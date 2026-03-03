@@ -684,7 +684,8 @@ test "parse_kgf go spec style no attrs no semantics" {
     #|
     #|=== grammar
     #|Doc -> Item*
-    #|Item -> ( Token )* ( NL )?
+    #|Item -> Token+ NL?
+    #|     | NL
     #|Token -> LineComment | Ident
     #|
     #|=== resolver
@@ -912,7 +913,8 @@ test "parse_kgf rust spec style" {
     #|
     #|=== grammar
     #|Doc -> Item*
-    #|Item -> ( Token )* ( NL )?
+    #|Item -> Token+ NL?
+    #|     | NL
     #|Token -> LineComment | Macro | Ident
     #|
     #|=== resolver

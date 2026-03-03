@@ -277,7 +277,8 @@ test "parse go spec - minimal without attrs and semantics" {
     #|
     #|=== grammar
     #|Doc -> Item*
-    #|Item -> ( Token )* ( NL )?
+    #|Item -> Token+ NL?
+    #|     | NL
     #|Token -> LineComment | BlockComment | String | Number
     #|      | KeywordDecl | KeywordControl | Ident | Punct
     #|
@@ -318,7 +319,8 @@ test "parse rust spec - macro token pattern" {
     #|
     #|=== grammar
     #|Doc -> Item*
-    #|Item -> ( Token )* ( NL )?
+    #|Item -> Token+ NL?
+    #|     | NL
     #|Token -> LineComment | DocComment | RawString | String | Lifetime
     #|      | KeywordDecl | KeywordType | Macro | Ident
     #|

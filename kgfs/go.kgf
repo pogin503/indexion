@@ -43,7 +43,8 @@ TOKEN Punct /[;,\.\(\)\[\]\{\}:]/
 
 === grammar
 Doc -> Item*
-Item -> ( Token )* ( NL )?
+Item -> Token+ NL?
+     | NL
 Token -> LineComment | BlockComment
       | RawString | String | Char | Number
       | KeywordDecl | KeywordControl | KeywordOther | KeywordType
