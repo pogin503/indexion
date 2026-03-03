@@ -14,21 +14,6 @@
 
 ## Commands
 
-### `indexion explore`
-
-
-Explores a directory and calculates pairwise similarity between all files.
-Useful for understanding code patterns and finding potential duplications.
-
-## Usage
-
-```bash
-indexion explore [options] <directory>
-```
-
-
-[Full documentation](cmd/indexion/explore/README.md)
-
 ### `indexion plan refactor`
 
 
@@ -43,7 +28,44 @@ indexion plan refactor [options] <directory>
 ```
 
 
-[Full documentation](cmd/indexion/plan/refactor/README.md)
+[Full documentation](./cmd/indexion/plan/refactor/README.md)
+
+### `indexion similarity`
+
+
+Computes similarity/distance metrics between two text inputs using
+various algorithms (TF-IDF cosine similarity, NCD compression distance,
+or a weighted hybrid).
+
+## Usage
+
+```bash
+indexion sim [options] <text1> <text2>
+```
+
+
+[Full documentation](./cmd/indexion/similarity/README.md)
+
+### `indexion explore`
+
+
+Explores a directory and calculates pairwise similarity between all files.
+Useful for understanding code patterns and finding potential duplications.
+
+## Usage
+
+```bash
+indexion explore [options] <directory>
+```
+
+
+[Full documentation](./cmd/indexion/explore/README.md)
+
+### `indexion doc`
+
+
+
+[Full documentation](./cmd/indexion/doc/README.md)
 
 ### `indexion doc gen`
 
@@ -59,38 +81,23 @@ indexion doc gen [options] [files...]
 ```
 
 
-[Full documentation](cmd/indexion/doc/gen/README.md)
+[Full documentation](./cmd/indexion/doc/gen/README.md)
 
 ### `indexion doc readme`
 
 
 Extracts `///` documentation comments from MoonBit source files and
-generates README.md files for each package, plus an aggregated root README.
+outputs them in various formats. Supports flexible package discovery
+with include/exclude patterns.
 
 ## Usage
 
 ```bash
-indexion doc readme [options] [directory]
+indexion doc readme [options] [paths...]
 ```
 
 
-[Full documentation](cmd/indexion/doc/readme/README.md)
-
-### `indexion sim`
-
-
-Computes similarity/distance metrics between two text inputs using
-various algorithms (TF-IDF cosine similarity, NCD compression distance,
-or a weighted hybrid).
-
-## Usage
-
-```bash
-indexion sim [options] <text1> <text2>
-```
-
-
-[Full documentation](cmd/indexion/similarity/README.md)
+[Full documentation](./cmd/indexion/doc/readme/README.md)
 
 ## Installation
 

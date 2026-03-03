@@ -1,35 +1,45 @@
 # indexion doc readme
 
-Generate README.md files from source code documentation.
+Extract documentation from source files and generate README files.
 
 ## Overview
 
 Extracts `///` documentation comments from MoonBit source files and
-generates README.md files for each package, plus an aggregated root README.
+outputs them in various formats. Supports flexible package discovery
+with include/exclude patterns.
 
 ## Usage
 
 ```bash
-indexion doc readme [options] [directory]
+indexion doc readme [options] [paths...]
 ```
 
 ## Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--config=FILE` | Configuration file | doc.json |
-| `--root-only` | Generate only root README | false |
-| `--packages-only` | Generate only package READMEs | false |
+| `--include=PATTERN` | Include packages matching glob (repeatable) | all |
+| `--exclude=PATTERN` | Exclude packages matching glob (repeatable) | none |
+| `--recursive` | Scan directories recursively | true |
+| `--no-recursive` | Do not scan recursively | |
+| `--format=FORMAT` | Output: `markdown`, `json`, `raw` | markdown |
+| `--output=FILE` | Output to file | stdout |
+| `--per-package` | Generate README.md per package | false |
+| `--root` | Generate root README.md | false |
+| `--no-packages` | Skip individual package output | false |
 
 ## Examples
 
 ```bash
-# Generate all READMEs from doc.json config
+# Extract docs from current directory
 indexion doc readme
 
-# Generate only root README
-indexion doc readme --root-only
+# Extract from specific path with JSON output
+indexion doc readme --format=json src/
 
-# Use custom config
-indexion doc readme --config=custom-doc.json
+# Filter packages
+indexion doc readme --include="cmd/*" --exclude="*test*"
+
+# Generate per-package READMEs (legacy behavior)
+indexion doc readme --per-package --root
 ```
