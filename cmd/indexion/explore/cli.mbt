@@ -126,9 +126,21 @@ pub fn show_explore_help() -> Unit {
 }
 
 ///|
-/// Collect files from directory.
+/// Collect files from directory (recursive).
 fn collect_files(dir : String, extensions : Array[String]) -> Array[(String, String)] {
   let files : Array[(String, String)] = []
+  collect_files_recursive(dir, extensions, files, "")
+  files
+}
+
+///|
+/// Recursive helper for collecting files.
+fn collect_files_recursive(
+  dir : String,
+  extensions : Array[String],
+  files : Array[(String, String)],
+  prefix : String
+) -> Unit {
   let clean_dir = if dir.has_suffix("/") {
     let chars = dir.to_array()
     let result : Array[Char] = []
@@ -141,12 +153,20 @@ fn collect_files(dir : String, extensions : Array[String]) -> Array[(String, Str
   }
   try {
     if not(@fs.is_dir(clean_dir)) {
-      return files
+      return
     }
     let entries = @fs.read_dir(clean_dir)
     for entry in entries {
       let path = clean_dir + "/" + entry
-      if @fs.is_file(path) {
+      let display_name = if prefix.length() > 0 {
+        prefix + "/" + entry
+      } else {
+        entry
+      }
+      if @fs.is_dir(path) {
+        // Recurse into subdirectory
+        collect_files_recursive(path, extensions, files, display_name)
+      } else if @fs.is_file(path) {
         let should_include = if extensions.length() == 0 {
           true
         } else {
@@ -161,14 +181,13 @@ fn collect_files(dir : String, extensions : Array[String]) -> Array[(String, Str
         }
         if should_include {
           let content = @fs.read_file_to_string(path)
-          files.push((entry, content))
+          files.push((display_name, content))
         }
       }
     }
   } catch {
-    e => println("Error reading directory: " + e.to_string())
+    _ => ()
   }
-  files
 }
 
 ///|
