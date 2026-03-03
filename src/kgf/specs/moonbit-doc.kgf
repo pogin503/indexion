@@ -5,10 +5,13 @@ language: moonbit-doc
 SKIP /[ \t]+/
 TOKEN NL /\r?\n/
 
-# MoonBit doc comments: ///| followed by content
+# MoonBit doc comments: ///| marks start of doc block
 TOKEN DocComment /\/\/\/\|[^\r\n]*/
 
-# Regular comments
+# Doc content lines: /// followed by content (must come before LineComment)
+TOKEN DocLine /\/\/\/[^\r\n]*/
+
+# Regular comments (// but not ///)
 TOKEN LineComment /\/\/[^\r\n]*/
 
 # Strings
@@ -77,29 +80,30 @@ Item -> FnDecl
      | DocBlock
      | Other
 
-# Doc comment block (one or more ///| lines)
-DocBlock -> DocComment+
+# Doc comment block: ///| marker followed by /// content lines
+# NL consumed separately so _last captures the last DocLine content
+DocBlock -> DocComment ( NL DocLine )*
 
-# Function declaration
-FnDecl -> fn_doc:DocBlock? KW_pub? KW_fn TypeIdent? DCOLON? fn_id:Ident GenericParams? LPAREN ParamList? RPAREN ReturnType? Body?
+# Function declaration (DocBlock optional, NL consumed separately)
+FnDecl -> fn_doc:DocBlock? NL? KW_pub? KW_fn TypeIdent? DCOLON? fn_id:Ident GenericParams? LPAREN ParamList? RPAREN ReturnType? Body?
 
 # Struct declaration
-StructDecl -> struct_doc:DocBlock? KW_pub? KW_priv? KW_struct struct_id:TypeIdent GenericParams? StructBody? DeriveClause?
+StructDecl -> struct_doc:DocBlock? NL? KW_pub? KW_priv? KW_struct struct_id:TypeIdent GenericParams? StructBody? DeriveClause?
 
 # Enum declaration
-EnumDecl -> enum_doc:DocBlock? KW_pub? KW_priv? KW_enum enum_id:TypeIdent GenericParams? EnumBody? DeriveClause?
+EnumDecl -> enum_doc:DocBlock? NL? KW_pub? KW_priv? KW_enum enum_id:TypeIdent GenericParams? EnumBody? DeriveClause?
 
 # Type alias
-TypeDecl -> type_doc:DocBlock? KW_pub? KW_priv? KW_type type_id:TypeIdent GenericParams? EQ Type
+TypeDecl -> type_doc:DocBlock? NL? KW_pub? KW_priv? KW_type type_id:TypeIdent GenericParams? EQ Type
 
 # Trait declaration
-TraitDecl -> trait_doc:DocBlock? KW_pub? KW_trait trait_id:TypeIdent GenericParams? TraitBody?
+TraitDecl -> trait_doc:DocBlock? NL? KW_pub? KW_trait trait_id:TypeIdent GenericParams? TraitBody?
 
 # Impl block
-ImplDecl -> impl_doc:DocBlock? KW_pub? KW_impl TypeIdent? KW_for? TypeIdent? GenericParams? ImplBody?
+ImplDecl -> impl_doc:DocBlock? NL? KW_pub? KW_impl TypeIdent? KW_for? TypeIdent? GenericParams? ImplBody?
 
-# Let binding
-LetDecl -> let_doc:DocBlock? KW_pub? KW_let let_id:Ident TypeAnnotation? EQ Expr
+# Let binding (pub required to avoid matching local let bindings)
+LetDecl -> let_doc:DocBlock? NL? KW_pub KW_let let_id:Ident TypeAnnotation? EQ Expr
 
 # Test declaration
 TestDecl -> KW_test String? Body?
@@ -120,14 +124,16 @@ ImplMember -> FnDecl | NL | LineComment
 
 DeriveClause -> KW_derive LPAREN TypeList RPAREN
 
-# Parameters and types
-ParamList -> Param ( COMMA Param )*
-Param -> KW_mut? param_id:Ident TypeAnnotation? | Ident TILDE
+# Parameters and types (NL allowed around params, QMARK for labeled params, default values, trailing comma)
+ParamList -> NL? Param ( COMMA NL? Param )* COMMA? NL?
+# Param: labeled param (name~ : Type) or regular param (name : Type) or just name~
+Param -> param_id:Ident TILDE TypeAnnotation? DefaultValue? | KW_mut? param_id:Ident QMARK? TypeAnnotation? DefaultValue?
+DefaultValue -> EQ Expr
 TypeAnnotation -> COLON Type
 ReturnType -> ARROW Type BANG?
 
 Type -> TypeAtom ( PIPE TypeAtom )*
-TypeAtom -> TypeIdent GenericArgs? | Ident | LPAREN TypeList? RPAREN | LBRACKET Type RBRACKET
+TypeAtom -> TypeIdent GenericArgs? QMARK? | Ident QMARK? | LPAREN TypeList? RPAREN QMARK? | LBRACKET Type RBRACKET QMARK?
 GenericParams -> LBRACKET TypeParam ( COMMA TypeParam )* RBRACKET
 GenericArgs -> LBRACKET Type ( COMMA Type )* RBRACKET
 TypeParam -> TypeIdent ( COLON TypeIdent )?
@@ -137,7 +143,8 @@ TypeList -> Type ( COMMA Type )*
 Body -> LBRACE BodyContent* RBRACE
 BodyContent -> LBRACE BodyContent* RBRACE | LPAREN BodyContent* RPAREN | LBRACKET BodyContent* RBRACKET | Atom
 Expr -> ExprAtom+
-ExprAtom -> Ident | TypeIdent | Number | String | MultiString | Char | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET | DOT | COMMA | COLON | DCOLON | EQ | ARROW | FATARROW | TILDE | BANG | QMARK | PIPE | AMP | AT
+# ExprAtom includes keywords for use in expressions and function bodies
+ExprAtom -> Ident | TypeIdent | Number | String | MultiString | Char | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET | DOT | COMMA | COLON | DCOLON | EQ | ARROW | FATARROW | TILDE | BANG | QMARK | PIPE | AMP | AT | KW_fn | KW_pub | KW_priv | KW_struct | KW_enum | KW_type | KW_trait | KW_impl | KW_let | KW_mut | KW_const | KW_test | KW_derive | KW_for | KW_with
 
 Atom -> ExprAtom | NL | LineComment | DocComment
 
