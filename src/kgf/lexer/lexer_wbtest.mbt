@@ -221,6 +221,38 @@ test "lexer: typescript-style string literal pattern" {
 }
 
 ///|
+test "pattern_matcher: non-capturing group (?:...)" {
+  // Non-capturing groups should work like regular groups
+  let result = match_pattern("(?:ab)+", "ababab", 0)
+  assert_eq(result.matched, true)
+  assert_eq(result.text, "ababab")
+  // With alternation inside non-capturing group
+  let result2 = match_pattern("(?:a|b)+", "abba", 0)
+  assert_eq(result2.matched, true)
+  assert_eq(result2.text, "abba")
+  // Simple number pattern
+  let result3 = match_pattern("[1-9][0-9]*", "123", 0)
+  assert_eq(result3.matched, true)
+  assert_eq(result3.text, "123")
+  // Number pattern with non-capturing group alternation
+  let result4 = match_pattern("(?:0|[1-9][0-9]*)", "123", 0)
+  assert_eq(result4.matched, true)
+  assert_eq(result4.text, "123")
+  // Full TypeScript NumberLit pattern
+  let result5 = match_pattern("(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?", "123.456", 0)
+  assert_eq(result5.matched, true)
+  assert_eq(result5.text, "123.456")
+  // Without decimal part
+  let result6 = match_pattern("(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?", "42", 0)
+  assert_eq(result6.matched, true)
+  assert_eq(result6.text, "42")
+  // Zero
+  let result7 = match_pattern("(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?", "0.5", 0)
+  assert_eq(result7.matched, true)
+  assert_eq(result7.text, "0.5")
+}
+
+///|
 test "lexer: typescript-style tokens" {
   // Test token definitions similar to those in typescript.kgf
   let lex = lexer()

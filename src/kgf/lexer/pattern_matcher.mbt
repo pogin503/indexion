@@ -59,8 +59,8 @@ priv enum PatternElement {
   CharClass(Array[(Char, Char)], Bool) // ranges, negated
   AnyChar // .
   Escape(Char) // \s, \w, \d, \S, \W, \D, etc.
-  Group(Array[PatternElement])
-  Alternation(Array[Array[PatternElement]])
+  Group(Array[QuantifiedElement])
+  Alternation(Array[Array[QuantifiedElement]])
 }
 
 ///|
@@ -109,9 +109,52 @@ fn parse_char_class(
     match get_char_at(pattern, pos) {
       Some(']') => return Some((ranges, negated, pos + 1))
       Some('\\') => {
-        // Escaped character - handle escape sequences
+        // Escaped character - handle escape sequences and character class shortcuts
         pos = pos + 1
         match get_char_at(pattern, pos) {
+          Some('s') => {
+            // \s - whitespace characters
+            ranges.push((' ', ' '))
+            ranges.push(('\t', '\t'))
+            ranges.push(('\n', '\n'))
+            ranges.push(('\r', '\r'))
+            pos = pos + 1
+          }
+          Some('S') => {
+            // \S - non-whitespace (approximated as printable ASCII excluding whitespace)
+            // Add ranges for non-whitespace printable characters
+            ranges.push(('!', '~')) // Printable ASCII excluding space
+            pos = pos + 1
+          }
+          Some('d') => {
+            // \d - digits
+            ranges.push(('0', '9'))
+            pos = pos + 1
+          }
+          Some('D') => {
+            // \D - non-digits (approximated)
+            ranges.push(('A', 'Z'))
+            ranges.push(('a', 'z'))
+            ranges.push((' ', '/')) // space through /
+            ranges.push((':', '@')) // : through @
+            pos = pos + 1
+          }
+          Some('w') => {
+            // \w - word characters
+            ranges.push(('A', 'Z'))
+            ranges.push(('a', 'z'))
+            ranges.push(('0', '9'))
+            ranges.push(('_', '_'))
+            pos = pos + 1
+          }
+          Some('W') => {
+            // \W - non-word characters (approximated as common punctuation)
+            ranges.push((' ', '/'))
+            ranges.push((':', '@'))
+            ranges.push(('[', '`'))
+            ranges.push(('{', '~'))
+            pos = pos + 1
+          }
           Some(c) => {
             let escaped_char = match c {
               'n' => '\n'
@@ -170,7 +213,10 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
       Some('.') => (AnyChar, pos + 1)
       Some('(') => {
         // Group - find matching close paren
-        let group_start = pos + 1
+        let mut group_start = pos + 1
+        // Check for non-capturing group marker (?:...)
+        let is_non_capturing = get_char_at(pattern, group_start) == Some('?') &&
+          get_char_at(pattern, group_start + 1) == Some(':')
         let mut depth = 1
         let mut group_end = group_start
         while group_end < pattern.length() && depth > 0 {
@@ -187,34 +233,25 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         if depth != 0 {
           return None
         }
+        // Skip ?:  prefix if non-capturing group
+        if is_non_capturing {
+          group_start = group_start + 2
+        }
         let group_pattern = pattern.substring(start=group_start, end=group_end)
         // Check for alternation in group
         if group_pattern.contains("|") {
           let alternatives = split_by_alternation(group_pattern)
-          let parsed_alternatives : Array[Array[PatternElement]] = []
+          let parsed_alternatives : Array[Array[QuantifiedElement]] = []
           for alt in alternatives {
             match parse_pattern(alt) {
-              Some(elems) => {
-                let simple_elems : Array[PatternElement] = []
-                for e in elems {
-                  // For simplicity, ignore quantifiers inside alternation for now
-                  simple_elems.push(e.element)
-                }
-                parsed_alternatives.push(simple_elems)
-              }
+              Some(elems) => parsed_alternatives.push(elems)
               None => return None
             }
           }
           (Alternation(parsed_alternatives), group_end + 1)
         } else {
           match parse_pattern(group_pattern) {
-            Some(group_elems) => {
-              let simple_elems : Array[PatternElement] = []
-              for e in group_elems {
-                simple_elems.push(e.element)
-              }
-              (Group(simple_elems), group_end + 1)
-            }
+            Some(group_elems) => (Group(group_elems), group_end + 1)
             None => return None
           }
         }
@@ -459,7 +496,7 @@ fn match_simple(
 ///|
 /// Matches a group of elements.
 fn match_group(
-  elements : Array[PatternElement],
+  elements : Array[QuantifiedElement],
   quantifier : Quantifier,
   input : String,
   pos : Int,
@@ -468,13 +505,7 @@ fn match_group(
   fn match_group_once(start_pos : Int) -> Int? {
     let mut current = start_pos
     for elem in elements {
-      match
-        match_quantified(
-          { element: elem, quantifier: One },
-          input,
-          current,
-          case_insensitive,
-        ) {
+      match match_quantified(elem, input, current, case_insensitive) {
         Some(new_pos) => current = new_pos
         None => return None
       }
@@ -529,7 +560,7 @@ fn match_group(
 ///|
 /// Matches alternation (a|b|c pattern).
 fn match_alternation(
-  alternatives : Array[Array[PatternElement]],
+  alternatives : Array[Array[QuantifiedElement]],
   quantifier : Quantifier,
   input : String,
   pos : Int,
@@ -540,13 +571,7 @@ fn match_alternation(
       let mut current = start_pos
       let mut matched = true
       for elem in alt {
-        match
-          match_quantified(
-            { element: elem, quantifier: One },
-            input,
-            current,
-            case_insensitive,
-          ) {
+        match match_quantified(elem, input, current, case_insensitive) {
           Some(new_pos) => current = new_pos
           None => {
             matched = false

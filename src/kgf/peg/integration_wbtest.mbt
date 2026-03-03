@@ -777,3 +777,60 @@ test "integration: multiline rule empty args" {
   assert_true(result is Some(_))
   assert_true(result.unwrap().ok)
 }
+
+///|
+/// TypeScript-style spec with keyword priority.
+fn typescript_keyword_kgf() -> String {
+  let text =
+    #|language: typescript
+    #|
+    #|=== lex
+    #|SKIP /\s+/
+    #|TOKEN KW_import /import/
+    #|TOKEN KW_from /from/
+    #|TOKEN KW_as /as/
+    #|TOKEN Ident /[A-Za-z_\$][A-Za-z0-9_\$]*/
+    #|TOKEN StringLit /"[^"]*"/
+    #|TOKEN LBRACE /\{/
+    #|TOKEN RBRACE /\}/
+    #|TOKEN COMMA /,/
+    #|TOKEN SEMI /;/
+    #|
+    #|=== grammar
+    #|Module -> ImportDecl*
+    #|ImportDecl -> KW_import LBRACE ImportSpecList RBRACE KW_from StringLit SEMI?
+    #|ImportSpecList -> ImportSpec ( COMMA ImportSpec )*
+    #|ImportSpec -> origin:Ident ( KW_as local:Ident )?
+    #|
+  text
+}
+
+///|
+test "integration: typescript keyword priority" {
+  let spec = @spec.parse_kgf(typescript_keyword_kgf()).unwrap()
+  let lexer = @lexer.Lexer::new(spec.get_tokens())
+
+  // Tokenize TypeScript import statement
+  let source = "import { foo as f, bar } from \"module\";"
+  let tokens = lexer.tokenize(source)
+
+  // Verify keyword tokens have priority over Ident
+  assert_eq(tokens[0].kind, "KW_import")
+  assert_eq(tokens[1].kind, "LBRACE")
+  assert_eq(tokens[2].kind, "Ident")
+  assert_eq(tokens[2].text, "foo")
+  assert_eq(tokens[3].kind, "KW_as")
+  assert_eq(tokens[4].kind, "Ident")
+  assert_eq(tokens[4].text, "f")
+  assert_eq(tokens[5].kind, "COMMA")
+  assert_eq(tokens[6].kind, "Ident")
+  assert_eq(tokens[6].text, "bar")
+  assert_eq(tokens[7].kind, "RBRACE")
+  assert_eq(tokens[8].kind, "KW_from")
+
+  // Parse and verify
+  let peg = build_peg(spec)
+  let result = run_parse(peg, spec, "Module", tokens)
+  assert_true(result is Some(_))
+  assert_true(result.unwrap().ok)
+}
