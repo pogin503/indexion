@@ -75,17 +75,39 @@ fn split_by_char(text : String, delim : Char) -> Array[String] {
 }
 
 ///|
-/// Parses a single action: kind key1=val1 key2=val2 ...
+/// Parses a single action: kind [implicit_id] key1=val1 key2=val2 ...
+/// For example: def id kind=Variable ns=value
+///   - kind = "def"
+///   - implicit "id" param (first non-key=value token) = "id" (label name)
+///   - kind = "Variable"
+///   - ns = "value"
 fn parse_single_action(text : String) -> @types.AttrAction {
   let parts = split_by_space(text)
   guard parts.length() > 0 else { return @types.AttrAction::new("") }
   let kind = parts[0]
   let params : Map[String, String] = {}
+  let mut has_implicit_id = false
   for i in 1..<parts.length() {
-    let kv = parts[i]
-    match parse_key_value(kv) {
+    let part = parts[i]
+    match parse_key_value(part) {
       Some((k, v)) => params.set(k, v)
-      None => ()
+      None => {
+        // First non-key=value token is the implicit id/name parameter
+        if not(has_implicit_id) {
+          // For "def" action, implicit param is "id"
+          // For "ref" action, implicit param is "name"
+          // For "call" action, implicit param is "callee"
+          let param_name = match kind {
+            "def" => "id"
+            "ref" => "name"
+            "call" => "callee"
+            "import" | "reexport" => "module"
+            _ => "id"
+          }
+          params.set(param_name, part)
+          has_implicit_id = true
+        }
+      }
     }
   }
   @types.AttrAction::new(kind, params~)

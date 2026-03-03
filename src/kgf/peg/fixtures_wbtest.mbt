@@ -74,7 +74,7 @@ fn typescript_spec_for_fixtures() -> String {
 
 ///|
 test "fixtures: typescript import tokenization" {
-  let spec = @spec.parse_kgf(typescript_spec_for_fixtures()).unwrap()
+  let spec = @parser.parse_kgf(typescript_spec_for_fixtures()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let code = typescript_import_example()
   let tokens = lexer.tokenize(code)
@@ -102,7 +102,7 @@ test "fixtures: typescript import tokenization" {
 
 ///|
 test "fixtures: typescript import parsing" {
-  let spec = @spec.parse_kgf(typescript_spec_for_fixtures()).unwrap()
+  let spec = @parser.parse_kgf(typescript_spec_for_fixtures()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let code = typescript_import_example()
   let tokens = lexer.tokenize(code)
@@ -171,7 +171,7 @@ fn javascript_spec_for_fixtures() -> String {
 
 ///|
 test "fixtures: javascript import tokenization" {
-  let spec = @spec.parse_kgf(javascript_spec_for_fixtures()).unwrap()
+  let spec = @parser.parse_kgf(javascript_spec_for_fixtures()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let code = javascript_import_example()
   let tokens = lexer.tokenize(code)
@@ -188,7 +188,7 @@ test "fixtures: javascript import tokenization" {
 
 ///|
 test "fixtures: javascript import parsing" {
-  let spec = @spec.parse_kgf(javascript_spec_for_fixtures()).unwrap()
+  let spec = @parser.parse_kgf(javascript_spec_for_fixtures()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let code = javascript_import_example()
   let tokens = lexer.tokenize(code)
@@ -258,7 +258,7 @@ fn python_spec_for_fixtures() -> String {
 
 ///|
 test "fixtures: python import tokenization" {
-  let spec = @spec.parse_kgf(python_spec_for_fixtures()).unwrap()
+  let spec = @parser.parse_kgf(python_spec_for_fixtures()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let code = python_import_example()
   let tokens = lexer.tokenize(code)
@@ -284,7 +284,7 @@ test "fixtures: python import tokenization" {
 
 ///|
 test "fixtures: python import parsing" {
-  let spec = @spec.parse_kgf(python_spec_for_fixtures()).unwrap()
+  let spec = @parser.parse_kgf(python_spec_for_fixtures()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let code = python_import_example()
   let tokens = lexer.tokenize(code)
@@ -326,7 +326,7 @@ test "fixtures: markdown tokenization" {
     #|Doc -> Element*
     #|Element -> Heading | Bold | Italic | Text | NL
     #|
-  let spec = @spec.parse_kgf(spec_text).unwrap()
+  let spec = @parser.parse_kgf(spec_text).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let code = markdown_example()
   let tokens = lexer.tokenize(code)

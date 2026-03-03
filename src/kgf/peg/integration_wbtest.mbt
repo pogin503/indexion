@@ -29,7 +29,7 @@ fn simple_assignment_kgf() -> String {
 ///|
 test "integration: simple assignment parsing" {
   // Parse the KGF spec
-  let spec = @spec.parse_kgf(simple_assignment_kgf())
+  let spec = @parser.parse_kgf(simple_assignment_kgf())
   assert_true(spec is Some(_))
   let spec = spec.unwrap()
 
@@ -67,7 +67,7 @@ test "integration: simple assignment parsing" {
 
 ///|
 test "integration: multiple statements" {
-  let spec = @spec.parse_kgf(simple_assignment_kgf()).unwrap()
+  let spec = @parser.parse_kgf(simple_assignment_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -86,7 +86,7 @@ test "integration: multiple statements" {
 
 ///|
 test "integration: empty program" {
-  let spec = @spec.parse_kgf(simple_assignment_kgf()).unwrap()
+  let spec = @parser.parse_kgf(simple_assignment_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -105,7 +105,7 @@ test "integration: empty program" {
 
 ///|
 test "integration: whitespace handling" {
-  let spec = @spec.parse_kgf(simple_assignment_kgf()).unwrap()
+  let spec = @parser.parse_kgf(simple_assignment_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -148,7 +148,7 @@ fn expression_kgf() -> String {
 
 ///|
 test "integration: expression parsing" {
-  let spec = @spec.parse_kgf(expression_kgf()).unwrap()
+  let spec = @parser.parse_kgf(expression_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -164,7 +164,7 @@ test "integration: expression parsing" {
 
 ///|
 test "integration: nested expressions with parentheses" {
-  let spec = @spec.parse_kgf(expression_kgf()).unwrap()
+  let spec = @parser.parse_kgf(expression_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -196,7 +196,7 @@ fn labeled_kgf() -> String {
 
 ///|
 test "integration: labeled captures" {
-  let spec = @spec.parse_kgf(labeled_kgf()).unwrap()
+  let spec = @parser.parse_kgf(labeled_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -243,7 +243,7 @@ fn optional_kgf() -> String {
 
 ///|
 test "integration: optional elements - with value" {
-  let spec = @spec.parse_kgf(optional_kgf()).unwrap()
+  let spec = @parser.parse_kgf(optional_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -268,7 +268,7 @@ test "integration: optional elements - with value" {
 
 ///|
 test "integration: optional elements - without value" {
-  let spec = @spec.parse_kgf(optional_kgf()).unwrap()
+  let spec = @parser.parse_kgf(optional_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -307,7 +307,7 @@ fn choice_kgf() -> String {
 
 ///|
 test "integration: choice - number" {
-  let spec = @spec.parse_kgf(choice_kgf()).unwrap()
+  let spec = @parser.parse_kgf(choice_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -321,7 +321,7 @@ test "integration: choice - number" {
 
 ///|
 test "integration: choice - string" {
-  let spec = @spec.parse_kgf(choice_kgf()).unwrap()
+  let spec = @parser.parse_kgf(choice_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -335,7 +335,7 @@ test "integration: choice - string" {
 
 ///|
 test "integration: choice - identifier" {
-  let spec = @spec.parse_kgf(choice_kgf()).unwrap()
+  let spec = @parser.parse_kgf(choice_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -350,7 +350,7 @@ test "integration: choice - identifier" {
 ///|
 /// Tests parse failures for invalid input.
 test "integration: parse failure - incomplete statement" {
-  let spec = @spec.parse_kgf(simple_assignment_kgf()).unwrap()
+  let spec = @parser.parse_kgf(simple_assignment_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -365,7 +365,7 @@ test "integration: parse failure - incomplete statement" {
 
 ///|
 test "integration: parse failure - wrong token order" {
-  let spec = @spec.parse_kgf(simple_assignment_kgf()).unwrap()
+  let spec = @parser.parse_kgf(simple_assignment_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -380,7 +380,7 @@ test "integration: parse failure - wrong token order" {
 
 ///|
 test "integration: parse failure - mismatched parentheses" {
-  let spec = @spec.parse_kgf(expression_kgf()).unwrap()
+  let spec = @parser.parse_kgf(expression_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -412,7 +412,7 @@ fn plus_kgf() -> String {
 
 ///|
 test "integration: plus repetition - success" {
-  let spec = @spec.parse_kgf(plus_kgf()).unwrap()
+  let spec = @parser.parse_kgf(plus_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -426,7 +426,7 @@ test "integration: plus repetition - success" {
 
 ///|
 test "integration: plus repetition - failure (no dots)" {
-  let spec = @spec.parse_kgf(plus_kgf()).unwrap()
+  let spec = @parser.parse_kgf(plus_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -459,7 +459,7 @@ fn case_insensitive_kgf() -> String {
 
 ///|
 test "integration: case insensitive tokens" {
-  let spec = @spec.parse_kgf(case_insensitive_kgf()).unwrap()
+  let spec = @parser.parse_kgf(case_insensitive_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -478,7 +478,7 @@ test "integration: case insensitive tokens" {
 
 ///|
 test "integration: case insensitive lowercase" {
-  let spec = @spec.parse_kgf(case_insensitive_kgf()).unwrap()
+  let spec = @parser.parse_kgf(case_insensitive_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -517,7 +517,7 @@ fn nested_rules_kgf() -> String {
 
 ///|
 test "integration: nested objects" {
-  let spec = @spec.parse_kgf(nested_rules_kgf()).unwrap()
+  let spec = @parser.parse_kgf(nested_rules_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -531,7 +531,7 @@ test "integration: nested objects" {
 
 ///|
 test "integration: multiple pairs" {
-  let spec = @spec.parse_kgf(nested_rules_kgf()).unwrap()
+  let spec = @parser.parse_kgf(nested_rules_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -545,7 +545,7 @@ test "integration: multiple pairs" {
 
 ///|
 test "integration: empty object" {
-  let spec = @spec.parse_kgf(nested_rules_kgf()).unwrap()
+  let spec = @parser.parse_kgf(nested_rules_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -560,7 +560,7 @@ test "integration: empty object" {
 ///|
 /// Test position tracking in tokens.
 test "integration: token position tracking" {
-  let spec = @spec.parse_kgf(simple_assignment_kgf()).unwrap()
+  let spec = @parser.parse_kgf(simple_assignment_kgf()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
   let source = "x = 42 ;"
@@ -595,7 +595,7 @@ fn string_value_kgf() -> String {
 
 ///|
 test "integration: string value extraction" {
-  let spec = @spec.parse_kgf(string_value_kgf()).unwrap()
+  let spec = @parser.parse_kgf(string_value_kgf()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
   let source = "\"hello world\""
@@ -632,7 +632,7 @@ fn resolver_kgf() -> String {
 
 ///|
 test "integration: resolver section parsing" {
-  let spec = @spec.parse_kgf(resolver_kgf()).unwrap()
+  let spec = @parser.parse_kgf(resolver_kgf()).unwrap()
 
   let resolver = spec.get_resolver()
   assert_eq(resolver.get_sources().length(), 2)
@@ -669,7 +669,7 @@ fn attrs_kgf() -> String {
 
 ///|
 test "integration: attrs section parsing" {
-  let spec = @spec.parse_kgf(attrs_kgf()).unwrap()
+  let spec = @parser.parse_kgf(attrs_kgf()).unwrap()
 
   let attrs = spec.get_attrs()
   assert_eq(attrs.length(), 2)
@@ -685,7 +685,7 @@ test "integration: attrs section parsing" {
 
 ///|
 test "integration: attrs parsing with program" {
-  let spec = @spec.parse_kgf(attrs_kgf()).unwrap()
+  let spec = @parser.parse_kgf(attrs_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -719,7 +719,7 @@ fn comments_kgf() -> String {
 
 ///|
 test "integration: comments in kgf spec" {
-  let spec = @spec.parse_kgf(comments_kgf()).unwrap()
+  let spec = @parser.parse_kgf(comments_kgf()).unwrap()
 
   // Comments should be ignored
   assert_eq(spec.get_language(), "comments_test")
@@ -750,7 +750,7 @@ fn multiline_rule_kgf() -> String {
 
 ///|
 test "integration: multiline rule definition" {
-  let spec = @spec.parse_kgf(multiline_rule_kgf()).unwrap()
+  let spec = @parser.parse_kgf(multiline_rule_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -765,7 +765,7 @@ test "integration: multiline rule definition" {
 
 ///|
 test "integration: multiline rule empty args" {
-  let spec = @spec.parse_kgf(multiline_rule_kgf()).unwrap()
+  let spec = @parser.parse_kgf(multiline_rule_kgf()).unwrap()
   let peg = build_peg(spec)
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
@@ -807,7 +807,7 @@ fn typescript_keyword_kgf() -> String {
 
 ///|
 test "integration: typescript keyword priority" {
-  let spec = @spec.parse_kgf(typescript_keyword_kgf()).unwrap()
+  let spec = @parser.parse_kgf(typescript_keyword_kgf()).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
 
   // Tokenize TypeScript import statement

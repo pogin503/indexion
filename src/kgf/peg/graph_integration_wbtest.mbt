@@ -9,7 +9,7 @@ fn run_full_pipeline(
   file_path : String,
 ) -> @graph.CodeGraph {
   // Parse spec
-  let spec = @spec.parse_kgf(spec_text).unwrap()
+  let spec = @parser.parse_kgf(spec_text).unwrap()
   // Create lexer and tokenize
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let tokens = lexer.tokenize(source_code)
@@ -169,7 +169,7 @@ fn javascript_spec() -> String {
     #|ParamList -> Ident ( COMMA Ident )*
     #|Block -> LBRACE BlockItem* RBRACE
     #|BlockItem -> VarDecl | ReturnStmt
-    #|ReturnStmt -> KW_return Expr
+    #|ReturnStmt -> KW_return Expr SEMI?
     #|ExprStmt -> Expr SEMI?
     #|Expr -> CallExpr | Primary
     #|CallExpr -> callee:Ident LPAREN Expr? RPAREN
@@ -244,19 +244,23 @@ test "graph integration: typescript import parses successfully" {
 }
 
 ///|
-test "graph integration: typescript variable declaration parses" {
+test "graph integration: typescript variable declaration creates symbols" {
   let source =
     #|const x = 1;
     #|let y: number = 2;
   let graph = run_full_pipeline(typescript_spec(), source, "src/vars.ts")
   // Should have module node
   assert_true(graph.get_modules().contains("src/vars.ts"))
-  // Note: Symbol creation from attrs section requires additional processing
-  // This test verifies parsing succeeds
+  // Should have symbols for x and y
+  let symbols = graph.get_symbols()
+  let has_x = symbols.iter().any(fn(entry) { entry.1.name == "x" })
+  let has_y = symbols.iter().any(fn(entry) { entry.1.name == "y" })
+  assert_true(has_x)
+  assert_true(has_y)
 }
 
 ///|
-test "graph integration: typescript function declaration parses" {
+test "graph integration: typescript function declaration creates symbols" {
   let source =
     #|function greet(name: string) {
     #|  return name;
@@ -264,42 +268,87 @@ test "graph integration: typescript function declaration parses" {
   let graph = run_full_pipeline(typescript_spec(), source, "src/fn.ts")
   // Should have module node
   assert_true(graph.get_modules().contains("src/fn.ts"))
+  // Check all symbols for debugging
+  let symbols = graph.get_symbols()
+  // Should have function symbol
+  let has_greet = symbols.iter().any(fn(entry) {
+    entry.1.name == "greet" && entry.1.kind == "Function"
+  })
+  assert_true(has_greet)
 }
 
 ///|
-test "graph integration: typescript type alias parses" {
+test "graph integration: typescript type alias creates symbol" {
   let source =
     #|type MyType = string;
   let graph = run_full_pipeline(typescript_spec(), source, "src/types.ts")
   assert_true(graph.get_modules().contains("src/types.ts"))
+  // Should have type alias symbol
+  let symbols = graph.get_symbols()
+  let has_mytype = symbols.iter().any(fn(entry) {
+    entry.1.name == "MyType" && entry.1.kind == "TypeAlias"
+  })
+  assert_true(has_mytype)
 }
 
 ///|
-test "graph integration: javascript import parses" {
+test "graph integration: javascript variable creates symbol" {
   let source =
     #|import { double } from './util.js';
     #|const val = double(n);
   let graph = run_full_pipeline(javascript_spec(), source, "src/app.js")
   assert_true(graph.get_modules().contains("src/app.js"))
+  // Should have variable symbol
+  let symbols = graph.get_symbols()
+  let has_val = symbols.iter().any(fn(entry) {
+    entry.1.name == "val" && entry.1.kind == "Variable"
+  })
+  assert_true(has_val)
 }
 
 ///|
-test "graph integration: javascript function declaration parses" {
+test "graph integration: javascript FnDecl labels" {
+  // Test that JavaScript FnDecl captures the function name correctly
+  let events = run_parse_with_events(javascript_spec(), "function run(n) { return double(n); }")
+  let fn_decl = events.iter().find_first(fn(e) { e.0 == "FnDecl" })
+  assert_true(fn_decl is Some(_))
+  let labels = fn_decl.unwrap().1
+  // Check the function name is captured
+  match labels.get("id") {
+    Some(String(name)) => assert_eq(name, "run")
+    _ => fail("Expected id label to be 'run'")
+  }
+}
+
+///|
+test "graph integration: javascript function creates symbol" {
   let source =
     #|function run(n) {
     #|  return double(n);
     #|}
   let graph = run_full_pipeline(javascript_spec(), source, "src/run.js")
   assert_true(graph.get_modules().contains("src/run.js"))
+  // Should have function symbol
+  let symbols = graph.get_symbols()
+  let has_run = symbols.iter().any(fn(entry) {
+    entry.1.name == "run" && entry.1.kind == "Function"
+  })
+  assert_true(has_run)
 }
 
 ///|
-test "graph integration: python function definition parses" {
+test "graph integration: python function creates symbol" {
   let source =
     #|def run(n):
     #|    return inc(n)
   let graph = run_full_pipeline(python_spec(), source, "main.py")
   assert_true(graph.get_modules().contains("main.py"))
+  // Should have function symbol
+  let symbols = graph.get_symbols()
+  let has_run = symbols.iter().any(fn(entry) {
+    entry.1.name == "run" && entry.1.kind == "Function"
+  })
+  assert_true(has_run)
 }
 
 ///|
@@ -357,6 +406,42 @@ test "graph integration: complex typescript example parses" {
 }
 
 ///|
+test "graph integration: attrs parsing debug" {
+  // Test that attrs are being parsed correctly
+  let spec = @parser.parse_kgf(typescript_spec()).unwrap()
+  let attrs = spec.get_attrs()
+  // Should have attrs for FnDecl
+  let fn_attrs = attrs.get("FnDecl")
+  assert_true(fn_attrs is Some(_))
+  let fn_actions = fn_attrs.unwrap()
+  assert_true(fn_actions.length() > 0)
+  // Check the first action is "def"
+  assert_eq(fn_actions[0].get_kind(), "def")
+  // Check the "id" param is present
+  let params = fn_actions[0].get_params()
+  assert_true(params.contains("id"))
+  assert_eq(params.get("id").unwrap(), "id")
+  assert_eq(params.get("kind").unwrap(), "Function")
+}
+
+///|
+test "graph integration: typescript FnDecl labels" {
+  // Test that nested rules don't pollute parent labels
+  let events = run_parse_with_events(
+    typescript_spec(),
+    "function greet(name: string) { return name; }",
+  )
+  let fn_decl = events.iter().find_first(fn(e) { e.0 == "FnDecl" })
+  assert_true(fn_decl is Some(_))
+  let labels = fn_decl.unwrap().1
+  // Verify function name is "greet", not "name" (the parameter)
+  match labels.get("id") {
+    Some(String(name)) => assert_eq(name, "greet")
+    _ => fail("Expected id label to be 'greet'")
+  }
+}
+
+///|
 test "graph integration: empty file" {
   let source = ""
   let graph = run_full_pipeline(typescript_spec(), source, "empty.ts")
@@ -384,7 +469,7 @@ fn run_parse_with_events(
   spec_text : String,
   source_code : String,
 ) -> Array[(String, Map[String, Json])] {
-  let spec = @spec.parse_kgf(spec_text).unwrap()
+  let spec = @parser.parse_kgf(spec_text).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let tokens = lexer.tokenize(source_code)
   let peg = try { build_peg(spec) } catch { _ => return [] }

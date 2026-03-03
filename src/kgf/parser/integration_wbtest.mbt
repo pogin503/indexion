@@ -1,7 +1,7 @@
 // Integration tests for parsing reference KGF spec files.
 // These tests verify that the parser can handle real-world spec files.
 
-// Note: The actual spec files are stored in kgf/specs/ directory.
+// Note: The actual spec files are stored in kgf/kgfs/ directory.
 // These tests use embedded spec content to verify parsing behavior.
 
 ///|

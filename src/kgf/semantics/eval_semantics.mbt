@@ -31,12 +31,15 @@ pub fn eval_semantics(
 
 ///|
 /// Evaluates semantics for a rule by name.
-/// Looks up the semantic blocks for the rule in the spec and evaluates them.
+/// First processes attrs (simple annotations), then semantics DSL blocks.
 pub fn eval_rule_semantics(
   rule_name : String,
   labels : Map[String, Json],
   ctx : SemEvalCtx,
 ) -> Unit {
+  // First, process attrs (simple annotations like: def id kind=Variable)
+  eval_rule_attrs(rule_name, labels, ctx)
+  // Then, process semantics DSL blocks (more complex logic)
   match ctx.spec.get_semantic(rule_name) {
     Some(blocks) => eval_semantics(blocks, labels, ctx)
     None => ()

@@ -180,8 +180,28 @@ fn eval_sym(
       EvalResult::failure(pos)
     }
   } else {
-    // Rule reference
-    call_rule(name, pos)
+    // Rule reference - don't propagate internal labels to parent scope
+    // Only keep _last so that Label nodes can capture the rule's value
+    let result = call_rule(name, pos)
+    if result.ok {
+      // Create clean labels with only _last (if present) for Label to capture
+      let clean_labels : Map[String, Json] = Map::new()
+      match result.labels.get("_last") {
+        Some(v) => clean_labels.set("_last", v)
+        None => ()
+      }
+      match result.labels.get("_last_pos") {
+        Some(v) => clean_labels.set("_last_pos", v)
+        None => ()
+      }
+      match result.labels.get("_last_len") {
+        Some(v) => clean_labels.set("_last_len", v)
+        None => ()
+      }
+      EvalResult::success(result.pos, labels=clean_labels, events=result.events)
+    } else {
+      result
+    }
   }
 }
 

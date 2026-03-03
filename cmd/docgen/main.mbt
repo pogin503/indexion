@@ -212,7 +212,7 @@ fn load_specs(specs_dir : String) -> Map[String, @kgf_types.KGFSpec] {
       if entry.has_suffix(".kgf") {
         let path = specs_dir + "/" + entry
         let content = @fs.read_file_to_string(path)
-        match @spec.parse_kgf(content) {
+        match @parser.parse_kgf(content) {
           Some(spec) => {
             let lang = spec.get_language()
             specs.set(lang, spec)
