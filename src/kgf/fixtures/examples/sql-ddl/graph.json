@@ -1,0 +1,1248 @@
+{
+  "modules": {
+    "sessions": {
+      "file": "schema.sql"
+    },
+    "chunks": {
+      "file": "schema.sql"
+    },
+    "session_chunks": {
+      "file": "schema.sql"
+    },
+    "attachments": {
+      "file": "schema.sql"
+    },
+    "chunk_processing_states": {
+      "file": "schema.sql"
+    },
+    "chunk_sources": {
+      "file": "schema.sql"
+    },
+    "chunk_tool_calls": {
+      "file": "schema.sql"
+    },
+    "recall_indexes": {
+      "file": "schema.sql"
+    },
+    "segmentation_jobs": {
+      "file": "schema.sql"
+    }
+  },
+  "symbols": {
+    "schema.sql::value:id#1": {
+      "name": "id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:user_id#2": {
+      "name": "user_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:status#3": {
+      "name": "status",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:created_at#4": {
+      "name": "created_at",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:updated_at#5": {
+      "name": "updated_at",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:sessions#6": {
+      "name": "sessions",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:id#7": {
+      "name": "id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:session_id#8": {
+      "name": "session_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:actor_type#9": {
+      "name": "actor_type",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:actor_user_id#10": {
+      "name": "actor_user_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:actor_name#11": {
+      "name": "actor_name",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:content#12": {
+      "name": "content",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:status#13": {
+      "name": "status",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:created_at#14": {
+      "name": "created_at",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:updated_at#15": {
+      "name": "updated_at",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:title#16": {
+      "name": "title",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunks#17": {
+      "name": "chunks",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:session_id#18": {
+      "name": "session_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:position#19": {
+      "name": "position",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_id#20": {
+      "name": "chunk_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:session_chunks#21": {
+      "name": "session_chunks",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:id#22": {
+      "name": "id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_id#23": {
+      "name": "chunk_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:kind#24": {
+      "name": "kind",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:uri#25": {
+      "name": "uri",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:description#26": {
+      "name": "description",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:mime_type#27": {
+      "name": "mime_type",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:size_bytes#28": {
+      "name": "size_bytes",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:metadata_json#29": {
+      "name": "metadata_json",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:attachments#30": {
+      "name": "attachments",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_id#31": {
+      "name": "chunk_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:state#32": {
+      "name": "state",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:reason#33": {
+      "name": "reason",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:updated_at#34": {
+      "name": "updated_at",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_processing_states#35": {
+      "name": "chunk_processing_states",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_id#36": {
+      "name": "chunk_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:position#37": {
+      "name": "position",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:source_chunk_id#38": {
+      "name": "source_chunk_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_sources#39": {
+      "name": "chunk_sources",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_id#40": {
+      "name": "chunk_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:index#41": {
+      "name": "index",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:tool_call_id#42": {
+      "name": "tool_call_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:name#43": {
+      "name": "name",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:input_json#44": {
+      "name": "input_json",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:output_json#45": {
+      "name": "output_json",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_tool_calls#46": {
+      "name": "chunk_tool_calls",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:id#47": {
+      "name": "id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:chunk_id#48": {
+      "name": "chunk_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:view_key#49": {
+      "name": "view_key",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:title#50": {
+      "name": "title",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:detail#51": {
+      "name": "detail",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:summary#52": {
+      "name": "summary",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:embedding_json#53": {
+      "name": "embedding_json",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:is_main#54": {
+      "name": "is_main",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:recall_indexes#55": {
+      "name": "recall_indexes",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:id#56": {
+      "name": "id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:session_id#57": {
+      "name": "session_id",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:status#58": {
+      "name": "status",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:total_chunks#59": {
+      "name": "total_chunks",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:window_config#60": {
+      "name": "window_config",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:checkpoint#61": {
+      "name": "checkpoint",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:error#62": {
+      "name": "error",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:created_at#63": {
+      "name": "created_at",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:updated_at#64": {
+      "name": "updated_at",
+      "kind": "Column",
+      "ns": "value",
+      "module": "schema.sql"
+    },
+    "schema.sql::value:segmentation_jobs#65": {
+      "name": "segmentation_jobs",
+      "kind": "Table",
+      "ns": "value",
+      "module": "schema.sql"
+    }
+  },
+  "edges": [
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:id#1",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "id",
+      "type": "text",
+      "isPK": "primary"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:user_id#2",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "user_id",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:status#3",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "status",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:created_at#4",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "created_at",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:updated_at#5",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "updated_at",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:sessions#6",
+      "site": "top"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:id#7",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "id",
+      "type": "text",
+      "isPK": "primary"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:session_id#8",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "session_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:actor_type#9",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "actor_type",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:actor_user_id#10",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "actor_user_id",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:actor_name#11",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "actor_name",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:content#12",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "content",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:status#13",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "status",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:created_at#14",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "created_at",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:updated_at#15",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "updated_at",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:title#16",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "title",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunks#17",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "chunks",
+      "to": "sessions",
+      "fkColumn": "session_id",
+      "refColumn": "id"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:session_id#18",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "session_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:position#19",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "position",
+      "type": "integer",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_id#20",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "chunk_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:session_chunks#21",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "session_chunks",
+      "to": "chunks",
+      "fkColumn": "chunk_id",
+      "refColumn": "id"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:id#22",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "id",
+      "type": "text",
+      "isPK": "primary"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_id#23",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "chunk_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:kind#24",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "kind",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:uri#25",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "uri",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:description#26",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "description",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:mime_type#27",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "mime_type",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:size_bytes#28",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "size_bytes",
+      "type": "integer"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:metadata_json#29",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "metadata_json",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:attachments#30",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "attachments",
+      "to": "chunks",
+      "fkColumn": "chunk_id",
+      "refColumn": "id"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_id#31",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "chunk_id",
+      "type": "text",
+      "isPK": "primary"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:state#32",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "state",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:reason#33",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "reason",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:updated_at#34",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "updated_at",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_processing_states#35",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "chunk_processing_states",
+      "to": "chunks",
+      "fkColumn": "chunk_id",
+      "refColumn": "id"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_id#36",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "chunk_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:position#37",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "position",
+      "type": "integer",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:source_chunk_id#38",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "source_chunk_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_sources#39",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "chunk_sources",
+      "to": "chunks",
+      "fkColumn": "source_chunk_id",
+      "refColumn": "id"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_id#40",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "chunk_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:index#41",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "index",
+      "type": "integer",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:tool_call_id#42",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "tool_call_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:name#43",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "name",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:input_json#44",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "input_json",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:output_json#45",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "output_json",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_tool_calls#46",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "chunk_tool_calls",
+      "to": "chunks",
+      "fkColumn": "chunk_id",
+      "refColumn": "id"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:id#47",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "id",
+      "type": "text",
+      "isPK": "primary"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:chunk_id#48",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "chunk_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:view_key#49",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "view_key",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:title#50",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "title",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:detail#51",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "detail",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:summary#52",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "summary",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:embedding_json#53",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "embedding_json",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:is_main#54",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "is_main",
+      "type": "integer",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:recall_indexes#55",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "recall_indexes",
+      "to": "chunks",
+      "fkColumn": "chunk_id",
+      "refColumn": "id"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:id#56",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "id",
+      "type": "text",
+      "isPK": "primary"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:session_id#57",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "session_id",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:status#58",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "status",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:total_chunks#59",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "total_chunks",
+      "type": "integer",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:window_config#60",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "window_config",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:checkpoint#61",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "checkpoint",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:error#62",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "error",
+      "type": "text"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:created_at#63",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "created_at",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:updated_at#64",
+      "site": "top"
+    },
+    {
+      "kind": "hasColumn",
+      "from": "schema.sql",
+      "to": "updated_at",
+      "type": "text",
+      "isNotNull": "not"
+    },
+    {
+      "kind": "declares",
+      "from": "schema.sql",
+      "to": "schema.sql::value:segmentation_jobs#65",
+      "site": "top"
+    },
+    {
+      "kind": "tableReferences",
+      "from": "segmentation_jobs",
+      "to": "sessions",
+      "fkColumn": "session_id",
+      "refColumn": "id"
+    }
+  ]
+}

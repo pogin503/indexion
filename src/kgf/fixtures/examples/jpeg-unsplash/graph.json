@@ -1,0 +1,443 @@
+{
+  "modules": {
+    "photo-w400.jpg": {
+      "file": "photo-w400.jpg"
+    },
+    "photo-w400.jpg::jpeg:soi@0": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:JFIF@12": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:DQT@1956": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:SOF2@2224": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:DHT@2262": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:SOS@2376": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:DHT@10258": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:SOS@10372": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:DHT@27826": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:SOS@27954": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:DHT@39118": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:SOS@39206": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:DHT@60614": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:SOS@60734": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:DHT@66218": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:SOS@66324": {
+      "file": ""
+    },
+    "photo-w400.jpg::jpeg:eoi@69770": {
+      "file": ""
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "jpeg",
+      "hexPos": 0,
+      "hexLen": 4,
+      "bytePos": 0,
+      "confidence": "0.9"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg",
+      "to": "photo-w400.jpg::jpeg:soi@0",
+      "confidence": "0.7"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:JFIF@12",
+      "hexPos": 12,
+      "hexLen": 8,
+      "bytePos": 6,
+      "confidence": "0.5"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:JFIF@12",
+      "confidence": "0.5"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:JFIF@12",
+      "to": "jpeg:meta:JFIF",
+      "hexPos": 12,
+      "hexLen": 8,
+      "bytePos": 6,
+      "confidence": "0.7"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:JFIF@12",
+      "to": "photo-w400.jpg::jpeg:DQT@1956",
+      "hexPos": 1956,
+      "bytePos": 978,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:DQT@1956",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:DQT@1956",
+      "to": "jpeg:marker:DQT",
+      "hexPos": 1956,
+      "bytePos": 978,
+      "confidence": "0.4"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:SOF2@2224",
+      "to": "jpeg:sof:progressive",
+      "hexPos": 2224,
+      "bytePos": 1112,
+      "confidence": "0.9"
+    },
+    {
+      "kind": "imageInfo",
+      "from": "photo-w400.jpg",
+      "to": "photo-w400.jpg::jpeg:SOF2@2224",
+      "width": 400,
+      "height": 500,
+      "precision": 8,
+      "components": 3,
+      "progressive": true,
+      "confidence": "0.8"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:DQT@1956",
+      "to": "photo-w400.jpg::jpeg:SOF2@2224",
+      "hexPos": 2224,
+      "bytePos": 1112,
+      "confidence": "0.6"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:SOF2@2224",
+      "confidence": "0.4"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:SOF2@2224",
+      "to": "photo-w400.jpg::jpeg:DHT@2262",
+      "hexPos": 2262,
+      "bytePos": 1131,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:DHT@2262",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:DHT@2262",
+      "to": "jpeg:marker:DHT",
+      "hexPos": 2262,
+      "bytePos": 1131,
+      "confidence": "0.4"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:DHT@2262",
+      "to": "photo-w400.jpg::jpeg:SOS@2376",
+      "hexPos": 2376,
+      "bytePos": 1188,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:SOS@2376",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:SOS@2376",
+      "to": "jpeg:marker:SOS",
+      "hexPos": 2376,
+      "bytePos": 1188,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:SOS@2376",
+      "to": "photo-w400.jpg::jpeg:DHT@10258",
+      "hexPos": 10258,
+      "bytePos": 5129,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:DHT@10258",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:DHT@10258",
+      "to": "jpeg:marker:DHT",
+      "hexPos": 10258,
+      "bytePos": 5129,
+      "confidence": "0.4"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:DHT@10258",
+      "to": "photo-w400.jpg::jpeg:SOS@10372",
+      "hexPos": 10372,
+      "bytePos": 5186,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:SOS@10372",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:SOS@10372",
+      "to": "jpeg:marker:SOS",
+      "hexPos": 10372,
+      "bytePos": 5186,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:SOS@10372",
+      "to": "photo-w400.jpg::jpeg:DHT@27826",
+      "hexPos": 27826,
+      "bytePos": 13913,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:DHT@27826",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:DHT@27826",
+      "to": "jpeg:marker:DHT",
+      "hexPos": 27826,
+      "bytePos": 13913,
+      "confidence": "0.4"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:DHT@27826",
+      "to": "photo-w400.jpg::jpeg:SOS@27954",
+      "hexPos": 27954,
+      "bytePos": 13977,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:SOS@27954",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:SOS@27954",
+      "to": "jpeg:marker:SOS",
+      "hexPos": 27954,
+      "bytePos": 13977,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:SOS@27954",
+      "to": "photo-w400.jpg::jpeg:DHT@39118",
+      "hexPos": 39118,
+      "bytePos": 19559,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:DHT@39118",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:DHT@39118",
+      "to": "jpeg:marker:DHT",
+      "hexPos": 39118,
+      "bytePos": 19559,
+      "confidence": "0.4"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:DHT@39118",
+      "to": "photo-w400.jpg::jpeg:SOS@39206",
+      "hexPos": 39206,
+      "bytePos": 19603,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:SOS@39206",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:SOS@39206",
+      "to": "jpeg:marker:SOS",
+      "hexPos": 39206,
+      "bytePos": 19603,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:SOS@39206",
+      "to": "photo-w400.jpg::jpeg:DHT@60614",
+      "hexPos": 60614,
+      "bytePos": 30307,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:DHT@60614",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:DHT@60614",
+      "to": "jpeg:marker:DHT",
+      "hexPos": 60614,
+      "bytePos": 30307,
+      "confidence": "0.4"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:DHT@60614",
+      "to": "photo-w400.jpg::jpeg:SOS@60734",
+      "hexPos": 60734,
+      "bytePos": 30367,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:SOS@60734",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:SOS@60734",
+      "to": "jpeg:marker:SOS",
+      "hexPos": 60734,
+      "bytePos": 30367,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:SOS@60734",
+      "to": "photo-w400.jpg::jpeg:DHT@66218",
+      "hexPos": 66218,
+      "bytePos": 33109,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:DHT@66218",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:DHT@66218",
+      "to": "jpeg:marker:DHT",
+      "hexPos": 66218,
+      "bytePos": 33109,
+      "confidence": "0.4"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:DHT@66218",
+      "to": "photo-w400.jpg::jpeg:SOS@66324",
+      "hexPos": 66324,
+      "bytePos": 33162,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:SOS@66324",
+      "confidence": "0.2"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:SOS@66324",
+      "to": "jpeg:marker:SOS",
+      "hexPos": 66324,
+      "bytePos": 33162,
+      "confidence": "0.3"
+    },
+    {
+      "kind": "next",
+      "from": "photo-w400.jpg::jpeg:SOS@66324",
+      "to": "photo-w400.jpg::jpeg:eoi@69770",
+      "hexPos": 69770,
+      "hexLen": 4,
+      "bytePos": 34885,
+      "confidence": "0.7"
+    },
+    {
+      "kind": "contains",
+      "from": "photo-w400.jpg::jpeg:soi@0",
+      "to": "photo-w400.jpg::jpeg:eoi@69770",
+      "confidence": "0.5"
+    },
+    {
+      "kind": "maybeType",
+      "from": "photo-w400.jpg::jpeg:eoi@69770",
+      "to": "jpeg:eoi",
+      "hexPos": 69770,
+      "hexLen": 4,
+      "bytePos": 34885,
+      "confidence": "0.8"
+    }
+  ]
+}

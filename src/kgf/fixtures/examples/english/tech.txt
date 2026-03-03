@@ -1,0 +1,15 @@
+React is a JavaScript library for building user interfaces.
+It was developed by Facebook and is now maintained by Meta.
+
+You can learn more at https://react.dev or email support@react.dev.
+
+The component-based architecture makes it easy to reuse code.
+However, you shouldn't overuse state management in small apps.
+
+Here's what we'll cover in this tutorial:
+1. Setting up the development environment
+2. Creating your first component
+3. Understanding props and state
+
+If you have any questions, don't hesitate to ask!
+We're here to help you succeed.

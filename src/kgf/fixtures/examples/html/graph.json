@@ -1,0 +1,98 @@
+{
+  "modules": {
+    "docs/index.html": {
+      "file": "docs/index.html"
+    },
+    "index.html": {
+      "file": "index.html"
+    },
+    "url:stylesheet": {
+      "file": null
+    },
+    "url:styles": {
+      "file": null
+    },
+    "url:/static/app.js": {
+      "file": null
+    },
+    "url:./docs/index.html": {
+      "file": null
+    },
+    "url:images": {
+      "file": null
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:stylesheet",
+      "via": "stylesheet",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:stylesheet",
+      "via": "stylesheet",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:styles",
+      "via": "styles/site.css",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:styles",
+      "via": "styles/site.css",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:/static/app.js",
+      "via": "/static/app.js",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:/static/app.js",
+      "via": "/static/app.js",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:./docs/index.html",
+      "via": "./docs/index.html",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:./docs/index.html",
+      "via": "./docs/index.html",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:images",
+      "via": "images/logo.svg",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "index.html",
+      "to": "url:images",
+      "via": "images/logo.svg",
+      "dep_kind": "value"
+    }
+  ]
+}

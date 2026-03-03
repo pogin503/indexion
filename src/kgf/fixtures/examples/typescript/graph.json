@@ -1,0 +1,59 @@
+{
+  "modules": {
+    "src/main.ts": {
+      "file": "src/main.ts"
+    },
+    "src/utils.ts": {
+      "file": "src/utils.ts"
+    },
+    "npm:react": {
+      "file": null
+    },
+    "src/types.ts": {
+      "file": "src/types.ts"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/main.ts",
+      "to": "src/utils.ts",
+      "via": "./utils",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/main.ts",
+      "to": "src/utils.ts",
+      "via": "./utils",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/main.ts",
+      "to": "npm:react",
+      "via": "react",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/main.ts",
+      "to": "npm:react",
+      "via": "react",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "calls",
+      "from": "src/main.ts",
+      "to": "src/main.ts::value:f?unresolved",
+      "call_id": "src/main.ts::call@1"
+    },
+    {
+      "kind": "calls",
+      "from": "src/main.ts",
+      "to": "src/main.ts::value:f?unresolved",
+      "call_id": "src/main.ts::call@2"
+    }
+  ]
+}

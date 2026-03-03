@@ -1,0 +1,42 @@
+{
+  "modules": {
+    "src/app.js": {
+      "file": "src/app.js"
+    },
+    "npm:./util.js": {
+      "file": null
+    },
+    "src/util.js": {
+      "file": "src/util.js"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/app.js",
+      "to": "npm:./util.js",
+      "via": "./util.js",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/app.js",
+      "to": "npm:./util.js",
+      "via": "./util.js",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "calls",
+      "from": "src/app.js",
+      "to": "src/app.js::value:double?unresolved",
+      "call_id": "src/app.js::call@1"
+    },
+    {
+      "kind": "calls",
+      "from": "src/app.js",
+      "to": "src/app.js::value:double?unresolved",
+      "call_id": "src/app.js::call@2"
+    }
+  ]
+}

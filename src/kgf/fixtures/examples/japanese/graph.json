@@ -1,0 +1,287 @@
+{
+  "modules": {
+    "quotes.txt": {
+      "file": "quotes.txt"
+    },
+    "simple.txt": {
+      "file": "simple.txt"
+    },
+    "tech.txt": {
+      "file": "tech.txt"
+    }
+  },
+  "symbols": {
+    "quotes.txt::value:彼は「明日やる」と言った#1": {
+      "name": "彼は「明日やる」と言った",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "quotes.txt"
+    },
+    "quotes.txt::value:でも本当にやるのだろうか#2": {
+      "name": "でも本当にやるのだろうか",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "quotes.txt"
+    },
+    "quotes.txt::value:私は「今やる」と決めた#3": {
+      "name": "私は「今やる」と決めた",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "quotes.txt"
+    },
+    "quotes.txt::value:結果は後でわかる#4": {
+      "name": "結果は後でわかる",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "quotes.txt"
+    },
+    "simple.txt::value:今日は天気がいい#1": {
+      "name": "今日は天気がいい",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "simple.txt"
+    },
+    "simple.txt::value:散歩に行こう#2": {
+      "name": "散歩に行こう",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "simple.txt"
+    },
+    "simple.txt::value:でも、風が強いかもしれない#3": {
+      "name": "でも、風が強いかもしれない",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "simple.txt"
+    },
+    "simple.txt::value:上着を持っていく#4": {
+      "name": "上着を持っていく",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "simple.txt"
+    },
+    "tech.txt::value:このライブラリはReactで書かれている#1": {
+      "name": "このライブラリはReactで書かれている",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "tech.txt"
+    },
+    "tech.txt::value:TypeScriptも使える#2": {
+      "name": "TypeScriptも使える",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "tech.txt"
+    },
+    "tech.txt::value:ドキュメントはREADMEにある#3": {
+      "name": "ドキュメントはREADMEにある",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "tech.txt"
+    },
+    "tech.txt::value:まずはサンプルを動かしてみよう#4": {
+      "name": "まずはサンプルを動かしてみよう",
+      "kind": "Sentence",
+      "ns": "value",
+      "module": "tech.txt"
+    }
+  },
+  "edges": [
+    {
+      "kind": "declares",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:彼は「明日やる」と言った#1",
+      "site": "top"
+    },
+    {
+      "kind": "contains",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:彼は「明日やる」と言った#1",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:でも本当にやるのだろうか#2",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "quotes.txt::value:彼は「明日やる」と言った#1",
+      "to": "quotes.txt::value:でも本当にやるのだろうか#2",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:でも本当にやるのだろうか#2",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:私は「今やる」と決めた#3",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "quotes.txt::value:でも本当にやるのだろうか#2",
+      "to": "quotes.txt::value:私は「今やる」と決めた#3",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:私は「今やる」と決めた#3",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:結果は後でわかる#4",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "quotes.txt::value:私は「今やる」と決めた#3",
+      "to": "quotes.txt::value:結果は後でわかる#4",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "quotes.txt",
+      "to": "quotes.txt::value:結果は後でわかる#4",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "simple.txt",
+      "to": "simple.txt::value:今日は天気がいい#1",
+      "site": "top"
+    },
+    {
+      "kind": "contains",
+      "from": "simple.txt",
+      "to": "simple.txt::value:今日は天気がいい#1",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "simple.txt",
+      "to": "simple.txt::value:散歩に行こう#2",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "simple.txt::value:今日は天気がいい#1",
+      "to": "simple.txt::value:散歩に行こう#2",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "simple.txt",
+      "to": "simple.txt::value:散歩に行こう#2",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "simple.txt",
+      "to": "simple.txt::value:でも、風が強いかもしれない#3",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "simple.txt::value:散歩に行こう#2",
+      "to": "simple.txt::value:でも、風が強いかもしれない#3",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "simple.txt",
+      "to": "simple.txt::value:でも、風が強いかもしれない#3",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "simple.txt",
+      "to": "simple.txt::value:上着を持っていく#4",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "simple.txt::value:でも、風が強いかもしれない#3",
+      "to": "simple.txt::value:上着を持っていく#4",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "simple.txt",
+      "to": "simple.txt::value:上着を持っていく#4",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "tech.txt",
+      "to": "tech.txt::value:このライブラリはReactで書かれている#1",
+      "site": "top"
+    },
+    {
+      "kind": "contains",
+      "from": "tech.txt",
+      "to": "tech.txt::value:このライブラリはReactで書かれている#1",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "tech.txt",
+      "to": "tech.txt::value:TypeScriptも使える#2",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "tech.txt::value:このライブラリはReactで書かれている#1",
+      "to": "tech.txt::value:TypeScriptも使える#2",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "tech.txt",
+      "to": "tech.txt::value:TypeScriptも使える#2",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "tech.txt",
+      "to": "tech.txt::value:ドキュメントはREADMEにある#3",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "tech.txt::value:TypeScriptも使える#2",
+      "to": "tech.txt::value:ドキュメントはREADMEにある#3",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "tech.txt",
+      "to": "tech.txt::value:ドキュメントはREADMEにある#3",
+      "rel": "file->sentence"
+    },
+    {
+      "kind": "declares",
+      "from": "tech.txt",
+      "to": "tech.txt::value:まずはサンプルを動かしてみよう#4",
+      "site": "top"
+    },
+    {
+      "kind": "nextSentence",
+      "from": "tech.txt::value:ドキュメントはREADMEにある#3",
+      "to": "tech.txt::value:まずはサンプルを動かしてみよう#4",
+      "rel": "sentence->sentence"
+    },
+    {
+      "kind": "contains",
+      "from": "tech.txt",
+      "to": "tech.txt::value:まずはサンプルを動かしてみよう#4",
+      "rel": "file->sentence"
+    }
+  ]
+}

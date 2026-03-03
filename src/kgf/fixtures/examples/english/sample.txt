@@ -1,0 +1,14 @@
+The quick brown fox jumps over the lazy dog.
+This is a simple example of English text highlighting.
+
+I've been working on this project for several months.
+We're excited to announce that the new features are ready!
+
+What do you think about this approach?
+It's not only faster but also more efficient than before.
+
+The meeting will be held at 3:30 PM tomorrow.
+Please don't forget to bring your documents.
+
+John and Mary went to the store yesterday.
+They bought some apples, oranges, and bananas.
