@@ -5,6 +5,7 @@
 ///   indexion <command> [options]
 ///
 /// Commands:
+///   explore     Analyze similarity across files in a directory
 ///   docgen      Generate documentation from source files
 ///   similarity  Calculate text similarity/distance
 ///   help        Show this help message
@@ -21,6 +22,7 @@ fn main {
   let subcommand = if args.length() > 1 { args[1] } else { "help" }
 
   match subcommand {
+    "explore" => @explore_cli.run(args, 2)
     "docgen" => @docgen_cli.run(args, 2)
     "similarity" | "sim" => @similarity_cli.run(args, 2)
     "version" | "-v" | "--version" => show_version()
@@ -42,6 +44,7 @@ fn show_help() -> Unit {
   println("  indexion <command> [options]")
   println("")
   println("Commands:")
+  println("  explore     Analyze similarity across files in a directory")
   println("  docgen      Generate documentation from source files")
   println("  similarity  Calculate text similarity/distance (alias: sim)")
   println("  help        Show this help message")
@@ -50,6 +53,7 @@ fn show_help() -> Unit {
   println("Run 'indexion <command> --help' for more information on a command.")
   println("")
   println("Examples:")
+  println("  indexion explore kgfs/")
   println("  indexion docgen --format=markdown src/")
   println("  indexion similarity \"hello world\" \"hello there\"")
 }
