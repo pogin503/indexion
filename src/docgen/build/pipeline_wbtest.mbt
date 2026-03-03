@@ -1,6 +1,7 @@
 // Tests for build pipeline.
 
 // Helper to create EdgeKind from string
+
 ///|
 fn edge_kind(s : String) -> @graph.EdgeKind {
   @graph.EdgeKind::from_string(s)

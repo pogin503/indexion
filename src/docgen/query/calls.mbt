@@ -6,7 +6,7 @@ pub fn extract_call_graph(graph : @graph.CodeGraph) -> Array[CallInfo] {
   let result : Array[CallInfo] = []
   for edge in graph.get_edges() {
     if edge.kind is @graph.Calls {
-      let file = edge.attrs.get("file").or("")
+      let file = edge.attrs.get("file").unwrap_or("")
       result.push(CallInfo::new(edge.from, edge.to, file))
     }
   }
@@ -22,7 +22,7 @@ pub fn get_callees(
   let result : Array[CallInfo] = []
   for edge in graph.edges_from(caller_id) {
     if edge.kind is @graph.Calls {
-      let file = edge.attrs.get("file").or("")
+      let file = edge.attrs.get("file").unwrap_or("")
       result.push(CallInfo::new(edge.from, edge.to, file))
     }
   }
@@ -38,7 +38,7 @@ pub fn get_callers(
   let result : Array[CallInfo] = []
   for edge in graph.edges_to(callee_id) {
     if edge.kind is @graph.Calls {
-      let file = edge.attrs.get("file").or("")
+      let file = edge.attrs.get("file").unwrap_or("")
       result.push(CallInfo::new(edge.from, edge.to, file))
     }
   }

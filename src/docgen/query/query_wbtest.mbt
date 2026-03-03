@@ -1,6 +1,7 @@
 // Tests for query module.
 
 // Helper to create EdgeKind from string
+
 ///|
 fn edge_kind(s : String) -> @graph.EdgeKind {
   @graph.EdgeKind::from_string(s)

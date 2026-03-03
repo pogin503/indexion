@@ -203,23 +203,40 @@ fn process_input_files(paths : Array[String]) -> @graph.CodeGraph {
 ///|
 /// Collect files from a path (file or directory).
 fn collect_files(path : String, files : Array[(String, String)]) -> Unit {
+  // Remove trailing slash if present
+  let clean_path = trim_trailing_slash(path)
   try {
-    if @fs.is_dir(path) {
+    if @fs.is_dir(clean_path) {
       // Read directory contents
-      let entries = @fs.read_dir(path)
+      let entries = @fs.read_dir(clean_path)
       for entry in entries {
-        let full_path = path + "/" + entry
+        let full_path = clean_path + "/" + entry
         collect_files(full_path, files)
       }
-    } else if @fs.is_file(path) {
+    } else if @fs.is_file(clean_path) {
       // Check if it's a supported file type
-      if is_supported_file(path) {
-        let content = @fs.read_file_to_string(path)
-        files.push((path, content))
+      if is_supported_file(clean_path) {
+        let content = @fs.read_file_to_string(clean_path)
+        files.push((clean_path, content))
       }
     }
   } catch {
-    e => println("Warning: Could not read " + path + ": " + e.to_string())
+    e => println("Warning: Could not read " + clean_path + ": " + e.to_string())
+  }
+}
+
+///|
+/// Remove trailing slash from path.
+fn trim_trailing_slash(path : String) -> String {
+  if path.length() > 0 && path.has_suffix("/") {
+    let chars = path.to_array()
+    let result : Array[Char] = []
+    for i = 0; i < chars.length() - 1; i = i + 1 {
+      result.push(chars[i])
+    }
+    String::from_array(result)
+  } else {
+    path
   }
 }
 
@@ -239,8 +256,8 @@ fn is_supported_file(path : String) -> Bool {
 }
 
 ///|
-/// Extract basic symbols from file content.
-/// This is a simplified extraction - full KGF parsing would be used in production.
+/// Extract basic symbols from file content with doc comments.
+/// Captures MoonBit ///| doc comments, JSDoc /** */ comments, and Python docstrings.
 fn extract_symbols_from_content(
   graph : @graph.CodeGraph,
   path : String,
@@ -248,92 +265,171 @@ fn extract_symbols_from_content(
   declares : @graph.EdgeKind,
 ) -> Unit {
   let lines = split_lines(content)
+  let doc_lines : Array[String] = []
   for i, line in lines {
-    // Look for common declaration patterns
     let trimmed = trim(line)
+    // Collect MoonBit doc comments (///| or ///)
+    if trimmed.has_prefix("///") {
+      let doc_text = extract_mbt_doc_line(trimmed)
+      doc_lines.push(doc_text)
+      continue
+    }
+    // Collect JSDoc style comments
+    if trimmed.has_prefix("/**") ||
+      (trimmed.has_prefix("*") && not(trimmed.has_prefix("*/"))) {
+      let doc_text = extract_jsdoc_line(trimmed)
+      if doc_text.length() > 0 {
+        doc_lines.push(doc_text)
+      }
+      continue
+    }
+    // Check for declarations and attach collected doc
+    let doc = join_doc_lines(doc_lines)
     // TypeScript/JavaScript: export function/class/interface/type
     if trimmed.has_prefix("export function ") ||
       trimmed.has_prefix("export async function ") {
       let name = extract_function_name(trimmed)
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Function")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Function", i + 1, doc)
       }
+      doc_lines.clear()
     } else if trimmed.has_prefix("export class ") {
       let name = extract_class_name(trimmed, "class ")
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Class")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Class", i + 1, doc)
       }
+      doc_lines.clear()
     } else if trimmed.has_prefix("export interface ") {
       let name = extract_class_name(trimmed, "interface ")
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Interface")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Interface", i + 1, doc)
       }
+      doc_lines.clear()
     } else if trimmed.has_prefix("export type ") {
       let name = extract_type_name(trimmed)
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Type")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Type", i + 1, doc)
       }
+      doc_lines.clear()
     } else if trimmed.has_prefix("pub fn ") || trimmed.has_prefix("fn ") {
-      // MoonBit function
       let name = extract_mbt_function_name(trimmed)
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Function")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Function", i + 1, doc)
       }
+      doc_lines.clear()
     } else if trimmed.has_prefix("pub struct ") || trimmed.has_prefix("struct ") {
-      // MoonBit struct
       let name = extract_mbt_type_name(trimmed, "struct ")
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Struct")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Struct", i + 1, doc)
       }
+      doc_lines.clear()
     } else if trimmed.has_prefix("pub enum ") || trimmed.has_prefix("enum ") {
-      // MoonBit enum
       let name = extract_mbt_type_name(trimmed, "enum ")
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Enum")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Enum", i + 1, doc)
       }
+      doc_lines.clear()
     } else if trimmed.has_prefix("def ") {
-      // Python function
       let name = extract_python_function_name(trimmed)
       if name.length() > 0 {
-        let attrs : Map[String, String] = {}
-        attrs.set("name", name)
-        attrs.set("kind", "Function")
-        attrs.set("line", (i + 1).to_string())
-        graph.add_edge(declares, path, path + "::" + name, attrs~)
+        add_symbol(graph, declares, path, name, "Function", i + 1, doc)
       }
-    } else if trimmed.has_prefix("class ") && not(trimmed.has_prefix("class ")) {
-      // Python class (with inheritance check)
-      ()
+      doc_lines.clear()
+    } else if trimmed.length() > 0 &&
+      not(trimmed.has_prefix("//")) &&
+      not(trimmed.has_prefix("#")) {
+      // Non-empty, non-comment line - clear doc buffer
+      doc_lines.clear()
     }
   }
+}
+
+///|
+/// Add a symbol to the graph with documentation.
+fn add_symbol(
+  graph : @graph.CodeGraph,
+  declares : @graph.EdgeKind,
+  path : String,
+  name : String,
+  kind : String,
+  line : Int,
+  doc : String,
+) -> Unit {
+  let attrs : Map[String, String] = {}
+  attrs.set("name", name)
+  attrs.set("kind", kind)
+  attrs.set("line", line.to_string())
+  if doc.length() > 0 {
+    attrs.set("doc", doc)
+  }
+  graph.add_edge(declares, path, path + "::" + name, attrs~)
+}
+
+///|
+/// Extract doc content from MoonBit doc comment line.
+fn extract_mbt_doc_line(line : String) -> String {
+  let chars = line.to_array()
+  // Skip ///| or ///
+  let mut start = 3
+  if start < chars.length() && chars[start] == '|' {
+    start = start + 1
+  }
+  // Skip leading space
+  if start < chars.length() && chars[start] == ' ' {
+    start = start + 1
+  }
+  let result : Array[Char] = []
+  for i = start; i < chars.length(); i = i + 1 {
+    result.push(chars[i])
+  }
+  String::from_array(result)
+}
+
+///|
+/// Extract doc content from JSDoc comment line.
+fn extract_jsdoc_line(line : String) -> String {
+  let chars = line.to_array()
+  let mut start = 0
+  // Skip /** or leading *
+  if chars.length() >= 3 &&
+    chars[0] == '/' &&
+    chars[1] == '*' &&
+    chars[2] == '*' {
+    start = 3
+  } else if chars.length() >= 1 && chars[0] == '*' {
+    start = 1
+  }
+  // Skip leading space
+  if start < chars.length() && chars[start] == ' ' {
+    start = start + 1
+  }
+  let result : Array[Char] = []
+  for i = start; i < chars.length(); i = i + 1 {
+    // Stop at */
+    if i + 1 < chars.length() && chars[i] == '*' && chars[i + 1] == '/' {
+      break
+    }
+    result.push(chars[i])
+  }
+  trim(String::from_array(result))
+}
+
+///|
+/// Join doc lines into a single string.
+fn join_doc_lines(lines : Array[String]) -> String {
+  if lines.length() == 0 {
+    return ""
+  }
+  let result : Array[Char] = []
+  for i, line in lines {
+    if i > 0 {
+      result.push(' ')
+    }
+    for c in line {
+      result.push(c)
+    }
+  }
+  String::from_array(result)
 }
 
 ///|

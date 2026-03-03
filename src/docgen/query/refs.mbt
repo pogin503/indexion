@@ -6,7 +6,7 @@ pub fn extract_references(graph : @graph.CodeGraph) -> Array[SymbolRef] {
   let result : Array[SymbolRef] = []
   for edge in graph.get_edges() {
     if edge.kind is @graph.References {
-      let ref_kind = edge.attrs.get("ns").or("value")
+      let ref_kind = edge.attrs.get("ns").unwrap_or("value")
       result.push(SymbolRef::new(edge.to, edge.from, ref_kind))
     }
   }
@@ -22,7 +22,7 @@ pub fn get_references_to(
   let result : Array[SymbolRef] = []
   for edge in graph.edges_to(symbol_id) {
     if edge.kind is @graph.References {
-      let ref_kind = edge.attrs.get("ns").or("value")
+      let ref_kind = edge.attrs.get("ns").unwrap_or("value")
       result.push(SymbolRef::new(edge.to, edge.from, ref_kind))
     }
   }
@@ -38,7 +38,7 @@ pub fn get_references_from(
   let result : Array[SymbolRef] = []
   for edge in graph.edges_from(site_id) {
     if edge.kind is @graph.References {
-      let ref_kind = edge.attrs.get("ns").or("value")
+      let ref_kind = edge.attrs.get("ns").unwrap_or("value")
       result.push(SymbolRef::new(edge.to, edge.from, ref_kind))
     }
   }
@@ -52,8 +52,8 @@ pub fn extract_declarations(graph : @graph.CodeGraph) -> Array[SymbolDecl] {
   let result : Array[SymbolDecl] = []
   for edge in graph.get_edges() {
     if edge.kind is @graph.Declares {
-      let name = edge.attrs.get("name").or("")
-      let kind = edge.attrs.get("kind").or("Unknown")
+      let name = edge.attrs.get("name").unwrap_or("")
+      let kind = edge.attrs.get("kind").unwrap_or("Unknown")
       let doc = edge.attrs.get("doc")
       result.push(SymbolDecl::new(edge.to, name, kind, edge.from, doc~))
     }
@@ -70,8 +70,8 @@ pub fn get_module_declarations(
   let result : Array[SymbolDecl] = []
   for edge in graph.edges_from(module_id) {
     if edge.kind is @graph.Declares {
-      let name = edge.attrs.get("name").or("")
-      let kind = edge.attrs.get("kind").or("Unknown")
+      let name = edge.attrs.get("name").unwrap_or("")
+      let kind = edge.attrs.get("kind").unwrap_or("Unknown")
       let doc = edge.attrs.get("doc")
       result.push(SymbolDecl::new(edge.to, name, kind, edge.from, doc~))
     }
@@ -86,7 +86,7 @@ pub fn count_references(graph : @graph.CodeGraph) -> Map[String, Int] {
   let counts : Map[String, Int] = {}
   for edge in graph.get_edges() {
     if edge.kind is @graph.References {
-      let current = counts.get(edge.to).or(0)
+      let current = counts.get(edge.to).unwrap_or(0)
       counts.set(edge.to, current + 1)
     }
   }
