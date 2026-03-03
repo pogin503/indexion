@@ -14,7 +14,7 @@ fn run_full_pipeline(
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let tokens = lexer.tokenize(source_code)
   // Build PEG and parse
-  let peg = try { build_peg(spec) } catch { _ => return @graph.CodeGraph::new() }
+  let peg = build_peg(spec) catch { _ => return @graph.CodeGraph::new() }
   let start_rule = spec.get_start_rule()
   let parse_result = run_parse(peg, spec, start_rule, tokens)
   // Create graph
@@ -271,9 +271,9 @@ test "graph integration: typescript function declaration creates symbols" {
   // Check all symbols for debugging
   let symbols = graph.get_symbols()
   // Should have function symbol
-  let has_greet = symbols.iter().any(fn(entry) {
-    entry.1.name == "greet" && entry.1.kind == "Function"
-  })
+  let has_greet = symbols
+    .iter()
+    .any(fn(entry) { entry.1.name == "greet" && entry.1.kind == "Function" })
   assert_true(has_greet)
 }
 
@@ -285,9 +285,9 @@ test "graph integration: typescript type alias creates symbol" {
   assert_true(graph.get_modules().contains("src/types.ts"))
   // Should have type alias symbol
   let symbols = graph.get_symbols()
-  let has_mytype = symbols.iter().any(fn(entry) {
-    entry.1.name == "MyType" && entry.1.kind == "TypeAlias"
-  })
+  let has_mytype = symbols
+    .iter()
+    .any(fn(entry) { entry.1.name == "MyType" && entry.1.kind == "TypeAlias" })
   assert_true(has_mytype)
 }
 
@@ -300,16 +300,19 @@ test "graph integration: javascript variable creates symbol" {
   assert_true(graph.get_modules().contains("src/app.js"))
   // Should have variable symbol
   let symbols = graph.get_symbols()
-  let has_val = symbols.iter().any(fn(entry) {
-    entry.1.name == "val" && entry.1.kind == "Variable"
-  })
+  let has_val = symbols
+    .iter()
+    .any(fn(entry) { entry.1.name == "val" && entry.1.kind == "Variable" })
   assert_true(has_val)
 }
 
 ///|
 test "graph integration: javascript FnDecl labels" {
   // Test that JavaScript FnDecl captures the function name correctly
-  let events = run_parse_with_events(javascript_spec(), "function run(n) { return double(n); }")
+  let events = run_parse_with_events(
+    javascript_spec(),
+    "function run(n) { return double(n); }",
+  )
   let fn_decl = events.iter().find_first(fn(e) { e.0 == "FnDecl" })
   assert_true(fn_decl is Some(_))
   let labels = fn_decl.unwrap().1
@@ -330,9 +333,9 @@ test "graph integration: javascript function creates symbol" {
   assert_true(graph.get_modules().contains("src/run.js"))
   // Should have function symbol
   let symbols = graph.get_symbols()
-  let has_run = symbols.iter().any(fn(entry) {
-    entry.1.name == "run" && entry.1.kind == "Function"
-  })
+  let has_run = symbols
+    .iter()
+    .any(fn(entry) { entry.1.name == "run" && entry.1.kind == "Function" })
   assert_true(has_run)
 }
 
@@ -345,25 +348,17 @@ test "graph integration: python function creates symbol" {
   assert_true(graph.get_modules().contains("main.py"))
   // Should have function symbol
   let symbols = graph.get_symbols()
-  let has_run = symbols.iter().any(fn(entry) {
-    entry.1.name == "run" && entry.1.kind == "Function"
-  })
+  let has_run = symbols
+    .iter()
+    .any(fn(entry) { entry.1.name == "run" && entry.1.kind == "Function" })
   assert_true(has_run)
 }
 
 ///|
 test "graph integration: multiple files simulation" {
   // Simulate processing multiple files and merging graphs
-  let graph1 = run_full_pipeline(
-    typescript_spec(),
-    "const a = 1;",
-    "src/a.ts",
-  )
-  let graph2 = run_full_pipeline(
-    typescript_spec(),
-    "const b = 2;",
-    "src/b.ts",
-  )
+  let graph1 = run_full_pipeline(typescript_spec(), "const a = 1;", "src/a.ts")
+  let graph2 = run_full_pipeline(typescript_spec(), "const b = 2;", "src/b.ts")
   // Merge graphs manually
   let merged = @graph.CodeGraph::new()
   for entry in graph1.get_modules() {
@@ -472,7 +467,7 @@ fn run_parse_with_events(
   let spec = @parser.parse_kgf(spec_text).unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let tokens = lexer.tokenize(source_code)
-  let peg = try { build_peg(spec) } catch { _ => return [] }
+  let peg = build_peg(spec) catch { _ => return [] }
   let start_rule = spec.get_start_rule()
   match run_parse(peg, spec, start_rule, tokens) {
     Some(result) => result.get_events()
@@ -489,12 +484,11 @@ test "graph integration: parse events for variable declaration" {
   // Check the labels contain expected values
   let var_item_event = events.iter().find_first(fn(e) { e.0 == "VarItem" })
   match var_item_event {
-    Some(event) => {
+    Some(event) =>
       match event.1.get("id") {
         Some(String(id)) => assert_eq(id, "x")
         _ => fail("Expected id label")
       }
-    }
     None => fail("Expected VarItem event")
   }
 }
@@ -525,12 +519,11 @@ test "graph integration: parse events for import statement" {
   // Check the from label (value is stripped of quotes by get_value)
   let import_event = events.iter().find_first(fn(e) { e.0 == "ImportNamed" })
   match import_event {
-    Some(event) => {
+    Some(event) =>
       match event.1.get("from") {
         Some(String(from)) => assert_eq(from, "./utils")
         _ => fail("Expected from label")
       }
-    }
     None => fail("Expected ImportNamed event")
   }
 }
@@ -544,22 +537,18 @@ test "graph integration: parse events for type alias" {
   // Check the id label
   let type_event = events.iter().find_first(fn(e) { e.0 == "TypeAlias" })
   match type_event {
-    Some(event) => {
+    Some(event) =>
       match event.1.get("id") {
         Some(String(id)) => assert_eq(id, "T")
         _ => fail("Expected id label")
       }
-    }
     None => fail("Expected TypeAlias event")
   }
 }
 
 ///|
 test "graph integration: parse events for call expression" {
-  let events = run_parse_with_events(
-    typescript_spec(),
-    "const x = foo(1);",
-  )
+  let events = run_parse_with_events(typescript_spec(), "const x = foo(1);")
   // Should have events for CallExpr rule
   let has_call = events.iter().any(fn(e) { e.0 == "CallExpr" })
   assert_true(has_call)
@@ -567,10 +556,7 @@ test "graph integration: parse events for call expression" {
 
 ///|
 test "graph integration: parse events for reference" {
-  let events = run_parse_with_events(
-    typescript_spec(),
-    "const x = a;",
-  )
+  let events = run_parse_with_events(typescript_spec(), "const x = a;")
   // Should have events for PrimaryName rule (identifier reference)
   let has_primary = events.iter().any(fn(e) { e.0 == "PrimaryName" })
   assert_true(has_primary)
@@ -578,10 +564,7 @@ test "graph integration: parse events for reference" {
 
 ///|
 test "graph integration: parse events for type reference" {
-  let events = run_parse_with_events(
-    typescript_spec(),
-    "const x: T = 1;",
-  )
+  let events = run_parse_with_events(typescript_spec(), "const x: T = 1;")
   // Should have events for TypeRef rule
   let has_type_ref = events.iter().any(fn(e) { e.0 == "TypeRef" })
   assert_true(has_type_ref)

@@ -55,7 +55,11 @@ fn eval_attr_def(
           break
         }
       }
-      if found.length() > 0 { found } else { "id" }
+      if found.length() > 0 {
+        found
+      } else {
+        "id"
+      }
     }
   }
   // Get the symbol name from labels
@@ -75,9 +79,9 @@ fn eval_attr_def(
   // Add symbol to graph
   let _ = ctx.graph.get_or_add_symbol(
     sym_id,
-    name=name,
-    kind=kind,
-    ns=ns,
+    name~,
+    kind~,
+    ns~,
     module_id=ctx.file,
   )
   // Register in current scope for later reference resolution
@@ -117,7 +121,11 @@ fn eval_attr_ref(
           break
         }
       }
-      if found.length() > 0 { found } else { "name" }
+      if found.length() > 0 {
+        found
+      } else {
+        "name"
+      }
     }
   }
   // Get the reference name from labels

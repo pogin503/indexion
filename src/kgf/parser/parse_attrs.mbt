@@ -91,7 +91,7 @@ fn parse_single_action(text : String) -> @types.AttrAction {
     let part = parts[i]
     match parse_key_value(part) {
       Some((k, v)) => params.set(k, v)
-      None => {
+      None =>
         // First non-key=value token is the implicit id/name parameter
         if not(has_implicit_id) {
           // For "def" action, implicit param is "id"
@@ -107,7 +107,6 @@ fn parse_single_action(text : String) -> @types.AttrAction {
           params.set(param_name, part)
           has_implicit_id = true
         }
-      }
     }
   }
   @types.AttrAction::new(kind, params~)

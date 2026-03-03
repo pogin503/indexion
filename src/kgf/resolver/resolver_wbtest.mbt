@@ -289,12 +289,7 @@ test "resolve_module typescript config" {
   )
   let resolver = MockFileResolver::new(["/project/src/utils.ts"])
   let result = resolve_module(
-    spec,
-    "typescript",
-    "/project/src/main.ts",
-    "./utils",
-    "/project",
-    resolver,
+    spec, "typescript", "/project/src/main.ts", "./utils", "/project", resolver,
   )
   assert_eq(result, "src/utils.ts")
 }
@@ -310,12 +305,7 @@ test "resolve_module typescript bare import" {
   )
   let resolver = MockFileResolver::new([])
   let result = resolve_module(
-    spec,
-    "typescript",
-    "/project/src/main.ts",
-    "react",
-    "/project",
-    resolver,
+    spec, "typescript", "/project/src/main.ts", "react", "/project", resolver,
   )
   assert_eq(result, "npm:react")
 }
@@ -331,12 +321,7 @@ test "resolve_module typescript scoped package" {
   )
   let resolver = MockFileResolver::new([])
   let result = resolve_module(
-    spec,
-    "typescript",
-    "/project/src/main.ts",
-    "@types/node",
-    "/project",
-    resolver,
+    spec, "typescript", "/project/src/main.ts", "@types/node", "/project", resolver,
   )
   // Scoped packages should preserve the full module name
   assert_eq(result, "npm:@types")
@@ -352,11 +337,7 @@ test "resolve_module parent directory" {
   )
   let resolver = MockFileResolver::new(["/project/utils/helper.ts"])
   let result = resolve_module(
-    spec,
-    "typescript",
-    "/project/src/nested/deep.ts",
-    "../../utils/helper",
-    "/project",
+    spec, "typescript", "/project/src/nested/deep.ts", "../../utils/helper", "/project",
     resolver,
   )
   assert_eq(result, "utils/helper.ts")
@@ -372,12 +353,7 @@ test "resolve_module absolute path from root" {
   )
   let resolver = MockFileResolver::new(["/project/lib/core.ts"])
   let result = resolve_module(
-    spec,
-    "typescript",
-    "/project/src/main.ts",
-    "/lib/core",
-    "/project",
-    resolver,
+    spec, "typescript", "/project/src/main.ts", "/lib/core", "/project", resolver,
   )
   assert_eq(result, "lib/core.ts")
 }
@@ -392,12 +368,7 @@ test "resolve_module python init file" {
   )
   let resolver = MockFileResolver::new(["/project/pkg/__init__.py"])
   let result = resolve_module(
-    spec,
-    "python",
-    "/project/main.py",
-    "pkg",
-    "/project",
-    resolver,
+    spec, "python", "/project/main.py", "pkg", "/project", resolver,
   )
   assert_eq(result, "pkg/__init__.py")
 }
@@ -412,12 +383,7 @@ test "resolve_module python nested module" {
   )
   let resolver = MockFileResolver::new(["/project/pkg/sub/module.py"])
   let result = resolve_module(
-    spec,
-    "python",
-    "/project/main.py",
-    "pkg.sub.module",
-    "/project",
-    resolver,
+    spec, "python", "/project/main.py", "pkg.sub.module", "/project", resolver,
   )
   assert_eq(result, "pkg/sub/module.py")
 }
@@ -433,12 +399,7 @@ test "resolve_module tries multiple extensions" {
   // Only .tsx file exists
   let resolver = MockFileResolver::new(["/project/src/Button.tsx"])
   let result = resolve_module(
-    spec,
-    "typescript",
-    "/project/src/main.ts",
-    "./Button",
-    "/project",
-    resolver,
+    spec, "typescript", "/project/src/main.ts", "./Button", "/project", resolver,
   )
   assert_eq(result, "src/Button.tsx")
 }
@@ -454,12 +415,7 @@ test "resolve_module tries index files in order" {
   // Only index.ts exists
   let resolver = MockFileResolver::new(["/project/src/components/index.ts"])
   let result = resolve_module(
-    spec,
-    "typescript",
-    "/project/src/main.ts",
-    "./components",
-    "/project",
-    resolver,
+    spec, "typescript", "/project/src/main.ts", "./components", "/project", resolver,
   )
   assert_eq(result, "src/components/index.ts")
 }
