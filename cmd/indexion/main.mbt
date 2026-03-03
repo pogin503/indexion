@@ -6,8 +6,9 @@
 ///
 /// Commands:
 ///   explore     Analyze similarity across files in a directory
-///   docgen      Generate documentation from source files
-///   similarity  Calculate text similarity/distance
+///   plan        Generate planning documents (refactor, etc.)
+///   doc         Documentation commands (gen, etc.)
+///   sim         Calculate text similarity/distance
 ///   help        Show this help message
 ///   version     Show version information
 ///
@@ -23,8 +24,9 @@ fn main {
 
   match subcommand {
     "explore" => @explore_cli.run(args, 2)
-    "docgen" => @docgen_cli.run(args, 2)
-    "similarity" | "sim" => @similarity_cli.run(args, 2)
+    "plan" => @plan_cli.run(args, 2)
+    "doc" => @doc_cli.run(args, 2)
+    "sim" | "similarity" => @similarity_cli.run(args, 2)
     "version" | "-v" | "--version" => show_version()
     "help" | "-h" | "--help" => show_help()
     _ => {
@@ -45,8 +47,9 @@ fn show_help() -> Unit {
   println("")
   println("Commands:")
   println("  explore     Analyze similarity across files in a directory")
-  println("  docgen      Generate documentation from source files")
-  println("  similarity  Calculate text similarity/distance (alias: sim)")
+  println("  plan        Generate planning documents (refactor, etc.)")
+  println("  doc         Documentation commands (gen, etc.)")
+  println("  sim         Calculate text similarity/distance")
   println("  help        Show this help message")
   println("  version     Show version information")
   println("")
@@ -54,8 +57,9 @@ fn show_help() -> Unit {
   println("")
   println("Examples:")
   println("  indexion explore kgfs/")
-  println("  indexion docgen --format=markdown src/")
-  println("  indexion similarity \"hello world\" \"hello there\"")
+  println("  indexion plan refactor --threshold=0.7 src/")
+  println("  indexion doc gen --format=markdown src/")
+  println("  indexion sim \"hello world\" \"hello there\"")
 }
 
 ///|

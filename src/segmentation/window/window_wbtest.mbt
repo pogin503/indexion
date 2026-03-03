@@ -97,7 +97,7 @@ test "min_max_normalize with empty array" {
 ///|
 test "find_local_maxima finds peaks" {
   let values = [0.1, 0.8, 0.3, 0.9, 0.2]
-  let maxima = find_local_maxima(values, 0.5)
+  let maxima = @utils.find_local_maxima(values, 0.5)
   assert_eq(maxima.length(), 2)
   assert_eq(maxima[0], 1) // index of 0.8
   assert_eq(maxima[1], 3) // index of 0.9
@@ -106,7 +106,7 @@ test "find_local_maxima finds peaks" {
 ///|
 test "find_local_maxima with threshold filtering" {
   let values = [0.1, 0.4, 0.2, 0.9, 0.3]
-  let maxima = find_local_maxima(values, 0.5)
+  let maxima = @utils.find_local_maxima(values, 0.5)
   assert_eq(maxima.length(), 1)
   assert_eq(maxima[0], 3) // Only 0.9 passes threshold
 }
@@ -114,14 +114,14 @@ test "find_local_maxima with threshold filtering" {
 ///|
 test "find_local_maxima with empty array" {
   let values : Array[Double] = []
-  let maxima = find_local_maxima(values, 0.5)
+  let maxima = @utils.find_local_maxima(values, 0.5)
   assert_eq(maxima.length(), 0)
 }
 
 ///|
 test "find_local_maxima with edge maxima" {
   let values = [0.9, 0.5, 0.3, 0.4, 0.8]
-  let maxima = find_local_maxima(values, 0.5)
+  let maxima = @utils.find_local_maxima(values, 0.5)
   // First and last elements can be maxima if they meet threshold and are >= neighbor
   assert_true(maxima.length() >= 1)
 }
@@ -534,7 +534,7 @@ test "find_nearest_sentence_end exact match" {
     @sentence.Sentence::new("Second.", 6, 13),
     @sentence.Sentence::new("Third.", 13, 19),
   ]
-  let result = find_nearest_sentence_end(sentences, 13)
+  let result = @utils.find_nearest_sentence_end(sentences, 13)
   assert_eq(result, 13) // Exact match
 }
 
@@ -546,7 +546,7 @@ test "find_nearest_sentence_end closest to left" {
     @sentence.Sentence::new("Third.", 20, 30),
   ]
   // Position 12 is closer to 10 (distance 2) than to 20 (distance 8)
-  let result = find_nearest_sentence_end(sentences, 12)
+  let result = @utils.find_nearest_sentence_end(sentences, 12)
   assert_eq(result, 10)
 }
 
@@ -558,21 +558,21 @@ test "find_nearest_sentence_end closest to right" {
     @sentence.Sentence::new("Third.", 20, 30),
   ]
   // Position 18 is closer to 20 (distance 2) than to 10 (distance 8)
-  let result = find_nearest_sentence_end(sentences, 18)
+  let result = @utils.find_nearest_sentence_end(sentences, 18)
   assert_eq(result, 20)
 }
 
 ///|
 test "find_nearest_sentence_end empty array" {
   let sentences : Array[@sentence.Sentence] = []
-  let result = find_nearest_sentence_end(sentences, 10)
+  let result = @utils.find_nearest_sentence_end(sentences, 10)
   assert_eq(result, 0)
 }
 
 ///|
 test "find_nearest_sentence_end single sentence" {
   let sentences = [@sentence.Sentence::new("Only one.", 0, 9)]
-  let result = find_nearest_sentence_end(sentences, 100)
+  let result = @utils.find_nearest_sentence_end(sentences, 100)
   assert_eq(result, 9)
 }
 
@@ -583,7 +583,7 @@ test "find_nearest_sentence_end single sentence" {
 ///|
 test "boundaries_to_segment_points basic" {
   let boundaries = [10, 20, 30]
-  let result = boundaries_to_segment_points(boundaries, 40)
+  let result = @utils.boundaries_to_segment_points(boundaries, 40)
   assert_eq(result.length(), 4)
   // First segment: 0-10
   assert_eq(result[0].get_start(), 0)
@@ -602,7 +602,7 @@ test "boundaries_to_segment_points basic" {
 ///|
 test "boundaries_to_segment_points empty boundaries" {
   let boundaries : Array[Int] = []
-  let result = boundaries_to_segment_points(boundaries, 50)
+  let result = @utils.boundaries_to_segment_points(boundaries, 50)
   assert_eq(result.length(), 1)
   assert_eq(result[0].get_start(), 0)
   assert_eq(result[0].get_end(), 50)
@@ -611,7 +611,7 @@ test "boundaries_to_segment_points empty boundaries" {
 ///|
 test "boundaries_to_segment_points boundary at text_length" {
   let boundaries = [25, 50]
-  let result = boundaries_to_segment_points(boundaries, 50)
+  let result = @utils.boundaries_to_segment_points(boundaries, 50)
   assert_eq(result.length(), 2)
   // 0-25 and 25-50
   assert_eq(result[0].get_end(), 25)
@@ -622,7 +622,7 @@ test "boundaries_to_segment_points boundary at text_length" {
 ///|
 test "boundaries_to_segment_points skips duplicate boundaries" {
   let boundaries = [10, 10, 20] // duplicate 10
-  let result = boundaries_to_segment_points(boundaries, 30)
+  let result = @utils.boundaries_to_segment_points(boundaries, 30)
   // Should skip second 10 since it equals previous end
   assert_true(result.length() >= 2)
 }
@@ -630,7 +630,7 @@ test "boundaries_to_segment_points skips duplicate boundaries" {
 ///|
 test "boundaries_to_segment_points all Paragraph type" {
   let boundaries = [15, 30]
-  let result = boundaries_to_segment_points(boundaries, 45)
+  let result = @utils.boundaries_to_segment_points(boundaries, 45)
   for seg in result {
     assert_eq(seg.get_type(), @types.SegmentType::Paragraph)
   }
@@ -650,7 +650,7 @@ test "apply_size_constraints filters small candidates" {
   // Candidates at positions 2, 4 - both too small (< min_size=10)
   // Text length 20, max_size 50, so no force split needed
   let candidates = [2, 4]
-  let result = apply_size_constraints(20, candidates, sentences, 10, 50, 15)
+  let result = @utils.apply_size_constraints(20, candidates, sentences, 10, 50, 15)
   // Should filter out candidates that create chunks < min_size
   assert_eq(result.length(), 0)
 }
@@ -664,7 +664,7 @@ test "apply_size_constraints keeps valid candidates" {
   ]
   // Candidate at 25 creates chunk of 25 chars (>= min_size=10, >= target=20)
   let candidates = [25]
-  let result = apply_size_constraints(50, candidates, sentences, 10, 100, 20)
+  let result = @utils.apply_size_constraints(50, candidates, sentences, 10, 100, 20)
   assert_eq(result.length(), 1)
   assert_eq(result[0], 25)
 }
@@ -677,7 +677,7 @@ test "apply_size_constraints force splits oversized" {
   ]
   // No candidates, but text is larger than max_size
   let candidates : Array[Int] = []
-  let result = apply_size_constraints(100, candidates, sentences, 5, 30, 20)
+  let result = @utils.apply_size_constraints(100, candidates, sentences, 5, 30, 20)
   // Should force split because 100 > max_size=30
   assert_true(result.length() >= 1)
 }
@@ -687,7 +687,7 @@ test "apply_size_constraints empty candidates small text" {
   let sentences = [@sentence.Sentence::new("Short.", 0, 6)]
   let candidates : Array[Int] = []
   // Text length 20 < max_size 100
-  let result = apply_size_constraints(20, candidates, sentences, 5, 100, 50)
+  let result = @utils.apply_size_constraints(20, candidates, sentences, 5, 100, 50)
   assert_eq(result.length(), 0)
 }
 
@@ -701,7 +701,7 @@ test "handle_few_sentences short text single segment" {
     @sentence.Sentence::new("Hello.", 0, 6),
     @sentence.Sentence::new(" World.", 6, 13),
   ]
-  let result = handle_few_sentences("Hello. World.", sentences, 50, 5, 100)
+  let result = @utils.handle_few_sentences("Hello. World.", sentences, 50, 5, 100)
   // Text length 13 < max_size 100, so single segment
   assert_eq(result.length(), 1)
   assert_eq(result[0].get_start(), 0)
@@ -717,7 +717,7 @@ test "handle_few_sentences creates segments at target size" {
     @sentence.Sentence::new("Second.", 100, 200),
   ]
   // max_size = 100, so should create multiple segments
-  let result = handle_few_sentences(text, sentences, 80, 10, 100)
+  let result = @utils.handle_few_sentences(text, sentences, 80, 10, 100)
   assert_true(result.length() >= 1)
 }
 
@@ -728,7 +728,7 @@ test "handle_few_sentences merges small remaining" {
     @sentence.Sentence::new("Tiny.", 50, 55),
   ]
   let text = "Big chunk here." + "X".repeat(35) + "Tiny." // 55 chars
-  let result = handle_few_sentences(text, sentences, 40, 10, 100)
+  let result = @utils.handle_few_sentences(text, sentences, 40, 10, 100)
   // Last segment is 5 chars (55-50) < min_size 10, should merge
   assert_true(result.length() >= 1)
   // If merged, last segment should end at 55
@@ -738,7 +738,7 @@ test "handle_few_sentences merges small remaining" {
 ///|
 test "handle_few_sentences empty sentences" {
   let sentences : Array[@sentence.Sentence] = []
-  let result = handle_few_sentences("Some text.", sentences, 50, 5, 100)
+  let result = @utils.handle_few_sentences("Some text.", sentences, 50, 5, 100)
   // Should return single segment covering entire text
   assert_eq(result.length(), 1)
   assert_eq(result[0].get_start(), 0)
@@ -841,40 +841,40 @@ test "subdivide_oversized_chunks force splits when needed" {
 
 ///|
 test "is_whitespace_only spaces" {
-  assert_true(is_whitespace_only("   "))
+  assert_true(@utils.is_whitespace_only("   "))
 }
 
 ///|
 test "is_whitespace_only tabs" {
-  assert_true(is_whitespace_only("\t\t"))
+  assert_true(@utils.is_whitespace_only("\t\t"))
 }
 
 ///|
 test "is_whitespace_only newlines" {
-  assert_true(is_whitespace_only("\n\r\n"))
+  assert_true(@utils.is_whitespace_only("\n\r\n"))
 }
 
 ///|
 test "is_whitespace_only mixed" {
-  assert_true(is_whitespace_only(" \t\n\r "))
+  assert_true(@utils.is_whitespace_only(" \t\n\r "))
 }
 
 ///|
 test "is_whitespace_only Japanese full-width space" {
-  assert_true(is_whitespace_only("\u{3000}"))
+  assert_true(@utils.is_whitespace_only("\u{3000}"))
 }
 
 ///|
 test "is_whitespace_only with content" {
-  assert_false(is_whitespace_only("  a  "))
+  assert_false(@utils.is_whitespace_only("  a  "))
 }
 
 ///|
 test "is_whitespace_only empty" {
-  assert_true(is_whitespace_only(""))
+  assert_true(@utils.is_whitespace_only(""))
 }
 
 ///|
 test "is_whitespace_only single char" {
-  assert_false(is_whitespace_only("x"))
+  assert_false(@utils.is_whitespace_only("x"))
 }

@@ -187,51 +187,6 @@ pub fn calculate_adjacent_ncd(texts : Array[String]) -> Array[Double] {
 }
 
 ///|
-/// Find local maxima indices where values exceed the threshold.
-/// A local maximum is a value that is greater than or equal to both its neighbors.
-///
-/// This is useful for finding potential segment boundaries in NCD/divergence values.
-pub fn find_local_maxima(
-  values : Array[Double],
-  threshold : Double,
-) -> Array[Int] {
-  let maxima : Array[Int] = []
-
-  if values.length() < 3 {
-    // For very short arrays, check each value against threshold
-    for i = 0; i < values.length(); i = i + 1 {
-      if values[i] >= threshold {
-        maxima.push(i)
-      }
-    }
-    return maxima
-  }
-
-  // Check edges
-  // First element: compare with second
-  if values[0] >= threshold && values[0] >= values[1] {
-    maxima.push(0)
-  }
-
-  // Middle elements: compare with both neighbors
-  for i = 1; i < values.length() - 1; i = i + 1 {
-    if values[i] >= threshold &&
-      values[i] >= values[i - 1] &&
-      values[i] >= values[i + 1] {
-      maxima.push(i)
-    }
-  }
-
-  // Last element: compare with second-to-last
-  let last_idx = values.length() - 1
-  if values[last_idx] >= threshold && values[last_idx] >= values[last_idx - 1] {
-    maxima.push(last_idx)
-  }
-
-  maxima
-}
-
-///|
 /// Normalize an array of values using Min-Max normalization.
 /// Returns values in range [0, 1].
 /// If all values are the same, returns 0.5 for all.

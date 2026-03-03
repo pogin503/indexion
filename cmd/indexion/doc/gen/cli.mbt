@@ -69,12 +69,12 @@ pub fn parse_docgen_args(args : Array[String], start_idx : Int) -> DocgenConfig 
 }
 
 ///|
-/// Show help message for docgen.
-pub fn show_docgen_help() -> Unit {
-  println("indexion docgen - Generate documentation from source files")
+/// Show help message for doc gen.
+pub fn show_help() -> Unit {
+  println("indexion doc gen - Generate documentation from source files")
   println("")
   println("Usage:")
-  println("  indexion docgen [options] [files...]")
+  println("  indexion doc gen [options] [files...]")
   println("")
   println("Options:")
   println("  --format=markdown|json|both  Output format (default: both)")
@@ -86,9 +86,9 @@ pub fn show_docgen_help() -> Unit {
   println("  --help                       Show this help message")
   println("")
   println("Examples:")
-  println("  indexion docgen src/*.mbt")
-  println("  indexion docgen --format=json --output=docs src/")
-  println("  indexion docgen (uses sample data for demo)")
+  println("  indexion doc gen src/*.mbt")
+  println("  indexion doc gen --format=json --output=docs src/")
+  println("  indexion doc gen (uses sample data for demo)")
 }
 
 ///|
@@ -304,7 +304,7 @@ fn join_lines(lines : Array[String]) -> String {
 pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_docgen_args(args, start_idx)
   if config.show_help {
-    show_docgen_help()
+    show_help()
     return
   }
   println("=== indexion Documentation Generator ===")

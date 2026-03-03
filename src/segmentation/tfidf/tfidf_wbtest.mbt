@@ -276,27 +276,27 @@ test "SegmentationStrategy::segment with custom config via trait" {
 
 ///|
 test "is_whitespace_only with spaces" {
-  assert_true(is_whitespace_only("   "))
+  assert_true(@utils.is_whitespace_only("   "))
 }
 
 ///|
 test "is_whitespace_only with tabs and newlines" {
-  assert_true(is_whitespace_only("\t\n\r"))
+  assert_true(@utils.is_whitespace_only("\t\n\r"))
 }
 
 ///|
 test "is_whitespace_only with content returns false" {
-  assert_false(is_whitespace_only("  a  "))
+  assert_false(@utils.is_whitespace_only("  a  "))
 }
 
 ///|
 test "is_whitespace_only empty string" {
-  assert_true(is_whitespace_only(""))
+  assert_true(@utils.is_whitespace_only(""))
 }
 
 ///|
 test "is_whitespace_only Japanese full-width space" {
-  assert_true(is_whitespace_only("\u{3000}"))
+  assert_true(@utils.is_whitespace_only("\u{3000}"))
 }
 
 ///|
@@ -389,27 +389,27 @@ test "min_max_normalize range" {
 
 ///|
 test "find_local_maxima empty array" {
-  let result = find_local_maxima([], 0.3)
+  let result = @utils.find_local_maxima([], 0.3)
   assert_eq(result.length(), 0)
 }
 
 ///|
 test "find_local_maxima single element above threshold" {
-  let result = find_local_maxima([0.5], 0.3)
+  let result = @utils.find_local_maxima([0.5], 0.3)
   assert_eq(result.length(), 1)
   assert_eq(result[0], 0)
 }
 
 ///|
 test "find_local_maxima single element below threshold" {
-  let result = find_local_maxima([0.1], 0.3)
+  let result = @utils.find_local_maxima([0.1], 0.3)
   assert_eq(result.length(), 0)
 }
 
 ///|
 test "find_local_maxima identifies peaks" {
   let values = [0.1, 0.5, 0.2, 0.8, 0.3]
-  let result = find_local_maxima(values, 0.3)
+  let result = @utils.find_local_maxima(values, 0.3)
   // Peaks at index 1 (0.5) and index 3 (0.8)
   assert_eq(result.length(), 2)
   assert_eq(result[0], 1)
@@ -419,7 +419,7 @@ test "find_local_maxima identifies peaks" {
 ///|
 test "find_local_maxima respects threshold" {
   let values = [0.1, 0.5, 0.2, 0.4, 0.3]
-  let result = find_local_maxima(values, 0.45)
+  let result = @utils.find_local_maxima(values, 0.45)
   // Only index 1 (0.5) is above threshold
   assert_eq(result.length(), 1)
   assert_eq(result[0], 1)
@@ -432,7 +432,7 @@ test "find_nearest_sentence_end exact match" {
     @sentence.Sentence::new("Second one", 10, 20),
     @sentence.Sentence::new("Third one.", 20, 30),
   ]
-  let result = find_nearest_sentence_end(sentences, 10)
+  let result = @utils.find_nearest_sentence_end(sentences, 10)
   assert_eq(result, 10)
 }
 
@@ -443,21 +443,21 @@ test "find_nearest_sentence_end nearest" {
     @sentence.Sentence::new("Second one", 10, 20),
     @sentence.Sentence::new("Third one.", 20, 30),
   ]
-  let result = find_nearest_sentence_end(sentences, 12)
+  let result = @utils.find_nearest_sentence_end(sentences, 12)
   assert_eq(result, 10) // 10 is closer than 20
 }
 
 ///|
 test "find_nearest_sentence_end empty" {
   let sentences : Array[@sentence.Sentence] = []
-  let result = find_nearest_sentence_end(sentences, 10)
+  let result = @utils.find_nearest_sentence_end(sentences, 10)
   assert_eq(result, 0)
 }
 
 ///|
 test "boundaries_to_segment_points basic" {
   let boundaries = [10, 20, 30]
-  let result = boundaries_to_segment_points(boundaries, 40)
+  let result = @utils.boundaries_to_segment_points(boundaries, 40)
   assert_eq(result.length(), 4)
   assert_eq(result[0].get_start(), 0)
   assert_eq(result[0].get_end(), 10)
@@ -472,7 +472,7 @@ test "boundaries_to_segment_points basic" {
 ///|
 test "boundaries_to_segment_points empty boundaries" {
   let boundaries : Array[Int] = []
-  let result = boundaries_to_segment_points(boundaries, 40)
+  let result = @utils.boundaries_to_segment_points(boundaries, 40)
   assert_eq(result.length(), 1)
   assert_eq(result[0].get_start(), 0)
   assert_eq(result[0].get_end(), 40)
@@ -481,7 +481,7 @@ test "boundaries_to_segment_points empty boundaries" {
 ///|
 test "boundaries_to_segment_points boundary at end" {
   let boundaries = [20, 40]
-  let result = boundaries_to_segment_points(boundaries, 40)
+  let result = @utils.boundaries_to_segment_points(boundaries, 40)
   assert_eq(result.length(), 2)
   assert_eq(result[1].get_end(), 40)
 }
@@ -517,7 +517,7 @@ test "handle_few_sentences small text" {
     @sentence.Sentence::new("Hello.", 0, 6),
     @sentence.Sentence::new(" World.", 6, 13),
   ]
-  let result = handle_few_sentences("Hello. World.", sentences, 50, 5, 100)
+  let result = @utils.handle_few_sentences("Hello. World.", sentences, 50, 5, 100)
   assert_eq(result.length(), 1)
   assert_eq(result[0].get_start(), 0)
   assert_eq(result[0].get_end(), 13)
@@ -527,6 +527,6 @@ test "handle_few_sentences small text" {
 test "handle_few_sentences with segments" {
   let text = "First sentence here. Second sentence follows. Third one is here."
   let sentences = @sentence.split_sentences(text)
-  let result = handle_few_sentences(text, sentences, 20, 10, 100)
+  let result = @utils.handle_few_sentences(text, sentences, 20, 10, 100)
   assert_true(result.length() >= 1)
 }

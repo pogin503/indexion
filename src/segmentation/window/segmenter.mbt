@@ -25,221 +25,6 @@ pub fn default_config() -> SegmentConfig {
   )
 }
 
-///|
-/// Find the nearest sentence boundary to a target position.
-fn find_nearest_sentence_end(
-  sentences : Array[@sentence.Sentence],
-  target_pos : Int,
-) -> Int {
-  let mut nearest_end = 0
-  let mut min_distance = 2147483647 // Max Int
-
-  for s in sentences {
-    let distance = if s.get_end() > target_pos {
-      s.get_end() - target_pos
-    } else {
-      target_pos - s.get_end()
-    }
-    if distance < min_distance {
-      min_distance = distance
-      nearest_end = s.get_end()
-    }
-  }
-
-  nearest_end
-}
-
-///|
-/// Convert boundary positions to @types.SegmentPoints.
-fn boundaries_to_segment_points(
-  boundaries : Array[Int],
-  text_length : Int,
-) -> Array[@types.SegmentPoint] {
-  let points : Array[@types.SegmentPoint] = []
-  let mut start = 0
-
-  for boundary in boundaries {
-    if boundary > start {
-      points.push(
-        @types.SegmentPoint::new(start, boundary, @types.SegmentType::Paragraph),
-      )
-      start = boundary
-    }
-  }
-
-  // Add final segment
-  if start < text_length {
-    points.push(
-      @types.SegmentPoint::new(
-        start,
-        text_length,
-        @types.SegmentType::Paragraph,
-      ),
-    )
-  }
-
-  points
-}
-
-///|
-/// Apply size constraints to candidate boundary positions.
-fn apply_size_constraints(
-  text_length : Int,
-  candidate_positions : Array[Int],
-  sentences : Array[@sentence.Sentence],
-  min_size : Int,
-  max_size : Int,
-  target_size : Int,
-) -> Array[Int] {
-  let final_boundaries : Array[Int] = []
-  let mut last_boundary = 0
-
-  // Sort candidates
-  let sorted_candidates = candidate_positions.copy()
-  sorted_candidates.sort_by(fn(a, b) { a.compare(b) })
-
-  if sorted_candidates.length() > 0 {
-    for pos in sorted_candidates {
-      // Force split if current segment exceeds max_size
-      while pos - last_boundary > max_size {
-        let force_split_target = last_boundary + max_size
-        let split_point = find_nearest_sentence_end(
-          sentences, force_split_target,
-        )
-
-        if split_point > last_boundary && split_point < pos {
-          final_boundaries.push(split_point)
-          last_boundary = split_point
-          continue
-        }
-
-        // Fall back to hard split
-        let force_split = last_boundary + max_size
-        if force_split < pos {
-          final_boundaries.push(force_split)
-          last_boundary = force_split
-          continue
-        }
-
-        break
-      }
-
-      let chunk_size = pos - last_boundary
-
-      // Skip if too small
-      if chunk_size < min_size {
-        continue
-      }
-
-      // Accept if meets target or is close to max
-      if chunk_size >= target_size || chunk_size > max_size * 8 / 10 {
-        final_boundaries.push(pos)
-        last_boundary = pos
-      }
-    }
-  }
-
-  // Handle remaining content
-  while text_length - last_boundary > max_size {
-    let force_split_target = last_boundary + max_size
-    let split_point = find_nearest_sentence_end(sentences, force_split_target)
-
-    if split_point > last_boundary && split_point < text_length {
-      final_boundaries.push(split_point)
-      last_boundary = split_point
-      continue
-    }
-
-    // Fall back to hard split
-    let force_split = if last_boundary + max_size < text_length {
-      last_boundary + max_size
-    } else {
-      text_length
-    }
-    if force_split > last_boundary && force_split < text_length {
-      final_boundaries.push(force_split)
-      last_boundary = force_split
-      continue
-    }
-
-    break
-  }
-
-  final_boundaries
-}
-
-///|
-/// Handle case when there are too few sentences for window analysis.
-fn handle_few_sentences(
-  text : String,
-  sentences : Array[@sentence.Sentence],
-  target_size : Int,
-  min_size : Int,
-  max_size : Int,
-) -> Array[@types.SegmentPoint] {
-  let text_length = text.length()
-
-  if text_length <= max_size {
-    return [
-      @types.SegmentPoint::new(0, text_length, @types.SegmentType::Paragraph),
-    ]
-  }
-
-  let points : Array[@types.SegmentPoint] = []
-  let mut start = 0
-
-  for s in sentences {
-    if s.get_end() - start >= target_size {
-      points.push(
-        @types.SegmentPoint::new(
-          start,
-          s.get_end(),
-          @types.SegmentType::Paragraph,
-        ),
-      )
-      start = s.get_end()
-    }
-  }
-
-  // Handle remaining text
-  if start < text_length {
-    if points.length() > 0 && text_length - start < min_size {
-      // Merge with last segment if too small
-      let last = points[points.length() - 1]
-      points[points.length() - 1] = @types.SegmentPoint::new(
-        last.get_start(),
-        text_length,
-        last.get_type(),
-      )
-    } else {
-      points.push(
-        @types.SegmentPoint::new(
-          start,
-          text_length,
-          @types.SegmentType::Paragraph,
-        ),
-      )
-    }
-  }
-
-  if points.length() > 0 {
-    return points
-  }
-
-  [@types.SegmentPoint::new(0, text_length, @types.SegmentType::Paragraph)]
-}
-
-///|
-/// Check if a string is whitespace only.
-fn is_whitespace_only(s : String) -> Bool {
-  let chars = s.to_array()
-  for c in chars {
-    if c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\u{3000}' {
-      return false
-    }
-  }
-  true
-}
 
 ///|
 /// Segment text using TF-IDF divergence between sentence windows.
@@ -249,7 +34,7 @@ pub fn segment_by_divergence(
   config : SegmentConfig,
 ) -> Array[@types.SegmentPoint] {
   // Handle empty or whitespace-only text
-  if text.length() == 0 || is_whitespace_only(text) {
+  if text.length() == 0 || @utils.is_whitespace_only(text) {
     return []
   }
 
@@ -273,7 +58,7 @@ pub fn segment_by_divergence(
 
   // If not enough sentences for window analysis
   if sentences.length() < config.window_size + 1 {
-    return handle_few_sentences(
+    return @utils.handle_few_sentences(
       text,
       sentences,
       config.target_chunk_size,
@@ -289,7 +74,7 @@ pub fn segment_by_divergence(
   )
 
   // Find local maxima above threshold
-  let maxima_indices = find_local_maxima(
+  let maxima_indices = @utils.find_local_maxima(
     divergence.divergence_values,
     config.threshold,
   )
@@ -304,7 +89,7 @@ pub fn segment_by_divergence(
   }
 
   // Apply size constraints
-  let final_boundaries = apply_size_constraints(
+  let final_boundaries = @utils.apply_size_constraints(
     text_length,
     candidate_positions,
     sentences,
@@ -314,7 +99,7 @@ pub fn segment_by_divergence(
   )
 
   // Convert to segment points
-  let points = boundaries_to_segment_points(final_boundaries, text_length)
+  let points = @utils.boundaries_to_segment_points(final_boundaries, text_length)
 
   if points.length() > 0 {
     return points
@@ -431,7 +216,7 @@ fn subdivide_oversized_chunks(
             minimum_threshold
           }
 
-          let local_maxima = find_local_maxima(
+          let local_maxima = @utils.find_local_maxima(
             sub_divergence.divergence_values,
             threshold,
           )
@@ -462,7 +247,7 @@ fn subdivide_oversized_chunks(
       }
       while pos - current_boundary > max_size {
         let force_split_target = current_boundary + max_size
-        let split_point = find_nearest_sentence_end(
+        let split_point = @utils.find_nearest_sentence_end(
           sentences, force_split_target,
         )
 
@@ -493,7 +278,7 @@ pub fn segment_adaptive(
   config : AdaptiveConfig,
 ) -> Array[@types.SegmentPoint] {
   // Handle empty or whitespace-only text
-  if text.length() == 0 || is_whitespace_only(text) {
+  if text.length() == 0 || @utils.is_whitespace_only(text) {
     return []
   }
 
@@ -517,7 +302,7 @@ pub fn segment_adaptive(
 
   // If not enough sentences for window analysis
   if sentences.length() < config.window_size + 1 {
-    return handle_few_sentences(
+    return @utils.handle_few_sentences(
       text,
       sentences,
       config.target_chunk_size,
@@ -546,7 +331,7 @@ pub fn segment_adaptive(
   )
 
   // Find local maxima above adaptive threshold
-  let maxima_indices = find_local_maxima(
+  let maxima_indices = @utils.find_local_maxima(
     divergence.divergence_values,
     threshold,
   )
@@ -583,7 +368,7 @@ pub fn segment_adaptive(
   )
 
   // Convert to segment points
-  let points = boundaries_to_segment_points(final_boundaries, text_length)
+  let points = @utils.boundaries_to_segment_points(final_boundaries, text_length)
 
   if points.length() > 0 {
     return points

@@ -1,0 +1,35 @@
+///|
+/// Plan CLI - Generate various planning documents.
+/// Subcommands:
+///   refactor - Generate refactoring plan from similarity analysis
+
+///|
+pub fn show_help() -> Unit {
+  println("indexion plan - Generate planning documents")
+  println("")
+  println("Usage:")
+  println("  indexion plan <command> [options]")
+  println("")
+  println("Commands:")
+  println("  refactor    Generate refactoring plan from file similarity analysis")
+  println("")
+  println("Use 'indexion plan <command> --help' for more information about a command.")
+}
+
+///|
+pub fn run(args : Array[String], start_idx : Int) -> Unit {
+  if start_idx >= args.length() {
+    show_help()
+    return
+  }
+  let subcommand = args[start_idx]
+  match subcommand {
+    "refactor" => @refactor.run(args, start_idx + 1)
+    "--help" | "-h" | "help" => show_help()
+    _ => {
+      println("Unknown plan command: " + subcommand)
+      println("")
+      show_help()
+    }
+  }
+}
