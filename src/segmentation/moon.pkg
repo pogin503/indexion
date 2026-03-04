@@ -1,1 +1,6 @@
-
+import {
+  "trkbt10/indexion/src/segmentation/types" @types,
+  "trkbt10/indexion/src/segmentation/punctuation" @punctuation,
+  "trkbt10/indexion/src/segmentation/tfidf" @tfidf,
+  "trkbt10/indexion/src/segmentation/window" @window,
+}
