@@ -219,6 +219,45 @@ pub fn handle_few_sentences(
 }
 
 ///|
+/// Combine multiple sentences into a single text string.
+/// Takes sentences from start index with count sentences.
+pub fn combine_sentences(
+  sentences : Array[@sentence.Sentence],
+  start : Int,
+  count : Int,
+) -> String {
+  let buf = StringBuilder::new()
+  let end = if start + count > sentences.length() {
+    sentences.length()
+  } else {
+    start + count
+  }
+  for i = start; i < end; i = i + 1 {
+    buf.write_string(sentences[i].get_text())
+  }
+  buf.to_string()
+}
+
+///|
+/// Get the end position of the last sentence in a window.
+pub fn get_window_end(
+  sentences : Array[@sentence.Sentence],
+  start : Int,
+  count : Int,
+) -> Int {
+  let end_index = if start + count > sentences.length() {
+    sentences.length()
+  } else {
+    start + count
+  }
+  if end_index > 0 {
+    sentences[end_index - 1].get_end()
+  } else {
+    0
+  }
+}
+
+///|
 /// Find local maxima indices where values exceed the threshold.
 pub fn find_local_maxima(
   values : Array[Double],

@@ -300,88 +300,88 @@ test "is_whitespace_only Japanese full-width space" {
 }
 
 ///|
-test "combine_sentences basic" {
+test "@utils.combine_sentences basic" {
   let sentences = [
     @sentence.Sentence::new("Hello.", 0, 6),
     @sentence.Sentence::new(" World.", 6, 13),
   ]
-  let result = combine_sentences(sentences, 0, 2)
+  let result = @utils.combine_sentences(sentences, 0, 2)
   assert_eq(result, "Hello. World.")
 }
 
 ///|
-test "combine_sentences partial" {
+test "@utils.combine_sentences partial" {
   let sentences = [
     @sentence.Sentence::new("One", 0, 3),
     @sentence.Sentence::new("Two", 3, 6),
     @sentence.Sentence::new("Three", 6, 11),
   ]
-  let result = combine_sentences(sentences, 0, 2)
+  let result = @utils.combine_sentences(sentences, 0, 2)
   assert_eq(result, "OneTwo")
 }
 
 ///|
-test "combine_sentences beyond length" {
+test "@utils.combine_sentences beyond length" {
   let sentences = [
     @sentence.Sentence::new("One", 0, 3),
     @sentence.Sentence::new("Two", 3, 6),
   ]
-  let result = combine_sentences(sentences, 0, 10)
+  let result = @utils.combine_sentences(sentences, 0, 10)
   assert_eq(result, "OneTwo")
 }
 
 ///|
-test "get_window_end basic" {
+test "@utils.get_window_end basic" {
   let sentences = [
     @sentence.Sentence::new("Hello.", 0, 6),
     @sentence.Sentence::new(" World.", 6, 13),
     @sentence.Sentence::new(" Test. ", 13, 20),
   ]
-  let result = get_window_end(sentences, 0, 2)
+  let result = @utils.get_window_end(sentences, 0, 2)
   assert_eq(result, 13) // End of second sentence
 }
 
 ///|
-test "get_window_end beyond length" {
+test "@utils.get_window_end beyond length" {
   let sentences = [
     @sentence.Sentence::new("Hello.", 0, 6),
     @sentence.Sentence::new(" World.", 6, 13),
   ]
-  let result = get_window_end(sentences, 0, 10)
+  let result = @utils.get_window_end(sentences, 0, 10)
   assert_eq(result, 13) // End of last sentence
 }
 
 ///|
-test "get_window_end empty" {
+test "@utils.get_window_end empty" {
   let sentences : Array[@sentence.Sentence] = []
-  let result = get_window_end(sentences, 0, 2)
+  let result = @utils.get_window_end(sentences, 0, 2)
   assert_eq(result, 0)
 }
 
 ///|
-test "min_max_normalize empty array" {
-  let result = min_max_normalize([])
+test "@utils.min_max_normalize empty array" {
+  let result = @utils.min_max_normalize([])
   assert_eq(result.length(), 0)
 }
 
 ///|
-test "min_max_normalize single value" {
-  let result = min_max_normalize([0.5])
+test "@utils.min_max_normalize single value" {
+  let result = @utils.min_max_normalize([0.5])
   assert_eq(result.length(), 1)
   assert_eq(result[0], 0.5)
 }
 
 ///|
-test "min_max_normalize all same values" {
-  let result = min_max_normalize([0.5, 0.5, 0.5])
+test "@utils.min_max_normalize all same values" {
+  let result = @utils.min_max_normalize([0.5, 0.5, 0.5])
   for val in result {
     assert_eq(val, 0.5)
   }
 }
 
 ///|
-test "min_max_normalize range" {
-  let result = min_max_normalize([0.0, 0.5, 1.0])
+test "@utils.min_max_normalize range" {
+  let result = @utils.min_max_normalize([0.0, 0.5, 1.0])
   assert_eq(result[0], 0.0)
   assert_eq(result[1], 0.5)
   assert_eq(result[2], 1.0)

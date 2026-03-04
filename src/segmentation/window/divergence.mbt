@@ -1,43 +1,5 @@
 // Window divergence calculation functions.
-
-///|
-/// Combine multiple sentences into a single text string.
-/// Takes sentences from start index with count sentences.
-pub fn combine_sentences(
-  sentences : Array[@sentence.Sentence],
-  start : Int,
-  count : Int,
-) -> String {
-  let buf = StringBuilder::new()
-  let end = if start + count > sentences.length() {
-    sentences.length()
-  } else {
-    start + count
-  }
-  for i = start; i < end; i = i + 1 {
-    buf.write_string(sentences[i].get_text())
-  }
-  buf.to_string()
-}
-
-///|
-/// Get the end position of the last sentence in a window.
-fn get_window_end(
-  sentences : Array[@sentence.Sentence],
-  start : Int,
-  count : Int,
-) -> Int {
-  let end_index = if start + count > sentences.length() {
-    sentences.length()
-  } else {
-    start + count
-  }
-  if end_index > 0 {
-    sentences[end_index - 1].get_end()
-  } else {
-    0
-  }
-}
+// Uses shared utilities from segmentation/utils for common operations.
 
 ///|
 /// Calculate TF-IDF divergence between adjacent sentence windows.
@@ -60,8 +22,8 @@ pub fn calculate_window_tfidf_divergence(
 
   let num_windows = sentences.length() - window_size + 1
   for i = 0; i < num_windows; i = i + 1 {
-    windows.push(combine_sentences(sentences, i, window_size))
-    window_ends.push(get_window_end(sentences, i, window_size))
+    windows.push(@utils.combine_sentences(sentences, i, window_size))
+    window_ends.push(@utils.get_window_end(sentences, i, window_size))
   }
 
   // Calculate TF-IDF distances between adjacent windows using utils

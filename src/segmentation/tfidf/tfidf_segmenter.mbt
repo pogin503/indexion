@@ -1,82 +1,7 @@
 // TF-IDF based segmentation implementation.
 // Uses TF-IDF cosine distance between adjacent sentence windows to detect
 // semantic boundaries without external API calls.
-
-///|
-/// Combine multiple sentences into a single text string.
-fn combine_sentences(
-  sentences : Array[@sentence.Sentence],
-  start : Int,
-  count : Int,
-) -> String {
-  let buf = StringBuilder::new()
-  let end = if start + count > sentences.length() {
-    sentences.length()
-  } else {
-    start + count
-  }
-  for i = start; i < end; i = i + 1 {
-    buf.write_string(sentences[i].get_text())
-  }
-  buf.to_string()
-}
-
-///|
-/// Get the end position of the last sentence in a window.
-fn get_window_end(
-  sentences : Array[@sentence.Sentence],
-  start : Int,
-  count : Int,
-) -> Int {
-  let end_index = if start + count > sentences.length() {
-    sentences.length()
-  } else {
-    start + count
-  }
-  if end_index > 0 {
-    sentences[end_index - 1].get_end()
-  } else {
-    0
-  }
-}
-
-///|
-/// Normalize an array of values using Min-Max normalization.
-/// Returns values in range [0, 1].
-fn min_max_normalize(values : Array[Double]) -> Array[Double] {
-  if values.length() == 0 {
-    return []
-  }
-
-  // Find min and max
-  let mut min_val = values[0]
-  let mut max_val = values[0]
-  for i = 1; i < values.length(); i = i + 1 {
-    if values[i] < min_val {
-      min_val = values[i]
-    }
-    if values[i] > max_val {
-      max_val = values[i]
-    }
-  }
-
-  // Handle case where all values are the same
-  if max_val == min_val {
-    let result : Array[Double] = []
-    for _ in values {
-      result.push(0.5)
-    }
-    return result
-  }
-
-  // Normalize
-  let range = max_val - min_val
-  let result : Array[Double] = []
-  for value in values {
-    result.push((value - min_val) / range)
-  }
-  result
-}
+// Uses shared utilities from segmentation/utils for common operations.
 
 ///|
 /// Calculate TF-IDF divergence between adjacent sentence windows.
@@ -98,15 +23,15 @@ pub fn calculate_window_tfidf_divergence(
 
   let num_windows = sentences.length() - window_size + 1
   for i = 0; i < num_windows; i = i + 1 {
-    windows.push(combine_sentences(sentences, i, window_size))
-    window_ends.push(get_window_end(sentences, i, window_size))
+    windows.push(@utils.combine_sentences(sentences, i, window_size))
+    window_ends.push(@utils.get_window_end(sentences, i, window_size))
   }
 
   // Calculate TF-IDF distances between adjacent windows
   let tfidf_values = @text_tfidf.calculate_adjacent_tfidf_distance(windows)
 
   // Normalize TF-IDF values
-  let normalized_tfidf = min_max_normalize(tfidf_values)
+  let normalized_tfidf = @utils.min_max_normalize(tfidf_values)
 
   // Build result
   let length = if normalized_tfidf.length() < window_ends.length() - 1 {

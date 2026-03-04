@@ -47,23 +47,23 @@ test "@types.WindowDivergence creation and accessors" {
 }
 
 ///|
-test "combine_sentences joins texts correctly" {
+test "@utils.combine_sentences joins texts correctly" {
   let sentences = [
     @sentence.Sentence::new("Hello.", 0, 6),
     @sentence.Sentence::new("World.", 7, 13),
     @sentence.Sentence::new("Test.", 14, 19),
   ]
-  let combined = combine_sentences(sentences, 0, 2)
+  let combined = @utils.combine_sentences(sentences, 0, 2)
   assert_eq(combined, "Hello.World.")
 }
 
 ///|
-test "combine_sentences handles out of bounds" {
+test "@utils.combine_sentences handles out of bounds" {
   let sentences = [
     @sentence.Sentence::new("Hello.", 0, 6),
     @sentence.Sentence::new("World.", 7, 13),
   ]
-  let combined = combine_sentences(sentences, 0, 5) // More than available
+  let combined = @utils.combine_sentences(sentences, 0, 5) // More than available
   assert_eq(combined, "Hello.World.")
 }
 
