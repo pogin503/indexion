@@ -1,4 +1,90 @@
 ///|
+/// # KGF Preprocess FST Section Syntax
+///
+/// The `=== preprocess_fst` section defines Finite State Transducers (FST)
+/// for text preprocessing. FSTs transform input text character-by-character
+/// using state machines. Common uses: Base64 decoding, escape handling.
+///
+/// ## JSON Schema
+///
+/// ```json
+/// {
+///   "name": "fst-name",
+///   "initial": "state-name",
+///   "classes": {
+///     "class-name": "regex-pattern",
+///     ...
+///   },
+///   "states": {
+///     "state-name": [
+///       { "on": "class-or-*", "to": "next-state", "actions": [...] },
+///       ...
+///     ],
+///     ...
+///   }
+/// }
+/// ```
+///
+/// ## Character Classes
+///
+/// Define character sets for transition matching:
+/// ```json
+/// "classes": {
+///   "b64char": "[A-Za-z0-9+/]",
+///   "padding": "[=]",
+///   "digit": "[0-9]",
+///   "hex": "[0-9a-fA-F]"
+/// }
+/// ```
+///
+/// ## Transitions
+///
+/// Each state has an array of transitions. First matching transition wins.
+/// Use `"on": "*"` for wildcard (match any character).
+///
+/// ## Actions
+///
+/// | Action | Description |
+/// |--------|-------------|
+/// | `{"type": "emitInput"}` | Emit the current input character |
+/// | `{"type": "emit", "value": "X"}` | Emit a specific string |
+/// | `{"type": "buf"}` | Buffer the input character |
+/// | `{"type": "flush", "pad": N}` | Flush buffer with padding (0, 1, 2) |
+///
+/// ## Example: Base64 Decoder
+///
+/// ```json
+/// === preprocess_fst
+/// {
+///   "name": "base64",
+///   "initial": "s0",
+///   "classes": {
+///     "b64": "[A-Za-z0-9+/]",
+///     "eq": "[=]"
+///   },
+///   "states": {
+///     "s0": [
+///       {"on": "b64", "to": "s1", "actions": [{"type": "buf"}]}
+///     ],
+///     "s1": [
+///       {"on": "b64", "to": "s2", "actions": [{"type": "buf"}]}
+///     ],
+///     "s2": [
+///       {"on": "b64", "to": "s3", "actions": [{"type": "buf"}]},
+///       {"on": "eq", "to": "s3p1", "actions": []}
+///     ],
+///     "s3": [
+///       {"on": "b64", "to": "s0", "actions": [{"type": "buf"}, {"type": "flush", "pad": 0}]},
+///       {"on": "eq", "to": "s0", "actions": [{"type": "flush", "pad": 1}]}
+///     ],
+///     "s3p1": [
+///       {"on": "eq", "to": "s0", "actions": [{"type": "flush", "pad": 2}]}
+///     ]
+///   }
+/// }
+/// ```
+
+///|
 /// Parses preprocess_fst section as JSON (single object or array).
 /// Returns None if the section is empty.
 pub fn parse_preprocess_fst(text : String) -> Array[@types.PreprocessFstSpec]? {

@@ -1,6 +1,71 @@
 ///|
+/// # KGF Grammar Section Syntax
+///
+/// The `=== grammar` section defines PEG (Parsing Expression Grammar) rules.
+/// Each rule maps a name to a parsing expression.
+///
+/// ## EBNF Grammar
+///
+/// ```ebnf
+/// GrammarSection ::= Rule*
+/// Rule           ::= RuleName "->" Expression NL ContinuationLine*
+/// RuleName       ::= UPPER_IDENT              (* e.g., "Module", "FnDecl" *)
+/// ContinuationLine ::= INDENT Expression NL   (* Indented = continuation *)
+///
+/// Expression     ::= Sequence ( "|" Sequence )*
+/// Sequence       ::= Item+
+/// Item           ::= Labeled | Unlabeled
+/// Labeled        ::= Label ":" Primary Quantifier?
+/// Unlabeled      ::= Primary Quantifier?
+/// Label          ::= LOWER_IDENT              (* e.g., "id", "name" *)
+///
+/// Primary        ::= RuleRef | TokenRef | Group | Optional | Literal
+/// RuleRef        ::= UPPER_IDENT              (* e.g., "Expr" *)
+/// TokenRef       ::= UPPER_IDENT              (* e.g., "Ident", "KW_fn" *)
+/// Group          ::= "(" Expression ")"
+/// Optional       ::= "[" Expression "]"       (* Same as (...)? *)
+/// Literal        ::= "'" CHAR+ "'"            (* Literal match *)
+///
+/// Quantifier     ::= "*" | "+" | "?"
+/// ```
+///
+/// ## PEG Operators
+///
+/// | Operator | Meaning | Example |
+/// |----------|---------|---------|
+/// | `A B` | Sequence | `KW_fn Ident` |
+/// | `A \| B` | Ordered choice | `FnDecl \| VarDecl` |
+/// | `A*` | Zero or more | `Item*` |
+/// | `A+` | One or more | `Digit+` |
+/// | `A?` | Optional | `TypeAnnotation?` |
+/// | `[A]` | Optional (alt syntax) | `[SEMI]` |
+/// | `(A)` | Grouping | `(A \| B)*` |
+/// | `label:A` | Labeled capture | `id:Ident` |
+///
+/// ## Examples
+///
+/// ```kgf
+/// === grammar
+/// Module -> Item*
+///
+/// Item -> FnDecl
+///      | StructDecl
+///      | VarDecl
+///
+/// FnDecl -> KW_fn id:Ident LPAREN ParamList? RPAREN ReturnType? Body
+///
+/// ParamList -> Param ( COMMA Param )*
+///
+/// Param -> name:Ident [ COLON Type ]
+///
+/// Type -> TypeIdent GenericArgs?
+///      | LPAREN TypeList RPAREN
+/// ```
+
+///|
 /// Parses rule lines into rule name to expression mapping.
 /// Preserves newlines between indented lines.
+///
 /// Syntax:
 ///   Name -> expression
 ///           continued on multiple lines

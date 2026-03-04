@@ -91,6 +91,7 @@ fn make_memo_key(node : Node, pos : Int) -> MemoKey {
 
 ///|
 /// Merges two label maps, with the second taking precedence.
+/// Special handling for `_text`: concatenate instead of overwrite.
 fn merge_labels(
   base : Map[String, Json],
   overlay : Map[String, Json],
@@ -100,7 +101,16 @@ fn merge_labels(
     result.set(key, value)
   }
   for key, value in overlay {
-    result.set(key, value)
+    // Special handling for _text: concatenate
+    if key == "_text" {
+      match (base.get("_text"), value) {
+        (Some(String(base_text)), String(new_text)) =>
+          result.set("_text", (base_text + new_text).to_json())
+        _ => result.set(key, value)
+      }
+    } else {
+      result.set(key, value)
+    }
   }
   result
 }
@@ -210,6 +220,8 @@ fn eval_trampoline(
                 labels.set("_last", tok.get_value().to_json())
                 labels.set("_last_pos", tok.pos.to_double().to_json())
                 labels.set("_last_len", tok.text.length().to_double().to_json())
+                // Set _text for multi-line accumulation
+                labels.set("_text", tok.text.to_json())
                 results.push(EvalResult::success(pos + 1, labels~))
               } else {
                 results.push(EvalResult::failure(pos))
@@ -360,7 +372,7 @@ fn eval_trampoline(
           results.push(EvalResult::failure(orig_pos))
         } else {
           let labels = prev.labels
-          // Copy _last to the label name
+          // Copy _last to the label name (processed single-token value)
           match labels.get("_last") {
             Some(v) => labels.set(name, v)
             None => labels.set(name, Json::null())
@@ -373,6 +385,11 @@ fn eval_trampoline(
           // Copy _last_len to name_len
           match labels.get("_last_len") {
             Some(v) => labels.set(name + "_len", v)
+            None => ()
+          }
+          // Copy _text to name_text (accumulated multi-line text)
+          match labels.get("_text") {
+            Some(v) => labels.set(name + "_text", v)
             None => ()
           }
           results.push(
@@ -389,7 +406,7 @@ fn eval_trampoline(
             event_labels.set(key, value)
           }
           ctx.all_events.push((name, event_labels))
-          // Clean labels - only keep _last for parent scope
+          // Clean labels - keep _last and _text for parent scope
           let clean_labels : Map[String, Json] = Map::new()
           match prev.labels.get("_last") {
             Some(v) => clean_labels.set("_last", v)
@@ -401,6 +418,11 @@ fn eval_trampoline(
           }
           match prev.labels.get("_last_len") {
             Some(v) => clean_labels.set("_last_len", v)
+            None => ()
+          }
+          // Also keep _text for multi-line capture
+          match prev.labels.get("_text") {
+            Some(v) => clean_labels.set("_text", v)
             None => ()
           }
           results.push(

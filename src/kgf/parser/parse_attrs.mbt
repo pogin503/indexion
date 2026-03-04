@@ -1,5 +1,75 @@
 ///|
+/// # KGF Attrs Section Syntax
+///
+/// The `=== attrs` section defines attribute actions that annotate parse tree
+/// nodes. These actions drive symbol extraction and semantic analysis.
+///
+/// ## EBNF Grammar
+///
+/// ```ebnf
+/// AttrsSection ::= AttrRule*
+/// AttrRule     ::= "on" RuleName ":" ActionList NL
+/// RuleName     ::= UPPER_IDENT              (* Grammar rule name *)
+/// ActionList   ::= Action ( ";" Action )*
+/// Action       ::= ActionKind ImplicitArg? KeyValuePair*
+///
+/// ActionKind   ::= "def" | "ref" | "call" | "argref"
+///                | "import" | "reexport" | "scope"
+/// ImplicitArg  ::= LOWER_IDENT              (* First positional = implicit id *)
+/// KeyValuePair ::= Key "=" Value
+/// Key          ::= "id" | "kind" | "ns" | "callee" | "module" | "push" | "pop"
+/// Value        ::= IDENTIFIER | STRING
+/// ```
+///
+/// ## Action Types
+///
+/// | Action | Purpose | Implicit Param |
+/// |--------|---------|----------------|
+/// | `def` | Define a symbol | `id` |
+/// | `ref` | Reference a symbol | `name` |
+/// | `call` | Function call | `callee` |
+/// | `argref` | Argument reference | - |
+/// | `import` | Module import | `module` |
+/// | `reexport` | Re-export symbol | `module` |
+/// | `scope` | Scope management | - |
+///
+/// ## Symbol Kinds
+///
+/// Common `kind=` values: `Function`, `Variable`, `Struct`, `Enum`, `Type`,
+/// `Trait`, `Param`, `Field`, `Variant`, `Method`, `TypeAlias`
+///
+/// ## Namespace (`ns=`)
+///
+/// - `value` - Value namespace (functions, variables)
+/// - `type` - Type namespace (types, traits)
+///
+/// ## Examples
+///
+/// ```kgf
+/// === attrs
+/// # Define function with id from 'fn_id' label, in value namespace
+/// on FnDecl: def fn_id kind=Function ns=value
+///
+/// # Define struct with scope push (for nested fields)
+/// on StructDecl: def struct_id kind=Struct; scope push=struct
+///
+/// # Reference variable in value namespace
+/// on Primary: ref name ns=value
+///
+/// # Function call tracking
+/// on CallExpr: call callee=callee
+/// on Arg: argref
+///
+/// # Import statement
+/// on ImportDecl: import module=path
+///
+/// # Multiple actions on same rule
+/// on VarDecl: def id kind=Variable ns=value; scope pop
+/// ```
+
+///|
 /// Parses simple one-line attribute actions per rule into structured form.
+///
 /// Syntax:
 ///   on RuleName: kind1 key1=val1; kind2; ...
 pub fn parse_attrs(text : String) -> Map[String, Array[@types.AttrAction]] {

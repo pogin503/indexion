@@ -1,4 +1,62 @@
 ///|
+/// # KGF File Structure
+///
+/// KGF (Knowledge Graph Format) is a domain-specific language for defining
+/// language specifications. Each KGF file describes how to tokenize, parse,
+/// and extract semantic information from source code.
+///
+/// ## File Structure
+///
+/// ```ebnf
+/// KGFFile      ::= Header Section*
+/// Header       ::= "kgf" Version NL "language:" LanguageName NL
+/// Version      ::= FLOAT                          (* e.g., "0.6" *)
+/// LanguageName ::= IDENTIFIER
+/// Section      ::= "===" SectionName NL SectionBody
+/// SectionName  ::= "lex" | "grammar" | "attrs" | "semantics"
+///                | "resolver" | "preprocess" | "preprocess_fst"
+/// ```
+///
+/// ## Sections Overview
+///
+/// | Section | Purpose | Format |
+/// |---------|---------|--------|
+/// | `lex` | Token definitions | `SKIP` / `TOKEN` rules |
+/// | `grammar` | PEG grammar rules | `Name -> expression` |
+/// | `attrs` | Attribute actions | `on Rule: action; ...` |
+/// | `semantics` | Graph construction | `on Rule { statements }` |
+/// | `resolver` | Module resolution | YAML-like config |
+/// | `preprocess` | Preprocessor names | Line-based list |
+/// | `preprocess_fst` | FST definitions | JSON format |
+///
+/// ## Example
+///
+/// ```kgf
+/// kgf 0.6
+/// language: typescript
+///
+/// === lex
+/// SKIP /\s+/
+/// TOKEN Ident /[a-zA-Z_][a-zA-Z0-9_]*/
+///
+/// === grammar
+/// Module -> Item*
+/// Item -> FnDecl | VarDecl
+///
+/// === attrs
+/// on FnDecl: def id kind=Function
+///
+/// === semantics
+/// on FnDecl {
+///   edge declares from $file to $id
+/// }
+///
+/// === resolver
+/// sources: .ts
+/// module_path_style: slash
+/// ```
+
+///|
 /// Extracts a section body by heading marker `=== name`.
 fn section(text : String, name : String) -> String {
   let marker = "=== " + name

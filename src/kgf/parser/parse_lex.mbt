@@ -1,5 +1,61 @@
 ///|
+/// # KGF Lex Section Syntax
+///
+/// The `=== lex` section defines token rules for lexical analysis.
+/// Tokens are matched in declaration order; first match wins.
+///
+/// ## EBNF Grammar
+///
+/// ```ebnf
+/// LexSection   ::= LexRule*
+/// LexRule      ::= SkipRule | TokenRule | Comment | BlankLine
+/// SkipRule     ::= "SKIP" Pattern
+/// TokenRule    ::= "TOKEN" TokenName Pattern Flags?
+/// TokenName    ::= UPPER_IDENT           (* e.g., "Ident", "KW_fn" *)
+/// Pattern      ::= "/" RegexBody "/"     (* JavaScript-style regex *)
+/// Flags        ::= [gimsuy]+             (* Optional regex flags *)
+/// Comment      ::= "#" ANY_CHAR* NL
+/// ```
+///
+/// ## Token Types
+///
+/// | Type | Syntax | Description |
+/// |------|--------|-------------|
+/// | Skip | `SKIP /pattern/` | Matched but not emitted (whitespace, comments) |
+/// | Token | `TOKEN NAME /pattern/` | Matched and emitted with kind=NAME |
+///
+/// ## Pattern Syntax
+///
+/// Patterns use JavaScript-compatible regular expressions:
+/// - Character classes: `[a-z]`, `[^"\\]`, `\s`, `\d`, `\w`
+/// - Quantifiers: `*`, `+`, `?`, `{n,m}`
+/// - Groups: `(...)`, `(?:...)`, `(?=...)`, `(?!...)`
+/// - Escapes: `\/` for literal slash, `\\` for backslash
+///
+/// ## Examples
+///
+/// ```kgf
+/// === lex
+/// # Skip whitespace and comments
+/// SKIP /(\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/)+/
+///
+/// # Keywords (order matters - check before identifiers)
+/// TOKEN KW_fn     /fn\b/
+/// TOKEN KW_let    /let\b/
+///
+/// # Identifiers and literals
+/// TOKEN Ident     /[a-zA-Z_][a-zA-Z0-9_]*/
+/// TOKEN Number    /[0-9]+(\.[0-9]+)?/
+/// TOKEN String    /"([^"\\]|\\.)*"/
+///
+/// # Operators (longer patterns first)
+/// TOKEN ARROW     /->/
+/// TOKEN EQ        /=/
+/// ```
+
+///|
 /// Parses the lex section into token definitions with optional SKIP rules.
+///
 /// Syntax:
 ///   SKIP /pattern/
 ///   TOKEN NAME /pattern/[flags]

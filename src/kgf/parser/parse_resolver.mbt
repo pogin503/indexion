@@ -1,4 +1,98 @@
 ///|
+/// # KGF Resolver Section Syntax
+///
+/// The `=== resolver` section configures module path resolution.
+/// Uses YAML-like syntax for flexibility and readability.
+///
+/// ## EBNF Grammar
+///
+/// ```ebnf
+/// ResolverSection ::= ( KeyValue | AliasesBlock | ResolveBlock )*
+///
+/// KeyValue     ::= Key ":" Value NL
+/// Key          ::= "sources" | "relative_prefixes" | "exts" | "indexes"
+///                | "bare_prefix" | "module_path_style" | "ns_prefix"
+///                | "ns_segments" | "rust_mod_mode" | "internal_prefixes"
+/// Value        ::= STRING | List
+/// List         ::= Value ( "," Value )*
+///
+/// AliasesBlock ::= "aliases:" NL AliasEntry+
+/// AliasEntry   ::= INDENT "-" NL AliasFields
+/// AliasFields  ::= INDENT2 "pattern:" REGEX NL INDENT2 "replace:" STRING NL
+///
+/// ResolveBlock ::= "resolve:" NL ResolveStep+
+/// ResolveStep  ::= INDENT "-" StepSpec NL | INDENT "-" NL StepFields
+/// StepSpec     ::= StepType ":" StepValue
+/// StepType     ::= "manifest" | "marker" | "index" | "ext" | "sibling" | "fallback"
+/// StepValue    ::= ManifestSpec | FileList | Prefix
+/// ManifestSpec ::= FileName "@" Query ( "?" Condition )?
+/// StepFields   ::= ( INDENT2 StepField NL )+
+/// StepField    ::= "type:" StepType | "file:" FileName | "query:" Query
+///                | "files:" FileList | "prefix:" Prefix | "when:" Condition
+/// ```
+///
+/// ## Configuration Keys
+///
+/// | Key | Type | Description |
+/// |-----|------|-------------|
+/// | `sources` | list | Source file extensions (`.ts`, `.py`) |
+/// | `relative_prefixes` | list | Prefixes for relative imports (`./`, `../`) |
+/// | `exts` | list | Extensions to try when resolving |
+/// | `indexes` | list | Index file names (`index.ts`) |
+/// | `bare_prefix` | string | Prefix for bare module names (`npm:`) |
+/// | `module_path_style` | enum | Path separator: `slash`, `dot`, `coloncol` |
+/// | `ns_prefix` | string | Namespace prefix |
+/// | `ns_segments` | int | Namespace segment count |
+/// | `internal_prefixes` | list | Prefixes for internal modules |
+///
+/// ## Resolve Step Types
+///
+/// | Type | Description | Value Format |
+/// |------|-------------|--------------|
+/// | `manifest` | Read from manifest file | `file @ query` |
+/// | `marker` | Check marker file exists | file list |
+/// | `index` | Try index files in directory | file list |
+/// | `ext` | Try adding extensions | extension list |
+/// | `sibling` | Try sibling file | file list |
+/// | `fallback` | Apply fallback prefix | prefix string |
+///
+/// ## Examples
+///
+/// ```kgf
+/// === resolver
+/// # Basic configuration
+/// sources: .ts, .tsx, .d.ts
+/// relative_prefixes: ./, ../, /
+/// module_path_style: slash
+///
+/// # Path aliases (e.g., @/components -> src/components)
+/// aliases:
+///   -
+///     pattern: ^@/(.*)$
+///     replace: src/\1
+///   -
+///     pattern: ^~/(.*)$
+///     replace: lib/\1
+///
+/// # Resolution chain (tried in order)
+/// resolve:
+///   # Check package.json exports for types
+///   -
+///     type: manifest
+///     file: package.json
+///     query: exports["."].types
+///     when: type
+///   # Shorthand: manifest: file @ query
+///   - manifest: package.json @ main | module
+///   # Try index files
+///   - index: /index.ts, /index.tsx, /index.js
+///   # Try extensions
+///   - ext: .ts, .tsx, .d.ts, .js
+///   # Fallback to npm prefix
+///   - fallback: npm:
+/// ```
+
+///|
 /// Parses resolver block into normalized ResolverSpec.
 /// Supports YAML-like syntax with aliases and resolve chain.
 pub fn parse_resolver(text : String) -> @types.ResolverSpec {

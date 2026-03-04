@@ -1,6 +1,101 @@
 ///|
+/// # KGF Semantics Section Syntax
+///
+/// The `=== semantics` section defines graph construction rules.
+/// Each `on` block executes when a grammar rule matches, adding
+/// nodes and edges to the knowledge graph.
+///
+/// ## EBNF Grammar
+///
+/// ```ebnf
+/// SemanticsSection ::= OnBlock*
+///
+/// OnBlock    ::= "on" RuleName WhenClause? "{" Statement* "}"
+///                ElseClause?
+/// WhenClause ::= "when" Expression
+/// ElseClause ::= "else" "{" Statement* "}"
+///
+/// Statement  ::= EdgeStmt | BindStmt | LetStmt | NoteStmt | ModuleStmt
+///
+/// EdgeStmt   ::= "edge" EdgeKind "from" Expr "to" Expr AttrsClause?
+/// EdgeKind   ::= IDENTIFIER           (* e.g., "declares", "calls", "imports" *)
+/// AttrsClause::= "attrs" Expr
+///
+/// BindStmt   ::= "bind" "ns" Expr "name" Expr "to" Expr
+///
+/// LetStmt    ::= "let" VarName "=" Expr
+/// VarName    ::= IDENTIFIER
+///
+/// NoteStmt   ::= "note" NoteType PayloadClause?
+/// NoteType   ::= IDENTIFIER
+/// PayloadClause ::= "payload" Expr
+///
+/// ModuleStmt ::= "module" Expr FileClause?
+/// FileClause ::= "file" Expr
+///
+/// Expr       ::= Literal | Variable | FuncCall | BuiltinCall
+/// Literal    ::= STRING | NUMBER | "true" | "false" | "null"
+/// Variable   ::= "$" IDENTIFIER | IDENTIFIER
+/// FuncCall   ::= IDENTIFIER "(" ArgList? ")"
+/// BuiltinCall::= "$" IDENTIFIER "(" ArgList? ")"
+/// ArgList    ::= Expr ( "," Expr )*
+/// ```
+///
+/// ## Built-in Functions
+///
+/// | Function | Description |
+/// |----------|-------------|
+/// | `$file` | Current file path |
+/// | `$resolve(path)` | Resolve module path |
+/// | `$scope(ns, name)` | Get scoped binding |
+/// | `concat(a, b, ...)` | String concatenation |
+/// | `obj(k1, v1, ...)` | Create object/map |
+///
+/// ## Edge Kinds
+///
+/// Common edge kinds: `declares`, `calls`, `imports`, `contains`,
+/// `references`, `extends`, `implements`, `next`, `moduleDependsOn`
+///
+/// ## Examples
+///
+/// ```kgf
+/// === semantics
+/// # Simple declaration
+/// on FnDecl {
+///   let sym_id = concat($file, "::", $fn_id)
+///   edge declares from $file to sym_id attrs obj("name", $fn_id, "kind", "Function")
+/// }
+///
+/// # Conditional with when clause
+/// on StructField when $scope("value", "current_struct") {
+///   let parent = $scope("value", "current_struct")
+///   let sym_id = concat(parent, ".", $field_id)
+///   edge declares from parent to sym_id attrs obj("kind", "Field")
+/// }
+///
+/// # Module import with resolution
+/// on ImportDecl {
+///   edge moduleDependsOn from $file to $resolve($path)
+/// }
+///
+/// # Binding for later reference
+/// on StructDecl {
+///   let sym = concat($file, "::", $struct_id)
+///   bind ns "value" name "current_struct" to sym
+/// }
+///
+/// # With else clause
+/// on Chapter when $scope("value", "last_chapter") {
+///   edge next from $scope("value", "last_chapter") to $ch
+/// } else {
+///   edge contains from $file to $ch
+/// }
+/// ```
+
+///|
 /// Parses semantics section into rule -> on-blocks mapping.
 /// Minimal parser using line scanning and balanced braces.
+///
 /// Syntax:
 ///   on RuleName when condition {
 ///     statements
