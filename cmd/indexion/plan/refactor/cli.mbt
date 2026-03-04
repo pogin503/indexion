@@ -714,13 +714,28 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("Error: Need at least 2 files to analyze.")
     return
   }
-  // Calculate all pairs
+  // Calculate all pairs using optimized batch processing for TF-IDF
   let pairs : Array[SimilarPair] = []
-  for i = 0; i < files.length(); i = i + 1 {
-    for j = i + 1; j < files.length(); j = j + 1 {
-      let sim = calc_similarity(files[i].1, files[j].1, config.strategy)
-      if sim >= config.threshold {
-        pairs.push({ file1: files[i].0, file2: files[j].0, similarity: sim })
+  if config.strategy == "tfidf" {
+    // Optimized path: batch TF-IDF with precomputed vectors
+    let contents : Array[String] = []
+    for f in files {
+      contents.push(f.1)
+    }
+    let batch = @sim.TfidfBatch::from_texts(contents)
+    let results = batch.all_pairs_above_threshold(config.threshold)
+    for result in results {
+      let (i, j, sim) = result
+      pairs.push({ file1: files[i].0, file2: files[j].0, similarity: sim })
+    }
+  } else {
+    // Fallback for NCD/Hybrid strategies
+    for i = 0; i < files.length(); i = i + 1 {
+      for j = i + 1; j < files.length(); j = j + 1 {
+        let sim = calc_similarity(files[i].1, files[j].1, config.strategy)
+        if sim >= config.threshold {
+          pairs.push({ file1: files[i].0, file2: files[j].0, similarity: sim })
+        }
       }
     }
   }

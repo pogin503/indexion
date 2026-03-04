@@ -169,3 +169,76 @@ pub fn calculate_adjacent_tfidf_distance(
   }
   distances
 }
+
+///|
+/// Precomputed TF-IDF vectors for batch similarity calculation.
+/// This allows efficient pairwise comparison without re-tokenizing.
+pub struct TfidfBatch {
+  /// TF-IDF vectors for each document.
+  vectors : Array[TfidfVector]
+}
+
+///|
+/// Create a TfidfBatch from an array of texts.
+/// Tokenizes each text once and builds TF-IDF vectors using shared document frequency.
+pub fn TfidfBatch::from_texts(texts : Array[String]) -> TfidfBatch {
+  if texts.length() == 0 {
+    return { vectors: [] }
+  }
+  // Tokenize all texts once
+  let tokenized : Array[Array[String]] = []
+  for text in texts {
+    tokenized.push(@tokenizer.tokenize_for_tfidf(text))
+  }
+  // Build document frequency from all documents
+  let document_frequency = build_document_frequency(tokenized)
+  let total_docs = tokenized.length()
+  // Build TF-IDF vectors
+  let vectors : Array[TfidfVector] = []
+  for tokens in tokenized {
+    vectors.push(build_tfidf_vector(tokens, document_frequency, total_docs))
+  }
+  { vectors, }
+}
+
+///|
+/// Get the number of documents in the batch.
+pub fn TfidfBatch::length(self : TfidfBatch) -> Int {
+  self.vectors.length()
+}
+
+///|
+/// Calculate similarity between two documents by index.
+/// Returns 1.0 for identical, 0.0 for completely different.
+pub fn TfidfBatch::similarity(self : TfidfBatch, i : Int, j : Int) -> Double {
+  if i < 0 ||
+    j < 0 ||
+    i >= self.vectors.length() ||
+    j >= self.vectors.length() {
+    return 0.0
+  }
+  if i == j {
+    return 1.0
+  }
+  cosine_similarity(self.vectors[i], self.vectors[j])
+}
+
+///|
+/// Calculate all pairwise similarities above a threshold.
+/// Returns array of (i, j, similarity) tuples where i < j and similarity >= threshold.
+pub fn TfidfBatch::all_pairs_above_threshold(
+  self : TfidfBatch,
+  threshold : Double,
+) -> Array[(Int, Int, Double)] {
+  let results : Array[(Int, Int, Double)] = []
+  let n = self.vectors.length()
+  for i = 0; i < n; i = i + 1 {
+    for j = i + 1; j < n; j = j + 1 {
+      let sim = cosine_similarity(self.vectors[i], self.vectors[j])
+      if sim >= threshold {
+        results.push((i, j, sim))
+      }
+    }
+  }
+  results
+}

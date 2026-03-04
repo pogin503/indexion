@@ -61,3 +61,37 @@ fn calculate_tfidf_distance(a : String, b : String) -> Double {
 pub fn calculate_adjacent_tfidf(texts : Array[String]) -> Array[Double] {
   @tfidf.calculate_adjacent_tfidf_distance(texts)
 }
+
+///|
+/// Batch TF-IDF similarity calculator.
+/// Precomputes TF-IDF vectors for efficient pairwise comparison.
+pub struct TfidfBatch(@tfidf.TfidfBatch)
+
+///|
+/// Create a batch calculator from texts.
+/// Each text is tokenized once and TF-IDF vectors are precomputed.
+pub fn TfidfBatch::from_texts(texts : Array[String]) -> TfidfBatch {
+  TfidfBatch(@tfidf.TfidfBatch::from_texts(texts))
+}
+
+///|
+/// Get the number of documents in the batch.
+pub fn TfidfBatch::length(self : TfidfBatch) -> Int {
+  self.0.length()
+}
+
+///|
+/// Calculate similarity between two documents by index.
+pub fn TfidfBatch::similarity(self : TfidfBatch, i : Int, j : Int) -> Double {
+  self.0.similarity(i, j)
+}
+
+///|
+/// Calculate all pairwise similarities above a threshold.
+/// Returns array of (i, j, similarity) where i < j.
+pub fn TfidfBatch::all_pairs_above_threshold(
+  self : TfidfBatch,
+  threshold : Double,
+) -> Array[(Int, Int, Double)] {
+  self.0.all_pairs_above_threshold(threshold)
+}
