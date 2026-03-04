@@ -55,8 +55,5 @@ sources: moon.pkg
 relative_prefixes: ./
 module_path_style: slash
 bare_prefix: pkg:
-# Paths starting with these are internal (not external dependencies)
-# Customize for your project's package prefix
-internal_prefixes: trkbt10/indexion
 resolve:
   - fallback: pkg:

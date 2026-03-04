@@ -12,7 +12,7 @@
 /// KeyValue     ::= Key ":" Value NL
 /// Key          ::= "sources" | "relative_prefixes" | "exts" | "indexes"
 ///                | "bare_prefix" | "module_path_style" | "ns_prefix"
-///                | "ns_segments" | "rust_mod_mode" | "internal_prefixes"
+///                | "ns_segments"
 /// Value        ::= STRING | List
 /// List         ::= Value ( "," Value )*
 ///
@@ -43,7 +43,6 @@
 /// | `module_path_style` | enum | Path separator: `slash`, `dot`, `coloncol` |
 /// | `ns_prefix` | string | Namespace prefix |
 /// | `ns_segments` | int | Namespace segment count |
-/// | `internal_prefixes` | list | Prefixes for internal modules |
 ///
 /// ## Resolve Step Types
 ///
@@ -420,7 +419,6 @@ fn build_resolver_spec(
   let module_path_style = get_module_path_style(kv.get("module_path_style"))
   let ns_prefix = get_optional_string(kv, "ns_prefix")
   let ns_segments = get_int(kv, "ns_segments", default=2)
-  let internal_prefixes = get_list(kv, "internal_prefixes")
   @types.ResolverSpec::new(
     sources~,
     relative_prefixes~,
@@ -432,7 +430,6 @@ fn build_resolver_spec(
     ns_prefix~,
     ns_segments~,
     resolve_chain~,
-    internal_prefixes~,
   )
 }
 

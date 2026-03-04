@@ -164,8 +164,8 @@ fn collect_files(
     if @fs.is_dir(clean_path) {
       let entries = @fs.read_dir(clean_path)
       for entry in entries {
-        // Skip build directories and mooncakes
-        if entry == "_build" || entry == ".mooncakes" || entry == "target" {
+        // Skip hidden directories
+        if entry.has_prefix(".") {
           continue
         }
         let full_path = clean_path + "/" + entry
@@ -291,12 +291,10 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   } else {
     // Default to Mermaid with external dependency detection from KGF
     let external_prefixes = registry.get_external_prefixes()
-    let internal_prefixes = registry.get_internal_prefixes()
     @diagram.generate_dep_diagram_with_externals(
       deps,
       circulars,
       external_prefixes,
-      internal_prefixes~,
       title=config.title,
     )
   }

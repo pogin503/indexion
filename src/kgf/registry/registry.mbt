@@ -211,30 +211,6 @@ pub fn KGFRegistry::get_external_prefixes(self : KGFRegistry) -> Array[String] {
   prefixes
 }
 
-///|
-/// Get all internal prefixes from registered specs.
-/// Paths starting with these (after bare_prefix) are internal dependencies.
-pub fn KGFRegistry::get_internal_prefixes(self : KGFRegistry) -> Array[String] {
-  let prefixes : Array[String] = []
-  for entry in self.specs {
-    let spec = entry.1
-    let resolver = spec.get_resolver()
-    for prefix in resolver.get_internal_prefixes() {
-      // Check if already in list
-      let mut exists = false
-      for p in prefixes {
-        if p == prefix {
-          exists = true
-          break
-        }
-      }
-      if not(exists) {
-        prefixes.push(prefix)
-      }
-    }
-  }
-  prefixes
-}
 
 // Helper functions
 

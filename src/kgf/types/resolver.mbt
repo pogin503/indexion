@@ -222,9 +222,6 @@ pub struct ResolverSpec {
   ns_segments : Int
   /// Resolution chain for conditional/manifest-based resolution
   resolve_chain : Array[ResolveStep]
-  /// Prefixes that are considered internal (not external dependencies)
-  /// Even if they have bare_prefix, paths starting with these are internal
-  internal_prefixes : Array[String]
 }
 
 ///|
@@ -240,7 +237,6 @@ pub fn ResolverSpec::new(
   ns_prefix? : String? = None,
   ns_segments? : Int = 0,
   resolve_chain? : Array[ResolveStep] = [],
-  internal_prefixes? : Array[String] = [],
 ) -> ResolverSpec {
   {
     sources,
@@ -253,7 +249,6 @@ pub fn ResolverSpec::new(
     ns_prefix,
     ns_segments,
     resolve_chain,
-    internal_prefixes,
   }
 }
 
@@ -327,15 +322,6 @@ pub fn ResolverSpec::get_resolve_chain(
 /// Checks if the resolver has a resolve chain defined.
 pub fn ResolverSpec::has_resolve_chain(self : ResolverSpec) -> Bool {
   self.resolve_chain.length() > 0
-}
-
-///|
-/// Returns the internal prefixes.
-/// Paths starting with these prefixes are internal even with bare_prefix.
-pub fn ResolverSpec::get_internal_prefixes(
-  self : ResolverSpec,
-) -> Array[String] {
-  self.internal_prefixes
 }
 
 ///|

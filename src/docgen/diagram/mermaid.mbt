@@ -13,29 +13,24 @@ pub fn generate_dep_diagram(
 ///|
 /// Generate a module dependency diagram with external dependency detection.
 /// external_prefixes: bare_prefix values from KGF specs (e.g., ["pkg:", "npm:"])
-/// internal_prefixes: paths that are internal even with bare_prefix (e.g., ["trkbt10/indexion"])
 pub fn generate_dep_diagram_with_externals(
   deps : Array[@query.ModuleDep],
   circulars : Array[@query.CircularDep],
   external_prefixes : Array[String],
-  internal_prefixes? : Array[String] = [],
   title? : String = "Module Dependencies",
 ) -> String {
-  generate_dep_diagram_impl(
-    deps, circulars, external_prefixes, internal_prefixes, title,
-  )
+  generate_dep_diagram_impl(deps, circulars, external_prefixes, title)
 }
 
 ///|
 /// Generate a module dependency diagram with circular dependency highlighting.
 /// Circular dependencies are shown with red dashed edges.
-/// Uses empty external/internal prefixes (for backwards compatibility).
 pub fn generate_dep_diagram_with_circular(
   deps : Array[@query.ModuleDep],
   circulars : Array[@query.CircularDep],
   title? : String = "Module Dependencies",
 ) -> String {
-  generate_dep_diagram_impl(deps, circulars, [], [], title)
+  generate_dep_diagram_impl(deps, circulars, [], title)
 }
 
 ///|
@@ -44,7 +39,6 @@ fn generate_dep_diagram_impl(
   deps : Array[@query.ModuleDep],
   circulars : Array[@query.CircularDep],
   external_prefixes : Array[String],
-  internal_prefixes : Array[String],
   title : String,
 ) -> String {
   if deps.length() == 0 && circulars.length() == 0 {
@@ -58,24 +52,12 @@ fn generate_dep_diagram_impl(
   lines.push("graph LR")
   // Normalize paths and collect unique nodes
   // Use shortened name as key to deduplicate same logical modules
-  // External dependencies are collapsed to package name
   let label_to_id : Map[String, String] = {}
   let original_to_label : Map[String, String] = {}
-  let external_nodes : Map[String, Bool] = {}
   let mut id_counter = 0
   for dep in deps {
-    let from_label = normalize_module_label(
-      dep.from,
-      external_nodes,
-      external_prefixes,
-      internal_prefixes,
-    )
-    let to_label = normalize_module_label(
-      dep.to,
-      external_nodes,
-      external_prefixes,
-      internal_prefixes,
-    )
+    let from_label = normalize_module_label(dep.from, external_prefixes)
+    let to_label = normalize_module_label(dep.to, external_prefixes)
     original_to_label.set(dep.from, from_label)
     original_to_label.set(dep.to, to_label)
     if not(label_to_id.contains(from_label)) {
@@ -88,18 +70,8 @@ fn generate_dep_diagram_impl(
     }
   }
   for circ in circulars {
-    let from_label = normalize_module_label(
-      circ.from,
-      external_nodes,
-      external_prefixes,
-      internal_prefixes,
-    )
-    let to_label = normalize_module_label(
-      circ.to,
-      external_nodes,
-      external_prefixes,
-      internal_prefixes,
-    )
+    let from_label = normalize_module_label(circ.from, external_prefixes)
+    let to_label = normalize_module_label(circ.to, external_prefixes)
     original_to_label.set(circ.from, from_label)
     original_to_label.set(circ.to, to_label)
     if not(label_to_id.contains(from_label)) {
@@ -111,17 +83,12 @@ fn generate_dep_diagram_impl(
       id_counter = id_counter + 1
     }
   }
-  // Generate node definitions (external nodes get different shape)
+  // Generate node definitions
   for entry in label_to_id {
     let label = entry.0
     let id = entry.1
     let escaped = escape_mermaid(label)
-    if external_nodes.contains(label) {
-      // External dependency: use stadium shape ([label])
-      lines.push("  " + id + "([" + escaped + "])")
-    } else {
-      lines.push("  " + id + "[" + escaped + "]")
-    }
+    lines.push("  " + id + "[" + escaped + "]")
   }
   // Generate normal dependency edges (deduplicate by label)
   let seen_edges : Map[String, Bool] = {}
@@ -324,37 +291,18 @@ pub fn generate_overview_diagram(
 // Helper functions
 
 ///|
-/// Normalize module label, collapsing external dependencies.
-/// Uses external_prefixes and internal_prefixes from KGF specs.
-/// External deps like pkg:moonbitlang/core/json → "moonbitlang/core"
-/// Internal deps (matching internal_prefixes) keep their structure.
+/// Normalize module label for display.
+/// External prefixes are stripped for cleaner display.
 fn normalize_module_label(
   name : String,
-  external_nodes : Map[String, Bool],
   external_prefixes : Array[String],
-  internal_prefixes : Array[String],
 ) -> String {
   // Check if path starts with any external prefix (from KGF specs)
   for prefix in external_prefixes {
     if name.has_prefix(prefix) {
-      // Strip the bare_prefix to check internal_prefixes
+      // Strip the bare_prefix for display
       let stripped = strip_prefix(name, prefix)
-      // Check if stripped path starts with any internal prefix
-      let mut is_internal = false
-      for internal in internal_prefixes {
-        if stripped.has_prefix(internal) {
-          is_internal = true
-          break
-        }
-      }
-      if is_internal {
-        // Internal module - shorten normally
-        return shorten_module_name(stripped)
-      }
-      // External dependency - extract package name
-      let package_name = extract_package_name(stripped)
-      external_nodes.set(package_name, true)
-      return package_name
+      return shorten_module_name(stripped)
     }
   }
   // No external prefix - just shorten
@@ -374,20 +322,6 @@ fn strip_prefix(s : String, prefix : String) -> String {
     String::from_array(result)
   } else {
     s
-  }
-}
-
-///|
-/// Extract package name from path (first two segments: org/package).
-/// "moonbitlang/core/json" → "moonbitlang/core"
-fn extract_package_name(path : String) -> String {
-  let parts = split_by_char(path, '/')
-  if parts.length() >= 2 {
-    parts[0] + "/" + parts[1]
-  } else if parts.length() == 1 {
-    parts[0]
-  } else {
-    path
   }
 }
 

@@ -5,9 +5,9 @@
 ///
 /// ## Overview
 ///
-/// Extracts `///` documentation comments from MoonBit source files and
-/// outputs them in various formats. Supports flexible package discovery
-/// with include/exclude patterns.
+/// Extracts documentation comments from source files using KGF-based
+/// language detection and parsing. Supports multiple languages and
+/// template-based generation.
 ///
 /// ## Usage
 ///
@@ -19,15 +19,21 @@
 ///
 /// | Option | Description | Default |
 /// |--------|-------------|---------|
+/// | `--specs-dir=DIR` | KGF specs directory | kgfs |
 /// | `--include=PATTERN` | Include packages matching glob (repeatable) | all |
 /// | `--exclude=PATTERN` | Exclude packages matching glob (repeatable) | none |
 /// | `--recursive` | Scan directories recursively | true |
 /// | `--no-recursive` | Do not scan recursively | |
 /// | `--format=FORMAT` | Output: `markdown`, `json`, `raw` | markdown |
 /// | `--output=FILE` | Output to file | stdout |
+/// | `--template=FILE` | Use template file for generation | none |
 /// | `--per-package` | Generate README.md per package | false |
-/// | `--root` | Generate root README.md | false |
-/// | `--no-packages` | Skip individual package output | false |
+///
+/// ## Template Syntax
+///
+/// Templates support simple placeholder substitution:
+/// - `{{include:path}}` - Include file contents
+/// - `{{packages}}` - List of all discovered packages
 ///
 /// ## Examples
 ///
@@ -35,28 +41,25 @@
 /// # Extract docs from current directory
 /// indexion doc readme
 ///
-/// # Extract from specific path with JSON output
-/// indexion doc readme --format=json src/
+/// # Generate README from template
+/// indexion doc readme --template=docs/templates/readme.md --output=README.md
 ///
 /// # Filter packages
 /// indexion doc readme --include="cmd/*" --exclude="*test*"
-///
-/// # Generate per-package READMEs (legacy behavior)
-/// indexion doc readme --per-package --root
 /// ```
 
 ///|
 /// Configuration for README generation.
 pub struct ReadmeConfig {
   paths : Array[String]
+  specs_dir : String
   includes : Array[String]
   excludes : Array[String]
   recursive : Bool
   format : String
   output : String?
+  template : String?
   per_package : Bool
-  generate_root : Bool
-  skip_packages : Bool
   show_help : Bool
 }
 
@@ -64,14 +67,14 @@ pub struct ReadmeConfig {
 pub fn ReadmeConfig::default() -> ReadmeConfig {
   {
     paths: [],
+    specs_dir: "kgfs",
     includes: [],
     excludes: [],
     recursive: true,
     format: "markdown",
     output: None,
+    template: None,
     per_package: false,
-    generate_root: false,
-    skip_packages: false,
     show_help: false,
   }
 }
@@ -105,10 +108,9 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> ReadmeConfig {
       config = { ..config, recursive: false }
     } else if arg == "--per-package" {
       config = { ..config, per_package: true }
-    } else if arg == "--root" {
-      config = { ..config, generate_root: true }
-    } else if arg == "--no-packages" {
-      config = { ..config, skip_packages: true }
+    } else if arg.has_prefix("--specs-dir=") {
+      let value = get_arg_value(arg, 12)
+      config = { ..config, specs_dir: value }
     } else if arg.has_prefix("--include=") {
       let value = get_arg_value(arg, 10)
       includes.push(value)
@@ -122,6 +124,9 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> ReadmeConfig {
       let prefix_len = if arg.has_prefix("--output=") { 9 } else { 3 }
       let value = get_arg_value(arg, prefix_len)
       config = { ..config, output: Some(value) }
+    } else if arg.has_prefix("--template=") {
+      let value = get_arg_value(arg, 11)
+      config = { ..config, template: Some(value) }
     } else if not(arg.has_prefix("-")) {
       paths.push(arg)
     }
@@ -141,6 +146,7 @@ pub fn show_help() -> Unit {
   println("  indexion doc readme [options] [paths...]")
   println("")
   println("Options:")
+  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
   println("  --include=PATTERN    Include packages matching glob (repeatable)")
   println("  --exclude=PATTERN    Exclude packages matching glob (repeatable)")
   println("  --recursive          Scan directories recursively (default)")
@@ -150,12 +156,13 @@ pub fn show_help() -> Unit {
   )
   println("  --output=FILE        Write output to file (default: stdout)")
   println("  -o=FILE              Short form of --output")
+  println("  --template=FILE      Use template file for generation")
   println("  --per-package        Generate README.md in each package directory")
-  println("  --root               Generate root README.md")
-  println(
-    "  --no-packages        Skip individual package output (use with --root)",
-  )
   println("  --help               Show this help message")
+  println("")
+  println("Template Syntax:")
+  println("  {{include:path}}     Include file contents")
+  println("  {{packages}}         List of all discovered packages")
   println("")
   println("Examples:")
   println(
@@ -166,13 +173,8 @@ pub fn show_help() -> Unit {
   )
   println("  indexion doc readme --include=\"cmd/*\" --exclude=\"*test*\"")
   println(
-    "  indexion doc readme --per-package --root             # Legacy behavior",
+    "  indexion doc readme --template=docs/templates/readme.md --output=README.md",
   )
-  println("")
-  println("Patterns:")
-  println("  *           Match any characters")
-  println("  cmd/*       Match packages starting with cmd/")
-  println("  *test*      Match packages containing 'test'")
 }
 
 ///|
@@ -182,8 +184,16 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     show_help()
     return
   }
-  // Discover packages
+  // Load KGF registry
+  let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
+  if registry.spec_count() == 0 {
+    println("Warning: No KGF specs found in " + config.specs_dir)
+  }
+  // Load specs map for docgen
+  let specs = load_specs(config.specs_dir)
+  // Discover packages using KGF registry
   let packages = discover_packages(
+    registry,
     config.paths,
     config.includes,
     config.excludes,
@@ -196,12 +206,8 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   // Extract documentation from each package
   let docs : Array[(PackageInfo, ExtractedDoc)] = []
   for pkg in packages {
-    match pkg.main_file {
-      Some(file) =>
-        match extract_doc_from_file(file) {
-          Some(doc) => docs.push((pkg, doc))
-          None => ()
-        }
+    match extract_package_doc(pkg, specs) {
+      Some(doc) => docs.push((pkg, doc))
       None => ()
     }
   }
@@ -209,28 +215,66 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("No documentation found.")
     return
   }
-  // Handle per-package output (legacy behavior)
+  // Handle per-package output
   if config.per_package {
     println("Generating package READMEs...")
     write_per_package(docs)
     println("")
   }
-  // Handle root README generation
-  if config.generate_root {
-    println("Generating root README...")
-    let base_dir = if config.paths.length() > 0 { config.paths[0] } else { "." }
-    let _ = generate_root_readme(docs, base_dir)
-    println("")
-  }
-  // If not per-package and not root-only, output combined docs
-  if not(config.per_package) && not(config.skip_packages) {
-    let format = OutputFormat::from_string(config.format)
-    let content = match format {
-      Markdown => render_markdown(docs)
-      Json => render_json(docs)
-      Raw => render_raw(docs)
+  // Handle template-based generation
+  match config.template {
+    Some(template_path) => {
+      let base_dir = if config.paths.length() > 0 {
+        config.paths[0]
+      } else {
+        "."
+      }
+      let ctx = TemplateContext::new(base_dir, docs)
+      match render_template_file(template_path, ctx) {
+        Some(content) =>
+          write_output(content, config.output, config.output is None)
+        None =>
+          println("Error: Could not read template file: " + template_path)
+      }
     }
-    let to_stdout = config.output is None && not(config.generate_root)
-    write_output(content, config.output, to_stdout)
+    None =>
+      // If not using template and not per-package, output combined docs
+      if not(config.per_package) {
+        let format = OutputFormat::from_string(config.format)
+        let content = match format {
+          Markdown => render_markdown(docs)
+          Json => render_json(docs)
+          Raw => render_raw(docs)
+        }
+        write_output(content, config.output, config.output is None)
+      }
   }
+}
+
+///|
+/// Load KGF specs into a map.
+fn load_specs(specs_dir : String) -> Map[String, @kgf_types.KGFSpec] {
+  let specs : Map[String, @kgf_types.KGFSpec] = {}
+  try {
+    if not(@fs.is_dir(specs_dir)) {
+      return specs
+    }
+    let entries = @fs.read_dir(specs_dir)
+    for entry in entries {
+      if entry.has_suffix(".kgf") {
+        let path = specs_dir + "/" + entry
+        let content = @fs.read_file_to_string(path)
+        match @parser.parse_kgf(content) {
+          Some(spec) => {
+            let lang = spec.get_language()
+            specs.set(lang, spec)
+          }
+          None => ()
+        }
+      }
+    }
+  } catch {
+    _ => ()
+  }
+  specs
 }
