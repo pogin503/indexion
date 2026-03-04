@@ -1,5 +1,5 @@
 
-kgf 0.5
+kgf 0.6
 language: javascript
 
 === lex
@@ -101,7 +101,9 @@ on ImportDefault {
 === resolver
 sources: .js, .mjs, .cjs
 relative_prefixes: ./, ../, /
-exts: .js, .mjs, .cjs
-indexes: /index.js
-bare_prefix: npm:
 module_path_style: slash
+resolve:
+  - manifest: package.json @ main | module
+  - index: /index.js, /index.mjs
+  - ext: .js, .mjs, .cjs
+  - fallback: npm:

@@ -1,4 +1,4 @@
-kgf 0.5
+kgf 0.6
 language: css
 
 === lex
@@ -53,7 +53,8 @@ on ImportRule {
 === resolver
 sources: .css
 relative_prefixes: ./, ../, /
-exts: .css
-indexes: /index.css
-bare_prefix: url:
 module_path_style: slash
+resolve:
+  - index: /index.css
+  - ext: .css
+  - fallback: url:
