@@ -328,6 +328,7 @@ fn build_resolver_spec(
   let ns_segments = get_int(kv, "ns_segments", default=2)
   let rust_mod_mode = get_bool(kv, "rust_mod_mode")
   let cargo_auto_from_roots = get_list(kv, "cargo_auto_from_roots")
+  let internal_prefixes = get_list(kv, "internal_prefixes")
   @types.ResolverSpec::new(
     sources~,
     relative_prefixes~,
@@ -341,6 +342,7 @@ fn build_resolver_spec(
     rust_mod_mode~,
     cargo_auto_from_roots~,
     resolve_chain~,
+    internal_prefixes~,
   )
 }
 

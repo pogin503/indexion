@@ -96,7 +96,8 @@ fn eval_call(
       } else {
         ""
       }
-      let resolved = @resolver.resolve_module_with_fn(
+      let result = @resolver.resolve_module_cached(
+        ctx.resolution_cache,
         ctx.spec.get_resolver(),
         ctx.language,
         ctx.file,
@@ -104,7 +105,7 @@ fn eval_call(
         ctx.root,
         ctx.file_exists,
       )
-      resolved.to_json()
+      result.to_string().to_json()
     }
     "scope" => {
       let ns = if evaluated_args.length() > 0 {

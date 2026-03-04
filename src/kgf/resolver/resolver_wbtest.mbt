@@ -1968,3 +1968,132 @@ test "clojure: clojars package fallback" {
   )
   assert_eq(result, "clojars:ring.adapter.jetty")
 }
+
+// --- ResolutionCache tests ---
+
+///|
+test "resolution_cache: basic memoization" {
+  let cache = @types.ResolutionCache::new()
+  let spec = @types.ResolverSpec::new(
+    relative_prefixes=["./", "../"],
+    exts=[".ts", ".js"],
+    indexes=["/index.ts", "/index.js"],
+    bare_prefix="npm:",
+  )
+  let mut file_check_count = 0
+  let file_exists_fn = fn(path : String) -> Bool {
+    file_check_count += 1
+    path == "/project/src/utils.ts"
+  }
+  // First resolution - should trigger file check
+  let result1 = resolve_module_cached(
+    cache, spec, "typescript", "/project/src/index.ts", "./utils", "/project", file_exists_fn,
+  )
+  match result1 {
+    Resolved(path) => assert_eq(path, "src/utils.ts")
+    Circular(_) => panic()
+  }
+  let first_check_count = file_check_count
+  // Second resolution of the same module - should use cache
+  let result2 = resolve_module_cached(
+    cache, spec, "typescript", "/project/src/index.ts", "./utils", "/project", file_exists_fn,
+  )
+  match result2 {
+    Resolved(path) => assert_eq(path, "src/utils.ts")
+    Circular(_) => panic()
+  }
+  // No additional file checks for cached result
+  assert_eq(file_check_count, first_check_count)
+  // Check stats
+  let stats = cache.get_stats()
+  assert_eq(stats.cache_hits, 1)
+  assert_eq(stats.cache_misses, 1)
+}
+
+///|
+test "resolution_cache: file_exists caching" {
+  let cache = @types.ResolutionCache::new()
+  let mut check_count = 0
+  let file_exists_fn = fn(path : String) -> Bool {
+    check_count += 1
+    path == "/project/src/utils.ts"
+  }
+  // First check
+  let exists1 = cache.check_file_exists("/project/src/utils.ts", file_exists_fn)
+  assert_true(exists1)
+  assert_eq(check_count, 1)
+  // Second check - should be cached
+  let exists2 = cache.check_file_exists("/project/src/utils.ts", file_exists_fn)
+  assert_true(exists2)
+  assert_eq(check_count, 1) // No additional call
+  // Different path - should trigger new check
+  let exists3 = cache.check_file_exists("/project/src/other.ts", file_exists_fn)
+  assert_false(exists3)
+  assert_eq(check_count, 2)
+}
+
+///|
+test "resolution_cache: circular detection" {
+  let cache = @types.ResolutionCache::new()
+  let key = @types.ResolutionCache::make_key("/src/a.ts", "./b")
+  // Simulate starting resolution of A
+  cache.push_resolving(key)
+  // Check if it's resolving
+  assert_true(cache.is_resolving(key))
+  // Pop after resolution
+  cache.pop_resolving()
+  assert_false(cache.is_resolving(key))
+}
+
+///|
+test "resolution_cache: circular sentinel format" {
+  // Test sentinel prefix
+  let sentinel = @types.circular_sentinel_prefix + "/src/a.ts::./b"
+  assert_true(is_circular_sentinel(sentinel))
+  assert_false(is_circular_sentinel("src/b.ts"))
+  // Test parsing
+  match parse_circular_sentinel(sentinel) {
+    Some((from_file, module_path)) => {
+      assert_eq(from_file, "/src/a.ts")
+      assert_eq(module_path, "./b")
+    }
+    None => panic()
+  }
+  // Non-sentinel should return None
+  assert_true(parse_circular_sentinel("src/b.ts") is None)
+}
+
+///|
+test "resolution_result: to_string conversion" {
+  let resolved = ResolutionResult::Resolved("src/utils.ts")
+  assert_eq(resolved.to_string(), "src/utils.ts")
+  let circular = ResolutionResult::Circular("/src/a.ts", "./b")
+  let circular_str = circular.to_string()
+  assert_true(circular_str.has_prefix(@types.circular_sentinel_prefix))
+  assert_true(is_circular_sentinel(circular_str))
+}
+
+///|
+test "resolution_cache: stats tracking" {
+  let cache = @types.ResolutionCache::new()
+  let stats = cache.get_stats()
+  assert_eq(stats.cache_hits, 0)
+  assert_eq(stats.cache_misses, 0)
+  assert_eq(stats.file_checks, 0)
+  assert_eq(stats.circular_detected, 0)
+  // Record operations
+  cache.record_hit()
+  cache.record_miss()
+  cache.record_file_check()
+  cache.record_circular("/a.ts", "./b")
+  let updated_stats = cache.get_stats()
+  assert_eq(updated_stats.cache_hits, 1)
+  assert_eq(updated_stats.cache_misses, 1)
+  assert_eq(updated_stats.file_checks, 1)
+  assert_eq(updated_stats.circular_detected, 1)
+  // Check circular refs recorded
+  let circulars = cache.get_circular_refs()
+  assert_eq(circulars.length(), 1)
+  assert_eq(circulars[0].0, "/a.ts")
+  assert_eq(circulars[0].1, "./b")
+}

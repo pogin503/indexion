@@ -434,6 +434,59 @@ test "registry: parse sql examples" {
 }
 
 ///|
+test "registry: is_file_supported with moon.pkg" {
+  let dir = get_kgfs_dir()
+  let registry = KGFRegistry::load_from_dir(dir)
+
+  // moon.pkg should be supported (from moonpkg.kgf)
+  assert_true(registry.is_file_supported("src/core/moon.pkg"))
+  assert_true(registry.is_file_supported("moon.pkg"))
+  assert_true(registry.is_file_supported("/Users/test/project/moon.pkg"))
+
+  // Non-matching paths
+  assert_false(registry.is_file_supported("moon.pkg.bak"))
+  assert_false(registry.is_file_supported("notmoon.pkg"))
+}
+
+///|
+test "registry: is_file_supported with extensions" {
+  let dir = get_kgfs_dir()
+  let registry = KGFRegistry::load_from_dir(dir)
+
+  // TypeScript files
+  assert_true(registry.is_file_supported("src/main.ts"))
+  assert_true(registry.is_file_supported("component.tsx"))
+  assert_true(registry.is_file_supported("/path/to/file.ts"))
+
+  // MoonBit files
+  assert_true(registry.is_file_supported("src/core/types.mbt"))
+
+  // Python files
+  assert_true(registry.is_file_supported("main.py"))
+
+  // Go files
+  assert_true(registry.is_file_supported("main.go"))
+
+  // Rust files
+  assert_true(registry.is_file_supported("lib.rs"))
+
+  // Unsupported files
+  assert_false(registry.is_file_supported("file.xyz"))
+  assert_false(registry.is_file_supported("README"))
+}
+
+///|
+test "registry: is_file_supported mixed" {
+  let dir = get_kgfs_dir()
+  let registry = KGFRegistry::load_from_dir(dir)
+
+  // Should correctly distinguish between extension and filename patterns
+  assert_true(registry.is_file_supported("src/kgf/moon.pkg"))
+  assert_true(registry.is_file_supported("src/kgf/types.mbt"))
+  assert_false(registry.is_file_supported("src/kgf/README"))
+}
+
+///|
 test "registry: all kgfs are version 0.6" {
   let dir = get_kgfs_dir()
   let is_dir = @fs.is_dir(dir) catch { _ => false }

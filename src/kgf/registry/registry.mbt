@@ -127,11 +127,51 @@ pub fn KGFRegistry::supports_ext(self : KGFRegistry, ext : String) -> Bool {
 }
 
 ///|
-/// Detect language from file path using extension.
+/// Check if a file path is supported by any registered spec.
+/// Handles both extension-based matching (e.g., ".ts") and filename-based matching (e.g., "moon.pkg").
+pub fn KGFRegistry::is_file_supported(
+  self : KGFRegistry,
+  path : String,
+) -> Bool {
+  for entry in self.ext_to_lang {
+    let pattern = entry.0
+    // Extension-based: pattern starts with "." (e.g., ".ts", ".tsx")
+    if pattern.has_prefix(".") {
+      if path.has_suffix(pattern) {
+        return true
+      }
+      // Filename-based: pattern is a filename (e.g., "moon.pkg")
+      // Match if path ends with /pattern or path equals pattern
+    } else if path == pattern ||
+      path.has_suffix("/" + pattern) ||
+      path.has_suffix("\\" + pattern) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// Detect language from file path.
+/// Handles both extension-based patterns (e.g., ".ts") and filename-based patterns (e.g., "moon.pkg").
 pub fn KGFRegistry::detect_from_path(
   self : KGFRegistry,
   path : String,
 ) -> String? {
+  // First try filename-based patterns
+  for entry in self.ext_to_lang {
+    let pattern = entry.0
+    let lang = entry.1
+    if not(pattern.has_prefix(".")) {
+      // Filename pattern (e.g., "moon.pkg")
+      if path == pattern ||
+        path.has_suffix("/" + pattern) ||
+        path.has_suffix("\\" + pattern) {
+        return Some(lang)
+      }
+    }
+  }
+  // Then try extension-based patterns
   let ext = extract_extension(path)
   if ext.length() == 0 {
     return None
@@ -143,6 +183,57 @@ pub fn KGFRegistry::detect_from_path(
 /// Get total number of registered specs.
 pub fn KGFRegistry::spec_count(self : KGFRegistry) -> Int {
   self.specs.length()
+}
+
+///|
+/// Get all external prefixes (bare_prefix values) from registered specs.
+/// These prefixes indicate external dependencies (e.g., "pkg:", "npm:", "pip:").
+pub fn KGFRegistry::get_external_prefixes(self : KGFRegistry) -> Array[String] {
+  let prefixes : Array[String] = []
+  for entry in self.specs {
+    let spec = entry.1
+    let resolver = spec.get_resolver()
+    let prefix = resolver.get_bare_prefix()
+    if prefix.length() > 0 {
+      // Check if already in list
+      let mut exists = false
+      for p in prefixes {
+        if p == prefix {
+          exists = true
+          break
+        }
+      }
+      if not(exists) {
+        prefixes.push(prefix)
+      }
+    }
+  }
+  prefixes
+}
+
+///|
+/// Get all internal prefixes from registered specs.
+/// Paths starting with these (after bare_prefix) are internal dependencies.
+pub fn KGFRegistry::get_internal_prefixes(self : KGFRegistry) -> Array[String] {
+  let prefixes : Array[String] = []
+  for entry in self.specs {
+    let spec = entry.1
+    let resolver = spec.get_resolver()
+    for prefix in resolver.get_internal_prefixes() {
+      // Check if already in list
+      let mut exists = false
+      for p in prefixes {
+        if p == prefix {
+          exists = true
+          break
+        }
+      }
+      if not(exists) {
+        prefixes.push(prefix)
+      }
+    }
+  }
+  prefixes
 }
 
 // Helper functions

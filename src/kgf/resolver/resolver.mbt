@@ -581,3 +581,93 @@ pub fn resolve_module_with_fns(
   let resolver = FnFileResolver::{ check: file_exists_fn, read: read_file_fn }
   resolve_module(spec, language, from_file, module_path, project_root, resolver)
 }
+
+///|
+/// Resolution result indicating success or circular dependency.
+pub enum ResolutionResult {
+  /// Successfully resolved to a path
+  Resolved(String)
+  /// Circular dependency detected
+  Circular(String, String) // (from_file, module_path)
+}
+
+///|
+/// Resolves a module specifier with caching and circular dependency detection.
+/// Returns a ResolutionResult indicating success or circular detection.
+pub fn resolve_module_cached(
+  cache : @types.ResolutionCache,
+  spec : @types.ResolverSpec,
+  language : String,
+  from_file : String,
+  module_path : String,
+  project_root : String,
+  file_exists_fn : (String) -> Bool,
+) -> ResolutionResult {
+  let key = @types.ResolutionCache::make_key(from_file, module_path)
+  // Check cache first
+  match cache.get(key) {
+    Some(resolved) => {
+      cache.record_hit()
+      return Resolved(resolved)
+    }
+    None => ()
+  }
+  // Check for circular dependency
+  if cache.is_resolving(key) {
+    cache.record_circular(from_file, module_path)
+    return Circular(from_file, module_path)
+  }
+  cache.record_miss()
+  // Push onto resolution stack
+  cache.push_resolving(key)
+  // Create a cached file_exists function
+  let cached_file_exists = fn(path : String) -> Bool {
+    cache.check_file_exists(path, file_exists_fn)
+  }
+  // Perform resolution
+  let resolved = resolve_module_with_fn(
+    spec, language, from_file, module_path, project_root, cached_file_exists,
+  )
+  // Pop from resolution stack
+  cache.pop_resolving()
+  // Cache the result
+  cache.set(key, resolved)
+  Resolved(resolved)
+}
+
+///|
+/// Converts a ResolutionResult to a string for JSON serialization.
+/// Returns the resolved path, or a sentinel value for circular dependencies.
+pub fn ResolutionResult::to_string(self : ResolutionResult) -> String {
+  match self {
+    Resolved(path) => path
+    Circular(from_file, module_path) =>
+      @types.circular_sentinel_prefix + from_file + "::" + module_path
+  }
+}
+
+///|
+/// Checks if a resolved path is a circular dependency sentinel.
+pub fn is_circular_sentinel(path : String) -> Bool {
+  path.has_prefix(@types.circular_sentinel_prefix)
+}
+
+///|
+/// Parses a circular sentinel to extract (from_file, module_path).
+/// Returns None if not a valid sentinel.
+pub fn parse_circular_sentinel(path : String) -> (String, String)? {
+  if not(is_circular_sentinel(path)) {
+    return None
+  }
+  let rest = substr_from_resolver(
+    path,
+    @types.circular_sentinel_prefix.length(),
+  )
+  let sep_idx = find_substring(rest, "::")
+  if sep_idx < 0 {
+    return None
+  }
+  let from_file = substr_resolver(rest, 0, sep_idx)
+  let module_path = substr_from_resolver(rest, sep_idx + 2)
+  Some((from_file, module_path))
+}

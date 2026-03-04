@@ -86,6 +86,8 @@ pub struct SemEvalCtx {
   call_stack : Array[String]
   events : Array[(String, Map[String, Json])]
   file_exists : (String) -> Bool
+  /// Cache for module resolution with circular detection
+  resolution_cache : @types.ResolutionCache
 }
 
 ///|
@@ -110,7 +112,43 @@ pub fn SemEvalCtx::new(
     call_stack: [],
     events: [],
     file_exists,
+    resolution_cache: @types.ResolutionCache::new(),
   }
+}
+
+///|
+/// Creates a new SemEvalCtx with a shared resolution cache.
+pub fn SemEvalCtx::new_with_cache(
+  spec : @types.KGFSpec,
+  graph : @graph.CodeGraph,
+  file : String,
+  root : String,
+  language : String,
+  file_exists : (String) -> Bool,
+  resolution_cache : @types.ResolutionCache,
+) -> SemEvalCtx {
+  {
+    spec,
+    graph,
+    file,
+    root,
+    language,
+    scopes: [ScopeEntry::new()],
+    sym_seq: Ref::new(0),
+    call_seq: Ref::new(0),
+    call_stack: [],
+    events: [],
+    file_exists,
+    resolution_cache,
+  }
+}
+
+///|
+/// Gets the resolution cache.
+pub fn SemEvalCtx::get_resolution_cache(
+  self : SemEvalCtx,
+) -> @types.ResolutionCache {
+  self.resolution_cache
 }
 
 ///|

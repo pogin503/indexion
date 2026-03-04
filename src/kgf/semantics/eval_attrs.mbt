@@ -284,10 +284,12 @@ fn eval_attr_scope(
 ///|
 /// Resolves an import path to a module ID.
 fn resolve_import_path(ctx : SemEvalCtx, path : String) -> String {
-  // Use resolver if available
+  // Use resolver if available (check both exts and resolve_chain)
   let resolver_spec = ctx.spec.get_resolver()
-  if resolver_spec.get_exts().length() > 0 {
-    @resolver.resolve_module_with_fn(
+  if resolver_spec.get_exts().length() > 0 || resolver_spec.has_resolve_chain() {
+    // Use cached resolver for consistency with $resolve()
+    let result = @resolver.resolve_module_cached(
+      ctx.resolution_cache,
       resolver_spec,
       ctx.language,
       ctx.file,
@@ -295,6 +297,7 @@ fn resolve_import_path(ctx : SemEvalCtx, path : String) -> String {
       ctx.root,
       ctx.file_exists,
     )
+    result.to_string()
   } else {
     // No resolver, return path with bare prefix if needed
     let bare_prefix = resolver_spec.get_bare_prefix()
