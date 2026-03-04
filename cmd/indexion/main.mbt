@@ -27,6 +27,7 @@
 /// | `plan refactor` | Generate refactoring plan from similarity |
 /// | `doc gen` | Generate documentation from source |
 /// | `sim` | Calculate text similarity/distance |
+/// | `perf kgf` | Run KGF parser performance benchmarks |
 ///
 /// ## Quick Start
 ///
@@ -59,6 +60,7 @@ fn main {
     "plan" => @plan_cli.run(args, 2)
     "doc" => @doc_cli.run(args, 2)
     "sim" | "similarity" => @similarity_cli.run(args, 2)
+    "perf" => @perf_cli.run(args, 2)
     "version" | "-v" | "--version" => show_version()
     "help" | "-h" | "--help" => show_help()
     _ => {
@@ -82,6 +84,7 @@ fn show_help() -> Unit {
   println("  plan        Generate planning documents (refactor, etc.)")
   println("  doc         Documentation commands (gen, etc.)")
   println("  sim         Calculate text similarity/distance")
+  println("  perf        Performance benchmark commands")
   println("  help        Show this help message")
   println("  version     Show version information")
   println("")
@@ -92,6 +95,7 @@ fn show_help() -> Unit {
   println("  indexion plan refactor --threshold=0.7 src/")
   println("  indexion doc gen --format=markdown src/")
   println("  indexion sim \"hello world\" \"hello there\"")
+  println("  indexion perf kgf --iterations=30")
 }
 
 ///|

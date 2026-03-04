@@ -20,7 +20,20 @@ pub fn build(config : DocConfig) -> @render.DocOutput {
 pub fn build_with_graph(
   config : DocConfig,
 ) -> (@render.DocOutput, @graph.CodeGraph) {
-  let graphs = analyze_files(config.files, config.specs)
+  build_with_graph_progress(config, None)
+}
+
+///|
+/// Build documentation with progress callback.
+pub fn build_with_graph_progress(
+  config : DocConfig,
+  on_progress : ProgressCallback?,
+) -> (@render.DocOutput, @graph.CodeGraph) {
+  let graphs = analyze_files_with_progress(
+    config.files,
+    config.specs,
+    on_progress,
+  )
   let merged = merge_graphs(graphs)
   let output = match config.options.format {
     @render.Markdown => @render.render_markdown(merged, config.options)
@@ -42,10 +55,32 @@ fn build_registry(
 }
 
 ///|
+/// Progress callback type for file analysis.
+pub struct ProgressCallback(((Int, Int, String)) -> Unit)
+
+///|
+/// Create a progress callback.
+pub fn ProgressCallback::new(
+  callback : ((Int, Int, String)) -> Unit,
+) -> ProgressCallback {
+  ProgressCallback(callback)
+}
+
+///|
 /// Analyze files with their corresponding KGF specs.
 fn analyze_files(
   files : Array[(String, String)],
   specs : Map[String, @kgf_types.KGFSpec],
+) -> Array[@graph.CodeGraph] {
+  analyze_files_with_progress(files, specs, None)
+}
+
+///|
+/// Analyze files with progress callback.
+pub fn analyze_files_with_progress(
+  files : Array[(String, String)],
+  specs : Map[String, @kgf_types.KGFSpec],
+  on_progress : ProgressCallback?,
 ) -> Array[@graph.CodeGraph] {
   // Build registry for language/spec detection
   let registry = build_registry(specs)
@@ -58,17 +93,34 @@ fn analyze_files(
   let file_exists = fn(path : String) -> Bool { known_paths.contains(path) }
   // Use empty root - paths are already relative to working directory
   let root = ""
+  let active_rules_cache : Map[String, @hashset.HashSet[String]] = Map::new()
   let graphs : Array[@graph.CodeGraph] = []
-  for entry in files {
+  let total = files.length()
+  for i, entry in files {
     let path = entry.0
     let content = entry.1
+    // Report progress
+    match on_progress {
+      Some(ProgressCallback(callback)) => callback((i + 1, total, path))
+      None => ()
+    }
     // Detect language and get spec name using registry
     let file_info = @analyze.analyze_file_with_registry(registry, path, content)
     let spec_name = file_info.get_spec_name()
     // Try to get the spec
     match specs.get(spec_name) {
       Some(spec) => {
-        let graph = analyze_with_spec(path, content, spec, root, file_exists)
+        let active_rules = match active_rules_cache.get(spec_name) {
+          Some(cached) => cached
+          None => {
+            let built = @kgf_peg.collect_active_rules(spec)
+            active_rules_cache.set(spec_name, built)
+            built
+          }
+        }
+        let graph = analyze_with_spec(
+          path, content, spec, active_rules, root, file_exists,
+        )
         graphs.push(graph)
       }
       None => {
@@ -163,6 +215,7 @@ fn analyze_with_spec(
   path : String,
   content : String,
   spec : @kgf_types.KGFSpec,
+  active_rules : @hashset.HashSet[String],
   root : String,
   file_exists : (String) -> Bool,
 ) -> @graph.CodeGraph {
@@ -177,7 +230,9 @@ fn analyze_with_spec(
   // Get start rule
   let start_rule = spec.get_start_rule()
   // Run parse
-  let parse_result = @kgf_peg.run_parse(peg, spec, start_rule, tokens)
+  let parse_result = @kgf_peg.run_parse_filtered(
+    peg, spec, start_rule, tokens, active_rules,
+  )
   // Evaluate semantics for all matched rules (via events)
   match parse_result {
     Some(eval_result) => {

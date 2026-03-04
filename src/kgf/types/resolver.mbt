@@ -352,6 +352,8 @@ pub struct ResolutionCache {
   file_exists_cache : Map[String, Bool]
   /// Stack of modules currently being resolved (for circular detection)
   resolution_stack : Array[String]
+  /// Set of modules currently being resolved (O(1) circular detection)
+  resolving_set : Map[String, Bool]
   /// Detected circular references: (from_file, module_path)
   circular_refs : Array[(String, String)]
   /// Statistics
@@ -365,6 +367,7 @@ pub fn ResolutionCache::new() -> ResolutionCache {
     resolved_paths: {},
     file_exists_cache: {},
     resolution_stack: [],
+    resolving_set: {},
     circular_refs: [],
     stats: ResolutionStats::new(),
   }
@@ -401,7 +404,7 @@ pub fn ResolutionCache::is_resolving(
   self : ResolutionCache,
   key : String,
 ) -> Bool {
-  self.resolution_stack.contains(key)
+  self.resolving_set.contains(key)
 }
 
 ///|
@@ -411,13 +414,15 @@ pub fn ResolutionCache::push_resolving(
   key : String,
 ) -> Unit {
   self.resolution_stack.push(key)
+  self.resolving_set.set(key, true)
 }
 
 ///|
 /// Pops a module from the resolution stack.
 pub fn ResolutionCache::pop_resolving(self : ResolutionCache) -> Unit {
   if self.resolution_stack.length() > 0 {
-    let _ = self.resolution_stack.pop()
+    let key = self.resolution_stack.pop().unwrap()
+    self.resolving_set.remove(key)
   }
 }
 

@@ -1,14 +1,27 @@
 ///|
 /// Lexer transforms input text into tokens based on token definitions.
 pub struct Lexer {
-  tokens : Array[@types.TokenDef]
+  tokens : Array[CompiledToken]
+}
+
+///|
+/// Compiled token matcher used by the lexer hot path.
+struct CompiledToken {
+  token_def : @types.TokenDef
+  compiled_pattern : CompiledPattern?
 }
 
 ///|
 /// Creates a new Lexer with the given token definitions.
 /// Token definitions are tried in order, so more specific patterns should come first.
 pub fn Lexer::new(tokens : Array[@types.TokenDef]) -> Lexer {
-  { tokens, }
+  let compiled_tokens : Array[CompiledToken] = []
+  for token_def in tokens {
+    let case_insensitive = has_case_insensitive_flag(token_def.flags)
+    let compiled_pattern = compile_pattern(token_def.pattern, case_insensitive~)
+    compiled_tokens.push({ token_def, compiled_pattern })
+  }
+  { tokens: compiled_tokens }
 }
 
 ///|
@@ -43,22 +56,27 @@ fn Lexer::try_match(
   input : String,
   pos : Int,
 ) -> (@types.TokenDef, Int, String)? {
-  for token_def in self.tokens {
-    let case_insensitive = match token_def.flags {
-      Some(flags) => flags.contains("i")
-      None => false
+  for entry in self.tokens {
+    let token_def = entry.token_def
+    let match_result = match entry.compiled_pattern {
+      Some(compiled) => match_compiled(compiled, input, pos)
+      // If compile failed at lexer construction time, this token can never match.
+      None => continue
     }
-    let match_result = match_pattern(
-      token_def.pattern,
-      input,
-      pos,
-      case_insensitive~,
-    )
     if match_result.matched && match_result.text.length() > 0 {
       return Some((token_def, match_result.end_pos, match_result.text))
     }
   }
   None
+}
+
+///|
+/// Returns true when regex flags include case-insensitive matching.
+fn has_case_insensitive_flag(flags : String?) -> Bool {
+  match flags {
+    Some(value) => value.contains("i")
+    None => false
+  }
 }
 
 ///|

@@ -89,6 +89,13 @@ priv struct QuantifiedElement {
 }
 
 ///|
+/// CompiledPattern stores parsed regex elements for repeated matching.
+priv struct CompiledPattern {
+  alternatives : Array[Array[QuantifiedElement]]
+  case_insensitive : Bool
+}
+
+///|
 /// Gets a character from a string at the given index safely.
 fn get_char_at(s : String, index : Int) -> Char? {
   if index >= 0 && index < s.length() {
@@ -1003,6 +1010,52 @@ fn match_alternation(
 }
 
 ///|
+/// Compiles a pattern once for repeated matching.
+fn compile_pattern(
+  pattern : String,
+  case_insensitive? : Bool = false,
+) -> CompiledPattern? {
+  let alternatives = split_by_alternation(pattern)
+  let compiled_alts : Array[Array[QuantifiedElement]] = []
+  for alt in alternatives {
+    match parse_pattern(alt) {
+      Some(elements) => compiled_alts.push(elements)
+      None => return None
+    }
+  }
+  Some({ alternatives: compiled_alts, case_insensitive })
+}
+
+///|
+/// Matches a compiled pattern against the input at the given position.
+fn match_compiled(
+  compiled : CompiledPattern,
+  input : String,
+  pos : Int,
+) -> MatchResult {
+  for elements in compiled.alternatives {
+    let mut current = pos
+    let mut matched = true
+    for qe in elements {
+      match match_quantified(qe, input, current, compiled.case_insensitive) {
+        Some(new_pos) => current = new_pos
+        None => {
+          matched = false
+          break
+        }
+      }
+    }
+    if matched {
+      return MatchResult::success(
+        current,
+        input.substring(start=pos, end=current),
+      )
+    }
+  }
+  MatchResult::failure()
+}
+
+///|
 /// Matches a pattern against the input starting at the given position.
 /// Returns the match result with the end position and matched text.
 pub fn match_pattern(
@@ -1011,29 +1064,9 @@ pub fn match_pattern(
   pos : Int,
   case_insensitive? : Bool = false,
 ) -> MatchResult {
-  // Handle top-level alternation only if there are actual top-level alternations
-  let alternatives = split_by_alternation(pattern)
-  if alternatives.length() > 1 {
-    for alt in alternatives {
-      let result = match_pattern(alt, input, pos, case_insensitive~)
-      if result.matched {
-        return result
-      }
-    }
-    return MatchResult::failure()
-  }
-  match parse_pattern(pattern) {
+  match compile_pattern(pattern, case_insensitive~) {
+    Some(compiled) => match_compiled(compiled, input, pos)
     None => MatchResult::failure()
-    Some(elements) => {
-      let mut current = pos
-      for qe in elements {
-        match match_quantified(qe, input, current, case_insensitive) {
-          Some(new_pos) => current = new_pos
-          None => return MatchResult::failure()
-        }
-      }
-      MatchResult::success(current, input.substring(start=pos, end=current))
-    }
   }
 }
 

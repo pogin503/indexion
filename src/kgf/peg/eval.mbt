@@ -58,7 +58,7 @@ pub fn EvalResult::get_label(self : EvalResult, name : String) -> Json? {
 ///|
 /// Memo key for memoization.
 struct MemoKey {
-  node_str : String
+  node_id : Int
   pos : Int
 } derive(Eq, Hash, Show)
 
@@ -69,102 +69,109 @@ struct EvalContext {
   tokens : Array[@types.Tok]
   memo : Map[MemoKey, EvalResult]
   all_events : Array[(String, Map[String, Json])]
+  emit_filter : @hashset.HashSet[String]?
 }
 
 ///|
 /// Creates a new evaluation context.
-pub fn EvalContext::new(peg : PEG, tokens : Array[@types.Tok]) -> EvalContext {
-  { peg, tokens, memo: Map::new(), all_events: [] }
+pub fn EvalContext::new(
+  peg : PEG,
+  tokens : Array[@types.Tok],
+  emit_filter? : @hashset.HashSet[String]? = None,
+) -> EvalContext {
+  { peg, tokens, memo: Map::new(), all_events: [], emit_filter }
 }
 
 ///|
-/// Converts a node to a string for memoization key.
-fn node_to_string(node : Node) -> String {
-  node.to_string()
+/// Creates a memo key from a node id and position.
+fn make_memo_key(node_id : Int, pos : Int) -> MemoKey {
+  { node_id, pos }
 }
 
 ///|
-/// Creates a memo key from a node and position.
-fn make_memo_key(node : Node, pos : Int) -> MemoKey {
-  { node_str: node_to_string(node), pos }
-}
-
-///|
-/// Merges two label maps, with the second taking precedence.
+/// Merges labels into target in place.
 /// Special handling for `_text`: concatenate instead of overwrite.
-fn merge_labels(
-  base : Map[String, Json],
+fn merge_labels_in_place(
+  target : Map[String, Json],
   overlay : Map[String, Json],
-) -> Map[String, Json] {
-  let result : Map[String, Json] = Map::new()
-  for key, value in base {
-    result.set(key, value)
-  }
+) -> Unit {
   for key, value in overlay {
     // Special handling for _text: concatenate
     if key == "_text" {
-      match (base.get("_text"), value) {
+      match (target.get("_text"), value) {
         (Some(String(base_text)), String(new_text)) =>
-          result.set("_text", (base_text + new_text).to_json())
-        _ => result.set(key, value)
+          target.set("_text", (base_text + new_text).to_json())
+        _ => target.set(key, value)
       }
     } else {
-      result.set(key, value)
+      target.set(key, value)
     }
   }
-  result
 }
 
 ///|
-/// Appends events from one array to another.
-fn append_events(
-  base : Array[(String, Map[String, Json])],
+/// Appends events into target in place.
+fn append_events_in_place(
+  target : Array[(String, Map[String, Json])],
   more : Array[(String, Map[String, Json])],
-) -> Array[(String, Map[String, Json])] {
-  let result : Array[(String, Map[String, Json])] = []
-  for item in base {
-    result.push(item)
-  }
+) -> Unit {
   for item in more {
-    result.push(item)
+    target.push(item)
   }
-  result
+}
+
+///|
+/// Clones labels to avoid mutating memoized result maps.
+fn clone_labels(labels : Map[String, Json]) -> Map[String, Json] {
+  let copied : Map[String, Json] = Map::new()
+  for key, value in labels {
+    copied.set(key, value)
+  }
+  copied
+}
+
+///|
+/// Clones events array.
+fn clone_events(
+  events : Array[(String, Map[String, Json])],
+) -> Array[(String, Map[String, Json])] {
+  let copied : Array[(String, Map[String, Json])] = []
+  for event in events {
+    copied.push(event)
+  }
+  copied
+}
+
+///|
+/// Returns true if a rule event should be emitted.
+fn should_emit_rule(ctx : EvalContext, name : String) -> Bool {
+  match ctx.emit_filter {
+    Some(filter) => filter.contains(name)
+    None => true
+  }
 }
 
 // Trampoline-based evaluation to avoid stack overflow
 
 ///|
 /// Frame types for the evaluation stack.
-enum EvalFrame {
+priv enum EvalFrame {
   // Evaluate a node and continue
-  EvalNode(Node, Int, MemoKey?)
+  EvalNode(Int, Int, MemoKey?)
   // Continue sequence evaluation
   SeqCont(
-    Array[Node],
+    Array[Int],
     Int,
     Int,
     Map[String, Json],
-    Array[(String, Map[String, Json])],
-    Int
+    Array[(String, Map[String, Json])]
   )
   // Continue choice evaluation
-  ChoiceCont(Array[Node], Int, Int, Int)
+  ChoiceCont(Array[Int], Int, Int)
   // Continue star evaluation
-  StarCont(
-    Node,
-    Int,
-    Map[String, Json],
-    Array[(String, Map[String, Json])],
-    Int
-  )
+  StarCont(Int, Int, Map[String, Json], Array[(String, Map[String, Json])], Int)
   // Continue plus evaluation (after first match)
-  PlusCont(
-    Node,
-    Int,
-    Map[String, Json],
-    Array[(String, Map[String, Json])],
-    Int
-  )
+  PlusCont(Int, Int, Map[String, Json], Array[(String, Map[String, Json])], Int)
   // Optional continuation
   OptionalCont(Int)
   // Apply label
@@ -179,23 +186,23 @@ enum EvalFrame {
 /// Evaluates nodes using an explicit stack (trampoline).
 fn eval_trampoline(
   ctx : EvalContext,
-  start_node : Node,
+  start_node_id : Int,
   start_pos : Int,
 ) -> EvalResult {
   let stack : Array[EvalFrame] = []
   let results : Array[EvalResult] = []
 
   // Push initial evaluation
-  stack.push(EvalNode(start_node, start_pos, None))
+  stack.push(EvalNode(start_node_id, start_pos, None))
 
   while stack.length() > 0 {
     let frame = stack.pop().unwrap()
     match frame {
-      EvalNode(node, pos, memo_key) => {
+      EvalNode(node_id, pos, memo_key) => {
         // Check memo first
         let key = match memo_key {
           Some(k) => k
-          None => make_memo_key(node, pos)
+          None => make_memo_key(node_id, pos)
         }
         match ctx.memo.get(key) {
           Some(cached) => {
@@ -209,96 +216,100 @@ fn eval_trampoline(
         stack.push(StoreMemo(key))
 
         // Evaluate based on node type
-        match node {
-          Empty => results.push(EvalResult::success(pos))
-          Sym(name) =>
-            if ctx.peg.is_token(name) {
-              // Token match
-              if pos < ctx.tokens.length() && ctx.tokens[pos].kind == name {
-                let tok = ctx.tokens[pos]
-                let labels : Map[String, Json] = Map::new()
-                labels.set("_last", tok.get_value().to_json())
-                labels.set("_last_pos", tok.pos.to_double().to_json())
-                labels.set("_last_len", tok.text.length().to_double().to_json())
-                // Set _text for multi-line accumulation
-                labels.set("_text", tok.text.to_json())
-                results.push(EvalResult::success(pos + 1, labels~))
-              } else {
-                results.push(EvalResult::failure(pos))
+        match ctx.peg.get_compiled_node(node_id) {
+          Some(compiled) =>
+            match compiled {
+              CEmpty => results.push(EvalResult::success(pos))
+              CSym(name) =>
+                if ctx.peg.is_token(name) {
+                  // Token match
+                  if pos < ctx.tokens.length() && ctx.tokens[pos].kind == name {
+                    let tok = ctx.tokens[pos]
+                    let labels : Map[String, Json] = Map::new()
+                    labels.set("_last", tok.get_value().to_json())
+                    labels.set("_last_pos", tok.pos.to_double().to_json())
+                    labels.set(
+                      "_last_len",
+                      tok.text.length().to_double().to_json(),
+                    )
+                    // Set _text for multi-line accumulation
+                    labels.set("_text", tok.text.to_json())
+                    results.push(EvalResult::success(pos + 1, labels~))
+                  } else {
+                    results.push(EvalResult::failure(pos))
+                  }
+                } else {
+                  // Rule reference
+                  stack.push(RuleCont(name, pos))
+                  match ctx.peg.get_rule_node_id(name) {
+                    Some(rule_node_id) =>
+                      stack.push(EvalNode(rule_node_id, pos, None))
+                    None => results.push(EvalResult::failure(pos))
+                  }
+                }
+              CSeq(elems) =>
+                if elems.length() == 0 {
+                  results.push(EvalResult::success(pos))
+                } else {
+                  // Push continuation for sequence
+                  stack.push(SeqCont(elems, 1, pos, Map::new(), []))
+                  // Evaluate first element
+                  stack.push(EvalNode(elems[0], pos, None))
+                }
+              CChoice(alts) =>
+                if alts.length() == 0 {
+                  results.push(EvalResult::failure(pos))
+                } else {
+                  // Push continuation for trying next alternatives
+                  stack.push(ChoiceCont(alts, 1, pos))
+                  // Try first alternative
+                  stack.push(EvalNode(alts[0], pos, None))
+                }
+              CStar(child) => {
+                // Push continuation for star
+                stack.push(StarCont(child, pos, Map::new(), [], pos))
+                // Try first match
+                stack.push(EvalNode(child, pos, None))
               }
-            } else {
-              // Rule reference
-              stack.push(RuleCont(name, pos))
-              match ctx.peg.get_rule(name) {
-                Some(rule_node) => stack.push(EvalNode(rule_node, pos, None))
-                None => results.push(EvalResult::failure(pos))
+              CPlus(child) => {
+                // Push continuation for plus (requires at least one match)
+                stack.push(PlusCont(child, pos, Map::new(), [], pos))
+                // Try first match
+                stack.push(EvalNode(child, pos, None))
+              }
+              COptional(child) => {
+                // Optional always succeeds - if child fails, return success at original pos
+                stack.push(OptionalCont(pos))
+                stack.push(EvalNode(child, pos, None))
+              }
+              CLabel(name, child) => {
+                stack.push(LabelCont(name, pos))
+                stack.push(EvalNode(child, pos, None))
               }
             }
-          Seq(elems) =>
-            if elems.length() == 0 {
-              results.push(EvalResult::success(pos))
-            } else {
-              // Push continuation for sequence
-              stack.push(SeqCont(elems, 1, pos, Map::new(), [], pos))
-              // Evaluate first element
-              stack.push(EvalNode(elems[0], pos, None))
-            }
-          Choice(alts) =>
-            if alts.length() == 0 {
-              results.push(EvalResult::failure(pos))
-            } else {
-              // Push continuation for trying next alternatives
-              stack.push(ChoiceCont(alts, 1, pos, pos))
-              // Try first alternative
-              stack.push(EvalNode(alts[0], pos, None))
-            }
-          Star(child) => {
-            // Push continuation for star
-            stack.push(StarCont(child, pos, Map::new(), [], pos))
-            // Try first match
-            stack.push(EvalNode(child, pos, None))
-          }
-          Plus(child) => {
-            // Push continuation for plus (requires at least one match)
-            stack.push(PlusCont(child, pos, Map::new(), [], pos))
-            // Try first match
-            stack.push(EvalNode(child, pos, None))
-          }
-          Optional(child) => {
-            // Optional always succeeds - if child fails, return success at original pos
-            stack.push(OptionalCont(pos))
-            stack.push(EvalNode(child, pos, None))
-          }
-          Label(name, child) => {
-            stack.push(LabelCont(name, pos))
-            stack.push(EvalNode(child, pos, None))
-          }
+          None => results.push(EvalResult::failure(pos))
         }
       }
-      SeqCont(elems, idx, orig_pos, labels, events, current_pos) => {
+      SeqCont(elems, idx, orig_pos, labels, events) => {
         // Get result of previous element
         let prev = results.pop().unwrap()
         if not(prev.ok) {
           results.push(EvalResult::failure(orig_pos))
         } else {
-          let new_labels = merge_labels(labels, prev.labels)
-          let new_events = append_events(events, prev.events)
+          merge_labels_in_place(labels, prev.labels)
+          append_events_in_place(events, prev.events)
           let new_pos = prev.pos
           if idx >= elems.length() {
             // All elements matched
-            results.push(
-              EvalResult::success(new_pos, labels=new_labels, events=new_events),
-            )
+            results.push(EvalResult::success(new_pos, labels~, events~))
           } else {
             // Continue with next element
-            stack.push(
-              SeqCont(elems, idx + 1, orig_pos, new_labels, new_events, new_pos),
-            )
+            stack.push(SeqCont(elems, idx + 1, orig_pos, labels, events))
             stack.push(EvalNode(elems[idx], new_pos, None))
           }
         }
       }
-      ChoiceCont(alts, idx, orig_pos, _) => {
+      ChoiceCont(alts, idx, orig_pos) => {
         // Get result of previous alternative
         let prev = results.pop().unwrap()
         if prev.ok {
@@ -309,7 +320,7 @@ fn eval_trampoline(
           results.push(EvalResult::failure(orig_pos))
         } else {
           // Try next alternative
-          stack.push(ChoiceCont(alts, idx + 1, orig_pos, orig_pos))
+          stack.push(ChoiceCont(alts, idx + 1, orig_pos))
           stack.push(EvalNode(alts[idx], orig_pos, None))
         }
       }
@@ -331,11 +342,9 @@ fn eval_trampoline(
           results.push(EvalResult::success(current_pos, labels~, events~))
         } else {
           // Continue iterating
-          let new_labels = merge_labels(labels, prev.labels)
-          let new_events = append_events(events, prev.events)
-          stack.push(
-            StarCont(child, start_pos, new_labels, new_events, prev.pos),
-          )
+          merge_labels_in_place(labels, prev.labels)
+          append_events_in_place(events, prev.events)
+          stack.push(StarCont(child, start_pos, labels, events, prev.pos))
           stack.push(EvalNode(child, prev.pos, None))
         }
       }
@@ -349,8 +358,10 @@ fn eval_trampoline(
             results.push(EvalResult::failure(start_pos))
           } else {
             // First match succeeded, continue like star
+            let acc_labels = clone_labels(prev.labels)
+            let acc_events = clone_events(prev.events)
             stack.push(
-              StarCont(child, start_pos, prev.labels, prev.events, prev.pos),
+              StarCont(child, start_pos, acc_labels, acc_events, prev.pos),
             )
             stack.push(EvalNode(child, prev.pos, None))
           }
@@ -358,11 +369,9 @@ fn eval_trampoline(
         } else if not(prev.ok) || prev.pos == current_pos {
           results.push(EvalResult::success(current_pos, labels~, events~))
         } else {
-          let new_labels = merge_labels(labels, prev.labels)
-          let new_events = append_events(events, prev.events)
-          stack.push(
-            StarCont(child, start_pos, new_labels, new_events, prev.pos),
-          )
+          merge_labels_in_place(labels, prev.labels)
+          append_events_in_place(events, prev.events)
+          stack.push(StarCont(child, start_pos, labels, events, prev.pos))
           stack.push(EvalNode(child, prev.pos, None))
         }
       }
@@ -401,11 +410,13 @@ fn eval_trampoline(
         let prev = results.pop().unwrap()
         if prev.ok {
           // Emit event for this matched rule
-          let event_labels : Map[String, Json] = Map::new()
-          for key, value in prev.labels {
-            event_labels.set(key, value)
+          if should_emit_rule(ctx, name) {
+            let event_labels : Map[String, Json] = Map::new()
+            for key, value in prev.labels {
+              event_labels.set(key, value)
+            }
+            ctx.all_events.push((name, event_labels))
           }
-          ctx.all_events.push((name, event_labels))
           // Clean labels - keep _last and _text for parent scope
           let clean_labels : Map[String, Json] = Map::new()
           match prev.labels.get("_last") {
@@ -456,22 +467,23 @@ fn eval_trampoline(
 /// Runs a PEG parse from a start rule over tokens.
 /// Returns the final result with labels and events, or None on failure.
 /// Events include rule match notifications for semantic processing.
-pub fn run_parse(
+fn run_parse_internal(
   peg : PEG,
-  _spec : @types.KGFSpec,
   start_rule : String,
   tokens : Array[@types.Tok],
+  emit_filter : @hashset.HashSet[String]?,
 ) -> EvalResult? {
-  let ctx = EvalContext::new(peg, tokens)
+  let ctx = EvalContext::new(peg, tokens, emit_filter~)
 
-  // Get start rule AST
-  match peg.get_rule(start_rule) {
+  // Get compiled start rule node id
+  match peg.get_rule_node_id(start_rule) {
     None => None
-    Some(node) => {
-      let result = eval_trampoline(ctx, node, 0)
+    Some(start_node_id) => {
+      let result = eval_trampoline(ctx, start_node_id, 0)
       if result.ok {
         // Merge all rule match events into the result
-        let merged_events = append_events(result.events, ctx.all_events)
+        let merged_events = clone_events(result.events)
+        append_events_in_place(merged_events, ctx.all_events)
         Some(
           EvalResult::success(
             result.pos,
@@ -484,4 +496,27 @@ pub fn run_parse(
       }
     }
   }
+}
+
+///|
+/// Runs a PEG parse and emits all matched rule events.
+pub fn run_parse(
+  peg : PEG,
+  _spec : @types.KGFSpec,
+  start_rule : String,
+  tokens : Array[@types.Tok],
+) -> EvalResult? {
+  run_parse_internal(peg, start_rule, tokens, None)
+}
+
+///|
+/// Runs a PEG parse while emitting only a subset of rule events.
+pub fn run_parse_filtered(
+  peg : PEG,
+  _spec : @types.KGFSpec,
+  start_rule : String,
+  tokens : Array[@types.Tok],
+  active_rules : @hashset.HashSet[String],
+) -> EvalResult? {
+  run_parse_internal(peg, start_rule, tokens, Some(active_rules))
 }

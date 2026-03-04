@@ -4,12 +4,20 @@ pub struct PEG {
   tokens : @hashset.HashSet[String]
   ast : Map[String, Node]
   attrs : Map[String, Array[@types.AttrAction]]
+  compiled_nodes : Array[CompiledNode]
+  rule_node_ids : Map[String, Int]
 }
 
 ///|
 /// Creates a new empty PEG.
 pub fn PEG::new() -> PEG {
-  { tokens: @hashset.new(), ast: Map::new(), attrs: Map::new() }
+  {
+    tokens: @hashset.new(),
+    ast: Map::new(),
+    attrs: Map::new(),
+    compiled_nodes: [],
+    rule_node_ids: Map::new(),
+  }
 }
 
 ///|
@@ -34,6 +42,18 @@ pub fn PEG::get_ast(self : PEG) -> Map[String, Node] {
 /// Gets the AST node for a specific rule.
 pub fn PEG::get_rule(self : PEG, name : String) -> Node? {
   self.ast.get(name)
+}
+
+///|
+/// Gets a compiled node by node id.
+fn PEG::get_compiled_node(self : PEG, node_id : Int) -> CompiledNode? {
+  self.compiled_nodes.get(node_id)
+}
+
+///|
+/// Gets compiled root node id for a rule.
+fn PEG::get_rule_node_id(self : PEG, name : String) -> Int? {
+  self.rule_node_ids.get(name)
 }
 
 ///|
@@ -63,10 +83,62 @@ pub fn build_peg(spec : @types.KGFSpec) -> PEG raise {
     }
   }
   let ast : Map[String, Node] = Map::new()
+  let compiled_nodes : Array[CompiledNode] = []
+  let rule_node_ids : Map[String, Int] = Map::new()
   // Parse all rule expressions
   for name, rule_def in spec.rules {
     let node = parse_expr(rule_def.expr)
     ast.set(name, node)
+    let node_id = compile_node(node, compiled_nodes)
+    rule_node_ids.set(name, node_id)
   }
-  { tokens, ast, attrs: spec.attrs }
+  { tokens, ast, attrs: spec.attrs, compiled_nodes, rule_node_ids }
+}
+
+///|
+/// Compiles an AST node into ID-based node table for faster evaluation.
+fn compile_node(node : Node, out : Array[CompiledNode]) -> Int {
+  let compiled = match node {
+    Empty => CEmpty
+    Sym(name) => CSym(name)
+    Seq(nodes) => {
+      let children : Array[Int] = []
+      for child in nodes {
+        children.push(compile_node(child, out))
+      }
+      CSeq(children)
+    }
+    Choice(nodes) => {
+      let children : Array[Int] = []
+      for child in nodes {
+        children.push(compile_node(child, out))
+      }
+      CChoice(children)
+    }
+    Star(child) => CStar(compile_node(child, out))
+    Plus(child) => CPlus(compile_node(child, out))
+    Optional(child) => COptional(compile_node(child, out))
+    Label(name, child) => CLabel(name, compile_node(child, out))
+  }
+  let id = out.length()
+  out.push(compiled)
+  id
+}
+
+///|
+/// Collects rules that can affect semantic output.
+/// This is used to suppress unnecessary parse events for pure grammar rules.
+pub fn collect_active_rules(spec : @types.KGFSpec) -> @hashset.HashSet[String] {
+  let active : @hashset.HashSet[String] = @hashset.new()
+  for entry in spec.get_attrs() {
+    active.add(entry.0)
+  }
+  match spec.get_semantics() {
+    Some(semantics) =>
+      for entry in semantics {
+        active.add(entry.0)
+      }
+    None => ()
+  }
+  active
 }

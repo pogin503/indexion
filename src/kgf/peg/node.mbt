@@ -9,7 +9,20 @@ pub enum Node {
   Plus(Node)
   Optional(Node)
   Label(String, Node)
-} derive(Show, Eq)
+} derive(Show, Eq, Hash)
+
+///|
+/// CompiledNode is an ID-based representation for evaluation hot paths.
+enum CompiledNode {
+  CEmpty
+  CSym(String)
+  CSeq(Array[Int])
+  CChoice(Array[Int])
+  CStar(Int)
+  CPlus(Int)
+  COptional(Int)
+  CLabel(String, Int)
+}
 
 ///|
 /// Returns true if this node is Empty.
