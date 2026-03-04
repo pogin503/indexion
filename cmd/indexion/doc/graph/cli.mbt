@@ -16,7 +16,7 @@
 /// | `--output=FILE` | Output file (- for stdout) | - |
 /// | `--specs=DIR` | KGF specs directory | kgfs |
 /// | `--title=TEXT` | Diagram title | Module Dependencies |
-/// | `--format=FORMAT` | Output format: mermaid, json | mermaid |
+/// | `--format=FORMAT` | Output format: mermaid, json, dot, d2, text | mermaid |
 ///
 /// ## Examples
 ///
@@ -109,7 +109,7 @@ pub fn show_help() -> Unit {
   println("  --output=FILE    Output file (- for stdout, default: -)")
   println("  --specs=DIR      KGF specs directory (default: kgfs)")
   println("  --title=TEXT     Diagram title (default: Module Dependencies)")
-  println("  --format=FORMAT  Output format: mermaid, json (default: mermaid)")
+  println("  --format=FORMAT  Output format: mermaid, json, dot, d2, text (default: mermaid)")
   println("  --help           Show this help message")
   println("")
   println("Examples:")
@@ -179,12 +179,7 @@ fn generate_json_output(
 fn print_progress(info : (Int, Int, String)) -> Unit {
   let (current, total, path) = info
   println(
-    "[" +
-    current.to_string() +
-    "/" +
-    total.to_string() +
-    "] Analyzing: " +
-    path,
+    "[" + current.to_string() + "/" + total.to_string() + "] Analyzing: " + path,
   )
 }
 
@@ -215,7 +210,10 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   // Stage 1: Collect candidate files from input directories.
   println("Collecting files...")
   let discover_opts = @pipeline.DiscoverOptions::default()
-  let candidate_paths = @pipeline.discover_files(config.input_paths, discover_opts)
+  let candidate_paths = @pipeline.discover_files(
+    config.input_paths,
+    discover_opts,
+  )
   if candidate_paths.length() == 0 {
     println("No input files found.")
     return
@@ -247,21 +245,25 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let deps = @query.extract_module_deps(graph)
   let circulars = @query.extract_circular_deps(graph)
   // Stage 5: Render graph output.
+  // Build intermediate GraphJSON for flexible rendering
+  let graph_json = @diagram.build_graph_from_deps(
+    deps,
+    circulars~,
+    graph~,
+    title=config.title,
+  )
   let output = if config.format == "json" {
+    // Raw dependency JSON
     generate_json_output(deps, circulars)
+  } else if config.format == "dot" {
+    @diagram.render_dot(graph_json)
+  } else if config.format == "d2" {
+    @diagram.render_d2(graph_json)
+  } else if config.format == "text" {
+    @diagram.render_text(graph_json)
   } else {
-    // Default to Mermaid - uses graph's module file field for internal/external detection
-    // and KGF bare_prefixes for stripping external package prefixes
-    let bare_prefixes = registry.get_external_prefixes()
-    let source_patterns = registry.get_extensions()
-    @diagram.generate_dep_diagram_with_externals(
-      deps,
-      circulars,
-      graph,
-      bare_prefixes=bare_prefixes,
-      source_patterns=source_patterns,
-      title=config.title,
-    )
+    // Default to Mermaid
+    @diagram.render_mermaid(graph_json)
   }
   // Handle empty graph case
   if output.length() == 0 {
