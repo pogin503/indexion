@@ -6,6 +6,7 @@
 /// ## Subcommands
 ///
 /// - `gen` - Generate documentation from source files (KGF-based)
+/// - `graph` - Generate dependency graph in Mermaid format
 /// - `readme` - Generate README.md from source doc comments
 
 ///|
@@ -17,6 +18,7 @@ pub fn show_help() -> Unit {
   println("")
   println("Commands:")
   println("  gen      Generate documentation from source files (KGF-based)")
+  println("  graph    Generate dependency graph in Mermaid format")
   println("  readme   Generate README.md from source doc comments")
   println("")
   println(
@@ -33,6 +35,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let subcommand = args[start_idx]
   match subcommand {
     "gen" | "generate" => @gen.run(args, start_idx + 1)
+    "graph" => @graph.run(args, start_idx + 1)
     "readme" => @readme.run(args, start_idx + 1)
     "--help" | "-h" | "help" => show_help()
     _ => {
