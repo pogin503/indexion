@@ -42,6 +42,8 @@ pub enum EdgeKind {
   Extends
   /// A symbol implements an interface/trait.
   Implements
+  /// A circular dependency was detected.
+  CircularDependency
   /// Custom edge kind for extensibility.
   Custom(String)
 } derive(Eq, Show, ToJson, @json.FromJson)

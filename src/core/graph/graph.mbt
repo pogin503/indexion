@@ -138,21 +138,26 @@ pub fn EdgeKind::to_string(self : EdgeKind) -> String {
     Calls => "calls"
     Extends => "extends"
     Implements => "implements"
+    CircularDependency => "circular_dependency"
     Custom(s) => s
   }
 }
 
 ///|
 /// Parse a string into an EdgeKind.
+/// Accepts both camelCase (e.g., "moduleDependsOn") and snake_case (e.g., "module_depends_on").
 pub fn EdgeKind::from_string(s : String) -> EdgeKind {
   match s {
-    "declares" => Declares
-    "references" => References
-    "module_depends_on" => ModuleDependsOn
-    "imports" => Imports
-    "calls" => Calls
-    "extends" => Extends
-    "implements" => Implements
+    "declares" | "Declares" => Declares
+    "references" | "References" => References
+    "module_depends_on" | "moduleDependsOn" | "ModuleDependsOn" =>
+      ModuleDependsOn
+    "imports" | "Imports" => Imports
+    "calls" | "Calls" => Calls
+    "extends" | "Extends" => Extends
+    "implements" | "Implements" => Implements
+    "circular_dependency" | "circularDependency" | "CircularDependency" =>
+      CircularDependency
     _ => Custom(s)
   }
 }
