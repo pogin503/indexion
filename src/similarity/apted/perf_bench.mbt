@@ -33,16 +33,8 @@ fn old_calculate_tsed(
   size_penalty : Bool,
   finalize_labels : Bool,
 ) -> Double {
-  let t1 = if finalize_labels {
-    tree1.with_finalized_labels()
-  } else {
-    tree1
-  }
-  let t2 = if finalize_labels {
-    tree2.with_finalized_labels()
-  } else {
-    tree2
-  }
+  let t1 = if finalize_labels { tree1.with_finalized_labels() } else { tree1 }
+  let t2 = if finalize_labels { tree2.with_finalized_labels() } else { tree2 }
   let size1 = t1.size().to_double()
   let size2 = t2.size().to_double()
   let total_size = size1 + size2
@@ -113,26 +105,15 @@ test "small 3-node" (b : @bench.T) {
   let t1 = TreeNode::node("A", [TreeNode::leaf("B"), TreeNode::leaf("C")])
   let t2 = TreeNode::node("A", [TreeNode::leaf("B"), TreeNode::leaf("D")])
   let cc = CostConfig::default()
-  b.bench(
-    name="old_tsed",
-    fn() { b.keep(old_calculate_tsed(t1, t2, cc, true, true)) },
-  )
-  b.bench(
-    name="new_tsed",
-    fn() { b.keep(calculate_tsed(t1, t2, TSEDConfig::default())) },
-  )
-  b.bench(
-    name="new_tsed_no_fin",
-    fn() {
-      b.keep(
-        calculate_tsed(
-          t1,
-          t2,
-          { cost_config: cc, finalize_labels: false },
-        ),
-      )
-    },
-  )
+  b.bench(name="old_tsed", fn() {
+    b.keep(old_calculate_tsed(t1, t2, cc, true, true))
+  })
+  b.bench(name="new_tsed", fn() {
+    b.keep(calculate_tsed(t1, t2, TSEDConfig::default()))
+  })
+  b.bench(name="new_tsed_no_fin", fn() {
+    b.keep(calculate_tsed(t1, t2, { cost_config: cc, finalize_labels: false }))
+  })
 }
 
 // ============================================================
@@ -150,26 +131,15 @@ test "medium 7-node" (b : @bench.T) {
     TreeNode::node("C", [TreeNode::leaf("F"), TreeNode::leaf("Y")]),
   ])
   let cc = CostConfig::default()
-  b.bench(
-    name="old_tsed",
-    fn() { b.keep(old_calculate_tsed(t1, t2, cc, true, true)) },
-  )
-  b.bench(
-    name="new_tsed",
-    fn() { b.keep(calculate_tsed(t1, t2, TSEDConfig::default())) },
-  )
-  b.bench(
-    name="new_tsed_no_fin",
-    fn() {
-      b.keep(
-        calculate_tsed(
-          t1,
-          t2,
-          { cost_config: cc, finalize_labels: false },
-        ),
-      )
-    },
-  )
+  b.bench(name="old_tsed", fn() {
+    b.keep(old_calculate_tsed(t1, t2, cc, true, true))
+  })
+  b.bench(name="new_tsed", fn() {
+    b.keep(calculate_tsed(t1, t2, TSEDConfig::default()))
+  })
+  b.bench(name="new_tsed_no_fin", fn() {
+    b.keep(calculate_tsed(t1, t2, { cost_config: cc, finalize_labels: false }))
+  })
 }
 
 // ============================================================
@@ -181,26 +151,15 @@ test "large 31-node balanced" (b : @bench.T) {
   let t1 = build_balanced("N", 4)
   let t2 = build_balanced("M", 4)
   let cc = CostConfig::default()
-  b.bench(
-    name="old_tsed",
-    fn() { b.keep(old_calculate_tsed(t1, t2, cc, true, true)) },
-  )
-  b.bench(
-    name="new_tsed",
-    fn() { b.keep(calculate_tsed(t1, t2, TSEDConfig::default())) },
-  )
-  b.bench(
-    name="new_tsed_no_fin",
-    fn() {
-      b.keep(
-        calculate_tsed(
-          t1,
-          t2,
-          { cost_config: cc, finalize_labels: false },
-        ),
-      )
-    },
-  )
+  b.bench(name="old_tsed", fn() {
+    b.keep(old_calculate_tsed(t1, t2, cc, true, true))
+  })
+  b.bench(name="new_tsed", fn() {
+    b.keep(calculate_tsed(t1, t2, TSEDConfig::default()))
+  })
+  b.bench(name="new_tsed_no_fin", fn() {
+    b.keep(calculate_tsed(t1, t2, { cost_config: cc, finalize_labels: false }))
+  })
 }
 
 // ============================================================
@@ -212,26 +171,15 @@ test "wide 21-node" (b : @bench.T) {
   let t1 = build_wide("A", 20)
   let t2 = build_wide("B", 20)
   let cc = CostConfig::default()
-  b.bench(
-    name="old_tsed",
-    fn() { b.keep(old_calculate_tsed(t1, t2, cc, true, true)) },
-  )
-  b.bench(
-    name="new_tsed",
-    fn() { b.keep(calculate_tsed(t1, t2, TSEDConfig::default())) },
-  )
-  b.bench(
-    name="new_tsed_no_fin",
-    fn() {
-      b.keep(
-        calculate_tsed(
-          t1,
-          t2,
-          { cost_config: cc, finalize_labels: false },
-        ),
-      )
-    },
-  )
+  b.bench(name="old_tsed", fn() {
+    b.keep(old_calculate_tsed(t1, t2, cc, true, true))
+  })
+  b.bench(name="new_tsed", fn() {
+    b.keep(calculate_tsed(t1, t2, TSEDConfig::default()))
+  })
+  b.bench(name="new_tsed_no_fin", fn() {
+    b.keep(calculate_tsed(t1, t2, { cost_config: cc, finalize_labels: false }))
+  })
 }
 
 // ============================================================
@@ -242,26 +190,15 @@ test "wide 21-node" (b : @bench.T) {
 test "identical 15-node" (b : @bench.T) {
   let t = build_balanced("N", 3)
   let cc = CostConfig::default()
-  b.bench(
-    name="old_tsed",
-    fn() { b.keep(old_calculate_tsed(t, t, cc, true, true)) },
-  )
-  b.bench(
-    name="new_tsed",
-    fn() { b.keep(calculate_tsed(t, t, TSEDConfig::default())) },
-  )
-  b.bench(
-    name="new_tsed_no_fin",
-    fn() {
-      b.keep(
-        calculate_tsed(
-          t,
-          t,
-          { cost_config: cc, finalize_labels: false },
-        ),
-      )
-    },
-  )
+  b.bench(name="old_tsed", fn() {
+    b.keep(old_calculate_tsed(t, t, cc, true, true))
+  })
+  b.bench(name="new_tsed", fn() {
+    b.keep(calculate_tsed(t, t, TSEDConfig::default()))
+  })
+  b.bench(name="new_tsed_no_fin", fn() {
+    b.keep(calculate_tsed(t, t, { cost_config: cc, finalize_labels: false }))
+  })
 }
 
 // ============================================================
@@ -272,24 +209,13 @@ test "identical 15-node" (b : @bench.T) {
 test "large identical 63-node" (b : @bench.T) {
   let t = build_balanced("N", 5)
   let cc = CostConfig::default()
-  b.bench(
-    name="old_tsed",
-    fn() { b.keep(old_calculate_tsed(t, t, cc, true, true)) },
-  )
-  b.bench(
-    name="new_tsed",
-    fn() { b.keep(calculate_tsed(t, t, TSEDConfig::default())) },
-  )
-  b.bench(
-    name="new_tsed_no_fin",
-    fn() {
-      b.keep(
-        calculate_tsed(
-          t,
-          t,
-          { cost_config: cc, finalize_labels: false },
-        ),
-      )
-    },
-  )
+  b.bench(name="old_tsed", fn() {
+    b.keep(old_calculate_tsed(t, t, cc, true, true))
+  })
+  b.bench(name="new_tsed", fn() {
+    b.keep(calculate_tsed(t, t, TSEDConfig::default()))
+  })
+  b.bench(name="new_tsed_no_fin", fn() {
+    b.keep(calculate_tsed(t, t, { cost_config: cc, finalize_labels: false }))
+  })
 }

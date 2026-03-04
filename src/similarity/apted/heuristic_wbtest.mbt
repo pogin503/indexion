@@ -36,9 +36,7 @@ test "A2: identical 3-node" {
 test "A3: identical deep tree" {
   let t = TreeNode::node("Fn", [
     TreeNode::node("Args", [TreeNode::leaf("x"), TreeNode::leaf("y")]),
-    TreeNode::node("Body", [
-      TreeNode::node("Return", [TreeNode::leaf("x")]),
-    ]),
+    TreeNode::node("Body", [TreeNode::node("Return", [TreeNode::leaf("x")])]),
   ])
   inspect(both(t, t), content="(1, 1)")
 }
@@ -54,9 +52,12 @@ test "B1: all-different labels, 3 nodes" {
   let t2 = TreeNode::node("X", [TreeNode::leaf("Y"), TreeNode::leaf("Z")])
   // ZS: renames only, dist=3, max_dist=6, 1-3/6=0.5
   // TSED: dist=3, max(3,3)=3, 1-3/3=0.0
-  inspect(both(t1, t2), content=(
-    #|(0.5, 0)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.5, 0)
+    ),
+  )
 }
 
 ///|
@@ -69,9 +70,12 @@ test "B2: all-different labels, 7 nodes" {
     TreeNode::node("Q", [TreeNode::leaf("R"), TreeNode::leaf("S")]),
     TreeNode::node("T", [TreeNode::leaf("U"), TreeNode::leaf("V")]),
   ])
-  inspect(both(t1, t2), content=(
-    #|(0.5, 0)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.5, 0)
+    ),
+  )
 }
 
 // ============================================================
@@ -79,6 +83,7 @@ test "B2: all-different labels, 7 nodes" {
 // ============================================================
 
 // C1: 関数のリネーム (1ラベルだけ違う)
+
 ///|
 test "C1: function rename - Fn(foo,Args(x,y)) vs Fn(bar,Args(x,y))" {
   let t1 = TreeNode::node("Fn", [
@@ -90,12 +95,16 @@ test "C1: function rename - Fn(foo,Args(x,y)) vs Fn(bar,Args(x,y))" {
     TreeNode::node("Args", [TreeNode::leaf("x"), TreeNode::leaf("y")]),
   ])
   // 5 nodes, 1 rename → dist=1
-  inspect(both(t1, t2), content=(
-    #|(0.9, 0.8)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.9, 0.8)
+    ),
+  )
 }
 
 // C2: 引数追加 (構造変化)
+
 ///|
 test "C2: argument added - Args(x,y) vs Args(x,y,z)" {
   let t1 = TreeNode::node("Fn", [
@@ -110,12 +119,16 @@ test "C2: argument added - Args(x,y) vs Args(x,y,z)" {
       TreeNode::leaf("z"),
     ]),
   ])
-  inspect(both(t1, t2), content=(
-    #|(0.9090909090909091, 0.6666666666666667)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.9090909090909091, 0.6666666666666667)
+    ),
+  )
 }
 
 // C3: if→match 変換 (構造大きく変化、子ノードは共通)
+
 ///|
 test "C3: if to match refactor" {
   let t1 = TreeNode::node("If", [
@@ -128,12 +141,16 @@ test "C3: if to match refactor" {
     TreeNode::node("Arm", [TreeNode::leaf("a")]),
     TreeNode::node("Arm", [TreeNode::leaf("b")]),
   ])
-  inspect(both(t1, t2), content=(
-    #|(0.7142857142857143, 0.4285714285714286)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.7142857142857143, 0.4285714285714286)
+    ),
+  )
 }
 
 // C4: 本体だけ変更 (大きな関数の一部)
+
 ///|
 test "C4: body change in large function" {
   let t1 = TreeNode::node("Fn", [
@@ -163,9 +180,12 @@ test "C4: body change in large function" {
     ]),
   ])
   // 14 nodes, 1 rename (x→y in Return)
-  inspect(both(t1, t2), content=(
-    #|(0.9666666666666667, 0.9333333333333333)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.9666666666666667, 0.9333333333333333)
+    ),
+  )
 }
 
 // ============================================================
@@ -173,32 +193,39 @@ test "C4: body change in large function" {
 // ============================================================
 
 // D1: 無関係な小さい木どうし
+
 ///|
 test "D1: unrelated small trees" {
   let t1 = TreeNode::node("Print", [TreeNode::leaf("hello")])
   let t2 = TreeNode::node("Return", [TreeNode::leaf("42")])
-  inspect(both(t1, t2), content=(
-    #|(0.5, 0)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.5, 0)
+    ),
+  )
 }
 
 // D2: 大小差のある木
+
 ///|
 test "D2: tiny vs large tree" {
   let t1 = TreeNode::leaf("x")
   let t2 = TreeNode::node("Fn", [
     TreeNode::leaf("process"),
     TreeNode::node("Args", [TreeNode::leaf("a"), TreeNode::leaf("b")]),
-    TreeNode::node("Body", [
-      TreeNode::node("Return", [TreeNode::leaf("a")]),
-    ]),
+    TreeNode::node("Body", [TreeNode::node("Return", [TreeNode::leaf("a")])]),
   ])
-  inspect(both(t1, t2), content=(
-    #|(0.11111111111111116, 0)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.11111111111111116, 0)
+    ),
+  )
 }
 
 // D3: 同じ葉を持つが構造が全く異なる木
+
 ///|
 test "D3: same leaves, different structure" {
   // flat: Root(a,b,c,d)
@@ -213,9 +240,12 @@ test "D3: same leaves, different structure" {
     TreeNode::node("X", [TreeNode::leaf("a"), TreeNode::leaf("b")]),
     TreeNode::node("Y", [TreeNode::leaf("c"), TreeNode::leaf("d")]),
   ])
-  inspect(both(t1, t2), content=(
-    #|(0.8333333333333334, 0.5714285714285714)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.8333333333333334, 0.5714285714285714)
+    ),
+  )
 }
 
 // ============================================================
@@ -223,6 +253,7 @@ test "D3: same leaves, different structure" {
 // ============================================================
 
 // E1: ほぼ同じ文法ルール
+
 ///|
 test "E1: PEG similar rules - only terminal differs" {
   // rule1: Seq(Label:name, Star(Choice(Sym:alpha, Sym:digit)))
@@ -246,12 +277,16 @@ test "E1: PEG similar rules - only terminal differs" {
     ]),
   ])
   // 8 nodes, 1 rename
-  inspect(both(t1, t2), content=(
-    #|(0.9285714285714286, 0.8571428571428572)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.9285714285714286, 0.8571428571428572)
+    ),
+  )
 }
 
 // E2: 構造的に異なる文法ルール
+
 ///|
 test "E2: PEG structurally different rules" {
   // rule1: Seq(Sym:a, Sym:b)
@@ -265,12 +300,16 @@ test "E2: PEG structurally different rules" {
     TreeNode::leaf("Sym:b"),
     TreeNode::leaf("Sym:c"),
   ])
-  inspect(both(t1, t2), content=(
-    #|(0.7142857142857143, 0.5)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.7142857142857143, 0.5)
+    ),
+  )
 }
 
 // E3: Optional 追加
+
 ///|
 test "E3: PEG added Optional wrapper" {
   // rule1: Seq(Sym:a, Sym:b)
@@ -283,7 +322,10 @@ test "E3: PEG added Optional wrapper" {
     TreeNode::leaf("Sym:a"),
     TreeNode::node("Optional", [TreeNode::leaf("Sym:b")]),
   ])
-  inspect(both(t1, t2), content=(
-    #|(0.8571428571428572, 0.75)
-  ))
+  inspect(
+    both(t1, t2),
+    content=(
+      #|(0.8571428571428572, 0.75)
+    ),
+  )
 }
