@@ -157,10 +157,22 @@ test "registry: resolve chain format validation" {
 }
 
 ///|
-/// Helper to get the examples directory path.
-fn get_examples_dir() -> String {
-  let kgfs_dir = get_kgfs_dir()
-  kgfs_dir + "/examples"
+/// Helper to get the fixtures directory path.
+fn get_fixtures_dir() -> String {
+  let paths = [
+    "fixtures", "../fixtures", "../../fixtures", "../../../fixtures",
+    "../../../../fixtures",
+  ]
+  for path in paths {
+    try {
+      if @fs.is_dir(path) {
+        return path
+      }
+    } catch {
+      _ => continue
+    }
+  }
+  "fixtures"
 }
 
 ///|
@@ -179,13 +191,13 @@ fn has_token_kind(tokens : Array[@types.Tok], kind : String) -> Bool {
 test "registry: tokenize example source files" {
   let dir = get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let examples_dir = get_examples_dir()
+  let fixtures_dir = get_fixtures_dir()
 
   // Test TypeScript example - verify keyword tokenization with word boundary
   let ts_spec = registry.get_spec("typescript").unwrap()
   let ts_lexer = @lexer.Lexer::new(ts_spec.get_tokens())
   let ts_source = @fs.read_file_to_string(
-    examples_dir + "/typescript/src/main.ts",
+    fixtures_dir + "/programming/typescript/src/main.ts",
   ) catch {
     _ => ""
   }
@@ -199,7 +211,7 @@ test "registry: tokenize example source files" {
   // Test Python example - verify keyword tokenization
   let py_spec = registry.get_spec("python").unwrap()
   let py_lexer = @lexer.Lexer::new(py_spec.get_tokens())
-  let py_source = @fs.read_file_to_string(examples_dir + "/python/main.py") catch {
+  let py_source = @fs.read_file_to_string(fixtures_dir + "/programming/python/main.py") catch {
     _ => ""
   }
   if py_source.length() > 0 {
@@ -213,7 +225,7 @@ test "registry: tokenize example source files" {
   // Test Go example - verify keyword tokenization
   let go_spec = registry.get_spec("go").unwrap()
   let go_lexer = @lexer.Lexer::new(go_spec.get_tokens())
-  let go_source = @fs.read_file_to_string(examples_dir + "/go/main.go") catch {
+  let go_source = @fs.read_file_to_string(fixtures_dir + "/programming/go/main.go") catch {
     _ => ""
   }
   if go_source.length() > 0 {
@@ -227,7 +239,7 @@ test "registry: tokenize example source files" {
   // Test Rust example - verify keyword tokenization
   let rs_spec = registry.get_spec("rust").unwrap()
   let rs_lexer = @lexer.Lexer::new(rs_spec.get_tokens())
-  let rs_source = @fs.read_file_to_string(examples_dir + "/rust/main.rs") catch {
+  let rs_source = @fs.read_file_to_string(fixtures_dir + "/programming/rust/main.rs") catch {
     _ => ""
   }
   if rs_source.length() > 0 {
@@ -245,14 +257,14 @@ test "registry: tokenize example source files" {
 test "registry: parse example source files" {
   let dir = get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let examples_dir = get_examples_dir()
+  let fixtures_dir = get_fixtures_dir()
 
   // Test JavaScript example
   let js_spec = registry.get_spec("javascript").unwrap()
   let js_peg = @peg.build_peg(js_spec)
   let js_lexer = @lexer.Lexer::new(js_spec.get_tokens())
   let js_source = @fs.read_file_to_string(
-    examples_dir + "/javascript/src/app.js",
+    fixtures_dir + "/programming/javascript/src/app.js",
   ) catch {
     _ => ""
   }
@@ -268,7 +280,7 @@ test "registry: parse example source files" {
   let ts_peg = @peg.build_peg(ts_spec)
   let ts_lexer = @lexer.Lexer::new(ts_spec.get_tokens())
   let ts_source = @fs.read_file_to_string(
-    examples_dir + "/typescript/src/main.ts",
+    fixtures_dir + "/programming/typescript/src/main.ts",
   ) catch {
     _ => ""
   }
@@ -283,7 +295,7 @@ test "registry: parse example source files" {
   let py_spec = registry.get_spec("python").unwrap()
   let py_peg = @peg.build_peg(py_spec)
   let py_lexer = @lexer.Lexer::new(py_spec.get_tokens())
-  let py_source = @fs.read_file_to_string(examples_dir + "/python/main.py") catch {
+  let py_source = @fs.read_file_to_string(fixtures_dir + "/programming/python/main.py") catch {
     _ => ""
   }
   if py_source.length() > 0 {
@@ -297,7 +309,7 @@ test "registry: parse example source files" {
   let go_spec = registry.get_spec("go").unwrap()
   let go_peg = @peg.build_peg(go_spec)
   let go_lexer = @lexer.Lexer::new(go_spec.get_tokens())
-  let go_source = @fs.read_file_to_string(examples_dir + "/go/main.go") catch {
+  let go_source = @fs.read_file_to_string(fixtures_dir + "/programming/go/main.go") catch {
     _ => ""
   }
   if go_source.length() > 0 {
@@ -311,7 +323,7 @@ test "registry: parse example source files" {
   let rs_spec = registry.get_spec("rust").unwrap()
   let rs_peg = @peg.build_peg(rs_spec)
   let rs_lexer = @lexer.Lexer::new(rs_spec.get_tokens())
-  let rs_source = @fs.read_file_to_string(examples_dir + "/rust/main.rs") catch {
+  let rs_source = @fs.read_file_to_string(fixtures_dir + "/programming/rust/main.rs") catch {
     _ => ""
   }
   if rs_source.length() > 0 {
@@ -327,13 +339,13 @@ test "registry: parse example source files" {
 test "registry: parse markup example files" {
   let dir = get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let examples_dir = get_examples_dir()
+  let fixtures_dir = get_fixtures_dir()
 
   // Test HTML example
   let html_spec = registry.get_spec("html").unwrap()
   let html_peg = @peg.build_peg(html_spec)
   let html_lexer = @lexer.Lexer::new(html_spec.get_tokens())
-  let html_source = @fs.read_file_to_string(examples_dir + "/html/index.html") catch {
+  let html_source = @fs.read_file_to_string(fixtures_dir + "/dsl/html/index.html") catch {
     _ => ""
   }
   if html_source.length() > 0 {
@@ -347,7 +359,7 @@ test "registry: parse markup example files" {
   let md_spec = registry.get_spec("markdown").unwrap()
   let md_peg = @peg.build_peg(md_spec)
   let md_lexer = @lexer.Lexer::new(md_spec.get_tokens())
-  let md_source = @fs.read_file_to_string(examples_dir + "/markdown/README.md") catch {
+  let md_source = @fs.read_file_to_string(fixtures_dir + "/dsl/markdown/README.md") catch {
     _ => ""
   }
   if md_source.length() > 0 {
@@ -363,12 +375,12 @@ test "registry: parse markup example files" {
 test "registry: tokenize natural language examples" {
   let dir = get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let examples_dir = get_examples_dir()
+  let fixtures_dir = get_fixtures_dir()
 
   // Test Japanese example
   let ja_spec = registry.get_spec("japanese").unwrap()
   let ja_lexer = @lexer.Lexer::new(ja_spec.get_tokens())
-  let ja_source = @fs.read_file_to_string(examples_dir + "/japanese/simple.txt") catch {
+  let ja_source = @fs.read_file_to_string(fixtures_dir + "/natural/japanese/simple.txt") catch {
     _ => ""
   }
   if ja_source.length() > 0 {
@@ -379,7 +391,7 @@ test "registry: tokenize natural language examples" {
   // Test English example
   let en_spec = registry.get_spec("english").unwrap()
   let en_lexer = @lexer.Lexer::new(en_spec.get_tokens())
-  let en_source = @fs.read_file_to_string(examples_dir + "/english/sample.txt") catch {
+  let en_source = @fs.read_file_to_string(fixtures_dir + "/natural/english/sample.txt") catch {
     _ => ""
   }
   if en_source.length() > 0 {
@@ -390,7 +402,7 @@ test "registry: tokenize natural language examples" {
   // Test Korean example
   let ko_spec = registry.get_spec("korean").unwrap()
   let ko_lexer = @lexer.Lexer::new(ko_spec.get_tokens())
-  let ko_source = @fs.read_file_to_string(examples_dir + "/korean/sample.txt") catch {
+  let ko_source = @fs.read_file_to_string(fixtures_dir + "/natural/korean/sample.txt") catch {
     _ => ""
   }
   if ko_source.length() > 0 {
@@ -401,7 +413,7 @@ test "registry: tokenize natural language examples" {
   // Test Chinese example
   let zh_spec = registry.get_spec("chinese").unwrap()
   let zh_lexer = @lexer.Lexer::new(zh_spec.get_tokens())
-  let zh_source = @fs.read_file_to_string(examples_dir + "/chinese/sample.txt") catch {
+  let zh_source = @fs.read_file_to_string(fixtures_dir + "/natural/chinese/sample.txt") catch {
     _ => ""
   }
   if zh_source.length() > 0 {
@@ -415,13 +427,13 @@ test "registry: tokenize natural language examples" {
 test "registry: parse sql examples" {
   let dir = get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let examples_dir = get_examples_dir()
+  let fixtures_dir = get_fixtures_dir()
 
   // Test SQL DDL example
   let sql_spec = registry.get_spec("sql-ddl").unwrap()
   let sql_peg = @peg.build_peg(sql_spec)
   let sql_lexer = @lexer.Lexer::new(sql_spec.get_tokens())
-  let sql_source = @fs.read_file_to_string(examples_dir + "/sql-ddl/schema.sql") catch {
+  let sql_source = @fs.read_file_to_string(fixtures_dir + "/dsl/sql-ddl/schema.sql") catch {
     _ => ""
   }
   if sql_source.length() > 0 {
