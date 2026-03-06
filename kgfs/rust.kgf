@@ -299,3 +299,7 @@ resolve:
   - sibling: .rs
   - ext: .rs
   - fallback: crate:
+
+=== ignore
+# Cargo build output
+target/

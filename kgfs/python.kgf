@@ -168,3 +168,17 @@ resolve:
   - marker: pyproject.toml, setup.py, requirements.txt, __init__.py
   - ext: .py, .pyi
   - fallback: pip:
+
+=== ignore
+# Virtual environments
+.venv/
+venv/
+env/
+# Cache
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+# Build
+dist/
+build/
+*.egg-info/

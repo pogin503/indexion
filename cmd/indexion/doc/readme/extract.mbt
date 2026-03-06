@@ -68,9 +68,25 @@ pub fn extract_package_doc(
 
 ///|
 /// Extract module-level documentation from CodeGraph.
+/// Looks for module_doc notes first, then falls back to edge attrs.
 fn extract_module_docs(graph : @graph.CodeGraph, pkg_path : String) -> String {
   let docs : Array[String] = []
-  // Look for documentation in edge attrs
+  // First, look for module_doc notes (preferred)
+  for note in graph.get_all_notes() {
+    if note.note_type == "module_doc" {
+      // Check if note belongs to this package
+      if note.module_id.has_prefix(pkg_path) || pkg_path.has_prefix(note.module_id) {
+        if note.content.length() > 0 {
+          docs.push(note.content)
+        }
+      }
+    }
+  }
+  // If we found module docs, return them
+  if docs.length() > 0 {
+    return join_with_newlines(docs)
+  }
+  // Fallback: look for documentation in edge attrs (legacy behavior)
   for edge in graph.get_edges() {
     // Check if edge belongs to this package
     if edge.from.has_prefix(pkg_path) || pkg_path.has_prefix(edge.from) {

@@ -185,6 +185,7 @@ pub fn parse_kgf(text : String) -> @types.KGFSpec? {
   let semantics = parse_semantics(section(text, "semantics"))
   let preprocess = parse_preprocess(section(text, "preprocess"))
   let preprocess_fst = parse_preprocess_fst(section(text, "preprocess_fst"))
+  let ignore = parse_ignore(section(text, "ignore"))
   Some(
     @types.KGFSpec::new(
       language,
@@ -195,8 +196,29 @@ pub fn parse_kgf(text : String) -> @types.KGFSpec? {
       semantics~,
       preprocess~,
       preprocess_fst~,
+      ignore~,
     ),
   )
+}
+
+///|
+/// Parses ignore section into list of patterns.
+/// Each line is a pattern (like .gitignore syntax).
+/// Lines starting with # are comments.
+fn parse_ignore(text : String) -> Array[String]? {
+  let lines = split_lines(text)
+  let result : Array[String] = []
+  for line in lines {
+    let trimmed = trim_str(line)
+    if trimmed.length() > 0 && not(starts_with(trimmed, "#")) {
+      result.push(trimmed)
+    }
+  }
+  if result.is_empty() {
+    None
+  } else {
+    Some(result)
+  }
 }
 
 ///|

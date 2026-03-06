@@ -258,3 +258,21 @@ resolve:
   - index: /index.ts, /index.tsx, /index.d.ts, /index.js
   - ext: .ts, .tsx, .d.ts, .js
   - fallback: npm:
+
+=== ignore
+# Node.js
+node_modules/
+# Build output
+dist/
+build/
+out/
+.next/
+.nuxt/
+# TypeScript cache
+*.tsbuildinfo
+# Cache
+.cache/
+.parcel-cache/
+# Coverage
+coverage/
+.nyc_output/

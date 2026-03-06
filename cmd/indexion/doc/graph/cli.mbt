@@ -209,9 +209,13 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("No input files found.")
     return
   }
-  // Stage 1: Collect candidate files from input directories.
+  // Stage 1: Load KGF specs to get ignore patterns.
+  println("Loading language specs...")
+  let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
+  // Stage 2: Collect candidate files using KGF ignore patterns.
   println("Collecting files...")
-  let discover_opts = @pipeline.DiscoverOptions::default()
+  let kgf_ignore = registry.collect_ignore_patterns()
+  let discover_opts = @pipeline.DiscoverOptions::new(kgf_ignore=kgf_ignore)
   let candidate_paths = @pipeline.discover_files(
     config.input_paths,
     discover_opts,
@@ -220,12 +224,6 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("No input files found.")
     return
   }
-  // Stage 2: Select relevant KGF specs from discovered files.
-  println("Loading language specs...")
-  let registry = @pipeline.load_registry_for_paths(
-    config.specs_dir,
-    candidate_paths,
-  )
   let specs = registry.to_specs_map()
   // Stage 3: Filter supported files and read contents.
   let files = @pipeline.collect_supported_files(candidate_paths, registry)

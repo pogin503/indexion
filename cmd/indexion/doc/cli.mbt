@@ -5,6 +5,7 @@
 ///
 /// ## Subcommands
 ///
+/// - `init` - Initialize documentation templates (README.md)
 /// - `graph` - Generate dependency graph in Mermaid format
 /// - `readme` - Generate README.md from source doc comments (with template support)
 
@@ -16,6 +17,7 @@ pub fn show_help() -> Unit {
   println("  indexion doc <command> [options]")
   println("")
   println("Commands:")
+  println("  init     Initialize documentation templates (README.md)")
   println("  graph    Generate dependency graph in Mermaid format")
   println("  readme   Generate README.md from source doc comments")
   println("")
@@ -32,6 +34,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
   let subcommand = args[start_idx]
   match subcommand {
+    "init" => @init.run(args, start_idx + 1)
     "graph" => @graph.run(args, start_idx + 1)
     "readme" => @readme.run(args, start_idx + 1)
     "--help" | "-h" | "help" => show_help()

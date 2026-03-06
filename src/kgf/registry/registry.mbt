@@ -271,3 +271,24 @@ fn substr(s : String, start : Int, end : Int) -> String {
   }
   String::from_array(result)
 }
+
+///|
+/// Collect all ignore patterns from loaded KGF specs.
+/// Returns (pattern, language) pairs.
+pub fn KGFRegistry::collect_ignore_patterns(
+  self : KGFRegistry,
+) -> Array[(String, String)] {
+  let result : Array[(String, String)] = []
+  for entry in self.specs {
+    let lang = entry.0
+    let spec = entry.1
+    match spec.get_ignore() {
+      Some(patterns) =>
+        for p in patterns {
+          result.push((p, lang))
+        }
+      None => ()
+    }
+  }
+  result
+}

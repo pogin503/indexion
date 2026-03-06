@@ -178,33 +178,45 @@ pub fn show_help() -> Unit {
 }
 
 ///|
+/// Log progress message to stderr (falls back to println for now).
+fn log_progress(msg : String) -> Unit {
+  // TODO: Use stderr when MoonBit supports it
+  println(msg)
+}
+
+///|
 pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_args(args, start_idx)
   if config.show_help {
     show_help()
     return
   }
-  // Stage 1: Collect candidate files from input paths.
+  // Stage 1: Load KGF specs to get ignore patterns.
+  log_progress("[1/4] Loading KGF specs...")
+  let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
+  if registry.spec_count() == 0 {
+    println("Warning: No KGF specs found in " + config.specs_dir)
+  } else {
+    log_progress("      Loaded " + registry.spec_count().to_string() + " specs")
+  }
+  // Stage 2: Collect candidate files using KGF ignore patterns.
+  log_progress("[2/4] Discovering files...")
+  let kgf_ignore = registry.collect_ignore_patterns()
   let discover_opts = @pipeline.DiscoverOptions::new(
     recursive=config.recursive,
     excludes=config.excludes,
+    kgf_ignore=kgf_ignore,
   )
   let candidate_paths = @pipeline.discover_files(config.paths, discover_opts)
   if candidate_paths.length() == 0 {
     println("No packages found.")
     return
   }
-  // Stage 2: Select relevant KGF specs.
-  let registry = @pipeline.load_registry_for_paths(
-    config.specs_dir,
-    candidate_paths,
-  )
-  if registry.spec_count() == 0 {
-    println("Warning: No KGF specs found in " + config.specs_dir)
-  }
+  log_progress("      Found " + candidate_paths.length().to_string() + " files")
   // Reuse loaded specs for docgen.
   let specs = registry.to_specs_map()
   // Stage 3: Build package groups from file list + selected specs.
+  log_progress("[3/4] Grouping packages...")
   let packages = discover_packages_from_files(
     registry,
     candidate_paths,
@@ -215,7 +227,9 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("No packages found.")
     return
   }
+  log_progress("      Found " + packages.length().to_string() + " packages")
   // Extract documentation from each package
+  log_progress("[4/4] Extracting documentation...")
   let docs : Array[(PackageInfo, ExtractedDoc)] = []
   for pkg in packages {
     match extract_package_doc(pkg, specs) {
@@ -223,6 +237,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
       None => ()
     }
   }
+  log_progress("      Extracted " + docs.length().to_string() + " docs")
   if docs.length() == 0 {
     println("No documentation found.")
     return

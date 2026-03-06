@@ -236,15 +236,16 @@ fn build_graph_from_source(
   source_dir : String,
   specs_dir : String,
 ) -> @graph.CodeGraph? {
+  log_progress("Loading language specs...")
+  let registry = @registry.KGFRegistry::load_from_dir(specs_dir)
   log_progress("Collecting files...")
-  let discover_opts = @pipeline.DiscoverOptions::default()
+  let kgf_ignore = registry.collect_ignore_patterns()
+  let discover_opts = @pipeline.DiscoverOptions::new(kgf_ignore=kgf_ignore)
   let paths = @pipeline.discover_files([source_dir], discover_opts)
   if paths.length() == 0 {
     log_error("No files found in: " + source_dir)
     return None
   }
-  log_progress("Loading language specs...")
-  let registry = @pipeline.load_registry_for_paths(specs_dir, paths)
   let files = @pipeline.collect_supported_files(paths, registry)
   if files.length() == 0 {
     log_error("No supported files found")

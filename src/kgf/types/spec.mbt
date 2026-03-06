@@ -10,6 +10,7 @@ pub struct KGFSpec {
   semantics : Map[String, Array[SemOnBlock]]?
   preprocess : Array[String]?
   preprocess_fst : Array[PreprocessFstSpec]?
+  ignore : Array[String]?
 }
 
 ///|
@@ -23,6 +24,7 @@ pub fn KGFSpec::new(
   semantics? : Map[String, Array[SemOnBlock]]? = None,
   preprocess? : Array[String]? = None,
   preprocess_fst? : Array[PreprocessFstSpec]? = None,
+  ignore? : Array[String]? = None,
 ) -> KGFSpec {
   {
     language,
@@ -33,6 +35,7 @@ pub fn KGFSpec::new(
     semantics,
     preprocess,
     preprocess_fst,
+    ignore,
   }
 }
 
@@ -108,6 +111,12 @@ pub fn KGFSpec::get_preprocess(self : KGFSpec) -> Array[String]? {
 /// Returns the preprocess FST specifications.
 pub fn KGFSpec::get_preprocess_fst(self : KGFSpec) -> Array[PreprocessFstSpec]? {
   self.preprocess_fst
+}
+
+///|
+/// Returns the ignore patterns for this language.
+pub fn KGFSpec::get_ignore(self : KGFSpec) -> Array[String]? {
+  self.ignore
 }
 
 ///|

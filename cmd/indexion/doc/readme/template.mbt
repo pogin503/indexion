@@ -68,9 +68,49 @@ fn resolve_placeholder(placeholder : String, ctx : TemplateContext) -> String {
   } else {
     match placeholder {
       "packages" => render_packages(ctx.packages, ctx.base_dir)
+      "module_doc" => render_module_docs(ctx.packages)
       _ => "{{" + placeholder + "}}"
     }
   }
+}
+
+///|
+/// Render {{module_doc}} - outputs only module-level documentation.
+fn render_module_docs(packages : Array[(PackageInfo, ExtractedDoc)]) -> String {
+  let buf = StringBuilder::new()
+  for i, item in packages {
+    let (_, doc) = item
+    // Only output non-empty content that looks like module documentation
+    let content = doc.content
+    if content.length() > 0 && is_module_doc_content(content) {
+      if buf.to_string().length() > 0 {
+        buf.write_string("\n\n")
+      }
+      buf.write_string(content)
+    }
+    let _ = i
+  }
+  buf.to_string()
+}
+
+///|
+/// Check if content looks like module-level documentation.
+/// Module docs typically start with module description, not individual function/test docs.
+fn is_module_doc_content(content : String) -> Bool {
+  // Skip content that starts with test/function doc markers
+  if content.has_prefix("///|") {
+    // Check if it's just function docs (starts with ///| followed by short line)
+    let lines = split_content_lines(content)
+    if lines.length() > 0 {
+      let first = lines[0]
+      // Module docs usually have substantial description
+      // Function docs are often short or start with lowercase
+      if first.has_prefix("///|") && first.length() < 10 {
+        return false
+      }
+    }
+  }
+  true
 }
 
 ///|
@@ -156,4 +196,24 @@ pub fn render_template_file(
   } catch {
     _ => None
   }
+}
+
+///|
+/// Split content into lines.
+fn split_content_lines(s : String) -> Array[String] {
+  let lines : Array[String] = []
+  let chars = s.to_array()
+  let current : Array[Char] = []
+  for c in chars {
+    if c == '\n' {
+      lines.push(String::from_array(current.copy()))
+      current.clear()
+    } else if c != '\r' {
+      current.push(c)
+    }
+  }
+  if current.length() > 0 {
+    lines.push(String::from_array(current))
+  }
+  lines
 }

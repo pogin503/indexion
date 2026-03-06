@@ -262,3 +262,10 @@ resolve:
   - marker: moon.pkg.json
   - ext: .mbt
   - fallback: moon:
+
+=== ignore
+# MoonBit build output
+_build/
+target/
+# Package manager
+.mooncakes/

@@ -1,0 +1,3 @@
+# Negation test
+*.log
+!important.log

@@ -28,9 +28,13 @@ pub fn discover_packages(
   recursive : Bool,
 ) -> Array[PackageInfo] {
   let packages : Array[PackageInfo] = []
+  // Build filter config with user patterns
+  let filter = @filter.FilterConfig::new()
+    .with_includes(includes)
+    .with_excludes(excludes)
   for path in paths {
     let clean_path = @pipeline.trim_trailing_slash(path)
-    discover_impl(registry, clean_path, includes, excludes, recursive, packages)
+    discover_impl(registry, clean_path, filter, recursive, packages)
   }
   packages
 }
@@ -43,6 +47,9 @@ pub fn discover_packages_from_files(
   includes : Array[String],
   excludes : Array[String],
 ) -> Array[PackageInfo] {
+  let filter = @filter.FilterConfig::new()
+    .with_includes(includes)
+    .with_excludes(excludes)
   let by_dir : Map[String, Array[String]] = {}
   for path in file_paths {
     if registry.is_file_supported(path) {
@@ -57,7 +64,7 @@ pub fn discover_packages_from_files(
   for entry in by_dir {
     let dir = entry.0
     let files = entry.1
-    if files.length() == 0 || not(should_include(dir, includes, excludes)) {
+    if files.length() == 0 || not(filter.should_include(dir, true).is_included()) {
       continue
     }
     let name = extract_dir_name(dir)
@@ -70,8 +77,7 @@ pub fn discover_packages_from_files(
 fn discover_impl(
   registry : @registry.KGFRegistry,
   path : String,
-  includes : Array[String],
-  excludes : Array[String],
+  filter : @filter.FilterConfig,
   recursive : Bool,
   packages : Array[PackageInfo],
 ) -> Unit {
@@ -79,29 +85,26 @@ fn discover_impl(
     if not(@fs.is_dir(path)) {
       return
     }
-    if is_excluded_path(path, excludes) {
+    // Check if path should be included
+    if not(filter.should_include(path, true).is_included()) {
       return
     }
     // Collect supported files in this directory
     let files = collect_supported_files(registry, path)
     if files.length() > 0 {
       let name = extract_dir_name(path)
-      if should_include(path, includes, excludes) {
-        packages.push(PackageInfo::new(path, name, files))
-      }
+      packages.push(PackageInfo::new(path, name, files))
     }
     // Recurse into subdirectories
     if recursive {
       let entries = @fs.read_dir(path)
       for entry in entries {
-        if @pipeline.should_skip_dir(entry) {
+        if filter.should_skip_dir(entry) {
           continue
         }
         let subpath = path + "/" + entry
         if @fs.is_dir(subpath) {
-          discover_impl(
-            registry, subpath, includes, excludes, recursive, packages,
-          )
+          discover_impl(registry, subpath, filter, recursive, packages)
         }
       }
     }
@@ -157,38 +160,3 @@ fn extract_dir_name(path : String) -> String {
   @pipeline.extract_basename(path)
 }
 
-///|
-fn is_excluded_path(path : String, excludes : Array[String]) -> Bool {
-  for pattern in excludes {
-    if @pipeline.matches_pattern(path, pattern) {
-      return true
-    }
-  }
-  false
-}
-
-///|
-/// Check if path should be included based on include/exclude patterns.
-fn should_include(
-  path : String,
-  includes : Array[String],
-  excludes : Array[String],
-) -> Bool {
-  // Check excludes first
-  for pattern in excludes {
-    if @pipeline.matches_pattern(path, pattern) {
-      return false
-    }
-  }
-  // If no includes specified, include all (that weren't excluded)
-  if includes.length() == 0 {
-    return true
-  }
-  // Check includes
-  for pattern in includes {
-    if @pipeline.matches_pattern(path, pattern) {
-      return true
-    }
-  }
-  false
-}

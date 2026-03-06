@@ -107,3 +107,19 @@ resolve:
   - index: /index.js, /index.mjs
   - ext: .js, .mjs, .cjs
   - fallback: npm:
+
+=== ignore
+# Node.js
+node_modules/
+# Build output
+dist/
+build/
+out/
+.next/
+.nuxt/
+# Cache
+.cache/
+.parcel-cache/
+# Coverage
+coverage/
+.nyc_output/

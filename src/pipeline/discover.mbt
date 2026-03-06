@@ -7,12 +7,14 @@
 pub struct DiscoverOptions {
   recursive : Bool
   excludes : Array[String]
+  /// KGF ignore patterns: (pattern, language)
+  kgf_ignore : Array[(String, String)]
 }
 
 ///|
 /// Create default discover options.
 pub fn DiscoverOptions::default() -> DiscoverOptions {
-  { recursive: true, excludes: [] }
+  { recursive: true, excludes: [], kgf_ignore: [] }
 }
 
 ///|
@@ -20,8 +22,9 @@ pub fn DiscoverOptions::default() -> DiscoverOptions {
 pub fn DiscoverOptions::new(
   recursive? : Bool = true,
   excludes? : Array[String] = [],
+  kgf_ignore? : Array[(String, String)] = [],
 ) -> DiscoverOptions {
-  { recursive, excludes }
+  { recursive, excludes, kgf_ignore }
 }
 
 ///|
@@ -31,9 +34,15 @@ pub fn discover_files(
   paths : Array[String],
   options : DiscoverOptions,
 ) -> Array[String] {
+  // Create filter config with user excludes and KGF patterns
+  let mut filter = @filter.FilterConfig::new().with_excludes(options.excludes)
+  // Add KGF ignore patterns
+  for entry in options.kgf_ignore {
+    filter = filter.with_kgf_ignore([entry.0], entry.1)
+  }
   let file_paths : Array[String] = []
   for path in paths {
-    collect_files_impl(path, options, file_paths)
+    collect_files_impl(path, options, filter, file_paths)
   }
   file_paths
 }
@@ -42,26 +51,34 @@ pub fn discover_files(
 fn collect_files_impl(
   path : String,
   options : DiscoverOptions,
+  filter : @filter.FilterConfig,
   file_paths : Array[String],
 ) -> Unit {
   let clean_path = trim_trailing_slash(path)
-  if is_excluded(clean_path, options.excludes) {
+  if not(filter.should_include(clean_path, true).is_included()) {
     return
   }
   try {
     if @fs.is_dir(clean_path) {
+      // Load nested ignore files from this directory
+      let dir_filter = filter
+        .with_gitignore_from_dir(clean_path)
+        .with_indexionignore_from_dir(clean_path)
       let entries = @fs.read_dir(clean_path)
       for entry in entries {
-        if should_skip_dir(entry) {
+        if dir_filter.should_skip_dir(entry) {
           continue
         }
         let full_path = clean_path + "/" + entry
         if @fs.is_dir(full_path) {
           if options.recursive {
-            collect_files_impl(full_path, options, file_paths)
+            collect_files_impl(full_path, options, dir_filter, file_paths)
           }
         } else if @fs.is_file(full_path) {
-          file_paths.push(full_path)
+          // Check file inclusion using dir filter
+          if dir_filter.should_include(full_path, false).is_included() {
+            file_paths.push(full_path)
+          }
         }
       }
     } else if @fs.is_file(clean_path) {
@@ -73,12 +90,15 @@ fn collect_files_impl(
 }
 
 ///|
+/// Default filter config, cached for performance.
+/// Used by should_skip_dir for backward compatibility.
+let default_filter : @filter.FilterConfig = @filter.FilterConfig::new()
+
+///|
 /// Check if directory should be skipped (hidden, build artifacts, etc.).
-/// Uses the filter system for consistent filtering across the codebase.
+/// Uses cached default filter config for performance.
 pub fn should_skip_dir(entry : String) -> Bool {
-  // Use default filter config for skip detection
-  let config = @filter.FilterConfig::new()
-  config.should_skip_dir(entry)
+  default_filter.should_skip_dir(entry)
 }
 
 ///|
@@ -94,17 +114,6 @@ pub fn trim_trailing_slash(path : String) -> String {
   } else {
     path
   }
-}
-
-///|
-/// Check if path matches any exclude pattern.
-fn is_excluded(path : String, excludes : Array[String]) -> Bool {
-  for pattern in excludes {
-    if matches_pattern(path, pattern) {
-      return true
-    }
-  }
-  false
 }
 
 ///|

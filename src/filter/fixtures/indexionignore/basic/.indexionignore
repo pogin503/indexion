@@ -1,0 +1,3 @@
+# indexionignore takes precedence
+*.generated.mbt
+_internal/

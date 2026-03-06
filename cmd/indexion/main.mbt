@@ -49,8 +49,8 @@
 /// - Doc config: `doc.json` for documentation generation settings
 
 ///|
-/// Main entry point (async to support OpenAI embeddings in digest command).
-async fn main {
+/// Main entry point.
+fn main {
   let args = @sys.get_cli_args()
 
   // Find subcommand (skip program name)
@@ -60,7 +60,7 @@ async fn main {
     "explore" => @explore_cli.run(args, 2)
     "plan" => @plan_cli.run(args, 2)
     "doc" => @doc_cli.run(args, 2)
-    "digest" => @digest_cli.run(args, 2)
+    "digest" => println("digest command temporarily disabled (vcdb API update needed)")
     "sim" | "similarity" => @similarity_cli.run(args, 2)
     "segment" | "seg" => @segment_cli.run(args, 2)
     "perf" => @perf_cli.run(args, 2)
