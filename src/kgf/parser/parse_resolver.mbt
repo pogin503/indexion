@@ -497,7 +497,6 @@ fn get_int(kv : Map[String, String], key : String, default~ : Int) -> Int {
   }
 }
 
-
 ///|
 /// Gets a default ModulePathStyle (slash).
 fn default_module_path_style() -> @types.ModulePathStyle {

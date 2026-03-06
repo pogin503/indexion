@@ -212,7 +212,8 @@ fn process_eval(ctx : IterEvalContext, node_id : Int, pos : Int) -> Unit {
         labels.set("_last", tok.get_value().to_json())
         labels.set("_last_pos", tok.pos.to_double().to_json())
         labels.set("_last_len", tok.text.length().to_double().to_json())
-        labels.set("_text", tok.text.to_json())
+        // Use token value (cleaned by strip/skip_value) for text accumulation
+        labels.set("_text", tok.get_value().to_json())
         ctx.memo[memo_idx] = Succeeded(pos + 1, labels)
         ctx.results.push({ ok: true, end_pos: pos + 1, labels })
       } else {

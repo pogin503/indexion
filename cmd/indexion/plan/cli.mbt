@@ -3,6 +3,7 @@
 /// Subcommands:
 ///   refactor      - Generate refactoring plan from similarity analysis
 ///   documentation - Generate documentation coverage analysis
+///   readme        - Generate README documentation tasks
 
 ///|
 pub fn show_help() -> Unit {
@@ -16,7 +17,10 @@ pub fn show_help() -> Unit {
     "  refactor       Generate refactoring plan from file similarity analysis",
   )
   println(
-    "  documentation  Generate documentation coverage and README templates",
+    "  documentation  Generate documentation coverage analysis",
+  )
+  println(
+    "  readme         Generate README documentation tasks for manual/LLM writing",
   )
   println("")
   println(
@@ -34,6 +38,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   match subcommand {
     "refactor" => @refactor.run(args, start_idx + 1)
     "documentation" | "doc" | "docs" => @documentation.run(args, start_idx + 1)
+    "readme" => @readme.run(args, start_idx + 1)
     "--help" | "-h" | "help" => show_help()
     _ => {
       println("Unknown plan command: " + subcommand)

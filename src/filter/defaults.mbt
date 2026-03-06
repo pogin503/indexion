@@ -18,4 +18,3 @@ pub fn default_exclude_patterns() -> Array[IgnorePattern] {
 fn dir_pattern(name : String) -> IgnorePattern {
   IgnorePattern::new(name, directory_only=true, source="default")
 }
-

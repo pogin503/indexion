@@ -351,7 +351,9 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         if is_non_capturing {
           group_start = group_start + 2
         }
-        let group_pattern = pattern[group_start:group_end].to_string() catch { _ => "" }
+        let group_pattern = pattern[group_start:group_end].to_string() catch {
+          _ => ""
+        }
         // Check for alternation in group
         if group_pattern.contains("|") {
           let alternatives = split_by_alternation(group_pattern)
@@ -1069,7 +1071,12 @@ fn match_compiled_with_chars(
 ) -> MatchResult {
   match match_compiled_end_pos_with_chars(compiled, input_chars, pos) {
     Some(end_pos) =>
-      MatchResult::success(end_pos, input[pos:end_pos].to_string() catch { _ => "" })
+      MatchResult::success(
+        end_pos,
+        input[pos:end_pos].to_string() catch {
+          _ => ""
+        },
+      )
     None => MatchResult::failure()
   }
 }

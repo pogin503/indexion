@@ -38,7 +38,7 @@ pub fn Lexer::tokenize(self : Lexer, input : String) -> Array[@types.Tok] {
         if not(token_def.skip) {
           match text {
             Some(token_text) => {
-              let value = extract_value(token_text)
+              let value = extract_value_with_strip(token_text, token_def)
               result.push(
                 @types.Tok::new(token_def.name, token_text, pos, value~),
               )
@@ -97,6 +97,37 @@ fn has_case_insensitive_flag(flags : String?) -> Bool {
     Some(value) => value.contains("i")
     None => false
   }
+}
+
+///|
+/// Extracts the value from a token text using token definition settings.
+/// Handles: skip_value, strip prefix, and quoted strings.
+fn extract_value_with_strip(
+  text : String,
+  token_def : @types.TokenDef,
+) -> String? {
+  // skip_value: return empty string (for marker tokens like ///|)
+  if token_def.is_skip_value() {
+    return Some("")
+  }
+  // strip: remove N characters from start
+  let strip = token_def.get_strip()
+  if strip > 0 {
+    if strip >= text.length() {
+      return Some("")
+    }
+    let stripped = text[strip:].to_string() catch { _ => "" }
+    // Also trim leading space after strip (common for doc comments)
+    if stripped.length() > 0 {
+      let first = stripped[0].to_int().unsafe_to_char()
+      if first == ' ' {
+        return Some(stripped[1:].to_string() catch { _ => "" })
+      }
+    }
+    return Some(stripped)
+  }
+  // Default: handle quoted strings
+  extract_value(text)
 }
 
 ///|

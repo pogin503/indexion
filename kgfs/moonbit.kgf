@@ -8,13 +8,15 @@ TOKEN NL /\r?\n/
 
 # Doc section markers (must come before DocLine)
 # Recognizes: Module:, Overview:, Example:, Description:, Parameters:, Returns:, Throws:
-TOKEN DocSection /\/\/\/\s*(Module|Overview|Example|Description|Parameters|Returns|Throws|Deprecated|See|Since):/
+TOKEN DocSection /\/\/\/\s*(Module|Overview|Example|Description|Parameters|Returns|Throws|Deprecated|See|Since):/ strip=4
 
 # MoonBit doc comments: ///| marks start of doc block (legacy format)
-TOKEN DocComment /\/\/\/\|[^\r\n]*/
+# skip_value: this is just a marker, content comes from subsequent DocLine tokens
+TOKEN DocComment /\/\/\/\|[^\r\n]*/ skip_value
 
 # Doc content lines: /// followed by content (must come before LineComment)
-TOKEN DocLine /\/\/\/[^\r\n]*/
+# strip=3: remove "///" prefix, leaving just the content
+TOKEN DocLine /\/\/\/[^\r\n]*/ strip=3
 
 # Regular comments (// but not ///)
 TOKEN LineComment /\/\/[^\r\n]*/
@@ -191,6 +193,7 @@ on Param:       def param_id kind=Param
 
 === semantics
 # Module-level documentation
+# Note: doc values are already cleaned by lexer strip/skip_value
 on ModuleDoc {
   note module_doc payload obj("doc", $module_doc_text)
 }
@@ -269,3 +272,7 @@ _build/
 target/
 # Package manager
 .mooncakes/
+# Test and benchmark files (exclude from documentation)
+*_test.mbt
+*_wbtest.mbt
+*_mbench.mbt

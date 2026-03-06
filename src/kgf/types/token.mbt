@@ -6,6 +6,8 @@ pub struct TokenDef {
   pattern : String
   skip : Bool
   flags : String?
+  strip : Int // Number of characters to strip from start for value
+  skip_value : Bool // If true, value is empty (for marker tokens)
 }
 
 ///|
@@ -15,8 +17,10 @@ pub fn TokenDef::new(
   pattern : String,
   skip? : Bool = false,
   flags? : String? = None,
+  strip? : Int = 0,
+  skip_value? : Bool = false,
 ) -> TokenDef {
-  { name, pattern, skip, flags }
+  { name, pattern, skip, flags, strip, skip_value }
 }
 
 ///|
@@ -41,6 +45,18 @@ pub fn TokenDef::is_skip(self : TokenDef) -> Bool {
 /// Returns the flags of the token if any.
 pub fn TokenDef::get_flags(self : TokenDef) -> String? {
   self.flags
+}
+
+///|
+/// Returns the number of characters to strip from start for value.
+pub fn TokenDef::get_strip(self : TokenDef) -> Int {
+  self.strip
+}
+
+///|
+/// Returns whether this token's value should be empty.
+pub fn TokenDef::is_skip_value(self : TokenDef) -> Bool {
+  self.skip_value
 }
 
 ///|

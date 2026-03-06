@@ -77,12 +77,15 @@ fn eval_stmt_note(
       let payload_json = eval_expr(payload_expr, env, ctx)
       payload_map.set("payload", payload_json)
       // If this is a module_doc note, add it to the graph
+      // Note: doc text is already cleaned by lexer strip/skip_value
       if note_type == "module_doc" {
         match payload_json {
           Object(obj) =>
             match obj.get("doc") {
               Some(String(doc_text)) =>
-                ctx.get_graph().add_note("module_doc", doc_text, ctx.file)
+                if doc_text.length() > 0 {
+                  ctx.get_graph().add_note("module_doc", doc_text, ctx.file)
+                }
               _ => ()
             }
           _ => ()
