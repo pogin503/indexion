@@ -88,6 +88,7 @@ fn extract_module_docs(graph : @graph.CodeGraph, pkg_path : String) -> String {
     return join_with_newlines(docs)
   }
   // Fallback: look for documentation in edge attrs (legacy behavior)
+  // Note: doc values are already cleaned by lexer strip/skip_value
   for edge in graph.get_edges() {
     // Check if edge belongs to this package
     if edge.from.has_prefix(pkg_path) || pkg_path.has_prefix(edge.from) {

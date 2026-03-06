@@ -208,9 +208,29 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     kgf_ignore~,
   )
   let candidate_paths = @pipeline.discover_files(config.paths, discover_opts)
+  // If using template with only {{include:...}}, we don't need packages
   if candidate_paths.length() == 0 {
-    println("No packages found.")
-    return
+    match config.template {
+      Some(template_path) => {
+        // Process template even without packages (for {{include:...}} only)
+        let base_dir = if config.paths.length() > 0 {
+          config.paths[0]
+        } else {
+          "."
+        }
+        let ctx = TemplateContext::new(base_dir, [])
+        match render_template_file(template_path, ctx) {
+          Some(content) =>
+            write_output(content, config.output, config.output is None)
+          None => println("Error: Could not read template file: " + template_path)
+        }
+        return
+      }
+      None => {
+        println("No packages found.")
+        return
+      }
+    }
   }
   log_progress("      Found " + candidate_paths.length().to_string() + " files")
   // Reuse loaded specs for docgen.

@@ -95,22 +95,10 @@ fn render_module_docs(packages : Array[(PackageInfo, ExtractedDoc)]) -> String {
 
 ///|
 /// Check if content looks like module-level documentation.
-/// Module docs typically start with module description, not individual function/test docs.
+/// Note: doc content is already cleaned by KGF lexer strip/skip_value,
+/// so we just check for non-empty content.
 fn is_module_doc_content(content : String) -> Bool {
-  // Skip content that starts with test/function doc markers
-  if content.has_prefix("///|") {
-    // Check if it's just function docs (starts with ///| followed by short line)
-    let lines = split_content_lines(content)
-    if lines.length() > 0 {
-      let first = lines[0]
-      // Module docs usually have substantial description
-      // Function docs are often short or start with lowercase
-      if first.has_prefix("///|") && first.length() < 10 {
-        return false
-      }
-    }
-  }
-  true
+  content.length() > 0
 }
 
 ///|
@@ -196,24 +184,4 @@ pub fn render_template_file(
   } catch {
     _ => None
   }
-}
-
-///|
-/// Split content into lines.
-fn split_content_lines(s : String) -> Array[String] {
-  let lines : Array[String] = []
-  let chars = s.to_array()
-  let current : Array[Char] = []
-  for c in chars {
-    if c == '\n' {
-      lines.push(String::from_array(current.copy()))
-      current.clear()
-    } else if c != '\r' {
-      current.push(c)
-    }
-  }
-  if current.length() > 0 {
-    lines.push(String::from_array(current))
-  }
-  lines
 }

@@ -92,23 +92,6 @@ test "render_cross_references: sorts by count descending" {
 }
 
 ///|
-test "clean_doc: removes JSDoc markers" {
-  let doc = "/** This is a doc comment */"
-  let cleaned = clean_doc(doc)
-  assert_false(cleaned.contains("/**"))
-  assert_false(cleaned.contains("*/"))
-  assert_true(cleaned.contains("This is a doc comment"))
-}
-
-///|
-test "clean_doc: removes MoonBit markers" {
-  let doc = "///| This is a doc"
-  let cleaned = clean_doc(doc)
-  assert_false(cleaned.contains("///|"))
-  assert_true(cleaned.contains("This is a doc"))
-}
-
-///|
 test "render_json: produces valid JSON structure" {
   let graph = @graph.CodeGraph::new()
   let attrs : Map[String, String] = {}

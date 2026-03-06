@@ -5,16 +5,16 @@
 ///
 /// ## Overview
 ///
-/// Generates `docs/` directory with template files based on
-/// project metadata and KGF spec configuration.
+/// Generates `.indexion/` directory with template files based on
+/// project metadata and KGF spec configuration. This keeps indexion
+/// files isolated from user's docs/ directory.
 ///
 /// ## Generated Structure
 ///
 /// ```
-/// docs/
-///   intro.md              # Project introduction
-///   templates/readme.md   # README template with {{include:...}} and {{packages}}
-///   installation.md       # Installation instructions
+/// .indexion/
+///   templates/
+///     readme.md           # README template with {{include:...}} placeholders
 /// ```
 ///
 /// ## Usage
@@ -81,19 +81,23 @@ pub fn show_help() -> Unit {
   println("  --help               Show this help message")
   println("")
   println("Generated Files:")
-  println("  docs/intro.md              Project introduction")
-  println("  docs/templates/readme.md   README template with placeholders")
-  println("  docs/installation.md       Installation instructions")
+  println("  .indexion/templates/readme.md   README template with placeholders")
   println("")
-  println("After initialization, generate README.md with:")
+  println("Workflow:")
+  println("  1. indexion doc init                  # Generate template")
+  println("  2. indexion plan readme --template=.indexion/templates/readme.md")
+  println("                                        # Generate writing plans")
+  println("  3. Write docs/ files based on plans   # Manual or LLM")
   println(
-    "  indexion doc readme --template=docs/templates/readme.md -o=README.md",
+    "  4. indexion doc readme --template=.indexion/templates/readme.md -o=README.md",
   )
   println("")
   println("Examples:")
   println("  indexion doc init                    # Init in current directory")
   println("  indexion doc init ./myproject        # Init in specific directory")
-  println("  indexion doc init --force            # Overwrite existing docs/")
+  println(
+    "  indexion doc init --force            # Overwrite existing template",
+  )
 }
 
 ///|
@@ -108,51 +112,45 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
   // Detect project type and load info
   let (info, lang_spec) = detect_project_info(target_dir, registry)
+  let _ = lang_spec
   if info.name == "project" {
     println("Warning: No project config found. Using defaults.")
   }
-  // Create docs/ directory structure
-  let docs_dir = target_dir + "/docs"
-  let templates_dir = docs_dir + "/templates"
+  // Create .indexion/ directory structure (isolated from user's docs/)
+  let indexion_dir = target_dir + "/.indexion"
+  let templates_dir = indexion_dir + "/templates"
   // Create directories
-  @fs.create_dir(docs_dir) catch {
+  @fs.create_dir(indexion_dir) catch {
     _ => () // Directory may already exist
   }
   @fs.create_dir(templates_dir) catch {
     _ => ()
   }
-  // Generate and write files
+  // Generate only the template file (no placeholder files)
   let files_created : Array[String] = []
-  // 1. docs/intro.md
-  let intro_path = docs_dir + "/intro.md"
-  if write_file_if_ok(intro_path, generate_intro(info), config.force) {
-    files_created.push(intro_path)
-  }
-  // 2. docs/installation.md
-  let install_path = docs_dir + "/installation.md"
-  if write_file_if_ok(
-      install_path,
-      generate_installation(info, lang_spec),
-      config.force,
-    ) {
-    files_created.push(install_path)
-  }
-  // 3. docs/templates/readme.md
   let template_path = templates_dir + "/readme.md"
-  if write_file_if_ok(template_path, generate_template(), config.force) {
+  if write_file_if_ok(template_path, generate_template(info), config.force) {
     files_created.push(template_path)
   }
   // Summary
   if files_created.length() > 0 {
-    println("Created documentation templates:")
+    println("Created documentation template:")
     for path in files_created {
       println("  " + path)
     }
     println("")
-    println("Generate README.md with:")
+    println("Next steps:")
     println(
-      "  indexion doc readme --template=docs/templates/readme.md -o=README.md",
+      "  1. indexion plan readme --template=.indexion/templates/readme.md",
     )
+    println("     Generate writing plans for each section")
+    println("")
+    println("  2. Write docs/ files based on the plans")
+    println("")
+    println(
+      "  3. indexion doc readme --template=.indexion/templates/readme.md -o=README.md",
+    )
+    println("     Assemble README.md from docs/")
   } else {
     println("No files created. Use --force to overwrite existing files.")
   }
@@ -182,23 +180,12 @@ fn write_file_if_ok(path : String, content : String, force : Bool) -> Bool {
 ///|
 priv struct ProjectInfo {
   name : String
-  _version : String
-  description : String
-  repository : String
-  _license : String
-  keywords : Array[String]
+  license : String
 }
 
 ///|
 fn ProjectInfo::default() -> ProjectInfo {
-  {
-    name: "project",
-    _version: "0.0.0",
-    description: "",
-    repository: "",
-    _license: "",
-    keywords: [],
-  }
+  { name: "project", license: "" }
 }
 
 ///|
@@ -246,14 +233,9 @@ fn parse_config_content(filename : String, content : String) -> ProjectInfo {
 
 ///|
 fn parse_json_config(content : String) -> ProjectInfo {
-  let mut info = ProjectInfo::default()
-  info = { ..info, name: extract_json_string(content, "name") }
-  info = { ..info, _version: extract_json_string(content, "version") }
-  info = { ..info, description: extract_json_string(content, "description") }
-  info = { ..info, repository: extract_json_string(content, "repository") }
-  info = { ..info, _license: extract_json_string(content, "license") }
-  info = { ..info, keywords: extract_json_array(content, "keywords") }
-  info
+  let name = extract_json_string(content, "name")
+  let license = extract_json_string(content, "license")
+  { name: if name.length() > 0 { name } else { "project" }, license }
 }
 
 ///|
@@ -296,170 +278,24 @@ fn extract_json_string(json : String, key : String) -> String {
   String::from_array(result)
 }
 
-///|
-fn extract_json_array(json : String, key : String) -> Array[String] {
-  let result : Array[String] = []
-  let pattern = "\"" + key + "\":"
-  let chars = json.to_array()
-  let pat_chars = pattern.to_array()
-  let mut start = -1
-  for i = 0; i < chars.length() - pat_chars.length(); i = i + 1 {
-    let mut found = true
-    for j = 0; j < pat_chars.length(); j = j + 1 {
-      if chars[i + j] != pat_chars[j] {
-        found = false
-        break
-      }
-    }
-    if found {
-      start = i + pat_chars.length()
-      break
-    }
-  }
-  if start < 0 {
-    return result
-  }
-  while start < chars.length() && chars[start] != '[' {
-    start = start + 1
-  }
-  if start >= chars.length() {
-    return result
-  }
-  start = start + 1
-  while start < chars.length() && chars[start] != ']' {
-    while start < chars.length() &&
-          (
-            chars[start] == ' ' ||
-            chars[start] == '\t' ||
-            chars[start] == '\n' ||
-            chars[start] == ','
-          ) {
-      start = start + 1
-    }
-    if start >= chars.length() || chars[start] == ']' {
-      break
-    }
-    if chars[start] == '"' {
-      start = start + 1
-      let item : Array[Char] = []
-      while start < chars.length() && chars[start] != '"' {
-        item.push(chars[start])
-        start = start + 1
-      }
-      if item.length() > 0 {
-        result.push(String::from_array(item))
-      }
-      start = start + 1
-    } else {
-      start = start + 1
-    }
-  }
-  result
-}
-
 // Template generation
 
 ///|
-/// Generate docs/intro.md content.
-fn generate_intro(info : ProjectInfo) -> String {
-  let buf = StringBuilder::new()
-  // Title
-  buf.write_string("# ")
-  buf.write_string(info.name)
-  buf.write_string("\n\n")
-  // Description
-  if info.description.length() > 0 {
-    buf.write_string(info.description)
-    buf.write_string("\n\n")
-  } else {
-    buf.write_string("<!-- Add project description here -->\n\n")
-  }
-  // Features from keywords
-  if info.keywords.length() > 0 {
-    buf.write_string("## Features\n\n")
-    for kw in info.keywords {
-      buf.write_string("- **")
-      buf.write_string(capitalize(kw))
-      buf.write_string("**\n")
-    }
-    buf.write_string("\n")
-  } else {
-    buf.write_string("## Features\n\n")
-    buf.write_string("- Feature 1\n")
-    buf.write_string("- Feature 2\n")
-    buf.write_string("- Feature 3\n\n")
-  }
-  buf.to_string()
-}
-
-///|
-/// Generate docs/installation.md content using KGF spec commands.
-fn generate_installation(
-  info : ProjectInfo,
-  spec : @kgf_types.KGFSpec?,
-) -> String {
-  let buf = StringBuilder::new()
-  buf.write_string("## Installation\n\n")
-  // Get commands from KGF spec
-  let (install_cmd, build_cmd) = match spec {
-    Some(s) => {
-      let resolver = s.get_resolver()
-      (resolver.get_install_cmd(), resolver.get_build_cmd())
-    }
-    None => ("", "")
-  }
-  // From package manager
-  buf.write_string("### From Package Manager\n\n")
-  buf.write_string("```bash\n")
-  if install_cmd.length() > 0 {
-    // Replace {name} placeholder with actual name
-    buf.write_string(replace_placeholder(install_cmd, "{name}", info.name))
-  } else {
-    buf.write_string("# Install ")
-    buf.write_string(info.name)
-  }
-  buf.write_string("\n```\n\n")
-  // From source
-  buf.write_string("### From Source\n\n")
-  buf.write_string("```bash\n")
-  if info.repository.length() > 0 {
-    buf.write_string("git clone ")
-    buf.write_string(info.repository)
-    buf.write_string("\n")
-  } else {
-    buf.write_string("git clone https://github.com/user/")
-    buf.write_string(extract_project_name(info.name))
-    buf.write_string("\n")
-  }
-  buf.write_string("cd ")
-  buf.write_string(extract_project_name(info.name))
-  buf.write_string("\n")
-  if build_cmd.length() > 0 {
-    buf.write_string(build_cmd)
-  } else {
-    buf.write_string("# Build project")
-  }
-  buf.write_string("\n```\n\n")
-  // Requirements
-  buf.write_string("### Requirements\n\n")
-  match spec {
-    Some(s) =>
-      buf.write_string("- " + capitalize(s.get_language()) + " toolchain\n")
-    None => buf.write_string("- See project documentation\n")
-  }
-  buf.to_string()
-}
-
-///|
-/// Generate docs/templates/readme.md content.
-fn generate_template() -> String {
+/// Generate .indexion/templates/readme.md content.
+fn generate_template(info : ProjectInfo) -> String {
   let buf = StringBuilder::new()
   buf.write_string("{{include:docs/intro.md}}\n\n")
-  buf.write_string("## Overview\n\n")
-  buf.write_string("{{module_doc}}\n\n")
+  buf.write_string("{{include:docs/overview.md}}\n\n")
+  buf.write_string("{{include:docs/getting-started.md}}\n\n")
+  buf.write_string("{{include:docs/usage.md}}\n\n")
   buf.write_string("{{include:docs/installation.md}}\n\n")
   buf.write_string("## License\n\n")
-  buf.write_string("<!-- Add license information here -->\n")
+  if info.license.length() > 0 {
+    buf.write_string(info.license)
+    buf.write_string(" - see [LICENSE](LICENSE) for details.\n")
+  } else {
+    buf.write_string("See [LICENSE](LICENSE) for details.\n")
+  }
   buf.to_string()
 }
 
@@ -477,72 +313,4 @@ fn normalize_path(path : String) -> String {
   } else {
     path
   }
-}
-
-///|
-fn capitalize(s : String) -> String {
-  let chars = s.to_array()
-  if chars.length() == 0 {
-    return s
-  }
-  let first = chars[0]
-  if first >= 'a' && first <= 'z' {
-    chars[0] = (first.to_int() - 32).unsafe_to_char()
-  }
-  String::from_array(chars)
-}
-
-///|
-fn extract_project_name(full_name : String) -> String {
-  // Extract "project" from "user/project"
-  let chars = full_name.to_array()
-  let mut last_slash = -1
-  for i = 0; i < chars.length(); i = i + 1 {
-    if chars[i] == '/' {
-      last_slash = i
-    }
-  }
-  if last_slash >= 0 && last_slash + 1 < chars.length() {
-    let result : Array[Char] = []
-    for i = last_slash + 1; i < chars.length(); i = i + 1 {
-      result.push(chars[i])
-    }
-    String::from_array(result)
-  } else {
-    full_name
-  }
-}
-
-///|
-fn replace_placeholder(
-  template : String,
-  placeholder : String,
-  value : String,
-) -> String {
-  let chars = template.to_array()
-  let ph_chars = placeholder.to_array()
-  let result : Array[Char] = []
-  let mut i = 0
-  while i < chars.length() {
-    let mut found = false
-    if i + ph_chars.length() <= chars.length() {
-      found = true
-      for j = 0; j < ph_chars.length(); j = j + 1 {
-        if chars[i + j] != ph_chars[j] {
-          found = false
-          break
-        }
-      }
-    }
-    if found {
-      for c in value {
-        result.push(c)
-      }
-      i = i + ph_chars.length()
-    } else {
-      result.push(chars[i])
-      i = i + 1
-    }
-  }
-  String::from_array(result)
 }

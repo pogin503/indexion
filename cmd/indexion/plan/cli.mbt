@@ -16,9 +16,7 @@ pub fn show_help() -> Unit {
   println(
     "  refactor       Generate refactoring plan from file similarity analysis",
   )
-  println(
-    "  documentation  Generate documentation coverage analysis",
-  )
+  println("  documentation  Generate documentation coverage analysis")
   println(
     "  readme         Generate README documentation tasks for manual/LLM writing",
   )

@@ -129,10 +129,10 @@ fn render_symbol(
 ) -> Unit {
   lines.push("### " + sym.name)
   lines.push("")
-  // Documentation
+  // Documentation (already cleaned by lexer strip/skip_value)
   match sym.doc {
     Some(doc) => {
-      lines.push(clean_doc(doc))
+      lines.push(doc)
       lines.push("")
     }
     None => ()
@@ -181,68 +181,6 @@ pub fn render_cross_references(
     )
   }
   join_lines(lines)
-}
-
-///|
-/// Clean documentation comment.
-fn clean_doc(doc : String) -> String {
-  let chars = doc.to_array()
-  let result : Array[Char] = []
-  let mut i = 0
-  let len = chars.length()
-  // Skip leading /** or ///|
-  while i < len {
-    if i + 2 < len &&
-      chars[i] == '/' &&
-      chars[i + 1] == '*' &&
-      chars[i + 2] == '*' {
-      i = i + 3
-      continue
-    }
-    if i + 3 < len &&
-      chars[i] == '/' &&
-      chars[i + 1] == '/' &&
-      chars[i + 2] == '/' &&
-      chars[i + 3] == '|' {
-      i = i + 4
-      continue
-    }
-    break
-  }
-  // Skip whitespace
-  while i < len && (chars[i] == ' ' || chars[i] == '\t' || chars[i] == '\n') {
-    i = i + 1
-  }
-  // Copy content
-  while i < len {
-    // Stop at */
-    if i + 1 < len && chars[i] == '*' && chars[i + 1] == '/' {
-      break
-    }
-    // Skip leading * on lines
-    if result.length() > 0 &&
-      result[result.length() - 1] == '\n' &&
-      chars[i] == '*' &&
-      (i + 1 >= len || chars[i + 1] == ' ') {
-      i = i + 1
-      if i < len && chars[i] == ' ' {
-        i = i + 1
-      }
-      continue
-    }
-    result.push(chars[i])
-    i = i + 1
-  }
-  // Trim trailing whitespace
-  while result.length() > 0 {
-    let last = result[result.length() - 1]
-    if last == ' ' || last == '\t' || last == '\n' || last == '\r' {
-      let _ = result.pop()
-    } else {
-      break
-    }
-  }
-  String::from_array(result)
 }
 
 ///|

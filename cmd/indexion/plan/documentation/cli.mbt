@@ -14,14 +14,14 @@
 /// | Option | Description | Default |
 /// |--------|-------------|---------|
 /// | `--output=FILE`, `-o=` | Output file path | stdout |
-/// | `--style=STYLE` | Output style: coverage, readme, full | full |
+/// | `--style=STYLE` | Output style: coverage, full | full |
 /// | `--name=NAME` | Project name (auto-detect from moon.mod.json) | - |
 
 ///|
 pub struct DocPlanConfig {
   target_dir : String
   output : String
-  style : String // "coverage", "readme", "full"
+  style : String // "coverage", "full"
   project_name : String
   show_help : Bool
 }
@@ -94,6 +94,8 @@ pub fn show_help() -> Unit {
   println("Styles:")
   println("  coverage   Documentation coverage analysis only")
   println("  full       Complete documentation plan with action items")
+  println("")
+  println("For README documentation tasks, use 'indexion plan readme' instead.")
   println("")
   println("Examples:")
   println("  indexion plan documentation src/")
