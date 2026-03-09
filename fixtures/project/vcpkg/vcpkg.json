@@ -1,0 +1,20 @@
+{
+  "name": "my-cpp-app",
+  "version": "1.2.0",
+  "description": "A modern C++ application",
+  "homepage": "https://github.com/example/my-cpp-app",
+  "license": "MIT",
+  "dependencies": [
+    "fmt",
+    "spdlog",
+    {
+      "name": "boost-asio",
+      "version>=": "1.82.0"
+    },
+    {
+      "name": "nlohmann-json",
+      "version>=": "3.11.0"
+    }
+  ],
+  "builtin-baseline": "a1b2c3d4e5f6"
+}

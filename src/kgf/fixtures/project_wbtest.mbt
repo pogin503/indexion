@@ -545,3 +545,191 @@ test "registry: get_external_prefixes includes project prefixes" {
   assert_true(has_pypi)
   assert_true(has_jsr)
 }
+
+// ============================================================================
+// Additional language tests (C++, C#, Swift, Java, Ruby, PHP)
+// ============================================================================
+
+///|
+test "project/vcpkg: parse C++ vcpkg.json" {
+  let source = @fs.read_file_to_string(
+    get_fixtures_dir() + "/project/vcpkg/vcpkg.json",
+  ) catch {
+    _ => return
+  }
+  let result = run_project_pipeline(
+    "vcpkg-json",
+    source,
+    "fixtures/project/vcpkg/vcpkg.json",
+  )
+  assert_true(result.parse_ok)
+  let edges = result.edges
+  // Should have projectName
+  let name_edge = edges.iter().find_first(fn(e) { edge_kind_is(e.kind, "projectName") })
+  assert_true(name_edge is Some(_))
+  // Should have vcpkg: dependencies
+  let deps = edges
+    .iter()
+    .filter(fn(e) { edge_kind_is(e.kind, "dependsOn") && e.to.has_prefix("vcpkg:") })
+    .collect()
+  assert_true(deps.length() >= 4)
+}
+
+///|
+test "project/csharp: parse .csproj" {
+  let source = @fs.read_file_to_string(
+    get_fixtures_dir() + "/project/csharp/Example.csproj",
+  ) catch {
+    _ => return
+  }
+  let result = run_project_pipeline(
+    "csproj",
+    source,
+    "fixtures/project/csharp/Example.csproj",
+  )
+  assert_true(result.parse_ok)
+  let edges = result.edges
+  // Should have projectName
+  let has_name = edges.iter().any(fn(e) { edge_kind_is(e.kind, "projectName") })
+  assert_true(has_name)
+  // Should have nuget: dependencies
+  let deps = edges
+    .iter()
+    .filter(fn(e) { edge_kind_is(e.kind, "dependsOn") && e.to.has_prefix("nuget:") })
+    .collect()
+  assert_true(deps.length() >= 3)
+}
+
+///|
+test "project/swift: parse Package.swift" {
+  let source = @fs.read_file_to_string(
+    get_fixtures_dir() + "/project/swift/Package.swift",
+  ) catch {
+    _ => return
+  }
+  let result = run_project_pipeline(
+    "package-swift",
+    source,
+    "fixtures/project/swift/Package.swift",
+  )
+  assert_true(result.parse_ok)
+  let edges = result.edges
+  // Should have projectName
+  let name_edge = edges.iter().find_first(fn(e) { edge_kind_is(e.kind, "projectName") })
+  assert_true(name_edge is Some(_))
+  match name_edge {
+    Some(e) => assert_eq(e.to, "MySwiftPackage")
+    None => fail("Expected projectName edge")
+  }
+  // Should have swift: dependencies (GitHub URLs)
+  let deps = edges
+    .iter()
+    .filter(fn(e) { edge_kind_is(e.kind, "dependsOn") && e.to.has_prefix("swift:") })
+    .collect()
+  assert_true(deps.length() >= 3)
+}
+
+///|
+test "project/maven: parse pom.xml" {
+  let source = @fs.read_file_to_string(
+    get_fixtures_dir() + "/project/maven/pom.xml",
+  ) catch {
+    _ => return
+  }
+  let result = run_project_pipeline(
+    "pom-xml",
+    source,
+    "fixtures/project/maven/pom.xml",
+  )
+  assert_true(result.parse_ok)
+  let edges = result.edges
+  // Should have projectName
+  let name_edge = edges.iter().find_first(fn(e) { edge_kind_is(e.kind, "projectName") })
+  assert_true(name_edge is Some(_))
+  match name_edge {
+    Some(e) => assert_eq(e.to, "my-java-app")
+    None => fail("Expected projectName edge")
+  }
+  // Should have maven: dependencies
+  let deps = edges
+    .iter()
+    .filter(fn(e) { edge_kind_is(e.kind, "dependsOn") && e.to.has_prefix("maven:") })
+    .collect()
+  assert_true(deps.length() >= 4)
+}
+
+///|
+test "project/gradle: parse build.gradle.kts" {
+  let source = @fs.read_file_to_string(
+    get_fixtures_dir() + "/project/gradle/build.gradle.kts",
+  ) catch {
+    _ => return
+  }
+  let result = run_project_pipeline(
+    "build-gradle-kts",
+    source,
+    "fixtures/project/gradle/build.gradle.kts",
+  )
+  assert_true(result.parse_ok)
+  let edges = result.edges
+  // Should have projectVersion
+  let has_version = edges.iter().any(fn(e) { edge_kind_is(e.kind, "projectVersion") })
+  assert_true(has_version)
+  // Should have maven: dependencies
+  let deps = edges
+    .iter()
+    .filter(fn(e) { edge_kind_is(e.kind, "dependsOn") && e.to.has_prefix("maven:") })
+    .collect()
+  assert_true(deps.length() >= 6)
+}
+
+///|
+test "project/ruby: parse Gemfile" {
+  let source = @fs.read_file_to_string(
+    get_fixtures_dir() + "/project/ruby/Gemfile",
+  ) catch {
+    _ => return
+  }
+  let result = run_project_pipeline(
+    "gemfile",
+    source,
+    "fixtures/project/ruby/Gemfile",
+  )
+  assert_true(result.parse_ok)
+  let edges = result.edges
+  // Should have rubygems: dependencies
+  let deps = edges
+    .iter()
+    .filter(fn(e) { edge_kind_is(e.kind, "dependsOn") && e.to.has_prefix("rubygems:") })
+    .collect()
+  assert_true(deps.length() >= 8)
+}
+
+///|
+test "project/php: parse composer.json" {
+  let source = @fs.read_file_to_string(
+    get_fixtures_dir() + "/project/php/composer.json",
+  ) catch {
+    _ => return
+  }
+  let result = run_project_pipeline(
+    "composer-json",
+    source,
+    "fixtures/project/php/composer.json",
+  )
+  assert_true(result.parse_ok)
+  let edges = result.edges
+  // Should have projectName
+  let name_edge = edges.iter().find_first(fn(e) { edge_kind_is(e.kind, "projectName") })
+  assert_true(name_edge is Some(_))
+  match name_edge {
+    Some(e) => assert_eq(e.to, "example/my-php-app")
+    None => fail("Expected projectName edge")
+  }
+  // Should have packagist: dependencies
+  let deps = edges
+    .iter()
+    .filter(fn(e) { edge_kind_is(e.kind, "dependsOn") && e.to.has_prefix("packagist:") })
+    .collect()
+  assert_true(deps.length() >= 7)
+}
