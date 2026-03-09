@@ -1,6 +1,6 @@
 kgf 0.6
-language: typescript
-sources: .ts, .d.ts
+language: typescript-jsx
+sources: .tsx
 
 === lex
 # Whitespace (not comments - we capture those)
@@ -14,8 +14,15 @@ TOKEN DocComment /\/\*\*[\s\S]*?\*\//
 TOKEN LineComment /\/\/[^\r\n]*/
 TOKEN BlockComment /\/\*(?!\*)[\s\S]*?\*\//
 
-# String literals
-TOKEN StringLit /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'|`([^`\\]|\\.)*`/
+# String literals (including template literals)
+TOKEN TemplateLit /`(?:[^`\\$]|\\.|\$(?!\{)|\$\{[^}]*\})*`/
+TOKEN StringLit /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/
+
+# JSX tokens (order matters - more specific first)
+TOKEN JSX_FRAG_CLOSE /<\/>/
+TOKEN JSX_FRAG_OPEN /<>/
+TOKEN JSX_CLOSE_START /<\//
+TOKEN JSX_SELF_CLOSE /\/>/
 
 # Keywords
 TOKEN KW_import    /import\b/
@@ -33,6 +40,8 @@ TOKEN KW_enum      /enum\b/
 TOKEN KW_extends   /extends\b/
 TOKEN KW_implements /implements\b/
 TOKEN KW_async     /async\b/
+TOKEN KW_await     /await\b/
+TOKEN KW_return    /return\b/
 TOKEN KW_public    /public\b/
 TOKEN KW_private   /private\b/
 TOKEN KW_protected /protected\b/
@@ -64,6 +73,10 @@ TOKEN QMARK   /\?/
 TOKEN STAR    /\*/
 TOKEN PIPE    /\|/
 TOKEN AMP     /&/
+TOKEN SLASH   /\//
+TOKEN PLUS    /\+/
+TOKEN MINUS   /-/
+TOKEN BANG    /!/
 
 === grammar
 # Module with optional leading module doc (JSDoc with @module or @packageDocumentation)
@@ -138,12 +151,23 @@ ExtendsClause -> KW_extends TypeList
 ImplementsClause -> KW_implements TypeList
 TypeList -> Type ( COMMA Type )*
 
+# JSX Elements
+JsxElement -> JsxSelfClosing / JsxOpenClose / JsxFragment
+JsxSelfClosing -> LT JsxTagName JsxAttr* JSX_SELF_CLOSE
+JsxOpenClose -> LT JsxTagName JsxAttr* GT JsxChild* JSX_CLOSE_START JsxTagName GT
+JsxFragment -> JSX_FRAG_OPEN JsxChild* JSX_FRAG_CLOSE
+JsxTagName -> Ident ( DOT Ident )*
+JsxAttr -> Ident ( EQ JsxAttrValue )?
+JsxAttrValue -> StringLit / TemplateLit / LBRACE Expr RBRACE
+JsxChild -> JsxElement / LBRACE Expr RBRACE / JsxText
+JsxText -> Atom+
+
 # Bodies and expressions (simplified - just balance braces)
 Body -> LBRACE BodyContent* RBRACE
 BodyContent -> LBRACE BodyContent* RBRACE / LPAREN BodyContent* RPAREN / LBRACKET BodyContent* RBRACKET / Atom
 Expr -> ExprAtom+
-ExprAtom -> Ident / Number / StringLit / LPAREN / RPAREN / LBRACE / RBRACE / LBRACKET / RBRACKET / DOT / COMMA / COLON / LT / GT / EQ / ARROW / QMARK / STAR / PIPE / AMP
-Atom -> Ident / Number / StringLit / SEMI / COMMA / COLON / DOT / EQ / ARROW / QMARK / STAR / PIPE / AMP / LT / GT / NL / LineComment / BlockComment / DocComment
+ExprAtom -> Ident / Number / StringLit / TemplateLit / LPAREN / RPAREN / LBRACE / RBRACE / LBRACKET / RBRACKET / DOT / COMMA / COLON / LT / GT / EQ / ARROW / QMARK / STAR / PIPE / AMP / SLASH / PLUS / MINUS / BANG
+Atom -> Ident / Number / StringLit / TemplateLit / SEMI / COMMA / COLON / DOT / EQ / ARROW / QMARK / STAR / PIPE / AMP / LT / GT / SLASH / PLUS / MINUS / BANG / NL / LineComment / BlockComment / DocComment
 
 # Fallback
 Other -> Atom

@@ -81,7 +81,8 @@ test "registry: comprehensive validation" {
 
   // Test 3: Extension to language mapping
   let ext_mappings = [
-    (".ts", "typescript"), (".tsx", "typescript"), (".js", "javascript"),
+    (".ts", "typescript"), (".tsx", "typescript-jsx"), (".js", "javascript"),
+    (".jsx", "javascript-jsx"),
     (".py", "python"), (".go", "go"), (".rs", "rust"), (".java", "java"),
     (".rb", "ruby"), (".php", "php"), (".swift", "swift"), (".kt", "kotlin"),
     (".dart", "dart"), (".scala", "scala"), (".ex", "elixir"), (".hs", "haskell"),
