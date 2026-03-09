@@ -2,45 +2,8 @@
 /// Iterative (trampoline-based) PEG evaluator to avoid stack overflow.
 /// Handles large files that would cause SIGSEGV with recursive approach.
 /// Optimized to avoid array copying by using indices.
-
-///|
-/// Memo entry states for memoization.
-/// Stores labels to support labeled captures across backtracking.
-priv enum MemoState {
-  Unknown
-  Failed
-  Succeeded(Int, Map[String, Json]) // (end_pos, labels)
-}
-
-///|
-/// FastEvalResult holds evaluation result with labels.
-priv struct FastEvalResult {
-  ok : Bool
-  end_pos : Int
-  labels : Map[String, Json]
-}
-
-///|
-/// Creates empty labels map.
-fn empty_labels() -> Map[String, Json] {
-  Map::new()
-}
-
-///|
-/// Merges labels from source into target (in place).
-fn merge_labels(target : Map[String, Json], source : Map[String, Json]) -> Unit {
-  for key, value in source {
-    if key == "_text" {
-      match (target.get("_text"), value) {
-        (Some(String(base)), String(new_text)) =>
-          target.set("_text", (base + new_text).to_json())
-        _ => target.set(key, value)
-      }
-    } else {
-      target.set(key, value)
-    }
-  }
-}
+///
+/// Common types (MemoState, FastEvalResult, etc.) are defined in eval_common.mbt.
 
 ///|
 /// Work item for the evaluation stack.
@@ -95,17 +58,8 @@ fn IterEvalContext::new(
 ) -> IterEvalContext {
   let num_nodes = peg.fast_nodes.length()
   let num_positions = tokens.length() + 1
-  let memo_size = num_nodes * num_positions
-  let memo : Array[MemoState] = Array::make(memo_size, Unknown)
-  let token_ids : Array[Int] = Array::make(tokens.length(), -1)
-  for i = 0; i < tokens.length(); i = i + 1 {
-    let kind = tokens[i].kind
-    match peg.get_token_id(kind) {
-      Some(id) => token_ids[i] = id
-      None => token_ids[i] = -1
-    }
-  }
-  // Pre-compute bracket pairs for fast balanced matching
+  let memo = create_memo(num_nodes, num_positions)
+  let token_ids = compute_token_ids(peg, tokens)
   let brace_pairs = compute_brace_pairs(tokens)
   {
     peg,
@@ -294,7 +248,7 @@ fn process_seq_cont(
   node_id : Int,
   idx : Int,
   start_pos : Int,
-  current_pos : Int,
+  _current_pos : Int,
   labels : Map[String, Json],
 ) -> Unit {
   let result = ctx.results.pop().unwrap()

@@ -1,6 +1,8 @@
 ///|
 /// Recursive PEG evaluator - fast but can stack overflow on very large files.
 /// Use for files with < 10000 tokens.
+///
+/// Common types (MemoState, FastEvalResult, etc.) are defined in eval_common.mbt.
 
 ///|
 /// Recursive evaluation context.
@@ -24,16 +26,8 @@ fn RecEvalContext::new(
 ) -> RecEvalContext {
   let num_nodes = peg.fast_nodes.length()
   let num_positions = tokens.length() + 1
-  let memo_size = num_nodes * num_positions
-  let memo : Array[MemoState] = Array::make(memo_size, Unknown)
-  let token_ids : Array[Int] = Array::make(tokens.length(), -1)
-  for i = 0; i < tokens.length(); i = i + 1 {
-    let kind = tokens[i].kind
-    match peg.get_token_id(kind) {
-      Some(id) => token_ids[i] = id
-      None => token_ids[i] = -1
-    }
-  }
+  let memo = create_memo(num_nodes, num_positions)
+  let token_ids = compute_token_ids(peg, tokens)
   { peg, tokens, token_ids, memo, num_positions, on_rule_match, emit_filter }
 }
 
