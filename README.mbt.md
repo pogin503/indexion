@@ -49,8 +49,8 @@ indexion sim [options] <text1> <text2>
 ### `indexion explore`
 
 
-Explores a directory and calculates pairwise similarity between all files.
-Useful for understanding code patterns and finding potential duplications.
+Explores a directory and calculates pairwise similarity across files, with
+include/exclude filters and thresholded list or JSON output.
 
 ## Usage
 

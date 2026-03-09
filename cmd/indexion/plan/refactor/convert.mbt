@@ -5,10 +5,12 @@
 /// Convert refactoring plan to PlanDocument.
 pub fn refactor_to_plan_document(
   plan : RefactorPlanJSON,
-  project_name : String
+  project_name : String,
 ) -> @plan_types.PlanDocument {
   let doc = @plan_types.PlanDocument::new(project_name + " Refactoring Plan")
-  doc.set_description("Code similarity analysis and refactoring recommendations.")
+  doc.set_description(
+    "Code similarity analysis and refactoring recommendations.",
+  )
   // Metadata
   doc.set_meta("project_name", project_name)
   doc.set_meta("threshold", plan.config.threshold.to_string())
@@ -66,11 +68,20 @@ fn build_cluster_subsection(cluster : ClusterJSON) -> @plan_types.PlanSection {
   // Add similarity info
   for pair in cluster.pairs {
     let desc = format_similarity(pair.similarity) + " similar"
-    items.push(@plan_types.ListItem::with_desc("`" + pair.file1 + "` ↔ `" + pair.file2 + "`", desc))
+    items.push(
+      @plan_types.ListItem::with_desc(
+        "`" + pair.file1 + "` ↔ `" + pair.file2 + "`",
+        desc,
+      ),
+    )
   }
   @plan_types.PlanSection::new(
     "group" + cluster.group_id.to_string(),
-    "Group " + cluster.group_id.to_string() + " (" + cluster.files.length().to_string() + " files)",
+    "Group " +
+    cluster.group_id.to_string() +
+    " (" +
+    cluster.files.length().to_string() +
+    " files)",
     @plan_types.SectionContent::list(items),
   )
 }
@@ -83,38 +94,58 @@ fn build_refactor_actions(plan : RefactorPlanJSON) -> @plan_types.PlanSection {
   for cluster in plan.clusters {
     for pair in cluster.pairs {
       if pair.similarity >= 0.9 {
-        high_sim.push(@plan_types.ChecklistItem::with_priority(
-          "Merge or extract common code: `" + short_name(pair.file1) + "` ↔ `" + short_name(pair.file2) + "` (" + format_similarity(pair.similarity) + ")",
-          1,
-        ))
+        high_sim.push(
+          @plan_types.ChecklistItem::with_priority(
+            "Merge or extract common code: `" +
+            short_name(pair.file1) +
+            "` ↔ `" +
+            short_name(pair.file2) +
+            "` (" +
+            format_similarity(pair.similarity) +
+            ")",
+            1,
+          ),
+        )
       }
     }
   }
   if high_sim.length() > 0 {
-    nested.push(@plan_types.PlanSection::new(
-      "priority1",
-      "Priority 1: Near Duplicates (>90%)",
-      @plan_types.SectionContent::checklist(high_sim),
-    ))
+    nested.push(
+      @plan_types.PlanSection::new(
+        "priority1",
+        "Priority 1: Near Duplicates (>90%)",
+        @plan_types.SectionContent::checklist(high_sim),
+      ),
+    )
   }
   // Medium priority: 80-90% similarity
   let med_sim : Array[@plan_types.ChecklistItem] = []
   for cluster in plan.clusters {
     for pair in cluster.pairs {
       if pair.similarity >= 0.8 && pair.similarity < 0.9 {
-        med_sim.push(@plan_types.ChecklistItem::with_priority(
-          "Consider extracting shared logic: `" + short_name(pair.file1) + "` ↔ `" + short_name(pair.file2) + "` (" + format_similarity(pair.similarity) + ")",
-          2,
-        ))
+        med_sim.push(
+          @plan_types.ChecklistItem::with_priority(
+            "Consider extracting shared logic: `" +
+            short_name(pair.file1) +
+            "` ↔ `" +
+            short_name(pair.file2) +
+            "` (" +
+            format_similarity(pair.similarity) +
+            ")",
+            2,
+          ),
+        )
       }
     }
   }
   if med_sim.length() > 0 {
-    nested.push(@plan_types.PlanSection::new(
-      "priority2",
-      "Priority 2: High Similarity (80-90%)",
-      @plan_types.SectionContent::checklist(med_sim),
-    ))
+    nested.push(
+      @plan_types.PlanSection::new(
+        "priority2",
+        "Priority 2: High Similarity (80-90%)",
+        @plan_types.SectionContent::checklist(med_sim),
+      ),
+    )
   }
   // Suggested modules
   let suggested : Array[@plan_types.ChecklistItem] = []
@@ -135,18 +166,25 @@ fn build_refactor_actions(plan : RefactorPlanJSON) -> @plan_types.PlanSection {
         }
         funcs = funcs + ")"
       }
-      suggested.push(@plan_types.ChecklistItem::with_priority(
-        "Create shared module `" + cluster.suggestions.shared_module + "`" + funcs,
-        3,
-      ))
+      suggested.push(
+        @plan_types.ChecklistItem::with_priority(
+          "Create shared module `" +
+          cluster.suggestions.shared_module +
+          "`" +
+          funcs,
+          3,
+        ),
+      )
     }
   }
   if suggested.length() > 0 {
-    nested.push(@plan_types.PlanSection::new(
-      "suggestions",
-      "Suggested Shared Modules",
-      @plan_types.SectionContent::checklist(suggested),
-    ))
+    nested.push(
+      @plan_types.PlanSection::new(
+        "suggestions",
+        "Suggested Shared Modules",
+        @plan_types.SectionContent::checklist(suggested),
+      ),
+    )
   }
   @plan_types.PlanSection::new(
     "actions",

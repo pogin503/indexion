@@ -19,8 +19,10 @@ indexion explore [options] <directory>
 |--------|-------------|---------|
 | `--format=FORMAT` | Output: `matrix`, `list`, `cluster`, `json` | matrix |
 | `--strategy=NAME` | Algorithm: `tfidf`, `ncd`, `hybrid` | tfidf |
-| `--threshold=FLOAT` | Clustering threshold (for cluster format) | 0.5 |
+| `--threshold=FLOAT` | Min similarity for list/json/cluster output | 0.5 |
 | `--ext=EXT` | File extension filter (repeatable) | all |
+| `--include=PATTERN` | Include files matching glob pattern | * |
+| `--exclude=PATTERN` | Exclude files matching glob pattern | - |
 
 ## Examples
 
@@ -36,11 +38,14 @@ indexion explore --format=cluster --threshold=0.7 src/
 
 # Filter by extension
 indexion explore --ext=.mbt --ext=.kgf src/
+
+# TypeScript only with glob filters
+indexion explore --format=list --include=*.ts --include=*.tsx src/
 ```
 
 ## Output Formats
 
 - **matrix**: Grid showing pairwise similarity percentages
-- **list**: Pairs sorted by similarity (highest first)
+- **list**: Pairs sorted by similarity (highest first, filtered by `--threshold`)
 - **cluster**: Groups of files exceeding threshold
-- **json**: Machine-readable JSON output
+- **json**: Machine-readable JSON output (filtered by `--threshold`)
