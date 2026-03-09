@@ -204,14 +204,7 @@ pub fn show_explore_help() -> Unit {
 }
 
 ///|
-/// Progress counter for file collection.
-priv struct CollectProgress {
-  mut files_found : Int
-  mut dirs_scanned : Int
-}
-
-///|
-/// Collect files from directory (recursive).
+/// Collect files from directory using pipeline.discover_files (SoT).
 fn collect_files(
   dir : String,
   extensions : Array[String],
@@ -219,101 +212,57 @@ fn collect_files(
   excludes : Array[String],
 ) -> Array[(String, String)] {
   let files : Array[(String, String)] = []
-  let progress = CollectProgress::{ files_found: 0, dirs_scanned: 0 }
-  // Load filter config from directory (respects .gitignore, .indexionignore)
-  let filter_config = @filter.FilterConfig::new()
-    .with_includes(includes)
-    .with_excludes(excludes)
-    .with_gitignore_from_dir(dir)
-    .with_indexionignore_from_dir(dir)
-  collect_files_recursive(dir, extensions, files, "", progress, filter_config)
+  // Use pipeline.discover_files as SoT for filtering
+  let opts = @pipeline.DiscoverOptions::new(
+    includes=includes,
+    excludes=excludes,
+    root_dir=dir,
+  )
+  let paths = @pipeline.discover_files([dir], opts)
+  // Filter by extensions and read contents
+  for path in paths {
+    let basename = @pipeline.extract_basename(path)
+    // Check extension filter
+    let ext_ok = if extensions.length() == 0 {
+      true
+    } else {
+      let mut matched = false
+      for ext in extensions {
+        if basename.has_suffix(ext) {
+          matched = true
+          break
+        }
+      }
+      matched
+    }
+    if ext_ok {
+      try {
+        let content = @fs.read_file_to_string(path)
+        // Convert to relative path for display
+        let display_name = make_relative_path(path, dir)
+        files.push((display_name, content))
+      } catch {
+        _ => ()
+      }
+    }
+  }
   files
 }
 
 ///|
-fn should_include_file(
-  filter : @filter.FilterConfig,
-  filename : String,
-) -> Bool {
-  filter.should_include(filename, false).is_included()
-}
-
-///|
-/// Recursive helper for collecting files.
-fn collect_files_recursive(
-  dir : String,
-  extensions : Array[String],
-  files : Array[(String, String)],
-  prefix : String,
-  progress : CollectProgress,
-  filter_config : @filter.FilterConfig,
-) -> Unit {
-  let clean_dir = if dir.has_suffix("/") {
-    let chars = dir.to_array()
+/// Convert absolute path to relative path from base directory.
+fn make_relative_path(path : String, base : String) -> String {
+  let clean_base = @pipeline.trim_trailing_slash(base)
+  let prefix = clean_base + "/"
+  if path.has_prefix(prefix) {
+    let chars = path.to_array()
     let result : Array[Char] = []
-    for i = 0; i < chars.length() - 1; i = i + 1 {
+    for i = prefix.length(); i < chars.length(); i = i + 1 {
       result.push(chars[i])
     }
     String::from_array(result)
   } else {
-    dir
-  }
-  try {
-    if not(@fs.is_dir(clean_dir)) {
-      return
-    }
-    progress.dirs_scanned = progress.dirs_scanned + 1
-    // Show progress every 10 directories
-    if progress.dirs_scanned % 10 == 0 {
-      println(
-        "      Scanning: " +
-        progress.dirs_scanned.to_string() +
-        " dirs, " +
-        progress.files_found.to_string() +
-        " files found",
-      )
-    }
-    let entries = @fs.read_dir(clean_dir)
-    for entry in entries {
-      let path = clean_dir + "/" + entry
-      let display_name = if prefix.length() > 0 {
-        prefix + "/" + entry
-      } else {
-        entry
-      }
-      if @fs.is_dir(path) {
-        // Use filter config to determine if directory should be skipped
-        if filter_config.should_skip_dir(entry) {
-          continue
-        }
-        // Recurse into subdirectory
-        collect_files_recursive(
-          path, extensions, files, display_name, progress, filter_config,
-        )
-      } else if @fs.is_file(path) {
-        // Check extension filter
-        let ext_ok = if extensions.length() == 0 {
-          true
-        } else {
-          let mut matched = false
-          for ext in extensions {
-            if entry.has_suffix(ext) {
-              matched = true
-              break
-            }
-          }
-          matched
-        }
-        // Check filter config
-        if ext_ok && should_include_file(filter_config, display_name) {
-          let content = @fs.read_file_to_string(path)
-          files.push((display_name, content))
-          progress.files_found = progress.files_found + 1
-        }
-      }
-    }
-  } catch {
-    _ => ()
+    path
   }
 }
 

@@ -231,73 +231,48 @@ pub fn show_help() -> Unit {
 }
 
 ///|
-/// Check if file should be included based on filter config.
-fn should_include_file(
-  filter : @filter.FilterConfig,
-  filename : String,
-) -> Bool {
-  filter.should_include(filename, false).is_included()
-}
-
-///|
-/// Collect files recursively with filtering.
+/// Collect files recursively with filtering using pipeline.discover_files (SoT).
 fn collect_files(
   dir : String,
   includes : Array[String],
   excludes : Array[String],
 ) -> Array[(String, String)] {
-  let filter = @filter.FilterConfig::new()
-    .with_includes(includes)
-    .with_excludes(excludes)
   let files : Array[(String, String)] = []
-  collect_files_recursive(dir, filter, files, "")
+  // Use pipeline.discover_files as SoT for filtering
+  let opts = @pipeline.DiscoverOptions::new(
+    includes=includes,
+    excludes=excludes,
+    root_dir=dir,
+  )
+  let paths = @pipeline.discover_files([dir], opts)
+  // Read file contents
+  for path in paths {
+    try {
+      let content = @fs.read_file_to_string(path)
+      // Convert to relative path for display
+      let display_name = make_relative_path(path, dir)
+      files.push((display_name, content))
+    } catch {
+      _ => ()
+    }
+  }
   files
 }
 
 ///|
-fn collect_files_recursive(
-  dir : String,
-  filter : @filter.FilterConfig,
-  files : Array[(String, String)],
-  prefix : String,
-) -> Unit {
-  let clean_dir = if dir.has_suffix("/") {
-    let chars = dir.to_array()
+/// Convert absolute path to relative path from base directory.
+fn make_relative_path(path : String, base : String) -> String {
+  let clean_base = @pipeline.trim_trailing_slash(base)
+  let prefix = clean_base + "/"
+  if path.has_prefix(prefix) {
+    let chars = path.to_array()
     let result : Array[Char] = []
-    for i = 0; i < chars.length() - 1; i = i + 1 {
+    for i = prefix.length(); i < chars.length(); i = i + 1 {
       result.push(chars[i])
     }
     String::from_array(result)
   } else {
-    dir
-  }
-  try {
-    if not(@fs.is_dir(clean_dir)) {
-      return
-    }
-    let entries = @fs.read_dir(clean_dir)
-    for entry in entries {
-      // Skip excluded directories early
-      if filter.should_skip_dir(entry) {
-        continue
-      }
-      let path = clean_dir + "/" + entry
-      let display_name = if prefix.length() > 0 {
-        prefix + "/" + entry
-      } else {
-        entry
-      }
-      if @fs.is_dir(path) {
-        collect_files_recursive(path, filter, files, display_name)
-      } else if @fs.is_file(path) {
-        if should_include_file(filter, display_name) {
-          let content = @fs.read_file_to_string(path)
-          files.push((display_name, content))
-        }
-      }
-    }
-  } catch {
-    _ => ()
+    path
   }
 }
 

@@ -6,36 +6,48 @@
 /// Options for file discovery.
 pub struct DiscoverOptions {
   recursive : Bool
+  includes : Array[String]
   excludes : Array[String]
   /// KGF ignore patterns: (pattern, language)
   kgf_ignore : Array[(String, String)]
+  /// Root directory for loading project-level ignore files (.gitignore, .indexionignore)
+  root_dir : String
 }
 
 ///|
 /// Create default discover options.
 pub fn DiscoverOptions::default() -> DiscoverOptions {
-  { recursive: true, excludes: [], kgf_ignore: [] }
+  { recursive: true, includes: [], excludes: [], kgf_ignore: [], root_dir: "" }
 }
 
 ///|
 /// Create discover options.
 pub fn DiscoverOptions::new(
   recursive? : Bool = true,
+  includes? : Array[String] = [],
   excludes? : Array[String] = [],
   kgf_ignore? : Array[(String, String)] = [],
+  root_dir? : String = "",
 ) -> DiscoverOptions {
-  { recursive, excludes, kgf_ignore }
+  { recursive, includes, excludes, kgf_ignore, root_dir }
 }
 
 ///|
 /// Collect all file paths from given input paths.
-/// Respects excludes and recursion settings.
+/// Respects includes, excludes, and recursion settings.
+/// Loads project-level ignore files from root_dir if specified.
 pub fn discover_files(
   paths : Array[String],
   options : DiscoverOptions,
 ) -> Array[String] {
-  // Create filter config with user excludes and KGF patterns
-  let mut filter = @filter.FilterConfig::new().with_excludes(options.excludes)
+  // Create filter config - load from project root if specified
+  let mut filter = if options.root_dir.length() > 0 {
+    @filter.FilterConfig::from_project_root(options.root_dir)
+  } else {
+    @filter.FilterConfig::new()
+  }
+  // Add user includes and excludes
+  filter = filter.with_includes(options.includes).with_excludes(options.excludes)
   // Add KGF ignore patterns
   for entry in options.kgf_ignore {
     filter = filter.with_kgf_ignore([entry.0], entry.1)

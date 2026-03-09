@@ -230,44 +230,18 @@ fn ProjectInfo::default() -> ProjectInfo {
 }
 
 ///|
-/// Load KGF registry from multiple possible locations.
-/// Priority:
-/// 1. Explicit --specs-dir option
-/// 2. INDEXION_SPECS_DIR environment variable
-/// 3. kgfs/ relative to executable directory
-/// 4. kgfs/ in current working directory (fallback)
+/// Load KGF registry using the centralized kgfs directory resolution.
+/// Uses @config.find_kgfs_dir() as SoT for path resolution.
 fn load_registry_from_paths(
   specs_dir : String,
-  exe_dir : String,
+  _exe_dir : String,
 ) -> @registry.KGFRegistry {
-  // 1. Try specified specs_dir if not default
-  if specs_dir != "kgfs" {
-    let registry = @registry.KGFRegistry::load_from_dir(specs_dir)
-    if registry.spec_count() > 0 {
-      return registry
-    }
+  // Use SoT: explicit path takes priority if not default
+  let explicit = if specs_dir != "kgfs" { specs_dir } else { "" }
+  match @config.find_kgfs_dir(explicit_path=explicit) {
+    Some(dir) => @registry.KGFRegistry::load_from_dir(dir)
+    None => @registry.KGFRegistry::new()
   }
-  // 2. Try INDEXION_SPECS_DIR environment variable
-  let env_specs = match @sys.get_env_var("INDEXION_SPECS_DIR") {
-    Some(v) => v
-    None => ""
-  }
-  if env_specs.length() > 0 {
-    let registry = @registry.KGFRegistry::load_from_dir(env_specs)
-    if registry.spec_count() > 0 {
-      return registry
-    }
-  }
-  // 3. Try kgfs/ relative to executable (for binary distribution)
-  if exe_dir.length() > 0 {
-    let exe_kgfs = exe_dir + "/kgfs"
-    let registry = @registry.KGFRegistry::load_from_dir(exe_kgfs)
-    if registry.spec_count() > 0 {
-      return registry
-    }
-  }
-  // 4. Fallback to current directory's kgfs/
-  @registry.KGFRegistry::load_from_dir("kgfs")
 }
 
 ///|

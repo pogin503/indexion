@@ -3,21 +3,10 @@
 /// Converts KGF lexer tokens to TF-IDF feature strings.
 
 ///|
-/// Find kgfs directory by searching relative paths.
-pub fn find_kgfs_dir() -> String? {
-  let paths = [
-    "kgfs", "../kgfs", "../../kgfs", "../../../kgfs", "../../../../kgfs",
-  ]
-  for path in paths {
-    try {
-      if @fs.is_dir(path) {
-        return Some(path)
-      }
-    } catch {
-      _ => continue
-    }
-  }
-  None
+/// Find kgfs directory.
+/// Delegates to @config.find_kgfs_dir which is the SoT for path resolution.
+pub fn find_kgfs_dir(explicit_path? : String = "") -> String? {
+  @config.find_kgfs_dir(explicit_path~)
 }
 
 ///|

@@ -22,12 +22,34 @@ pub fn FilterConfig::should_include(
   }
   // 2. Check user includes (whitelist mode when specified)
   // If --include is specified, only matching files are included
+  // Follows gitignore semantics:
+  //   - Pattern without "/" = filename pattern (matches basename anywhere)
+  //   - Pattern with "/" = path pattern (matches against full path)
+  //   - Filename patterns don't apply to directories (not a match target)
+  //   - Path patterns allow directory traversal if dir is on the path to matches
   if config.user_includes.length() > 0 {
     let mut matched = false
     for pattern in config.user_includes {
-      if glob_match(path, pattern) || glob_match(basename, pattern) {
-        matched = true
-        break
+      // Check if this is a filename pattern (no slash) or path pattern
+      let is_filename_pattern = not(contains_slash(pattern))
+      if is_dir {
+        // For directories, check if traversal should continue
+        if is_filename_pattern {
+          // Filename pattern: directory is not a target, continue traversal
+          matched = true
+          break
+        }
+        // Path pattern: check if directory is on the path to potential matches
+        if dir_could_contain_pattern_match(path, pattern) {
+          matched = true
+          break
+        }
+      } else {
+        // For files, check pattern match
+        if glob_match(path, pattern) || glob_match(basename, pattern) {
+          matched = true
+          break
+        }
       }
     }
     if not(matched) {
@@ -172,4 +194,70 @@ pub fn filter_paths(
     }
   }
   result
+}
+
+///|
+/// Check if a directory could contain files that match a path pattern.
+/// For pattern "src/filter/*.mbt":
+///   - dir "src" → true (prefix of pattern's directory)
+///   - dir "src/filter" → true (matches pattern's directory)
+///   - dir "src/core" → false (not on the path)
+fn dir_could_contain_pattern_match(dir : String, pattern : String) -> Bool {
+  // Normalize: ensure dir ends with /
+  let dir_with_slash = if dir.has_suffix("/") { dir } else { dir + "/" }
+  // Extract the fixed prefix of the pattern (before wildcards)
+  let pattern_prefix = extract_pattern_prefix(pattern)
+  let prefix_with_slash = if pattern_prefix.has_suffix("/") {
+    pattern_prefix
+  } else {
+    pattern_prefix + "/"
+  }
+  // Check if dir is a prefix of the pattern's directory part
+  // e.g., "src/" is prefix of "src/filter/"
+  if prefix_with_slash.has_prefix(dir_with_slash) {
+    return true
+  }
+  // Check if pattern's prefix is a prefix of dir
+  // e.g., "src/filter/" is prefix of "src/filter/sub/"
+  if dir_with_slash.has_prefix(prefix_with_slash) {
+    return true
+  }
+  // Also check with ** patterns - if pattern contains **, be more permissive
+  if pattern.has_prefix("**/") || pattern.has_prefix("**\\") {
+    // Pattern like "**/test.mbt" matches anywhere
+    return true
+  }
+  false
+}
+
+///|
+/// Extract the fixed prefix of a glob pattern (before any wildcards).
+/// "src/filter/*.mbt" → "src/filter"
+/// "src/**/test.mbt" → "src"
+/// "*.mbt" → ""
+fn extract_pattern_prefix(pattern : String) -> String {
+  let chars = pattern.to_array()
+  let result : Array[Char] = []
+  let mut last_slash = -1
+  for i = 0; i < chars.length(); i = i + 1 {
+    let c = chars[i]
+    // Stop at first wildcard character
+    if c == '*' || c == '?' || c == '[' {
+      break
+    }
+    result.push(c)
+    if c == '/' || c == '\\' {
+      last_slash = result.length()
+    }
+  }
+  // Return up to the last slash (directory part only)
+  if last_slash > 0 {
+    let dir_part : Array[Char] = []
+    for i = 0; i < last_slash; i = i + 1 {
+      dir_part.push(result[i])
+    }
+    String::from_array(dir_part)
+  } else {
+    String::from_array(result)
+  }
 }
