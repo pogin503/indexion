@@ -46,30 +46,6 @@ pub fn TraversalResult::max_depth(self : TraversalResult) -> Int {
 }
 
 ///|
-/// Get callees of a symbol.
-fn get_callees(graph : @graph.CodeGraph, symbol_id : String) -> Array[String] {
-  let result : Array[String] = []
-  for edge in graph.edges_from(symbol_id) {
-    if edge.kind is @graph.Calls {
-      result.push(edge.to)
-    }
-  }
-  result
-}
-
-///|
-/// Get callers of a symbol.
-fn get_callers(graph : @graph.CodeGraph, symbol_id : String) -> Array[String] {
-  let result : Array[String] = []
-  for edge in graph.edges_to(symbol_id) {
-    if edge.kind is @graph.Calls {
-      result.push(edge.from)
-    }
-  }
-  result
-}
-
-///|
 /// Compute bottom-up traversal order.
 /// Returns functions ordered from leaves (depth 0) to roots (max depth).
 pub fn compute_bottom_up_order(
@@ -125,7 +101,7 @@ fn compute_depth_recursive(
     return 0 // Break cycle, already recorded
   }
   visiting.set(symbol_id, true)
-  let callees = get_callees(graph, symbol_id)
+  let callees = graph.get_callees(symbol_id)
   let mut max_callee_depth = -1
   for callee in callees {
     // Only consider callees within our valid set
@@ -204,7 +180,7 @@ fn compute_caller_depth_recursive(
     return 0
   }
   visiting.set(symbol_id, true)
-  let callers = get_callers(graph, symbol_id)
+  let callers = graph.get_callers(symbol_id)
   let mut max_caller_depth = -1
   for caller in callers {
     if not(valid_ids.contains(caller)) {

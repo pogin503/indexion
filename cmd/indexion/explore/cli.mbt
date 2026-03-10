@@ -54,9 +54,9 @@
 ///|
 /// CLI configuration.
 pub struct ExploreConfig {
-  target_dir : String
+  target_dirs : Array[String] // multiple directories supported
   format : String // "matrix", "list", "cluster", "json"
-  strategy : String // "hybrid", "ncd", "tfidf"
+  strategy : String // "hybrid", "ncd", "tfidf", "apted", "tsed"
   threshold : Double // similarity threshold for clustering
   extensions : Array[String] // file extensions to include
   includes : Array[String] // glob patterns to include
@@ -68,7 +68,7 @@ pub struct ExploreConfig {
 /// Create default CLI configuration.
 pub fn ExploreConfig::default() -> ExploreConfig {
   {
-    target_dir: "",
+    target_dirs: [],
     format: "matrix",
     strategy: "tfidf",
     threshold: 0.5,
@@ -88,49 +88,7 @@ priv struct FilePair {
   _distance : Double
 }
 
-///|
-fn get_arg_value(arg : String, prefix_len : Int) -> String {
-  let chars = arg.to_array()
-  if prefix_len >= chars.length() {
-    return ""
-  }
-  let result : Array[Char] = []
-  for i = prefix_len; i < chars.length(); i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
-fn parse_double(s : String) -> Double {
-  let chars = s.to_array()
-  if chars.length() == 0 {
-    return 0.0
-  }
-  let mut result = 0.0
-  let mut decimal_place = 0
-  let mut i = 0
-  while i < chars.length() {
-    let c = chars[i]
-    if c == '.' {
-      decimal_place = 1
-    } else if c >= '0' && c <= '9' {
-      let digit = (c.to_int() - '0'.to_int()).to_double()
-      if decimal_place > 0 {
-        let mut divisor = 1.0
-        for j = 0; j < decimal_place; j = j + 1 {
-          divisor = divisor * 10.0
-        }
-        result = result + digit / divisor
-        decimal_place = decimal_place + 1
-      } else {
-        result = result * 10.0 + digit
-      }
-    }
-    i = i + 1
-  }
-  result
-}
+// get_arg_value and parse_double are now in @common (SoT)
 
 ///|
 /// Parse command line arguments into ExploreConfig.
@@ -144,25 +102,25 @@ pub fn parse_explore_args(
     if arg == "--help" || arg == "-h" {
       config = { ..config, show_help: true }
     } else if arg.has_prefix("--format=") {
-      let value = get_arg_value(arg, 9)
+      let value = @common.get_arg_value(arg, 9)
       config = { ..config, format: value }
     } else if arg.has_prefix("--strategy=") {
-      let value = get_arg_value(arg, 11)
+      let value = @common.get_arg_value(arg, 11)
       config = { ..config, strategy: value }
     } else if arg.has_prefix("--threshold=") {
-      let value = get_arg_value(arg, 12)
-      config = { ..config, threshold: parse_double(value) }
+      let value = @common.get_arg_value(arg, 12)
+      config = { ..config, threshold: @common.parse_double(value) }
     } else if arg.has_prefix("--ext=") {
-      let value = get_arg_value(arg, 6)
+      let value = @common.get_arg_value(arg, 6)
       config.extensions.push(value)
     } else if arg.has_prefix("--include=") {
-      let value = get_arg_value(arg, 10)
+      let value = @common.get_arg_value(arg, 10)
       config.includes.push(value)
     } else if arg.has_prefix("--exclude=") {
-      let value = get_arg_value(arg, 10)
+      let value = @common.get_arg_value(arg, 10)
       config.excludes.push(value)
-    } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
-      config = { ..config, target_dir: arg }
+    } else if not(arg.has_prefix("-")) {
+      config.target_dirs.push(arg)
     }
   }
   config
@@ -181,7 +139,10 @@ pub fn show_explore_help() -> Unit {
     "  --format=FORMAT      Output format: matrix, list, cluster, json (default: matrix)",
   )
   println(
-    "  --strategy=NAME      Similarity strategy: hybrid, ncd, tfidf (default: tfidf)",
+    "  --strategy=NAME      Similarity strategy: tfidf, ncd, hybrid, apted, tsed (default: tfidf)",
+  )
+  println(
+    "                       apted/tsed: function-level tree edit distance",
   )
   println(
     "  --threshold=FLOAT    Min similarity for list/json/cluster output (default: 0.5)",
@@ -201,48 +162,54 @@ pub fn show_explore_help() -> Unit {
   println("  indexion explore --format=cluster --threshold=0.7 kgfs/")
   println("  indexion explore --ext=.mbt --ext=.kgf .")
   println("  indexion explore --include=*.ts --include=*.tsx src/")
+  println("")
+  println("Function-level similarity (apted/tsed):")
+  println("  indexion explore --strategy=apted --format=list src/")
+  println("  indexion explore --strategy=tsed --threshold=0.8 src/")
 }
 
 ///|
-/// Collect files from directory using pipeline.discover_files (SoT).
-fn collect_files(
-  dir : String,
+/// Collect files from multiple directories using pipeline.discover_files (SoT).
+fn collect_files_multi(
+  dirs : Array[String],
   extensions : Array[String],
   includes : Array[String],
   excludes : Array[String],
 ) -> Array[(String, String)] {
   let files : Array[(String, String)] = []
-  // Use pipeline.discover_files as SoT for filtering
-  let opts = @pipeline.DiscoverOptions::new(
-    includes=includes,
-    excludes=excludes,
-    root_dir=dir,
-  )
-  let paths = @pipeline.discover_files([dir], opts)
-  // Filter by extensions and read contents
-  for path in paths {
-    let basename = @pipeline.extract_basename(path)
-    // Check extension filter
-    let ext_ok = if extensions.length() == 0 {
-      true
-    } else {
-      let mut matched = false
-      for ext in extensions {
-        if basename.has_suffix(ext) {
-          matched = true
-          break
+  for dir in dirs {
+    // Use pipeline.discover_files as SoT for filtering
+    let opts = @pipeline.DiscoverOptions::new(
+      includes=includes,
+      excludes=excludes,
+      root_dir=dir,
+    )
+    let paths = @pipeline.discover_files([dir], opts)
+    // Filter by extensions and read contents
+    for path in paths {
+      let basename = @pipeline.extract_basename(path)
+      // Check extension filter
+      let ext_ok = if extensions.length() == 0 {
+        true
+      } else {
+        let mut matched = false
+        for ext in extensions {
+          if basename.has_suffix(ext) {
+            matched = true
+            break
+          }
         }
+        matched
       }
-      matched
-    }
-    if ext_ok {
-      try {
-        let content = @fs.read_file_to_string(path)
-        // Convert to relative path for display
-        let display_name = make_relative_path(path, dir)
-        files.push((display_name, content))
-      } catch {
-        _ => ()
+      if ext_ok {
+        try {
+          let content = @fs.read_file_to_string(path)
+          // Use relative path with directory prefix for cross-dir comparison
+          let display_name = make_relative_path(path, dir)
+          files.push((display_name, content))
+        } catch {
+          _ => ()
+        }
       }
     }
   }
@@ -599,20 +566,24 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     show_explore_help()
     return
   }
-  if config.target_dir.length() == 0 {
+  if config.target_dirs.length() == 0 {
     println("Error: Directory path required.")
     println("")
     show_explore_help()
     return
   }
   println("=== indexion explore ===")
-  println("Directory: " + config.target_dir)
+  let dirs_str = config.target_dirs.iter().fold(
+    init="",
+    fn(acc, d) { if acc.length() == 0 { d } else { acc + ", " + d } },
+  )
+  println("Directories: " + dirs_str)
   println("Strategy: " + config.strategy)
   println("")
   // Collect files with progress (respects .gitignore, .indexionignore)
   println("[1/2] Scanning files...")
-  let files = collect_files(
-    config.target_dir,
+  let files = collect_files_multi(
+    config.target_dirs,
     config.extensions,
     config.includes,
     config.excludes,
@@ -631,7 +602,11 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     config.format,
     config.threshold,
   )
-  let pairs = if config.strategy == "tfidf" {
+  // Check if using tree-based strategy (function-level comparison)
+  let is_tree_strategy = config.strategy == "apted" || config.strategy == "tsed"
+  let pairs = if is_tree_strategy {
+    calculate_function_pairs(files, config.strategy, min_similarity)
+  } else if config.strategy == "tfidf" {
     // Load KGF registry for language-aware tokenization
     let registry = @kgf_features.load_registry()
     println("      Tokenizing with KGF lexer...")
@@ -682,4 +657,86 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     "json" => output_json(files, pairs)
     _ => output_matrix(files, pairs)
   }
+}
+
+///|
+/// Calculate function-level similarity pairs using APTED or TSED.
+fn calculate_function_pairs(
+  files : Array[(String, String)],
+  strategy : String,
+  min_similarity : Double,
+) -> Array[FilePair] {
+  let pairs : Array[FilePair] = []
+  // Load KGF registry for tokenization
+  let registry = match @kgf_features.load_registry() {
+    Some(r) => r
+    None => {
+      println("      Warning: KGF registry not found, cannot extract functions")
+      return pairs
+    }
+  }
+  // Extract functions from all files
+  println("      Extracting functions...")
+  let all_functions : Array[(@kgf_features.ExtractedFunction, @apted.TreeNode)] = []
+  let mut total_functions = 0
+  for file in files {
+    let (path, content) = file
+    // Detect language and get spec
+    match registry.detect_from_path(path) {
+      Some(lang) =>
+        match registry.get_spec(lang) {
+          Some(spec) => {
+            // Tokenize
+            let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+            let tokens = lexer.tokenize(content)
+            // Extract functions and convert to TreeNodes
+            let func_trees = @kgf_features.extract_function_trees(tokens, path)
+            for ft in func_trees {
+              all_functions.push(ft)
+              total_functions += 1
+            }
+          }
+          None => ()
+        }
+      None => ()
+    }
+  }
+  println("      Found " + total_functions.to_string() + " functions")
+  if all_functions.length() < 2 {
+    println("      Need at least 2 functions to compare")
+    return pairs
+  }
+  // Calculate function pairs
+  let total_fn_pairs = all_functions.length() * (all_functions.length() - 1) / 2
+  println(
+    "      Comparing " + total_fn_pairs.to_string() + " function pairs...",
+  )
+  let cost_config = @apted.CostConfig::default()
+  let tsed_config = @apted.TSEDConfig::default()
+  for i = 0; i < all_functions.length(); i = i + 1 {
+    let (func1, tree1) = all_functions[i]
+    for j = i + 1; j < all_functions.length(); j = j + 1 {
+      let (func2, tree2) = all_functions[j]
+      // Skip comparing functions from the same file with the same name
+      if func1.get_file() == func2.get_file() &&
+        func1.get_name() == func2.get_name() {
+        continue
+      }
+      // Calculate similarity based on strategy
+      let sim = if strategy == "tsed" {
+        @apted.calculate_tsed(tree1, tree2, tsed_config)
+      } else {
+        @apted.tree_similarity(tree1, tree2, cost_config)
+      }
+      if sim >= min_similarity {
+        pairs.push({
+          file1: func1.qualified_name(),
+          file2: func2.qualified_name(),
+          similarity: sim,
+          _distance: 1.0 - sim,
+        })
+      }
+    }
+  }
+  pairs
 }

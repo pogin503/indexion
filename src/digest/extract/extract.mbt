@@ -52,30 +52,6 @@ fn should_include_kind(kind : String, config : ExtractConfig) -> Bool {
 }
 
 ///|
-/// Get callers of a symbol (symbols that call this one).
-fn get_callers(graph : @graph.CodeGraph, symbol_id : String) -> Array[String] {
-  let result : Array[String] = []
-  for edge in graph.edges_to(symbol_id) {
-    if edge.kind is @graph.Calls {
-      result.push(edge.from)
-    }
-  }
-  result
-}
-
-///|
-/// Get callees of a symbol (symbols that this one calls).
-fn get_callees(graph : @graph.CodeGraph, symbol_id : String) -> Array[String] {
-  let result : Array[String] = []
-  for edge in graph.edges_from(symbol_id) {
-    if edge.kind is @graph.Calls {
-      result.push(edge.to)
-    }
-  }
-  result
-}
-
-///|
 /// Compute depth of a function in call graph.
 /// Depth 0 = leaf function (no outgoing calls).
 /// Uses memoization to avoid recomputation.
@@ -95,7 +71,7 @@ fn compute_depth(
     return 0 // Break cycle
   }
   visiting.set(symbol_id, true)
-  let callees = get_callees(graph, symbol_id)
+  let callees = graph.get_callees(symbol_id)
   if callees.length() == 0 {
     memo.set(symbol_id, 0)
     visiting.remove(symbol_id)
@@ -120,8 +96,8 @@ pub fn extract_function_unit(
   symbol : @graph.SymbolNode,
   depth_memo : Map[String, Int],
 ) -> @types.FunctionUnit {
-  let callers = get_callers(graph, symbol.id)
-  let callees = get_callees(graph, symbol.id)
+  let callers = graph.get_callers(symbol.id)
+  let callees = graph.get_callees(symbol.id)
   // Compute source hash from symbol info (placeholder - actual source not available in graph)
   // In real use, source would be fetched from file system
   let source_content = symbol.id + ":" + symbol.name + ":" + symbol.kind

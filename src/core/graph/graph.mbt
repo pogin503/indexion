@@ -177,6 +177,30 @@ pub fn CodeGraph::edges_to(self : CodeGraph, node_id : String) -> Array[Edge] {
 }
 
 ///|
+/// Get callees of a symbol (symbols that this symbol calls).
+pub fn CodeGraph::get_callees(self : CodeGraph, symbol_id : String) -> Array[String] {
+  let result : Array[String] = []
+  for edge in self.edges_from(symbol_id) {
+    if edge.kind is Calls {
+      result.push(edge.to)
+    }
+  }
+  result
+}
+
+///|
+/// Get callers of a symbol (symbols that call this symbol).
+pub fn CodeGraph::get_callers(self : CodeGraph, symbol_id : String) -> Array[String] {
+  let result : Array[String] = []
+  for edge in self.edges_to(symbol_id) {
+    if edge.kind is Calls {
+      result.push(edge.from)
+    }
+  }
+  result
+}
+
+///|
 /// Convert EdgeKind to its string representation.
 pub fn EdgeKind::to_string(self : EdgeKind) -> String {
   match self {

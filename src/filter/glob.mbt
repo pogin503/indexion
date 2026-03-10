@@ -19,7 +19,7 @@ pub fn glob_match_anywhere(path : String, pattern : String) -> Bool {
   for i = 0; i <= path_chars.length(); i = i + 1 {
     // Only try at start or after /
     if i == 0 || (i > 0 && path_chars[i - 1] == '/') {
-      let suffix = substring_from_glob(path, i)
+      let suffix = @parser.substr_from(path, i)
       if glob_match(suffix, pattern) || glob_match(suffix, pattern + "/**") {
         return true
       }
@@ -28,18 +28,6 @@ pub fn glob_match_anywhere(path : String, pattern : String) -> Bool {
   false
 }
 
-///|
-fn substring_from_glob(s : String, start : Int) -> String {
-  let chars = s.to_array()
-  if start >= chars.length() {
-    return ""
-  }
-  let buf : Array[Char] = []
-  for i = start; i < chars.length(); i = i + 1 {
-    buf.push(chars[i])
-  }
-  String::from_array(buf)
-}
 
 ///|
 fn glob_match_impl(
@@ -204,7 +192,7 @@ fn path_starts_with_pattern(path : String, pattern : String) -> Bool {
   // Check at start and after each /
   for i = 0; i <= path_chars.length(); i = i + 1 {
     if i == 0 || (i > 0 && path_chars[i - 1] == '/') {
-      let suffix = substring_from_glob(path, i)
+      let suffix = @parser.substr_from(path, i)
       // Check if suffix starts with pattern followed by /
       if glob_match(suffix, pattern + "/**") ||
         glob_match(suffix, pattern + "/*") {
@@ -236,34 +224,126 @@ fn get_basename(path : String) -> String {
         prev_slash = i
       }
     }
-    substring_range(path, prev_slash + 1, last_slash)
+    @parser.substr(path, prev_slash + 1, last_slash)
   } else {
-    substring_after(path, last_slash + 1)
+    @parser.substr_from(path, last_slash + 1)
   }
 }
 
 ///|
-fn substring_after(s : String, start : Int) -> String {
-  let chars = s.to_array()
-  if start >= chars.length() {
-    return ""
+/// Check if a path contains glob pattern characters.
+pub fn has_glob_pattern(path : String) -> Bool {
+  let chars = path.to_array()
+  for i = 0; i < chars.length(); i = i + 1 {
+    let c = chars[i]
+    if c == '*' || c == '?' || c == '[' {
+      return true
+    }
   }
-  let buf : Array[Char] = []
-  for i = start; i < chars.length(); i = i + 1 {
-    buf.push(chars[i])
-  }
-  String::from_array(buf)
+  false
 }
 
 ///|
-fn substring_range(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  if start >= chars.length() || start >= end {
-    return ""
+/// Expand a glob pattern into matching file paths.
+/// Returns array of matching paths.
+pub fn expand_glob(pattern : String) -> Array[String] {
+  let results : Array[String] = []
+  if not(has_glob_pattern(pattern)) {
+    // No glob characters, return as-is if exists
+    results.push(pattern)
+    return results
   }
-  let buf : Array[Char] = []
-  for i = start; i < end && i < chars.length(); i = i + 1 {
-    buf.push(chars[i])
+  // Find the base directory (longest prefix without glob)
+  let (base_dir, glob_part) = split_glob_pattern(pattern)
+  // Walk from base directory and match
+  expand_glob_impl(base_dir, glob_part, pattern, results)
+  results
+}
+
+///|
+/// Split pattern into base directory and glob part.
+fn split_glob_pattern(pattern : String) -> (String, String) {
+  let chars = pattern.to_array()
+  let mut last_slash = -1
+  for i = 0; i < chars.length(); i = i + 1 {
+    let c = chars[i]
+    if c == '*' || c == '?' || c == '[' {
+      break
+    }
+    if c == '/' {
+      last_slash = i
+    }
   }
-  String::from_array(buf)
+  if last_slash < 0 {
+    (".", pattern)
+  } else if last_slash == 0 {
+    ("/", @parser.substr_from(pattern, 1))
+  } else {
+    (@parser.substr(pattern, 0, last_slash), @parser.substr_from(pattern, last_slash + 1))
+  }
+}
+
+///|
+/// Recursively expand glob pattern.
+fn expand_glob_impl(
+  dir : String,
+  remaining : String,
+  full_pattern : String,
+  results : Array[String],
+) -> Unit {
+  try {
+    if not(@fs.is_dir(dir)) {
+      return
+    }
+    let entries = @fs.read_dir(dir)
+    for entry in entries {
+      // Skip hidden files/dirs unless pattern starts with .
+      if entry.has_prefix(".") && not(remaining.has_prefix(".")) {
+        continue
+      }
+      let full_path = if dir == "." {
+        entry
+      } else {
+        dir + "/" + entry
+      }
+      // Check if full path matches the original pattern
+      if glob_match(full_path, full_pattern) {
+        results.push(full_path)
+      }
+      // Recurse into directories if pattern has **
+      if @fs.is_dir(full_path) && remaining.has_prefix("**") {
+        expand_glob_impl(full_path, remaining, full_pattern, results)
+      } else if @fs.is_dir(full_path) {
+        // Recurse if pattern continues beyond this segment
+        let next_remaining = skip_first_segment(remaining)
+        if next_remaining.length() > 0 {
+          expand_glob_impl(full_path, next_remaining, full_pattern, results)
+        }
+      }
+    }
+  } catch {
+    _ => ()
+  }
+}
+
+///|
+/// Skip first path segment in pattern.
+fn skip_first_segment(pattern : String) -> String {
+  let chars = pattern.to_array()
+  let mut i = 0
+  // Skip ** or first segment
+  if chars.length() >= 2 && chars[0] == '*' && chars[1] == '*' {
+    i = 2
+    if i < chars.length() && chars[i] == '/' {
+      i += 1
+    }
+  } else {
+    while i < chars.length() && chars[i] != '/' {
+      i += 1
+    }
+    if i < chars.length() && chars[i] == '/' {
+      i += 1
+    }
+  }
+  @parser.substr_from(pattern, i)
 }

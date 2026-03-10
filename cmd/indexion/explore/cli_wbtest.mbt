@@ -8,7 +8,8 @@ test "parse_explore_args: include and exclude patterns" {
     0,
   )
   assert_eq(config.format, "list")
-  assert_eq(config.target_dir, "src")
+  assert_eq(config.target_dirs.length(), 1)
+  assert_eq(config.target_dirs[0], "src")
   assert_eq(config.includes.length(), 2)
   assert_eq(config.includes[0], "*.ts")
   assert_eq(config.includes[1], "*.tsx")

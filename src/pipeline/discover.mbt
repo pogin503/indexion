@@ -34,6 +34,7 @@ pub fn DiscoverOptions::new(
 
 ///|
 /// Collect all file paths from given input paths.
+/// Supports glob patterns (e.g., "src/**/*.mbt").
 /// Respects includes, excludes, and recursion settings.
 /// Loads project-level ignore files from root_dir if specified.
 pub fn discover_files(
@@ -54,7 +55,15 @@ pub fn discover_files(
   }
   let file_paths : Array[String] = []
   for path in paths {
-    collect_files_impl(path, options, filter, file_paths)
+    // Expand glob patterns
+    if @filter.has_glob_pattern(path) {
+      let expanded = @filter.expand_glob(path)
+      for expanded_path in expanded {
+        collect_files_impl(expanded_path, options, filter, file_paths)
+      }
+    } else {
+      collect_files_impl(path, options, filter, file_paths)
+    }
   }
   file_paths
 }
