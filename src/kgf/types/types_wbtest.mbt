@@ -70,9 +70,9 @@ test "ModulePathStyle conversion" {
 
 ///|
 test "ResolverAlias::new creates alias" {
-  let alias = ResolverAlias::new("@/*", "src/*")
-  assert_eq(alias.get_pattern(), "@/*")
-  assert_eq(alias.get_replace(), "src/*")
+  let resolver_alias = ResolverAlias::new("@/*", "src/*")
+  assert_eq(resolver_alias.get_pattern(), "@/*")
+  assert_eq(resolver_alias.get_replace(), "src/*")
 }
 
 ///|
@@ -152,7 +152,7 @@ test "SemStmt::edge creates edge statement" {
   match stmt {
     Edge(edge_kind~, from~, to~, attrs~) => {
       assert_eq(edge_kind, "imports")
-      assert_true(attrs.is_empty())
+      assert_true(attrs is None)
       match from {
         Var(name) => assert_eq(name, "a")
         _ => fail("Expected Var")
@@ -247,9 +247,9 @@ test "SemOnBlock::new creates on-block" {
   let then_stmts = [SemStmt::note("matched")]
   let block = SemOnBlock::new("identifier", then_stmts)
   assert_eq(block.get_rule(), "identifier")
-  assert_true(block.get_when_cond().is_empty())
+  assert_true(block.get_when_cond() is None)
   assert_eq(block.get_then_stmts().length(), 1)
-  assert_true(block.get_else_stmts().is_empty())
+  assert_true(block.get_else_stmts() is None)
 }
 
 ///|
@@ -263,8 +263,8 @@ test "SemOnBlock::new creates on-block with when/else" {
     when_cond=Some(when_cond),
     else_stmts=Some(else_stmts),
   )
-  assert_false(block.get_when_cond().is_empty())
-  assert_false(block.get_else_stmts().is_empty())
+  assert_true(block.get_when_cond() is Some(_))
+  assert_true(block.get_else_stmts() is Some(_))
 }
 
 ///|
@@ -279,10 +279,20 @@ test "KGFSpec::new creates spec with values" {
   let tokens = [TokenDef::new("IDENT", "[a-z]+")]
   let rules : Map[String, RuleDef] = Map::new()
   rules.set("prog", RuleDef::new("prog", "stmt*"))
-  let spec = KGFSpec::new("typescript", tokens~, rules~)
+  let features : Map[String, Array[String]] = {}
+  features.set("reference_token_kinds", ["INLINE_CODE"])
+  let spec = KGFSpec::new(
+    "typescript",
+    tokens~,
+    rules~,
+    features=Some(features),
+  )
   assert_eq(spec.get_tokens().length(), 1)
-  assert_false(spec.get_rule("prog").is_empty())
-  assert_true(spec.get_rule("nonexistent").is_empty())
+  assert_true(spec.get_rule("prog") is Some(_))
+  assert_true(spec.get_rule("nonexistent") is None)
+  assert_true(spec.get_features() is Some(_))
+  assert_eq(spec.get_feature("reference_token_kinds").unwrap(), ["INLINE_CODE"])
+  assert_true(spec.get_feature("missing") is None)
 }
 
 ///|
@@ -295,7 +305,7 @@ test "KGFSpec::get_semantic returns semantic blocks" {
     Some(blks) => assert_eq(blks.length(), 1)
     None => fail("Expected Some")
   }
-  assert_true(spec.get_semantic("nonexistent").is_empty())
+  assert_true(spec.get_semantic("nonexistent") is None)
 }
 
 ///|

@@ -237,6 +237,9 @@ test "parse_kgf full" {
     #|=== attrs
     #|on Statement: ref
     #|
+    #|=== features
+    #|reference_token_kinds: IDENT, INLINE_CODE
+    #|
     #|=== resolver
     #|sources: src
     #|exts: .ts
@@ -248,7 +251,25 @@ test "parse_kgf full" {
   assert_eq(s.get_tokens().length(), 2)
   assert_eq(s.get_rules().length(), 2)
   assert_eq(s.get_attrs().length(), 1)
+  assert_true(s.get_features() is Some(_))
+  assert_eq(s.get_feature("reference_token_kinds").unwrap(), [
+    "IDENT", "INLINE_CODE",
+  ])
   assert_eq(s.get_resolver().get_sources().length(), 1)
+}
+
+///|
+test "parse_features basic" {
+  let text =
+    #|reference_token_kinds: INLINE_CODE, Key
+    #|matching_modes: symbol_name
+    #|# comment
+    #|
+  let features = parse_features(text)
+  assert_true(features is Some(_))
+  let map = features.unwrap()
+  assert_eq(map.get("reference_token_kinds").unwrap(), ["INLINE_CODE", "Key"])
+  assert_eq(map.get("matching_modes").unwrap(), ["symbol_name"])
 }
 
 ///|

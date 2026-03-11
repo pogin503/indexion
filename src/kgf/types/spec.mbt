@@ -7,6 +7,7 @@ pub struct KGFSpec {
   rules : Map[String, RuleDef]
   attrs : Map[String, Array[AttrAction]]
   resolver : ResolverSpec
+  features : Map[String, Array[String]]?
   semantics : Map[String, Array[SemOnBlock]]?
   preprocess : Array[String]?
   preprocess_fst : Array[PreprocessFstSpec]?
@@ -21,6 +22,7 @@ pub fn KGFSpec::new(
   rules? : Map[String, RuleDef] = Map::new(),
   attrs? : Map[String, Array[AttrAction]] = Map::new(),
   resolver? : ResolverSpec = ResolverSpec::new(),
+  features? : Map[String, Array[String]]? = None,
   semantics? : Map[String, Array[SemOnBlock]]? = None,
   preprocess? : Array[String]? = None,
   preprocess_fst? : Array[PreprocessFstSpec]? = None,
@@ -32,6 +34,7 @@ pub fn KGFSpec::new(
     rules,
     attrs,
     resolver,
+    features,
     semantics,
     preprocess,
     preprocess_fst,
@@ -79,6 +82,21 @@ pub fn KGFSpec::get_attr(self : KGFSpec, name : String) -> Array[AttrAction]? {
 /// Returns the resolver configuration.
 pub fn KGFSpec::get_resolver(self : KGFSpec) -> ResolverSpec {
   self.resolver
+}
+
+///|
+/// Returns KGF feature metadata.
+pub fn KGFSpec::get_features(self : KGFSpec) -> Map[String, Array[String]]? {
+  self.features
+}
+
+///|
+/// Returns a specific feature value list by name.
+pub fn KGFSpec::get_feature(self : KGFSpec, name : String) -> Array[String]? {
+  match self.features {
+    Some(features) => features.get(name)
+    None => None
+  }
 }
 
 ///|

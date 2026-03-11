@@ -1,0 +1,68 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/config"
+
+// Values
+pub fn basename(String) -> String
+
+pub fn config_base_dir(String, String) -> String
+
+pub fn default_tool_dir(String, String) -> String
+
+pub fn dirname(String) -> String
+
+pub fn ensure_dir_recursive(String) -> Unit
+
+pub fn ensure_parent_dir(String) -> Unit
+
+pub fn extension(String) -> String
+
+pub fn find_indexion_config_path(String, explicit_path? : String) -> String
+
+pub fn find_kgfs_dir(explicit_path? : String, target_dir? : String) -> String?
+
+pub fn get_home_dir() -> String?
+
+pub fn is_absolute_path(String) -> Bool
+
+pub fn join_path(String, String) -> String
+
+pub fn load_reconcile_file_config(String) -> ReconcileFileConfig
+
+pub fn normalize_path(String) -> String
+
+pub fn parse_reconcile_toml_config(String) -> ReconcileFileConfig
+
+pub fn relative_to(String, String) -> String
+
+pub fn resolve_config_path_value(String, String, String) -> String
+
+pub fn resolve_path(String, String) -> String
+
+pub fn resolve_reconcile_specs_dir(String, explicit_specs_dir? : String) -> String
+
+pub fn trim_toml_comment(String) -> String
+
+// Errors
+
+// Types and methods
+pub struct ReconcileFileConfig {
+  doc_paths : Array[String]?
+  doc_specs : Array[String]?
+  index_dir : String?
+  format : String?
+  review_results_path : String?
+  threshold_seconds : Int?
+  max_candidates : Int?
+  allow_file_fallback : Bool?
+  git_preferred : Bool?
+  mtime_fallback : Bool?
+  logical_review_mode : String?
+}
+pub fn ReconcileFileConfig::empty() -> Self
+pub impl Eq for ReconcileFileConfig
+pub impl Show for ReconcileFileConfig
+
+// Type aliases
+
+// Traits
+

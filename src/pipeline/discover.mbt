@@ -203,6 +203,22 @@ fn matches_impl(
   if pi >= pat.length() {
     return false
   }
+  if pi + 2 < pat.length() &&
+    pat[pi] == '*' &&
+    pat[pi + 1] == '*' &&
+    pat[pi + 2] == '/' {
+    if matches_impl(text, ti, pat, pi + 3) {
+      return true
+    }
+    let mut idx = ti
+    while idx < text.length() {
+      if text[idx] == '/' && matches_impl(text, idx + 1, pat, pi + 3) {
+        return true
+      }
+      idx += 1
+    }
+    return false
+  }
   if pat[pi] == '*' {
     if matches_impl(text, ti, pat, pi + 1) {
       return true

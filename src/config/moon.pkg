@@ -1,4 +1,6 @@
 import {
+  "moonbitlang/core/json" @json,
+  "trkbt10/indexion/src/kgf/resolver" @path_utils,
   "moonbitlang/x/fs" @fs,
   "mizchi/x/sys" @sys,
 }

@@ -1,0 +1,17 @@
+import {
+  "moonbitlang/core/encoding/utf8" @utf8,
+  "moonbitlang/core/env" @env,
+  "moonbitlang/x/fs" @fs,
+  "trkbt10/indexion/src/config" @config_paths,
+}
+
+options(
+  "native-stub": [ "git_stub.c" ],
+  targets: {
+    "host_native.mbt": [ "native" ],
+    "host_stub.mbt": [ "wasm", "wasm-gc", "js", "llvm" ],
+    "shell_native.mbt": [ "native" ],
+    "shell_security_wbtest.mbt": [ "native" ],
+    "shell_stub.mbt": [ "wasm", "wasm-gc", "js", "llvm" ],
+  },
+)

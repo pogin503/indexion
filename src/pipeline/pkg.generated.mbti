@@ -36,10 +36,13 @@ pub fn trim_trailing_slash(String) -> String
 // Types and methods
 pub struct DiscoverOptions {
   recursive : Bool
+  includes : Array[String]
   excludes : Array[String]
+  kgf_ignore : Array[(String, String)]
+  root_dir : String
 }
 pub fn DiscoverOptions::default() -> Self
-pub fn DiscoverOptions::new(recursive? : Bool, excludes? : Array[String]) -> Self
+pub fn DiscoverOptions::new(recursive? : Bool, includes? : Array[String], excludes? : Array[String], kgf_ignore? : Array[(String, String)], root_dir? : String) -> Self
 
 pub struct KGFIndex {
   source_to_files : Map[String, Array[String]]

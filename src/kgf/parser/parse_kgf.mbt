@@ -15,8 +15,9 @@
 ///                | "sources:" SourceList NL
 /// SourceList   ::= Source ( "," Source )*
 /// Section      ::= "===" SectionName NL SectionBody
-/// SectionName  ::= "lex" | "grammar" | "attrs" | "semantics"
-///                | "resolver" | "preprocess" | "preprocess_fst"
+/// SectionName  ::= "lex" | "grammar" | "attrs" | "features"
+///                | "semantics" | "resolver" | "preprocess"
+///                | "preprocess_fst" | "ignore"
 /// ```
 ///
 /// ## Header Fields
@@ -33,10 +34,12 @@
 /// | `lex` | Token definitions | `SKIP` / `TOKEN` rules |
 /// | `grammar` | PEG grammar rules | `Name -> expression` |
 /// | `attrs` | Attribute actions | `on Rule: action; ...` |
+/// | `features` | Consumer-facing metadata | `name: value1, value2` |
 /// | `semantics` | Graph construction | `on Rule { statements }` |
 /// | `resolver` | Module resolution | YAML-like config |
 /// | `preprocess` | Preprocessor names | Line-based list |
 /// | `preprocess_fst` | FST definitions | JSON format |
+/// | `ignore` | Ignore patterns | One pattern per line |
 ///
 /// ## Example
 ///
@@ -55,6 +58,9 @@
 ///
 /// === attrs
 /// on FnDecl: def id kind=Function
+///
+/// === features
+/// reference_token_kinds: INLINE_CODE
 ///
 /// === semantics
 /// on FnDecl {
@@ -178,6 +184,7 @@ pub fn parse_kgf(text : String) -> @types.KGFSpec? {
   let tokens = parse_lex(section(text, "lex"))
   let rules = parse_rules(section(text, "grammar"))
   let attrs = parse_attrs(section(text, "attrs"))
+  let features = parse_features(section(text, "features"))
   let resolver = parse_resolver_with_sources(
     section(text, "resolver"),
     header_sources,
@@ -193,12 +200,42 @@ pub fn parse_kgf(text : String) -> @types.KGFSpec? {
       rules~,
       attrs~,
       resolver~,
+      features~,
       semantics~,
       preprocess~,
       preprocess_fst~,
       ignore~,
     ),
   )
+}
+
+///|
+/// Parses feature metadata section into name -> values map.
+/// Each line is `name: value1, value2`.
+fn parse_features(text : String) -> Map[String, Array[String]]? {
+  let lines = split_lines(text)
+  let result : Map[String, Array[String]] = {}
+  for line in lines {
+    let trimmed = trim_str(line)
+    if trimmed.length() == 0 || starts_with(trimmed, "#") {
+      continue
+    }
+    let separator = find_substring(trimmed, ":")
+    if separator < 0 {
+      continue
+    }
+    let name = trim_str(substr(trimmed, 0, separator))
+    if name.length() == 0 {
+      continue
+    }
+    let values = parse_comma_list(trim_str(substr_from(trimmed, separator + 1)))
+    result.set(name, values)
+  }
+  if result.is_empty() {
+    None
+  } else {
+    Some(result)
+  }
 }
 
 ///|

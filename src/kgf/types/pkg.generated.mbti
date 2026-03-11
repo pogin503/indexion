@@ -43,12 +43,17 @@ pub struct KGFSpec {
   rules : Map[String, RuleDef]
   attrs : Map[String, Array[AttrAction]]
   resolver : ResolverSpec
+  features : Map[String, Array[String]]?
   semantics : Map[String, Array[SemOnBlock]]?
   preprocess : Array[String]?
   preprocess_fst : Array[PreprocessFstSpec]?
+  ignore : Array[String]?
 }
 pub fn KGFSpec::get_attr(Self, String) -> Array[AttrAction]?
 pub fn KGFSpec::get_attrs(Self) -> Map[String, Array[AttrAction]]
+pub fn KGFSpec::get_feature(Self, String) -> Array[String]?
+pub fn KGFSpec::get_features(Self) -> Map[String, Array[String]]?
+pub fn KGFSpec::get_ignore(Self) -> Array[String]?
 pub fn KGFSpec::get_language(Self) -> String
 pub fn KGFSpec::get_preprocess(Self) -> Array[String]?
 pub fn KGFSpec::get_preprocess_fst(Self) -> Array[PreprocessFstSpec]?
@@ -59,7 +64,7 @@ pub fn KGFSpec::get_semantic(Self, String) -> Array[SemOnBlock]?
 pub fn KGFSpec::get_semantics(Self) -> Map[String, Array[SemOnBlock]]?
 pub fn KGFSpec::get_start_rule(Self) -> String
 pub fn KGFSpec::get_tokens(Self) -> Array[TokenDef]
-pub fn KGFSpec::new(String, tokens? : Array[TokenDef], rules? : Map[String, RuleDef], attrs? : Map[String, Array[AttrAction]], resolver? : ResolverSpec, semantics? : Map[String, Array[SemOnBlock]]?, preprocess? : Array[String]?, preprocess_fst? : Array[PreprocessFstSpec]?) -> Self
+pub fn KGFSpec::new(String, tokens? : Array[TokenDef], rules? : Map[String, RuleDef], attrs? : Map[String, Array[AttrAction]], resolver? : ResolverSpec, features? : Map[String, Array[String]]?, semantics? : Map[String, Array[SemOnBlock]]?, preprocess? : Array[String]?, preprocess_fst? : Array[PreprocessFstSpec]?, ignore? : Array[String]?) -> Self
 
 pub enum ModulePathStyle {
   Slash
@@ -171,19 +176,25 @@ pub struct ResolverSpec {
   ns_prefix : String?
   ns_segments : Int
   resolve_chain : Array[ResolveStep]
+  project_config : String
+  install_cmd : String
+  build_cmd : String
 }
 pub fn ResolverSpec::get_aliases(Self) -> Array[ResolverAlias]
 pub fn ResolverSpec::get_bare_prefix(Self) -> String
+pub fn ResolverSpec::get_build_cmd(Self) -> String
 pub fn ResolverSpec::get_exts(Self) -> Array[String]
 pub fn ResolverSpec::get_indexes(Self) -> Array[String]
+pub fn ResolverSpec::get_install_cmd(Self) -> String
 pub fn ResolverSpec::get_module_path_style(Self) -> ModulePathStyle
 pub fn ResolverSpec::get_ns_prefix(Self) -> String?
 pub fn ResolverSpec::get_ns_segments(Self) -> Int
+pub fn ResolverSpec::get_project_config(Self) -> String
 pub fn ResolverSpec::get_relative_prefixes(Self) -> Array[String]
 pub fn ResolverSpec::get_resolve_chain(Self) -> Array[ResolveStep]
 pub fn ResolverSpec::get_sources(Self) -> Array[String]
 pub fn ResolverSpec::has_resolve_chain(Self) -> Bool
-pub fn ResolverSpec::new(sources? : Array[String], relative_prefixes? : Array[String], exts? : Array[String], indexes? : Array[String], bare_prefix? : String, module_path_style? : ModulePathStyle, aliases? : Array[ResolverAlias], ns_prefix? : String?, ns_segments? : Int, resolve_chain? : Array[ResolveStep]) -> Self
+pub fn ResolverSpec::new(sources? : Array[String], relative_prefixes? : Array[String], exts? : Array[String], indexes? : Array[String], bare_prefix? : String, module_path_style? : ModulePathStyle, aliases? : Array[ResolverAlias], ns_prefix? : String?, ns_segments? : Int, resolve_chain? : Array[ResolveStep], project_config? : String, install_cmd? : String, build_cmd? : String) -> Self
 
 pub struct RuleDef {
   name : String
@@ -254,12 +265,16 @@ pub struct TokenDef {
   pattern : String
   skip : Bool
   flags : String?
+  strip : Int
+  skip_value : Bool
 }
 pub fn TokenDef::get_flags(Self) -> String?
 pub fn TokenDef::get_name(Self) -> String
 pub fn TokenDef::get_pattern(Self) -> String
+pub fn TokenDef::get_strip(Self) -> Int
 pub fn TokenDef::is_skip(Self) -> Bool
-pub fn TokenDef::new(String, String, skip? : Bool, flags? : String?) -> Self
+pub fn TokenDef::is_skip_value(Self) -> Bool
+pub fn TokenDef::new(String, String, skip? : Bool, flags? : String?, strip? : Int, skip_value? : Bool) -> Self
 
 // Type aliases
 

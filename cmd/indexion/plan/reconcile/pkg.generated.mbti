@@ -1,0 +1,295 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/cmd/indexion/plan/reconcile"
+
+import {
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn parse_args(Array[String], Int) -> ReconcileConfig
+
+pub fn resolve_config(Array[String], Int) -> ReconcileConfig
+
+pub fn run(Array[String], Int) -> Unit
+
+pub fn show_help() -> Unit
+
+// Errors
+
+// Types and methods
+pub struct CacheState {
+  cache_hit : Bool
+  source_fingerprint : String
+  review_state_hash : String
+  reused_candidates : Int
+  reused_logical_reviews : Int
+}
+pub impl Eq for CacheState
+pub impl Show for CacheState
+pub impl ToJson for CacheState
+pub impl @json.FromJson for CacheState
+
+pub struct CodeAnchor {
+  symbol_id : String
+  name : String
+  kind : String
+  ns : String
+  module_path : String
+  inline_doc : String?
+}
+pub impl Eq for CodeAnchor
+pub impl Show for CodeAnchor
+pub impl ToJson for CodeAnchor
+pub impl @json.FromJson for CodeAnchor
+
+pub struct CodeUnit {
+  symbol_id : String
+  name : String
+  kind : String
+  ns : String
+  module_id : String
+  module_path : String
+  inline_doc : String?
+  code_hash : String
+}
+pub impl Eq for CodeUnit
+pub impl Show for CodeUnit
+pub impl ToJson for CodeUnit
+pub impl @json.FromJson for CodeUnit
+
+pub struct DocAnchor {
+  fragment_id : String
+  path : String
+  spec : String
+  kind : String
+  title : String
+  preview : String
+}
+pub impl Eq for DocAnchor
+pub impl Show for DocAnchor
+pub impl ToJson for DocAnchor
+pub impl @json.FromJson for DocAnchor
+
+pub struct DocFragment {
+  id : String
+  path : String
+  spec : String
+  kind : String
+  title : String
+  content : String
+  preview : String
+  fragment_hash : String
+}
+pub impl Eq for DocFragment
+pub impl Show for DocFragment
+pub impl ToJson for DocFragment
+pub impl @json.FromJson for DocFragment
+
+pub struct FileState {
+  path : String
+  file_kind : String
+  spec : String
+  content_hash : String
+  git_time : Int?
+  mtime : Int?
+  git_dirty : Bool
+}
+pub impl Eq for FileState
+pub impl Show for FileState
+pub impl ToJson for FileState
+pub impl @json.FromJson for FileState
+
+pub struct IndexedRecordEntry {
+  record_key : String
+  record_kind : String
+  digest : String
+  vector_id : Int64
+}
+pub impl Eq for IndexedRecordEntry
+pub impl Show for IndexedRecordEntry
+pub impl ToJson for IndexedRecordEntry
+pub impl @json.FromJson for IndexedRecordEntry
+
+pub struct LogicalReviewEntry {
+  review_key : String
+  candidate_id : String
+  digest : String
+  status : String
+  verdict : String?
+  updated_at : Int
+  vector_id : Int64
+}
+pub impl Eq for LogicalReviewEntry
+pub impl Show for LogicalReviewEntry
+pub impl ToJson for LogicalReviewEntry
+pub impl @json.FromJson for LogicalReviewEntry
+
+pub struct LogicalReviewTask {
+  review_key : String
+  candidate_id : String
+  digest : String
+  status : String
+  reused : Bool
+  code_anchor : CodeAnchor
+  doc_anchor : DocAnchor?
+  evidence : MappingEvidence
+  recommended_action : String
+}
+pub impl Eq for LogicalReviewTask
+pub impl Show for LogicalReviewTask
+pub impl ToJson for LogicalReviewTask
+pub impl @json.FromJson for LogicalReviewTask
+
+pub struct MappingEvidence {
+  matched_terms : Array[String]
+  match_kind : String
+  reason : String
+  code_time : TimestampInfo
+  doc_time : TimestampInfo
+}
+pub impl Eq for MappingEvidence
+pub impl Show for MappingEvidence
+pub impl ToJson for MappingEvidence
+pub impl @json.FromJson for MappingEvidence
+
+pub struct ReconcileCandidate {
+  id : String
+  symbol_id : String
+  status : String
+  time_relation : String
+  mapping_confidence : Int
+  recommended_action : String
+  mechanical_digest : String
+  code_anchor : CodeAnchor
+  doc_anchor : DocAnchor?
+  evidence : MappingEvidence
+  logical_review_key : String?
+  logical_review_status : String
+  logical_review_reused : Bool
+  needs_logical_review : Bool
+}
+pub impl Eq for ReconcileCandidate
+pub impl Show for ReconcileCandidate
+pub impl ToJson for ReconcileCandidate
+pub impl @json.FromJson for ReconcileCandidate
+
+pub struct ReconcileConfig {
+  target_dir : String
+  output : String
+  format : String
+  specs_dir : String
+  index_dir : String
+  config_path : String
+  review_results_path : String
+  doc_paths : Array[String]
+  doc_specs : Array[String]
+  threshold_seconds : Int
+  max_candidates : Int
+  allow_file_fallback : Bool
+  git_preferred : Bool
+  mtime_fallback : Bool
+  logical_review_mode : String
+  show_help : Bool
+}
+pub fn ReconcileConfig::default() -> Self
+pub impl Eq for ReconcileConfig
+pub impl Show for ReconcileConfig
+
+pub struct ReconcileManifest {
+  version : String
+  updated_at : Int
+  config_hash : String
+  source_fingerprint : String
+  review_state_hash : String
+  report_path : String
+  vector_id_counter : Int64
+  files : Map[String, FileState]
+  records : Map[String, IndexedRecordEntry]
+  logical_reviews : Map[String, LogicalReviewEntry]
+}
+pub fn ReconcileManifest::allocate_vector_id(Self) -> (Self, Int64)
+pub fn ReconcileManifest::empty() -> Self
+pub impl Eq for ReconcileManifest
+pub impl Show for ReconcileManifest
+pub impl ToJson for ReconcileManifest
+pub impl @json.FromJson for ReconcileManifest
+
+pub struct ReconcileReport {
+  version : String
+  generated_at : Int
+  config : ReconcileReportConfig
+  summary : ReconcileSummary
+  candidates : Array[ReconcileCandidate]
+  logical_reviews : Array[LogicalReviewTask]
+  skipped : Array[String]
+  used_specs : Array[String]
+  cache_state : CacheState
+}
+pub impl Eq for ReconcileReport
+pub impl Show for ReconcileReport
+pub impl ToJson for ReconcileReport
+pub impl @json.FromJson for ReconcileReport
+
+pub struct ReconcileReportConfig {
+  target_dir : String
+  specs_dir : String
+  index_dir : String
+  review_results_path : String
+  doc_paths : Array[String]
+  doc_specs : Array[String]
+  threshold_seconds : Int
+  max_candidates : Int
+  allow_file_fallback : Bool
+  git_preferred : Bool
+  mtime_fallback : Bool
+  logical_review_mode : String
+}
+pub impl Eq for ReconcileReportConfig
+pub impl Show for ReconcileReportConfig
+pub impl ToJson for ReconcileReportConfig
+pub impl @json.FromJson for ReconcileReportConfig
+
+pub struct ReconcileSummary {
+  total_symbols : Int
+  symbols_with_inline_doc : Int
+  module_covered_symbols : Int
+  total_doc_fragments : Int
+  total_candidates : Int
+  missing_doc : Int
+  stale_doc : Int
+  review_mapping : Int
+  review_both : Int
+  pending_logical_reviews : Int
+  new_logical_reviews : Int
+  reused_logical_reviews : Int
+  completed_logical_reviews : Int
+}
+pub impl Eq for ReconcileSummary
+pub impl Show for ReconcileSummary
+pub impl ToJson for ReconcileSummary
+pub impl @json.FromJson for ReconcileSummary
+
+pub struct ReviewDecisionInput {
+  review_key : String
+  status : String
+  verdict : String?
+}
+pub impl Eq for ReviewDecisionInput
+pub impl Show for ReviewDecisionInput
+pub impl @json.FromJson for ReviewDecisionInput
+
+pub struct TimestampInfo {
+  epoch_seconds : Int?
+  source : String
+  is_dirty : Bool
+}
+pub fn TimestampInfo::unknown(source? : String) -> Self
+pub impl Eq for TimestampInfo
+pub impl Show for TimestampInfo
+pub impl ToJson for TimestampInfo
+pub impl @json.FromJson for TimestampInfo
+
+// Type aliases
+
+// Traits
+

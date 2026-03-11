@@ -1,0 +1,19 @@
+///|
+fn git_is_repo_native(_root : String) -> Bool {
+  false
+}
+
+///|
+fn git_status_dirty_native(_root : String, _path : String) -> Bool {
+  false
+}
+
+///|
+fn git_last_commit_seconds_native(_root : String, _path : String) -> Int? {
+  None
+}
+
+///|
+pub fn file_mtime_seconds(_path : String) -> Int? {
+  None
+}

@@ -30,3 +30,10 @@ test "discover_files: KGF patterns skip build dirs" {
   // Normal dirs still allowed
   assert_false(filter.should_skip_dir("src"))
 }
+
+///|
+test "matches_pattern: doublestar matches direct and nested descendants" {
+  assert_true(matches_pattern("docs/api.md", "docs/**/*.md"))
+  assert_true(matches_pattern("docs/reference/api.md", "docs/**/*.md"))
+  assert_false(matches_pattern("README.md", "docs/**/*.md"))
+}
