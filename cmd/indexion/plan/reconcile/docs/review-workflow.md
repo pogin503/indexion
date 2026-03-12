@@ -30,7 +30,7 @@ To close or update queued reviews, prepare a JSON file like:
 Then apply it:
 
 ```bash
-indexion plan reconcile --review-results=.indexion/reconcile/reviews.json .
+indexion plan reconcile --review-results=.indexion/cache/reconcile/reviews.json .
 ```
 
 Accepted or rejected reviews stay indexed, so the same unchanged candidate is not requeued on every run.

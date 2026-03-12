@@ -67,7 +67,7 @@ indexion plan reconcile \
 
 # Apply logical review decisions from a JSON file
 indexion plan reconcile \
-  --review-results=.indexion/reconcile/reviews.json \
+  --review-results=.indexion/cache/reconcile/reviews.json \
   .
 ```
 
@@ -79,7 +79,7 @@ Main CLI options:
 | `--output=FILE`, `-o=` | Write report to a file | stdout |
 | `--scope=custom\|package-docs\|tree-docs` | Apply common doc-audit presets | `custom` |
 | `--specs=DIR` | Override KGF spec directory | auto-detect |
-| `--index-dir=DIR` | Override reconcile cache directory | `.indexion/reconcile` |
+| `--index-dir=DIR` | Override reconcile cache directory | `.indexion/cache/reconcile` |
 | `--config=FILE` | Load explicit `.indexion.toml` or `.json` | auto-discover |
 | `--doc=GLOB` | Limit document paths, repeatable | all detectable docs |
 | `--doc-spec=NAME` | Limit document specs, repeatable | all detected specs |
@@ -110,8 +110,8 @@ Example TOML:
 doc_scope = "package-docs"
 doc_paths = ["docs/**/*.md", "spec/**/*.toml", "notes/**/*.txt"]
 doc_specs = ["markdown", "toml", "plaintext"]
-index_dir = ".indexion/reconcile"
-review_results_path = ".indexion/reconcile/reviews.json"
+index_dir = ".indexion/cache/reconcile"
+review_results_path = ".indexion/cache/reconcile/reviews.json"
 threshold_seconds = 60
 max_candidates = 200
 
@@ -208,7 +208,7 @@ To close or update queued reviews, prepare a JSON file like:
 Then apply it:
 
 ```bash
-indexion plan reconcile --review-results=.indexion/reconcile/reviews.json .
+indexion plan reconcile --review-results=.indexion/cache/reconcile/reviews.json .
 ```
 
 Accepted or rejected reviews stay indexed, so the same unchanged candidate is not requeued on every run.

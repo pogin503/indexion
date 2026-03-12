@@ -124,10 +124,12 @@ moon build --target native --release
 ### KGF Specs Location
 
 indexion searches for KGF specs in this order:
-1. `--kgfs-dir` CLI option
+1. Explicit specs directory CLI option for the command
 2. `INDEXION_KGFS_DIR` environment variable
-3. `~/.indexion/kgfs/`
-4. `kgfs/` in project directory
+3. `[global].kgfs_dir` in global config
+4. `kgfs/` in the target project directory
+5. `kgfs/` in the current working directory
+6. OS-standard data directory `.../kgfs/` when non-empty
 
 ### Requirements
 

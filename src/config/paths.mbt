@@ -135,7 +135,7 @@ pub fn default_tool_dir(target_dir : String, tool_subdir : String) -> String {
 ///|
 /// Default cache/index directory for `indexion plan reconcile`.
 pub fn default_reconcile_index_dir(target_dir : String) -> String {
-  default_tool_dir(target_dir, ".indexion/reconcile")
+  default_tool_dir(target_dir, ".indexion/cache/reconcile")
 }
 
 ///|
@@ -299,48 +299,126 @@ fn find_substring_from(text : String, needle : String, start : Int) -> Int {
 /// Priority:
 /// 1. Explicit path (--kgfs-dir CLI option)
 /// 2. INDEXION_KGFS_DIR environment variable
-/// 3. ~/.indexion/kgfs (user local - for binary distribution)
-/// 4. kgfs/ relative to target dir (project-local override)
+/// 3. Global config [global].kgfs_dir
+/// 4. kgfs/ relative to target dir (project-local)
 /// 5. kgfs/ relative to CWD (development - submodule)
+/// 6. OS-standard data directory (get_global_data_dir()/kgfs) - only if non-empty
 pub fn find_kgfs_dir(
   explicit_path? : String = "",
   target_dir? : String = ".",
+  target_dirs? : Array[String] = [],
 ) -> String? {
-  // 1. Explicit override (from CLI option)
-  if explicit_path.length() > 0 {
-    let resolved = resolve_path(target_dir, explicit_path)
+  let search_dirs = normalize_kgfs_target_dirs(target_dir, target_dirs)
+  let base_dir = if search_dirs.length() > 0 { search_dirs[0] } else { "." }
+  let explicit_candidate = if explicit_path.length() > 0 {
+    let resolved = resolve_path(base_dir, explicit_path)
     if is_valid_dir(resolved) {
-      return Some(resolved)
+      Some(resolved)
+    } else {
+      None
     }
+  } else {
+    None
   }
-  // 2. INDEXION_KGFS_DIR environment variable
-  match @sys.get_env_var("INDEXION_KGFS_DIR") {
+  let env_candidate = match @sys.get_env_var("INDEXION_KGFS_DIR") {
     Some(dir) =>
       if dir.length() > 0 && is_valid_dir(dir) {
-        return Some(normalize_path(dir))
+        Some(normalize_path(dir))
+      } else {
+        None
       }
-    None => ()
+    None => None
   }
-  // 3. ~/.indexion/kgfs (user local installation)
-  match get_home_dir() {
-    Some(home) => {
-      let kgfs_path = join_path(home, ".indexion/kgfs")
-      if is_valid_dir(kgfs_path) {
-        return Some(kgfs_path)
+  let global_candidate = match load_global_config().kgfs_dir {
+    Some(dir) => if is_valid_dir(dir) { Some(dir) } else { None }
+    None => None
+  }
+  let project_candidate = find_project_kgfs_candidate(search_dirs)
+  let cwd_candidate = if is_valid_dir("kgfs") {
+    Some(normalize_path("kgfs"))
+  } else {
+    None
+  }
+  let data_candidate = match get_global_data_dir() {
+    Some(data_dir) => {
+      let kgfs_path = join_path(data_dir, "kgfs")
+      if is_valid_dir(kgfs_path) && not(is_empty_dir(kgfs_path)) {
+        Some(kgfs_path)
+      } else {
+        None
       }
     }
-    None => ()
+    None => None
   }
-  // 4. kgfs/ relative to target dir
-  let project_kgfs = join_path(target_dir, "kgfs")
-  if is_valid_dir(project_kgfs) {
-    return Some(project_kgfs)
+  select_kgfs_dir_candidate(
+    explicit_candidate, env_candidate, global_candidate, project_candidate, cwd_candidate,
+    data_candidate,
+  )
+}
+
+///|
+fn normalize_kgfs_target_dirs(
+  target_dir : String,
+  target_dirs : Array[String],
+) -> Array[String] {
+  let normalized : Array[String] = []
+  if target_dirs.length() > 0 {
+    for dir in target_dirs {
+      normalized.push(normalize_path(dir))
+    }
+  } else {
+    normalized.push(normalize_path(target_dir))
   }
-  // 5. kgfs/ relative to CWD (development with submodule)
-  if is_valid_dir("kgfs") {
-    return Some(normalize_path("kgfs"))
+  normalized
+}
+
+///|
+fn find_project_kgfs_candidate(target_dirs : Array[String]) -> String? {
+  for dir in target_dirs {
+    let project_kgfs = join_path(dir, "kgfs")
+    if is_valid_dir(project_kgfs) {
+      return Some(project_kgfs)
+    }
   }
   None
+}
+
+///|
+/// Check if a directory is empty (contains no files or subdirectories).
+fn is_empty_dir(path : String) -> Bool {
+  let entries = @fs.read_dir(path) catch { _ => return true }
+  entries.length() == 0
+}
+
+///|
+fn select_kgfs_dir_candidate(
+  explicit_candidate : String?,
+  env_candidate : String?,
+  global_candidate : String?,
+  project_candidate : String?,
+  cwd_candidate : String?,
+  data_candidate : String?,
+) -> String? {
+  match explicit_candidate {
+    Some(_) => explicit_candidate
+    None =>
+      match env_candidate {
+        Some(_) => env_candidate
+        None =>
+          match global_candidate {
+            Some(_) => global_candidate
+            None =>
+              match project_candidate {
+                Some(_) => project_candidate
+                None =>
+                  match cwd_candidate {
+                    Some(_) => cwd_candidate
+                    None => data_candidate
+                  }
+              }
+          }
+      }
+  }
 }
 
 ///|

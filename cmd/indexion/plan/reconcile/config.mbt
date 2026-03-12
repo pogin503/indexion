@@ -315,6 +315,36 @@ fn apply_doc_scope(config : ReconcileConfig) -> ReconcileConfig {
 }
 
 ///|
+fn resolve_inherited_config_path(
+  target_dir : String,
+  resolved_value : String,
+  project_value : String?,
+  project_config_path : String,
+  global_value : String?,
+  global_config_path : String?,
+  fallback : String,
+) -> String {
+  match project_value {
+    Some(_) =>
+      @config_paths.resolve_config_path_value(
+        target_dir, project_config_path, resolved_value,
+      )
+    None =>
+      match global_value {
+        Some(_) =>
+          match global_config_path {
+            Some(path) =>
+              @config_paths.resolve_config_path_value(
+                target_dir, path, resolved_value,
+              )
+            None => @config_paths.resolve_path(target_dir, resolved_value)
+          }
+        None => fallback
+      }
+  }
+}
+
+///|
 pub fn resolve_config(args : Array[String], start_idx : Int) -> ReconcileConfig {
   let parsed = parse_args_state(args, start_idx)
   let cli = parsed.config
@@ -329,7 +359,8 @@ pub fn resolve_config(args : Array[String], start_idx : Int) -> ReconcileConfig 
     target_dir,
     explicit_path=cli.config_path,
   )
-  let file_config = @config_paths.load_reconcile_file_config(config_path)
+  let effective = @config_paths.resolve_effective_reconcile_config(config_path)
+  let file_config = effective.merged
   let base = {
     ..cli,
     target_dir,
@@ -348,28 +379,28 @@ pub fn resolve_config(args : Array[String], start_idx : Int) -> ReconcileConfig 
     index_dir: if parsed.explicit_index_dir {
       @config_paths.resolve_path(target_dir, merged.index_dir)
     } else {
-      match file_config.index_dir {
-        Some(_) =>
-          @config_paths.resolve_config_path_value(
-            target_dir,
-            config_path,
-            merged.index_dir,
-          )
-        None => @config_paths.default_reconcile_index_dir(target_dir)
-      }
+      resolve_inherited_config_path(
+        target_dir,
+        merged.index_dir,
+        effective.project.reconcile.index_dir,
+        config_path,
+        effective.global.reconcile.index_dir,
+        effective.global_config_path,
+        @config_paths.default_reconcile_index_dir(target_dir),
+      )
     },
     review_results_path: if parsed.explicit_review_results_path {
       @config_paths.resolve_path(target_dir, merged.review_results_path)
     } else {
-      match file_config.review_results_path {
-        Some(_) =>
-          @config_paths.resolve_config_path_value(
-            target_dir,
-            config_path,
-            merged.review_results_path,
-          )
-        None => ""
-      }
+      resolve_inherited_config_path(
+        target_dir,
+        merged.review_results_path,
+        effective.project.reconcile.review_results_path,
+        config_path,
+        effective.global.reconcile.review_results_path,
+        effective.global_config_path,
+        "",
+      )
     },
     specs_dir: if parsed.explicit_specs_dir {
       @config_paths.resolve_path(target_dir, merged.specs_dir)
@@ -396,7 +427,7 @@ pub fn show_help() -> Unit {
   )
   println("  --specs=DIR            KGF specs directory (default: auto-detect)")
   println(
-    "  --index-dir=DIR        Cache directory (default: .indexion/reconcile)",
+    "  --index-dir=DIR        Cache directory (default: .indexion/cache/reconcile)",
   )
   println(
     "  --config=FILE          Explicit config file (.indexion.toml or .json)",

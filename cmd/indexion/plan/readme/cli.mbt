@@ -118,17 +118,21 @@ pub fn show_help() -> Unit {
   println("")
   println("Workflow:")
   println("  1. indexion doc init                  # Generate template")
-  println("  2. indexion plan readme --template=.indexion/templates/readme.md")
+  println(
+    "  2. indexion plan readme --template=.indexion/state/templates/readme.md",
+  )
   println("                                        # Generate writing plans")
   println("  3. Write docs/ files based on plans   # Manual or LLM")
   println(
-    "  4. indexion doc readme --template=.indexion/templates/readme.md -o=README.md",
+    "  4. indexion doc readme --template=.indexion/state/templates/readme.md -o=README.md",
   )
   println("")
   println("Examples:")
-  println("  indexion plan readme --template=.indexion/templates/readme.md")
   println(
-    "  indexion plan readme --template=.indexion/templates/readme.md --plans-dir=plans/",
+    "  indexion plan readme --template=.indexion/state/templates/readme.md",
+  )
+  println(
+    "  indexion plan readme --template=.indexion/state/templates/readme.md --plans-dir=plans/",
   )
 }
 
@@ -140,12 +144,6 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     show_help()
     return
   }
-  // Get executable directory from argv[0] for kgfs lookup
-  let exe_dir = if args.length() > 0 {
-    get_directory_of_path(args[0])
-  } else {
-    ""
-  }
   // Template is required for plan generation
   if config.template.length() == 0 {
     println("Error: --template=FILE is required.")
@@ -155,7 +153,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
   let target_dir = normalize_path(config.target_dir)
   // Load KGF registry for ignore patterns
-  let registry = load_registry_from_paths(config.specs_dir, exe_dir)
+  let registry = load_registry_from_paths(config.specs_dir, target_dir)
   // Detect project type and get spec
   let (project_info, lang_spec) = detect_project_with_kgf(target_dir, registry)
   // Read template and extract include paths
@@ -231,37 +229,16 @@ fn ProjectInfo::default() -> ProjectInfo {
 
 ///|
 /// Load KGF registry using the centralized kgfs directory resolution.
-/// Uses @config.find_kgfs_dir() as SoT for path resolution.
+/// Uses @kgf_features.load_registry() which delegates to the config SoT.
 fn load_registry_from_paths(
   specs_dir : String,
-  _exe_dir : String,
+  target_dir : String,
 ) -> @registry.KGFRegistry {
   // Use SoT: explicit path takes priority if not default
   let explicit = if specs_dir != "kgfs" { specs_dir } else { "" }
-  match @config.find_kgfs_dir(explicit_path=explicit) {
-    Some(dir) => @registry.KGFRegistry::load_from_dir(dir)
+  match @kgf_features.load_registry(explicit_path=explicit, target_dir~) {
+    Some(reg) => reg
     None => @registry.KGFRegistry::new()
-  }
-}
-
-///|
-/// Extract directory from a file path.
-fn get_directory_of_path(path : String) -> String {
-  let chars = path.to_array()
-  let mut last_slash = -1
-  for i = 0; i < chars.length(); i = i + 1 {
-    if chars[i] == '/' || chars[i] == '\\' {
-      last_slash = i
-    }
-  }
-  if last_slash > 0 {
-    let result : Array[Char] = []
-    for i = 0; i < last_slash; i = i + 1 {
-      result.push(chars[i])
-    }
-    String::from_array(result)
-  } else {
-    ""
   }
 }
 

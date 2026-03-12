@@ -620,11 +620,10 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   )
   // Check if using tree-based strategy (function-level comparison)
   let is_tree_strategy = config.strategy == "apted" || config.strategy == "tsed"
+  let registry = @kgf_features.load_registry(target_dirs=config.target_dirs)
   let pairs = if is_tree_strategy {
-    calculate_function_pairs(files, config.strategy, min_similarity)
+    calculate_function_pairs(files, config.strategy, min_similarity, registry)
   } else if config.strategy == "tfidf" {
-    // Load KGF registry for language-aware tokenization
-    let registry = @kgf_features.load_registry()
     println("      Tokenizing with KGF lexer...")
     let tokenize_started = @env.now()
     let (tokenized, kgf_hits) = @kgf_features.tokenize_files_with_kgf(
@@ -698,10 +697,10 @@ fn calculate_function_pairs(
   files : Array[(String, String)],
   strategy : String,
   min_similarity : Double,
+  registry : @registry.KGFRegistry?,
 ) -> Array[FilePair] {
   let pairs : Array[FilePair] = []
-  // Load KGF registry for tokenization
-  let registry = match @kgf_features.load_registry() {
+  let resolved_registry = match registry {
     Some(r) => r
     None => {
       println("      Warning: KGF registry not found, cannot extract functions")
@@ -715,9 +714,9 @@ fn calculate_function_pairs(
   for file in files {
     let (path, content) = file
     // Detect language and get spec
-    match registry.detect_from_path(path) {
+    match resolved_registry.detect_from_path(path) {
       Some(lang) =>
-        match registry.get_spec(lang) {
+        match resolved_registry.get_spec(lang) {
           Some(spec) => {
             // Tokenize
             let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())

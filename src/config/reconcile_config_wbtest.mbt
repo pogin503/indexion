@@ -107,6 +107,54 @@ test "config: load_reconcile_file_config loads target-local indexion config" {
 }
 
 ///|
+test "config: select_kgfs_dir_candidate honors explicit global override" {
+  assert_eq(
+    select_kgfs_dir_candidate(
+      None,
+      None,
+      Some("/global"),
+      Some("/project"),
+      Some("/cwd"),
+      Some("/data"),
+    ),
+    Some("/global"),
+  )
+}
+
+///|
+test "config: select_kgfs_dir_candidate keeps project-local before data fallback" {
+  assert_eq(
+    select_kgfs_dir_candidate(
+      None,
+      None,
+      None,
+      Some("/project"),
+      Some("/cwd"),
+      Some("/data"),
+    ),
+    Some("/project"),
+  )
+}
+
+///|
+test "config: find_kgfs_dir scans target dirs in order" {
+  let dir = temp_config_dir(".indexion/src-config-kgfs-targets-")
+  let target1 = join_path(dir, "pkg-a")
+  let target2 = join_path(dir, "pkg-b")
+  let kgfs_dir = join_path(target2, "kgfs")
+  remove_dir_if_exists(kgfs_dir)
+  remove_dir_if_exists(target2)
+  remove_dir_if_exists(target1)
+  remove_dir_if_exists(dir)
+  ensure_dir_recursive(kgfs_dir)
+  assert_eq(find_kgfs_dir(target_dirs=[target1, target2]), Some(kgfs_dir))
+  remove_dir_if_exists(kgfs_dir)
+  remove_dir_if_exists(target2)
+  remove_dir_if_exists(target1)
+  remove_dir_if_exists(dir)
+}
+
+///|
 test "config: path helpers normalize and derive file parts" {
   assert_eq(normalize_path("foo//bar/../baz"), "foo/baz")
   assert_eq(basename("docs/api/readme.md"), "readme.md")

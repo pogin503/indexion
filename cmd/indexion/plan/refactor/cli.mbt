@@ -638,7 +638,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let pairs : Array[SimilarPair] = []
   if config.strategy == "tfidf" {
     // Load KGF registry for language-aware tokenization
-    let registry = @kgf_features.load_registry()
+    let registry = @kgf_features.load_registry(target_dir=config.target_dir)
     // Tokenize files with KGF where available
     let (tokenized, _) = @kgf_features.tokenize_files_with_kgf(files, registry)
     let batch = @tfidf.TfidfBatch::from_tokens(tokenized)

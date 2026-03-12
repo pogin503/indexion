@@ -9,8 +9,8 @@ Example TOML:
 doc_scope = "package-docs"
 doc_paths = ["docs/**/*.md", "spec/**/*.toml", "notes/**/*.txt"]
 doc_specs = ["markdown", "toml", "plaintext"]
-index_dir = ".indexion/reconcile"
-review_results_path = ".indexion/reconcile/reviews.json"
+index_dir = ".indexion/cache/reconcile"
+review_results_path = ".indexion/cache/reconcile/reviews.json"
 threshold_seconds = 60
 max_candidates = 200
 

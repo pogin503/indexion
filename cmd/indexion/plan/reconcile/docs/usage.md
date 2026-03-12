@@ -36,7 +36,7 @@ indexion plan reconcile \
 
 # Apply logical review decisions from a JSON file
 indexion plan reconcile \
-  --review-results=.indexion/reconcile/reviews.json \
+  --review-results=.indexion/cache/reconcile/reviews.json \
   .
 ```
 
@@ -48,7 +48,7 @@ Main CLI options:
 | `--output=FILE`, `-o=` | Write report to a file | stdout |
 | `--scope=custom\|package-docs\|tree-docs` | Apply common doc-audit presets | `custom` |
 | `--specs=DIR` | Override KGF spec directory | auto-detect |
-| `--index-dir=DIR` | Override reconcile cache directory | `.indexion/reconcile` |
+| `--index-dir=DIR` | Override reconcile cache directory | `.indexion/cache/reconcile` |
 | `--config=FILE` | Load explicit `.indexion.toml` or `.json` | auto-discover |
 | `--doc=GLOB` | Limit document paths, repeatable | all detectable docs |
 | `--doc-spec=NAME` | Limit document specs, repeatable | all detected specs |

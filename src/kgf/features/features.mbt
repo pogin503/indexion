@@ -5,8 +5,12 @@
 ///|
 /// Find kgfs directory.
 /// Delegates to @config.find_kgfs_dir which is the SoT for path resolution.
-pub fn find_kgfs_dir(explicit_path? : String = "") -> String? {
-  @config.find_kgfs_dir(explicit_path~)
+pub fn find_kgfs_dir(
+  explicit_path? : String = "",
+  target_dir? : String = ".",
+  target_dirs? : Array[String] = [],
+) -> String? {
+  @config.find_kgfs_dir(explicit_path~, target_dir~, target_dirs~)
 }
 
 ///|
@@ -97,8 +101,12 @@ pub fn tokenize_files_with_kgf(
 
 ///|
 /// Load KGF registry from kgfs directory if available.
-pub fn load_registry() -> @kgf_registry.KGFRegistry? {
-  match find_kgfs_dir() {
+pub fn load_registry(
+  explicit_path? : String = "",
+  target_dir? : String = ".",
+  target_dirs? : Array[String] = [],
+) -> @kgf_registry.KGFRegistry? {
+  match find_kgfs_dir(explicit_path~, target_dir~, target_dirs~) {
     Some(dir) => {
       let reg = @kgf_registry.KGFRegistry::load_from_dir(dir)
       if reg.spec_count() > 0 {

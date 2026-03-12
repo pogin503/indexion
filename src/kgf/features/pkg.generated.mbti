@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/kgf/features"
+
+import {
+  "trkbt10/indexion/src/kgf/registry",
+  "trkbt10/indexion/src/kgf/types",
+  "trkbt10/indexion/src/similarity/apted",
+}
+
+// Values
+pub fn extract_function_trees(Array[@types.Tok], String) -> Array[(ExtractedFunction, @apted.TreeNode)]
+
+pub fn extract_functions(Array[@types.Tok], String) -> Array[ExtractedFunction]
+
+pub fn find_kgfs_dir(explicit_path? : String, target_dir? : String, target_dirs? : Array[String]) -> String?
+
+pub fn is_identifier_kind(String) -> Bool
+
+pub fn kgf_tok_to_tfidf_token(@types.Tok) -> String
+
+pub fn load_registry(explicit_path? : String, target_dir? : String, target_dirs? : Array[String]) -> @registry.KGFRegistry?
+
+pub fn tokenize_files_with_kgf(Array[(String, String)], @registry.KGFRegistry?) -> (Array[Array[String]], Int)
+
+pub fn tokenize_with_kgf(String, @types.KGFSpec) -> Array[String]
+
+pub fn tokens_to_tree_node(Array[@types.Tok], Int, Int) -> @apted.TreeNode
+
+// Errors
+
+// Types and methods
+pub struct ExtractedFunction {
+  name : String
+  start : Int
+  end : Int
+  file : String
+}
+pub fn ExtractedFunction::get_end(Self) -> Int
+pub fn ExtractedFunction::get_file(Self) -> String
+pub fn ExtractedFunction::get_name(Self) -> String
+pub fn ExtractedFunction::get_start(Self) -> Int
+pub fn ExtractedFunction::new(String, Int, Int, String) -> Self
+pub fn ExtractedFunction::qualified_name(Self) -> String
+pub fn ExtractedFunction::token_count(Self) -> Int
+
+// Type aliases
+
+// Traits
+

@@ -32,7 +32,7 @@ test "reconcile: resolve_config keeps default index dir under target root" {
   @config_paths.ensure_dir_recursive(dir)
   let config = resolve_config([dir], 0)
   assert_eq(config.target_dir, dir)
-  assert_eq(config.index_dir, dir + "/.indexion/reconcile")
+  assert_eq(config.index_dir, dir + "/.indexion/cache/reconcile")
   remove_dir_if_exists(dir)
 }
 
@@ -163,6 +163,34 @@ test "reconcile: resolve_config rebases cli relative paths to target root" {
     dir + "/.indexion/reconcile/reviews.json",
   )
   remove_dir_if_exists(dir)
+}
+
+///|
+test "reconcile: inherited global paths rebase to global config dir" {
+  let resolved = resolve_inherited_config_path(
+    "/workspace/demo",
+    ".cache/reconcile-db",
+    None,
+    "",
+    Some(".cache/reconcile-db"),
+    Some("/Users/demo/.config/indexion/config.toml"),
+    "/workspace/demo/.indexion/cache/reconcile",
+  )
+  assert_eq(resolved, "/Users/demo/.config/indexion/.cache/reconcile-db")
+}
+
+///|
+test "reconcile: project config paths keep project-local base" {
+  let resolved = resolve_inherited_config_path(
+    "/workspace/demo",
+    ".cache/reconcile-db",
+    Some(".cache/reconcile-db"),
+    "/workspace/demo/.indexion.toml",
+    Some(".global-cache/reconcile-db"),
+    Some("/Users/demo/.config/indexion/config.toml"),
+    "/workspace/demo/.indexion/cache/reconcile",
+  )
+  assert_eq(resolved, "/workspace/demo/.cache/reconcile-db")
 }
 
 ///|

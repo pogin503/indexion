@@ -411,13 +411,12 @@ fn find_cross_matches(config : SolidConfig) -> Array[FileMatch] {
   if files.length() < 2 {
     return matches
   }
+  let registry = @kgf_features.load_registry(target_dirs=config.from_dirs)
   // Check if using tree-based strategy
   let is_tree_strategy = config.strategy == "apted" || config.strategy == "tsed"
   let pairs : Array[(Int, Int, Double)] = if is_tree_strategy {
-    calculate_tree_pairs(files, config.strategy, config.threshold)
+    calculate_tree_pairs(files, config.strategy, config.threshold, registry)
   } else {
-    // Tokenize with KGF
-    let registry = @kgf_features.load_registry()
     let (tokenized, _) = @kgf_features.tokenize_files_with_kgf(files, registry)
     // Build TF-IDF batch
     let batch = @tfidf.TfidfBatch::from_tokens(tokenized)
@@ -458,9 +457,10 @@ fn calculate_tree_pairs(
   files : Array[(String, String)],
   strategy : String,
   threshold : Double,
+  registry : @registry.KGFRegistry?,
 ) -> Array[(Int, Int, Double)] {
   let pairs : Array[(Int, Int, Double)] = []
-  let registry = match @kgf_features.load_registry() {
+  let resolved_registry = match registry {
     Some(r) => r
     None => return pairs
   }
@@ -473,9 +473,9 @@ fn calculate_tree_pairs(
     // Get relative path for language detection
     let rel_path = @common.get_relative_part(path)
     let trees : Array[(@kgf_features.ExtractedFunction, @apted.TreeNode)] = []
-    match registry.detect_from_path(rel_path) {
+    match resolved_registry.detect_from_path(rel_path) {
       Some(lang) =>
-        match registry.get_spec(lang) {
+        match resolved_registry.get_spec(lang) {
           Some(spec) => {
             let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
             let tokens = lexer.tokenize(content)
