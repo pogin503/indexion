@@ -4,7 +4,10 @@
 ///|
 /// Extract specified sections from Markdown content.
 /// Returns content of matching sections joined together.
-pub fn extract_sections(content : String, section_names : Array[String]) -> String {
+pub fn extract_sections(
+  content : String,
+  section_names : Array[String],
+) -> String {
   if section_names.is_empty() {
     return content
   }
@@ -18,7 +21,9 @@ pub fn extract_sections(content : String, section_names : Array[String]) -> Stri
     if is_heading_line(line) {
       let heading_text = extract_heading_text(line)
       current_section = normalize_section_name(heading_text)
-      in_matching_section = contains_section_name(normalized_names, current_section)
+      in_matching_section = contains_section_name(
+        normalized_names, current_section,
+      )
       if in_matching_section {
         if not(first_output) {
           result.write_string("\n")

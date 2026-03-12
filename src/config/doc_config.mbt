@@ -61,18 +61,14 @@ pub fn load_doc_config(path : String) -> DocConfig? {
   if path.length() == 0 {
     return None
   }
-  let content = @fs.read_file_to_string(path) catch {
-    _ => return None
-  }
+  let content = @fs.read_file_to_string(path) catch { _ => return None }
   parse_doc_config_json(content)
 }
 
 ///|
 /// Parse doc.json content.
 fn parse_doc_config_json(content : String) -> DocConfig? {
-  let parsed = @json.parse(content) catch {
-    _ => return None
-  }
+  let parsed = @json.parse(content) catch { _ => return None }
   let root : Map[String, Json] = @json.from_json(parsed) catch {
     _ => return None
   }
@@ -117,9 +113,7 @@ fn parse_doc_output_config(value : Json) -> DocOutputConfig {
 
 ///|
 fn parse_doc_packages(value : Json) -> Array[DocPackageEntry] {
-  let arr : Array[Json] = @json.from_json(value) catch {
-    _ => return []
-  }
+  let arr : Array[Json] = @json.from_json(value) catch { _ => return [] }
   let result : Array[DocPackageEntry] = []
   for item in arr {
     match parse_doc_package_entry(item) {
@@ -183,9 +177,7 @@ fn parse_doc_root_config(value : Json) -> DocRootConfig {
 
 ///|
 fn parse_doc_root_sections(value : Json) -> Array[DocRootSection] {
-  let arr : Array[Json] = @json.from_json(value) catch {
-    _ => return []
-  }
+  let arr : Array[Json] = @json.from_json(value) catch { _ => return [] }
   let result : Array[DocRootSection] = []
   for item in arr {
     match parse_doc_root_section(item) {

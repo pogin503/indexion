@@ -1,0 +1,4 @@
+import {
+  "trkbt10/indexion/src/config",
+  "moonbitlang/x/fs",
+}

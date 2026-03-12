@@ -3,7 +3,10 @@
 
 ///|
 /// Run README generation using doc.json configuration.
-pub fn run_with_doc_config(config_path : String, cli_config : ReadmeConfig) -> Unit {
+pub fn run_with_doc_config(
+  config_path : String,
+  cli_config : ReadmeConfig,
+) -> Unit {
   log_progress("[1/4] Loading doc.json...")
   let doc_config = match @doc_config.load_doc_config(config_path) {
     Some(cfg) => cfg
@@ -12,7 +15,11 @@ pub fn run_with_doc_config(config_path : String, cli_config : ReadmeConfig) -> U
       return
     }
   }
-  log_progress("      Loaded " + doc_config.packages.length().to_string() + " package entries")
+  log_progress(
+    "      Loaded " +
+    doc_config.packages.length().to_string() +
+    " package entries",
+  )
 
   // Determine output file
   let output_path = match cli_config.output {
@@ -53,9 +60,11 @@ fn render_root_section(
   config : @doc_config.DocConfig,
 ) -> String {
   match section {
-    @doc_config.DocRootSection::Static(file_path) => render_static_section(file_path)
+    @doc_config.DocRootSection::Static(file_path) =>
+      render_static_section(file_path)
     @doc_config.DocRootSection::Toc(title) => render_toc_section(title, config)
-    @doc_config.DocRootSection::Packages(filter) => render_packages_section(filter, config)
+    @doc_config.DocRootSection::Packages(filter) =>
+      render_packages_section(filter, config)
   }
 }
 
@@ -192,7 +201,10 @@ fn contains_section(sections : Array[String], name : String) -> Bool {
 }
 
 ///|
-fn filter_section_names(sections : Array[String], exclude : String) -> Array[String] {
+fn filter_section_names(
+  sections : Array[String],
+  exclude : String,
+) -> Array[String] {
   let result : Array[String] = []
   for s in sections {
     if s != exclude {

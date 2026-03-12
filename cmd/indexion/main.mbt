@@ -57,6 +57,7 @@ fn main {
   let subcommand = if args.length() > 1 { args[1] } else { "help" }
 
   match subcommand {
+    "init" => @init_cli.run(args, 2)
     "explore" => @explore_cli.run(args, 2)
     "plan" => @plan_cli.run(args, 2)
     "doc" => @doc_cli.run(args, 2)
@@ -85,6 +86,7 @@ fn show_help() -> Unit {
   println("  indexion <command> [options]")
   println("")
   println("Commands:")
+  println("  init        Initialize indexion configuration")
   println("  explore     Analyze similarity across files in a directory")
   println("  segment     Split text into contextual segments")
   println("  plan        Generate planning documents (refactor, etc.)")

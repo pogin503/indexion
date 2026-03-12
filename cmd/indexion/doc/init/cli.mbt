@@ -85,15 +85,19 @@ pub fn show_help() -> Unit {
   println("  --help               Show this help message")
   println("")
   println("Generated Files:")
-  println("  .indexion/templates/readme.md   README template with placeholders")
+  println(
+    "  .indexion/state/templates/readme.md   README template with placeholders",
+  )
   println("")
   println("Workflow:")
   println("  1. indexion doc init                  # Generate template")
-  println("  2. indexion plan readme --template=.indexion/templates/readme.md")
+  println(
+    "  2. indexion plan readme --template=.indexion/state/templates/readme.md",
+  )
   println("                                        # Generate writing plans")
   println("  3. Write docs/ files based on plans   # Manual or LLM")
   println(
-    "  4. indexion doc readme --template=.indexion/templates/readme.md -o=README.md",
+    "  4. indexion doc readme --template=.indexion/state/templates/readme.md -o=README.md",
   )
   println("")
   println("Examples:")
@@ -123,10 +127,14 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
   // Create .indexion/ directory structure (isolated from user's docs/)
   let indexion_dir = target_dir + "/.indexion"
-  let templates_dir = indexion_dir + "/templates"
+  let state_dir = indexion_dir + "/state"
+  let templates_dir = state_dir + "/templates"
   // Create directories
   @fs.create_dir(indexion_dir) catch {
     _ => () // Directory may already exist
+  }
+  @fs.create_dir(state_dir) catch {
+    _ => ()
   }
   @fs.create_dir(templates_dir) catch {
     _ => ()
@@ -146,14 +154,14 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("")
     println("Next steps:")
     println(
-      "  1. indexion plan readme --template=.indexion/templates/readme.md",
+      "  1. indexion plan readme --template=.indexion/state/templates/readme.md",
     )
     println("     Generate writing plans for each section")
     println("")
     println("  2. Write docs/ files based on the plans")
     println("")
     println(
-      "  3. indexion doc readme --template=.indexion/templates/readme.md -o=README.md",
+      "  3. indexion doc readme --template=.indexion/state/templates/readme.md -o=README.md",
     )
     println("     Assemble README.md from docs/")
   } else {
@@ -286,7 +294,7 @@ fn extract_json_string(json : String, key : String) -> String {
 // Template generation
 
 ///|
-/// Generate .indexion/templates/readme.md content.
+/// Generate .indexion/state/templates/readme.md content.
 fn generate_template(info : ProjectInfo) -> String {
   let buf = StringBuilder::new()
   buf.write_string("{{include:docs/intro.md}}\n\n")
