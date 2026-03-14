@@ -1,53 +1,6 @@
 ///|
-/// Platform detection and OS-standard directory resolution.
-/// Follows XDG Base Directory Specification (Linux), Apple HIG (macOS),
-/// and Known Folder API conventions (Windows).
-
-///|
-/// Detected operating system platform.
-pub enum Platform {
-  MacOS
-  Linux
-  Windows
-  Unknown
-} derive(Eq, Show)
-
-///|
-/// Detect the current operating system platform.
-/// Uses environment variables and path patterns for detection.
-pub fn detect_platform() -> Platform {
-  // Windows detection: USERPROFILE with Windows path pattern
-  match @sys.get_env_var("USERPROFILE") {
-    Some(p) =>
-      if p.length() > 0 &&
-        (
-          p.has_prefix("C:\\") ||
-          p.has_prefix("c:\\") ||
-          p.contains("\\Users\\")
-        ) {
-        return Windows
-      }
-    None => ()
-  }
-  // Unix-like detection via HOME
-  match @sys.get_env_var("HOME") {
-    Some(h) =>
-      if h.length() > 0 {
-        // macOS: HOME starts with /Users/
-        if h.has_prefix("/Users/") {
-          return MacOS
-        }
-        // Additional macOS check: Library folder existence
-        if is_valid_dir_check(h + "/Library") {
-          return MacOS
-        }
-        // Otherwise assume Linux/Unix
-        return Linux
-      }
-    None => ()
-  }
-  Unknown
-}
+/// indexion application constants and directory resolution.
+/// Application-specific knowledge that depends on platform detection.
 
 ///|
 /// Get OS-standard configuration directory for indexion.
@@ -55,9 +8,9 @@ pub fn detect_platform() -> Platform {
 /// - Linux: $XDG_CONFIG_HOME/indexion or ~/.config/indexion
 /// - Windows: %APPDATA%\Indexion
 pub fn get_global_config_dir() -> String? {
-  match detect_platform() {
+  match @platform.detect_platform() {
     MacOS =>
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/Library/Application Support/Indexion")
         None => None
       }
@@ -66,7 +19,7 @@ pub fn get_global_config_dir() -> String? {
         Some(xdg) => if xdg.length() > 0 { return Some(xdg + "/indexion") }
         None => ()
       }
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/.config/indexion")
         None => None
       }
@@ -82,7 +35,7 @@ pub fn get_global_config_dir() -> String? {
         None => None
       }
     Unknown =>
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/.config/indexion")
         None => None
       }
@@ -95,9 +48,9 @@ pub fn get_global_config_dir() -> String? {
 /// - Linux: $XDG_DATA_HOME/indexion or ~/.local/share/indexion
 /// - Windows: %LOCALAPPDATA%\Indexion
 pub fn get_global_data_dir() -> String? {
-  match detect_platform() {
+  match @platform.detect_platform() {
     MacOS =>
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/Library/Application Support/Indexion")
         None => None
       }
@@ -106,7 +59,7 @@ pub fn get_global_data_dir() -> String? {
         Some(xdg) => if xdg.length() > 0 { return Some(xdg + "/indexion") }
         None => ()
       }
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/.local/share/indexion")
         None => None
       }
@@ -122,7 +75,7 @@ pub fn get_global_data_dir() -> String? {
         None => None
       }
     Unknown =>
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/.local/share/indexion")
         None => None
       }
@@ -135,9 +88,9 @@ pub fn get_global_data_dir() -> String? {
 /// - Linux: $XDG_CACHE_HOME/indexion or ~/.cache/indexion
 /// - Windows: %LOCALAPPDATA%\Indexion\Cache
 pub fn get_global_cache_dir() -> String? {
-  match detect_platform() {
+  match @platform.detect_platform() {
     MacOS =>
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/Library/Caches/Indexion")
         None => None
       }
@@ -146,7 +99,7 @@ pub fn get_global_cache_dir() -> String? {
         Some(xdg) => if xdg.length() > 0 { return Some(xdg + "/indexion") }
         None => ()
       }
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/.cache/indexion")
         None => None
       }
@@ -162,7 +115,7 @@ pub fn get_global_cache_dir() -> String? {
         None => None
       }
     Unknown =>
-      match get_home_dir() {
+      match @platform.get_home_dir() {
         Some(home) => Some(home + "/.cache/indexion")
         None => None
       }
@@ -170,9 +123,53 @@ pub fn get_global_cache_dir() -> String? {
 }
 
 ///|
-/// Internal helper to check if a path is a valid directory.
-fn is_valid_dir_check(path : String) -> Bool {
-  @fs.is_dir(path) catch {
-    _ => false
+/// Get the indexion install directory.
+/// Priority: INDEXION_INSTALL_DIR env var, then ~/.indexion
+/// This is the SoT for install directory resolution.
+pub fn get_install_dir() -> String? {
+  match @sys.get_env_var("INDEXION_INSTALL_DIR") {
+    Some(dir) => if dir.length() > 0 { return Some(dir) }
+    None => ()
+  }
+  match @platform.get_home_dir() {
+    Some(home) => Some(home + "/.indexion")
+    None => None
+  }
+}
+
+///|
+/// Get the platform asset name for release downloads.
+/// Maps Platform + Arch to the asset naming convention used in GitHub Releases.
+/// This is the SoT for platform-to-asset mapping.
+pub fn get_platform_asset_name() -> String? {
+  let arch = @platform.detect_arch()
+  let arch_str = match arch {
+    X64 => "x64"
+    Arm64 => "arm64"
+    UnknownArch => return None
+  }
+  match @platform.detect_platform() {
+    MacOS => Some("indexion-darwin-" + arch_str)
+    Linux => Some("indexion-linux-" + arch_str)
+    Windows => Some("indexion-windows-" + arch_str)
+    Unknown => None
+  }
+}
+
+///|
+/// Get the archive extension for the current platform.
+pub fn get_archive_extension() -> String {
+  match @platform.detect_platform() {
+    Windows => ".zip"
+    _ => ".tar.gz"
+  }
+}
+
+///|
+/// Get the binary name for the current platform.
+pub fn get_binary_name() -> String {
+  match @platform.detect_platform() {
+    Windows => "indexion.exe"
+    _ => "indexion"
   }
 }

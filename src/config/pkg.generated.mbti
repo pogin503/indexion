@@ -14,8 +14,6 @@ pub fn default_reconcile_index_dir(String) -> String
 
 pub fn default_tool_dir(String, String) -> String
 
-pub fn detect_platform() -> Platform
-
 pub fn dirname(String) -> String
 
 pub fn ensure_dir_recursive(String) -> Unit
@@ -30,6 +28,10 @@ pub fn find_kgfs_dir(explicit_path? : String, target_dir? : String, target_dirs?
 
 pub fn find_nearest_marker_dir(String, String, Array[String]) -> String?
 
+pub fn get_archive_extension() -> String
+
+pub fn get_binary_name() -> String
+
 pub fn get_global_cache_dir() -> String?
 
 pub fn get_global_config_dir() -> String?
@@ -38,7 +40,9 @@ pub fn get_global_config_path() -> String?
 
 pub fn get_global_data_dir() -> String?
 
-pub fn get_home_dir() -> String?
+pub fn get_install_dir() -> String?
+
+pub fn get_platform_asset_name() -> String?
 
 pub fn is_absolute_path(String) -> Bool
 
@@ -147,15 +151,6 @@ pub struct GlobalConfig {
 pub fn GlobalConfig::empty() -> Self
 pub impl Eq for GlobalConfig
 pub impl Show for GlobalConfig
-
-pub enum Platform {
-  MacOS
-  Linux
-  Windows
-  Unknown
-}
-pub impl Eq for Platform
-pub impl Show for Platform
 
 pub struct ProjectFileConfig {
   inherit_global : Bool

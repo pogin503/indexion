@@ -422,21 +422,6 @@ fn select_kgfs_dir_candidate(
 }
 
 ///|
-/// Get user home directory.
-pub fn get_home_dir() -> String? {
-  // Try HOME (Unix) then USERPROFILE (Windows)
-  match @sys.get_env_var("HOME") {
-    Some(h) => if h.length() > 0 { return Some(h) }
-    None => ()
-  }
-  match @sys.get_env_var("USERPROFILE") {
-    Some(h) => if h.length() > 0 { return Some(h) }
-    None => ()
-  }
-  None
-}
-
-///|
 /// Check if a path is a valid directory.
 fn is_valid_dir(path : String) -> Bool {
   @fs.is_dir(path) catch {

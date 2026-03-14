@@ -1,0 +1,11 @@
+import {
+  "trkbt10/indexion/src/update" @update_core,
+  "moonbitlang/async" @async,
+}
+
+options(
+  targets: {
+    "cli.mbt": [ "native" ],
+    "cli_stub.mbt": [ "wasm", "wasm-gc", "js" ],
+  },
+)

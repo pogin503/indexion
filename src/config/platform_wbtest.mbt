@@ -1,19 +1,19 @@
 ///|
 test "platform: detect_platform returns valid platform" {
-  let platform = detect_platform()
+  let platform = @platform.detect_platform()
   // Should return one of the valid platforms on any system
   assert_true(
-    platform == MacOS ||
-    platform == Linux ||
-    platform == Windows ||
-    platform == Unknown,
+    platform == @platform.Platform::MacOS ||
+    platform == @platform.Platform::Linux ||
+    platform == @platform.Platform::Windows ||
+    platform == @platform.Platform::Unknown,
   )
 }
 
 ///|
 test "platform: get_global_config_dir returns path on supported platforms" {
-  let platform = detect_platform()
-  if platform != Unknown {
+  let platform = @platform.detect_platform()
+  if platform != @platform.Platform::Unknown {
     let config_dir = get_global_config_dir()
     assert_true(config_dir is Some(_))
     let dir = config_dir.unwrap()
@@ -23,8 +23,8 @@ test "platform: get_global_config_dir returns path on supported platforms" {
 
 ///|
 test "platform: get_global_data_dir returns path on supported platforms" {
-  let platform = detect_platform()
-  if platform != Unknown {
+  let platform = @platform.detect_platform()
+  if platform != @platform.Platform::Unknown {
     let data_dir = get_global_data_dir()
     assert_true(data_dir is Some(_))
     let dir = data_dir.unwrap()
@@ -34,8 +34,8 @@ test "platform: get_global_data_dir returns path on supported platforms" {
 
 ///|
 test "platform: get_global_cache_dir returns path on supported platforms" {
-  let platform = detect_platform()
-  if platform != Unknown {
+  let platform = @platform.detect_platform()
+  if platform != @platform.Platform::Unknown {
     let cache_dir = get_global_cache_dir()
     assert_true(cache_dir is Some(_))
     let dir = cache_dir.unwrap()
@@ -45,8 +45,8 @@ test "platform: get_global_cache_dir returns path on supported platforms" {
 
 ///|
 test "platform: macOS paths follow Apple conventions" {
-  let platform = detect_platform()
-  if platform == MacOS {
+  let platform = @platform.detect_platform()
+  if platform == @platform.Platform::MacOS {
     let config_dir = get_global_config_dir().unwrap()
     let data_dir = get_global_data_dir().unwrap()
     let cache_dir = get_global_cache_dir().unwrap()
@@ -58,8 +58,8 @@ test "platform: macOS paths follow Apple conventions" {
 
 ///|
 test "platform: Linux paths follow XDG conventions" {
-  let platform = detect_platform()
-  if platform == Linux {
+  let platform = @platform.detect_platform()
+  if platform == @platform.Platform::Linux {
     let config_dir = get_global_config_dir().unwrap()
     let data_dir = get_global_data_dir().unwrap()
     let cache_dir = get_global_cache_dir().unwrap()

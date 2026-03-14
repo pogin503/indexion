@@ -1,0 +1,54 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/platform"
+
+// Values
+pub async fn copy_dir_recursive(String, String) -> Unit
+
+pub async fn copy_file(String, String) -> Unit
+
+pub async fn create_temp_dir(String) -> String
+
+pub fn detect_arch() -> Arch
+
+pub fn detect_platform() -> Platform
+
+pub async fn ensure_dir_async(String) -> Unit
+
+pub async fn extract_archive(String, String) -> Unit
+
+pub fn get_home_dir() -> String?
+
+pub async fn install_binary(String, String) -> Unit
+
+pub async fn make_executable(String) -> Unit
+
+pub async fn path_exists_async(String) -> Bool
+
+pub async fn remove_dir_recursive(String) -> Unit
+
+pub async fn write_bytes_async(String, Bytes) -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum Arch {
+  X64
+  Arm64
+  UnknownArch
+}
+pub impl Eq for Arch
+pub impl Show for Arch
+
+pub(all) enum Platform {
+  MacOS
+  Linux
+  Windows
+  Unknown
+}
+pub impl Eq for Platform
+pub impl Show for Platform
+
+// Type aliases
+
+// Traits
+

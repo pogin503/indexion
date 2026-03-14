@@ -67,6 +67,7 @@ fn main {
     "sim" | "similarity" => @similarity_cli.run(args, 2)
     "segment" | "seg" => @segment_cli.run(args, 2)
     "perf" => @perf_cli.run(args, 2)
+    "update" => @update_cli.run(args, 2)
     "version" | "-v" | "--version" => show_version()
     "help" | "-h" | "--help" => show_help()
     _ => {
@@ -94,6 +95,7 @@ fn show_help() -> Unit {
   println("  kgf         KGF spec inspection and debugging")
   println("  sim         Calculate text similarity/distance")
   println("  perf        Performance benchmark commands")
+  println("  update      Check for and install updates")
   println("  help        Show this help message")
   println("  version     Show version information")
   println("")
@@ -110,5 +112,5 @@ fn show_help() -> Unit {
 ///|
 /// Show version information.
 fn show_version() -> Unit {
-  println("indexion version 0.1.0")
+  println("indexion version " + @update.current_version)
 }

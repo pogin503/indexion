@@ -7,7 +7,7 @@ test "global_config: parse_global_toml_config parses global section" {
   assert_true(config.kgfs_dir is Some(_))
   let kgfs_dir = config.kgfs_dir.unwrap()
   // Should expand ~ to home dir if HOME is set
-  match get_home_dir() {
+  match @platform.get_home_dir() {
     Some(home) => {
       assert_true(not(kgfs_dir.has_prefix("~")))
       assert_true(kgfs_dir.has_prefix(home))
@@ -60,8 +60,8 @@ test "global_config: empty returns empty config" {
 
 ///|
 test "global_config: get_global_config_path returns path on supported platforms" {
-  let platform = detect_platform()
-  if platform != Unknown {
+  let platform = @platform.detect_platform()
+  if platform != @platform.Platform::Unknown {
     let path = get_global_config_path()
     assert_true(path is Some(_))
     let p = path.unwrap()

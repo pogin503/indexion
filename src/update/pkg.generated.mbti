@@ -1,0 +1,51 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/update"
+
+// Values
+pub fn build_checksum_url(String, String) -> String
+
+pub fn build_download_url(String, String) -> String
+
+pub async fn check_for_update() -> UpdateCheckResult raise UpdateError
+
+pub async fn check_latest_version() -> String raise UpdateError
+
+pub fn compare_versions(String, String) -> Int
+
+pub let current_version : String
+
+pub async fn download_bytes(String) -> Bytes raise UpdateError
+
+pub async fn download_text(String) -> String raise UpdateError
+
+pub fn get_install_dir() -> String raise UpdateError
+
+pub fn get_platform_asset() -> String raise UpdateError
+
+pub async fn perform_update(String) -> Unit raise UpdateError
+
+pub fn verify_checksum(Bytes, String) -> Unit raise UpdateError
+
+// Errors
+pub suberror UpdateError {
+  NetworkError(String)
+  ApiError(String)
+  ParseError(String)
+  PlatformError(String)
+  DownloadError(String)
+  ChecksumError(String)
+  InstallError(String)
+}
+pub fn UpdateError::to_string(Self) -> String
+
+// Types and methods
+pub struct UpdateCheckResult {
+  current_version : String
+  latest_version : String
+  has_update : Bool
+}
+
+// Type aliases
+
+// Traits
+

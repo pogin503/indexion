@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/cmd/indexion/update"
+
+// Values
+pub fn parse_args(Array[String], Int) -> UpdateConfig
+
+pub fn run(Array[String], Int) -> Unit
+
+pub fn show_help() -> Unit
+
+// Errors
+
+// Types and methods
+pub struct UpdateConfig {
+  check_only : Bool
+  force : Bool
+  show_help : Bool
+}
+pub fn UpdateConfig::default() -> Self
+
+// Type aliases
+
+// Traits
+
