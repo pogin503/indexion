@@ -20,11 +20,13 @@ pub struct InitConfig {
 }
 
 ///|
+/// Create a default InitConfig with current directory as target.
 pub fn InitConfig::default() -> InitConfig {
   { target_dir: ".", is_global: false, force: false, show_help: false }
 }
 
 ///|
+/// Parse command-line arguments for the init subcommand.
 pub fn parse_args(args : Array[String], start_idx : Int) -> InitConfig {
   let mut config = InitConfig::default()
   for i = start_idx; i < args.length(); i = i + 1 {
@@ -43,6 +45,7 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> InitConfig {
 }
 
 ///|
+/// Display help text for the init subcommand.
 pub fn show_help() -> Unit {
   println("indexion init - Initialize indexion configuration")
   println("")
@@ -77,6 +80,7 @@ pub fn show_help() -> Unit {
 }
 
 ///|
+/// Entry point for the init subcommand.
 pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_args(args, start_idx)
   if config.show_help {

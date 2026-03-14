@@ -125,6 +125,7 @@ fn match_char_class(
 }
 
 ///|
+/// Check whether a string contains glob metacharacters (*, ?, [).
 pub fn has_glob_pattern(path : String) -> Bool {
   let chars = path.to_array()
   for i = 0; i < chars.length(); i = i + 1 {
@@ -137,6 +138,7 @@ pub fn has_glob_pattern(path : String) -> Bool {
 }
 
 ///|
+/// Expand a glob pattern against the filesystem and return matching paths.
 pub fn expand_glob(pattern : String) -> Array[String] {
   let results : Array[String] = []
   if not(has_glob_pattern(pattern)) {

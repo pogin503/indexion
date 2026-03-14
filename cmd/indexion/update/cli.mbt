@@ -18,11 +18,13 @@ pub struct UpdateConfig {
 }
 
 ///|
+/// Create a default UpdateConfig with all options disabled.
 pub fn UpdateConfig::default() -> UpdateConfig {
   { check_only: false, force: false, show_help: false }
 }
 
 ///|
+/// Parse command-line arguments for the update subcommand.
 pub fn parse_args(args : Array[String], start_idx : Int) -> UpdateConfig {
   let mut config = UpdateConfig::default()
   for i = start_idx; i < args.length(); i = i + 1 {
@@ -39,6 +41,7 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> UpdateConfig {
 }
 
 ///|
+/// Display help text for the update subcommand.
 pub fn show_help() -> Unit {
   println("indexion update - Check for updates and install the latest version")
   println("")
@@ -57,6 +60,7 @@ pub fn show_help() -> Unit {
 }
 
 ///|
+/// Entry point for the update subcommand.
 pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_args(args, start_idx)
   if config.show_help {

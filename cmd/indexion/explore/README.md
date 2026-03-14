@@ -18,11 +18,21 @@ indexion explore [options] <directory>
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--format=FORMAT` | Output: `matrix`, `list`, `cluster`, `json` | matrix |
-| `--strategy=NAME` | Algorithm: `tfidf`, `ncd`, `hybrid` | tfidf |
+| `--strategy=NAME` | Algorithm: `tfidf`, `ncd`, `hybrid`, `apted`, `tsed` | tfidf |
 | `--threshold=FLOAT` | Min similarity for list/json/cluster output | 0.5 |
 | `--ext=EXT` | File extension filter (repeatable) | all |
 | `--include=PATTERN` | Include files matching glob pattern | * |
 | `--exclude=PATTERN` | Exclude files matching glob pattern | - |
+
+## Strategies
+
+| Strategy | Description | Speed |
+|----------|-------------|-------|
+| `tfidf` (default) | TF-IDF token similarity with KGF lexer | Fast |
+| `ncd` | Normalized Compression Distance | Fast |
+| `hybrid` | Combined NCD + TF-IDF | Fast |
+| `apted` | All-Path Tree Edit Distance (function-level) | Slow |
+| `tsed` | Tree Structure Edit Distance (function-level) | Slow |
 
 ## Examples
 
@@ -41,6 +51,13 @@ indexion explore --ext=.mbt --ext=.kgf src/
 
 # TypeScript only with glob filters
 indexion explore --format=list --include=*.ts --include=*.tsx src/
+
+# Exclude config noise for CLI dedup detection
+indexion explore --format=list --threshold=0.7 \
+  --include='*.mbt' --exclude='*moon.pkg*' cmd/indexion/
+
+# Function-level comparison
+indexion explore --strategy=apted --format=list src/
 ```
 
 ## Output Formats

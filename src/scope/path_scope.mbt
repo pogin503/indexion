@@ -5,6 +5,7 @@ pub struct PathSubject {
 } derive(Eq, Show)
 
 ///|
+/// Create a PathSubject from a primary path and optional alternates.
 pub fn PathSubject::new(
   path : String,
   additional_paths? : Array[String] = [],
@@ -33,6 +34,7 @@ pub struct PathScope {
 } derive(Eq, Show)
 
 ///|
+/// Create a PathScope with optional include and exclude glob patterns.
 pub fn PathScope::new(
   includes? : Array[String] = [],
   excludes? : Array[String] = [],
@@ -41,6 +43,7 @@ pub fn PathScope::new(
 }
 
 ///|
+/// Return true if the scope has no include or exclude patterns.
 pub fn PathScope::is_empty(self : PathScope) -> Bool {
   self.includes.is_empty() && self.excludes.is_empty()
 }
