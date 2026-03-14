@@ -122,66 +122,79 @@ pub fn DocOutput::with_json(json_data : String) -> DocOutput {
 // Getters
 
 ///|
+/// Return the selected output format.
 pub fn RenderOptions::get_format(self : RenderOptions) -> OutputFormat {
   self.format
 }
 
 ///|
+/// Return whether diagrams should be included.
 pub fn RenderOptions::get_include_diagrams(self : RenderOptions) -> Bool {
   self.include_diagrams
 }
 
 ///|
+/// Return whether dependency information should be included.
 pub fn RenderOptions::get_include_deps(self : RenderOptions) -> Bool {
   self.include_deps
 }
 
 ///|
+/// Return whether call graph information should be included.
 pub fn RenderOptions::get_include_calls(self : RenderOptions) -> Bool {
   self.include_calls
 }
 
 ///|
+/// Return whether type hierarchy should be included.
 pub fn RenderOptions::get_include_hierarchy(self : RenderOptions) -> Bool {
   self.include_hierarchy
 }
 
 ///|
+/// Return whether cross references should be included.
 pub fn RenderOptions::get_include_refs(self : RenderOptions) -> Bool {
   self.include_refs
 }
 
 ///|
+/// Return the maximum number of nodes allowed in diagrams.
 pub fn RenderOptions::get_max_diagram_nodes(self : RenderOptions) -> Int {
   self.max_diagram_nodes
 }
 
 ///|
+/// Return the rendered API reference section.
 pub fn DocOutput::get_api_reference(self : DocOutput) -> String {
   self.api_reference
 }
 
 ///|
+/// Return the dependency diagram, if generated.
 pub fn DocOutput::get_dependency_diagram(self : DocOutput) -> String? {
   self.dependency_diagram
 }
 
 ///|
+/// Return the call graph diagram, if generated.
 pub fn DocOutput::get_call_graph(self : DocOutput) -> String? {
   self.call_graph
 }
 
 ///|
+/// Return the type hierarchy diagram, if generated.
 pub fn DocOutput::get_type_hierarchy(self : DocOutput) -> String? {
   self.type_hierarchy
 }
 
 ///|
+/// Return the cross references section, if generated.
 pub fn DocOutput::get_cross_references(self : DocOutput) -> String? {
   self.cross_references
 }
 
 ///|
+/// Return the raw JSON data, if generated.
 pub fn DocOutput::get_json_data(self : DocOutput) -> String? {
   self.json_data
 }

@@ -110,6 +110,7 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> SolidConfig {
 // get_arg_value and parse_double are in @common (SoT)
 
 ///|
+/// Print usage information for the solid subcommand.
 pub fn show_help() -> Unit {
   println(
     "indexion plan solid - Generate solidification plan for common code extraction",

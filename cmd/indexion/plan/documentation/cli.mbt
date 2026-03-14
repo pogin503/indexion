@@ -20,6 +20,7 @@
 /// | `--name=NAME` | Project name (auto-detect from moon.mod.json) | - |
 
 ///|
+/// CLI configuration for the documentation plan subcommand.
 pub struct DocPlanConfig {
   target_dir : String
   output : String
@@ -31,6 +32,7 @@ pub struct DocPlanConfig {
 }
 
 ///|
+/// Create default configuration for the documentation plan subcommand.
 pub fn DocPlanConfig::default() -> DocPlanConfig {
   {
     target_dir: "",
@@ -46,6 +48,7 @@ pub fn DocPlanConfig::default() -> DocPlanConfig {
 // use @common (SoT) — get_arg_value
 
 ///|
+/// Parse command line arguments into documentation plan configuration.
 pub fn parse_args(args : Array[String], start_idx : Int) -> DocPlanConfig {
   let mut config = DocPlanConfig::default()
   for i = start_idx; i < args.length(); i = i + 1 {
@@ -74,6 +77,7 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> DocPlanConfig {
 }
 
 ///|
+/// Print usage information for the documentation subcommand.
 pub fn show_help() -> Unit {
   println(
     "indexion plan documentation - Generate documentation coverage analysis",
@@ -112,6 +116,7 @@ pub fn show_help() -> Unit {
 }
 
 ///|
+/// Run the documentation plan command with the given arguments.
 pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_args(args, start_idx)
   if config.show_help {

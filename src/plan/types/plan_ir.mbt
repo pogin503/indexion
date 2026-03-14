@@ -129,11 +129,13 @@ pub struct ListItem {
 }
 
 ///|
+/// Create a list item with no description.
 pub fn ListItem::simple(text : String) -> ListItem {
   { text, description: "" }
 }
 
 ///|
+/// Create a list item with a description.
 pub fn ListItem::with_desc(text : String, description : String) -> ListItem {
   { text, description }
 }
@@ -147,6 +149,7 @@ pub struct TableData {
 }
 
 ///|
+/// Create a new table with the given headers and left-aligned columns.
 pub fn TableData::new(headers : Array[String]) -> TableData {
   let alignments : Array[TableAlign] = []
   for _ in headers {
@@ -156,6 +159,7 @@ pub fn TableData::new(headers : Array[String]) -> TableData {
 }
 
 ///|
+/// Append a row to the table.
 pub fn TableData::add_row(self : TableData, row : Array[String]) -> Unit {
   self.rows.push(row)
 }
@@ -184,11 +188,13 @@ pub struct ChecklistItem {
 }
 
 ///|
+/// Create an unchecked checklist item with no priority.
 pub fn ChecklistItem::new(label : String) -> ChecklistItem {
   { label, description: "", checked: false, priority: 0 }
 }
 
 ///|
+/// Create an unchecked checklist item with the given priority.
 pub fn ChecklistItem::with_priority(
   label : String,
   priority : Int,
@@ -197,6 +203,7 @@ pub fn ChecklistItem::with_priority(
 }
 
 ///|
+/// Create an unchecked checklist item with a description.
 pub fn ChecklistItem::with_desc(
   label : String,
   description : String,

@@ -19,6 +19,7 @@ pub(all) enum DetectedLang {
 } derive(Eq, Show)
 
 ///|
+/// Convert the detected language to its lowercase string identifier.
 pub fn DetectedLang::to_string(self : DetectedLang) -> String {
   match self {
     TypeScript => "typescript"
@@ -69,6 +70,7 @@ pub(all) struct FileInfo {
 } derive(Eq, Show)
 
 ///|
+/// Create a new FileInfo with the given path, language, extension, and spec name.
 pub fn FileInfo::new(
   path : String,
   lang : DetectedLang,
@@ -79,21 +81,25 @@ pub fn FileInfo::new(
 }
 
 ///|
+/// Return the file path.
 pub fn FileInfo::get_path(self : FileInfo) -> String {
   self.path
 }
 
 ///|
+/// Return the detected language.
 pub fn FileInfo::get_lang(self : FileInfo) -> DetectedLang {
   self.lang
 }
 
 ///|
+/// Return the file extension without dot.
 pub fn FileInfo::get_ext(self : FileInfo) -> String {
   self.ext
 }
 
 ///|
+/// Return the KGF spec name for this file.
 pub fn FileInfo::get_spec_name(self : FileInfo) -> String {
   self.spec_name
 }
@@ -118,6 +124,7 @@ pub(all) struct DocSymbol {
 } derive(Eq, Show)
 
 ///|
+/// Create a new DocSymbol without documentation.
 pub fn DocSymbol::new(
   id : String,
   name : String,
@@ -128,6 +135,7 @@ pub fn DocSymbol::new(
 }
 
 ///|
+/// Create a new DocSymbol with an attached documentation string.
 pub fn DocSymbol::with_doc(
   id : String,
   name : String,
@@ -139,46 +147,55 @@ pub fn DocSymbol::with_doc(
 }
 
 ///|
+/// Return the symbol ID.
 pub fn DocSymbol::get_id(self : DocSymbol) -> String {
   self.id
 }
 
 ///|
+/// Return the symbol name.
 pub fn DocSymbol::get_name(self : DocSymbol) -> String {
   self.name
 }
 
 ///|
+/// Return the symbol kind (e.g. Function, Class).
 pub fn DocSymbol::get_kind(self : DocSymbol) -> String {
   self.kind
 }
 
 ///|
+/// Return the documentation comment, if any.
 pub fn DocSymbol::get_doc(self : DocSymbol) -> String? {
   self.doc
 }
 
 ///|
+/// Return the parent symbol ID, if any.
 pub fn DocSymbol::get_parent(self : DocSymbol) -> String? {
   self.parent
 }
 
 ///|
+/// Return the file where this symbol is declared.
 pub fn DocSymbol::get_file(self : DocSymbol) -> String {
   self.file
 }
 
 ///|
+/// Return the child symbols.
 pub fn DocSymbol::get_children(self : DocSymbol) -> Array[DocSymbol] {
   self.children
 }
 
 ///|
+/// Set the parent symbol ID.
 pub fn DocSymbol::set_parent(self : DocSymbol, parent : String) -> Unit {
   self.parent = Some(parent)
 }
 
 ///|
+/// Append a child symbol.
 pub fn DocSymbol::add_child(self : DocSymbol, child : DocSymbol) -> Unit {
   self.children.push(child)
 }
@@ -197,16 +214,19 @@ pub struct AnalysisResult {
 } derive(Eq, Show)
 
 ///|
+/// Create an empty analysis result.
 pub fn AnalysisResult::new() -> AnalysisResult {
   { files: [], graph: @graph.CodeGraph::new(), symbols: [], module_docs: {} }
 }
 
 ///|
+/// Add an analyzed file to the result.
 pub fn AnalysisResult::add_file(self : AnalysisResult, file : FileInfo) -> Unit {
   self.files.push(file)
 }
 
 ///|
+/// Add an extracted documentation symbol to the result.
 pub fn AnalysisResult::add_symbol(
   self : AnalysisResult,
   symbol : DocSymbol,
@@ -215,6 +235,7 @@ pub fn AnalysisResult::add_symbol(
 }
 
 ///|
+/// Set module-level documentation for a given module path.
 pub fn AnalysisResult::set_module_doc(
   self : AnalysisResult,
   mod_path : String,
@@ -224,16 +245,19 @@ pub fn AnalysisResult::set_module_doc(
 }
 
 ///|
+/// Return all analyzed files.
 pub fn AnalysisResult::get_files(self : AnalysisResult) -> Array[FileInfo] {
   self.files
 }
 
 ///|
+/// Return the merged code graph.
 pub fn AnalysisResult::get_graph(self : AnalysisResult) -> @graph.CodeGraph {
   self.graph
 }
 
 ///|
+/// Replace the code graph.
 pub fn AnalysisResult::set_graph(
   self : AnalysisResult,
   g : @graph.CodeGraph,
@@ -242,11 +266,13 @@ pub fn AnalysisResult::set_graph(
 }
 
 ///|
+/// Return all extracted documentation symbols.
 pub fn AnalysisResult::get_symbols(self : AnalysisResult) -> Array[DocSymbol] {
   self.symbols
 }
 
 ///|
+/// Return all module-level documentation entries.
 pub fn AnalysisResult::get_module_docs(
   self : AnalysisResult,
 ) -> Map[String, String] {

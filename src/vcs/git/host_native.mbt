@@ -68,6 +68,7 @@ fn git_last_commit_seconds_native(root : String, path : String) -> Int? {
 }
 
 ///|
+/// Return the file modification time in seconds, or None if unavailable.
 pub fn file_mtime_seconds(path : String) -> Int? {
   let path_bytes = encode_path(path)
   let mtime = c_file_mtime(path_bytes, path_bytes.length())

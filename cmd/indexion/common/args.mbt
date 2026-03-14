@@ -111,6 +111,7 @@ pub fn parse_comma_list(s : String) -> Array[String] {
 }
 
 ///|
+/// Strip leading and trailing ASCII whitespace from a string.
 pub fn trim_ascii_spaces(s : String) -> String {
   let chars = s.to_array()
   let mut start = 0
