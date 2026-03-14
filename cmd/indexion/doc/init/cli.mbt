@@ -105,7 +105,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     show_help()
     return
   }
-  let target_dir = normalize_path(config.target_dir)
+  let target_dir = @common.normalize_path(config.target_dir)
   // Load KGF registry
   let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
   // Detect project type and load info
@@ -301,18 +301,4 @@ fn generate_template(info : ProjectInfo) -> String {
   buf.to_string()
 }
 
-// Utilities
-
-///|
-fn normalize_path(path : String) -> String {
-  if path.has_suffix("/") {
-    let chars = path.to_array()
-    let result : Array[Char] = []
-    for i = 0; i < chars.length() - 1; i = i + 1 {
-      result.push(chars[i])
-    }
-    String::from_array(result)
-  } else {
-    path
-  }
-}
+// use @common (SoT) — normalize_path

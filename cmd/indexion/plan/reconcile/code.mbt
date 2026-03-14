@@ -24,7 +24,7 @@ fn document_symbol_kinds_for_path(
             Some(values) => {
               let configured : Map[String, Bool] = {}
               for value in values {
-                let normalized = lower_string(trim_string(value))
+                let normalized = lower_string(@common.trim_ascii_spaces(value))
                 if normalized.length() > 0 {
                   configured.set(normalized, true)
                 }

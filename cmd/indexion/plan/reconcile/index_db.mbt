@@ -83,7 +83,7 @@ fn save_record_db(index_dir : String, db : @vcdb.VectorDB) -> Unit {
 
 ///|
 fn normalize_review_status(status : String) -> String {
-  match lower_string(trim_string(status)) {
+  match lower_string(@common.trim_ascii_spaces(status)) {
     "accepted" | "approve" | "approved" => "accepted"
     "rejected" | "reject" => "rejected"
     "dismissed" => "dismissed"

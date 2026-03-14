@@ -172,17 +172,7 @@ fn pad_number(n : Int, width : Int) -> String {
   String::from_array(result)
 }
 
-///|
-/// Extract substring from text.
-fn substring(text : String, start : Int, end : Int) -> String {
-  let chars = text.to_array()
-  let result : Array[Char] = []
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  for i = start; i < actual_end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
+// use @common (SoT) — substring
 
 ///|
 /// Run the segment command with given arguments.
@@ -291,7 +281,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
 
   for i, seg in segments {
-    let segment_text = substring(text, seg.get_start(), seg.get_end())
+    let segment_text = @common.substring(text, seg.get_start(), seg.get_end())
     let filename = clean_output_dir +
       "/" +
       config.prefix +

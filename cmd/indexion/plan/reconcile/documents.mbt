@@ -144,7 +144,7 @@ fn markdown_heading_text(line : String) -> String {
   while idx < chars.length() && chars[idx] == ' ' {
     idx += 1
   }
-  trim_string(substring(line, idx, line.length()))
+  @common.trim_ascii_spaces(@common.substring(line, idx, line.length()))
 }
 
 ///|
@@ -167,7 +167,7 @@ fn extract_markdown_fragments(
     if paragraph.length() == 0 {
       return
     }
-    let text = trim_string(join_lines(paragraph))
+    let text = @common.trim_ascii_spaces(join_lines(paragraph))
     paragraph.clear()
     if text.length() == 0 {
       return
@@ -175,7 +175,7 @@ fn extract_markdown_fragments(
     fragments.push(make_fragment(path, spec, "paragraph", heading, text))
   }
   for line in lines {
-    let trimmed = trim_string(line)
+    let trimmed = @common.trim_ascii_spaces(line)
     if trimmed.has_prefix("#") {
       flush_markdown_paragraph(fragments, path, spec, heading, paragraph)
       let heading_text = markdown_heading_text(trimmed)
@@ -217,7 +217,7 @@ fn extract_plaintext_fragments(
     if paragraph.length() == 0 {
       return
     }
-    let text = trim_string(join_lines(paragraph))
+    let text = @common.trim_ascii_spaces(join_lines(paragraph))
     paragraph.clear()
     if text.length() == 0 {
       return
@@ -225,7 +225,7 @@ fn extract_plaintext_fragments(
     fragments.push(make_fragment(path, spec, "paragraph", title, text))
   }
   for line in lines {
-    let trimmed = trim_string(line)
+    let trimmed = @common.trim_ascii_spaces(line)
     if is_blank_line(trimmed) {
       flush_plaintext_paragraph(fragments, path, spec, title, paragraph)
       continue
@@ -255,7 +255,7 @@ fn extract_toml_fragments(
       continue
     }
     if line.has_prefix("[") && line.has_suffix("]") {
-      section = trim_string(substring(line, 1, line.length() - 1))
+      section = @common.trim_ascii_spaces(@common.substring(line, 1, line.length() - 1))
       fragments.push(
         make_fragment(path, spec, "section", section, "[" + section + "]"),
       )
@@ -278,8 +278,8 @@ fn extract_toml_fragments(
       )
       continue
     }
-    let key = trim_string(substring(line, 0, eq_idx))
-    let value = trim_string(substring(line, eq_idx + 1, line.length()))
+    let key = @common.trim_ascii_spaces(@common.substring(line, 0, eq_idx))
+    let value = @common.trim_ascii_spaces(@common.substring(line, eq_idx + 1, line.length()))
     let title = if section.length() > 0 { section + "." + key } else { key }
     fragments.push(
       make_fragment(path, spec, "entry", title, key + " = " + value),

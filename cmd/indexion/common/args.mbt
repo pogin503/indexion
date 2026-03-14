@@ -433,3 +433,30 @@ pub fn truncate(s : String, max_len : Int) -> String {
   result.push('.')
   String::from_array(result)
 }
+
+///|
+/// Extract substring from start (inclusive) to end (exclusive).
+pub fn substring(s : String, start : Int, end : Int) -> String {
+  let chars = s.to_array()
+  let actual_end = if end > chars.length() { chars.length() } else { end }
+  let result : Array[Char] = []
+  for i = start; i < actual_end; i = i + 1 {
+    result.push(chars[i])
+  }
+  String::from_array(result)
+}
+
+///|
+/// Normalize path by removing trailing slash.
+/// Delegates to @pipeline.trim_trailing_slash (SoT).
+pub fn normalize_path(path : String) -> String {
+  @pipeline.trim_trailing_slash(path)
+}
+
+///|
+/// Check if path is a directory.
+pub fn is_directory(path : String) -> Bool {
+  @fs.is_dir(path) catch {
+    _ => false
+  }
+}

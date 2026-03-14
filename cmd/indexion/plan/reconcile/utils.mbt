@@ -1,24 +1,6 @@
 // get_arg_value: use @common (SoT)
-
-///|
-fn substring(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  let actual_start = if start < 0 { 0 } else { start }
-  let capped_end = if end > chars.length() { chars.length() } else { end }
-  if actual_start >= capped_end {
-    return ""
-  }
-  let buf = StringBuilder::new(size_hint=capped_end - actual_start)
-  for i = actual_start; i < capped_end; i = i + 1 {
-    buf.write_char(chars[i])
-  }
-  buf.to_string()
-}
-
-///|
-fn trim_string(s : String) -> String {
-  s.trim().to_string()
-}
+// substring: use @common (SoT)
+// trim_string: use @common.trim_ascii_spaces (SoT)
 
 ///|
 fn lower_string(s : String) -> String {
@@ -62,7 +44,7 @@ fn normalize_spaces(text : String) -> String {
       last_space = false
     }
   }
-  trim_string(buf.to_string())
+  @common.trim_ascii_spaces(buf.to_string())
 }
 
 ///|
@@ -71,7 +53,7 @@ fn preview_text(text : String, max_len? : Int = 120) -> String {
   if normalized.length() <= max_len {
     normalized
   } else {
-    substring(normalized, 0, max_len) + "..."
+    @common.substring(normalized, 0, max_len) + "..."
   }
 }
 

@@ -20,7 +20,11 @@ pub fn get_dirname_prefix(String) -> String
 
 pub fn get_relative_part(String) -> String
 
+pub fn is_directory(String) -> Bool
+
 pub fn make_relative_path(String, String) -> String
+
+pub fn normalize_path(String) -> String
 
 pub fn parent_dir(String) -> String
 
@@ -33,6 +37,8 @@ pub fn parse_int(String) -> Int
 pub fn split_by_slash(String) -> Array[String]
 
 pub fn split_lines(String) -> Array[String]
+
+pub fn substring(String, Int, Int) -> String
 
 pub fn trim_ascii_spaces(String) -> String
 

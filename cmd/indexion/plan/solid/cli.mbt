@@ -293,7 +293,7 @@ fn parse_rules(content : String) -> Array[SolidRule] {
   let rules : Array[SolidRule] = []
   let lines = @common.split_lines(content)
   for line in lines {
-    let trimmed = trim_string(line)
+    let trimmed = @common.trim_ascii_spaces(line)
     // Skip empty lines and comments
     if trimmed.length() == 0 || trimmed.has_prefix("#") {
       continue
@@ -336,8 +336,8 @@ fn parse_rule(rule_str : String) -> SolidRule? {
   for i = target_start; i < chars.length(); i = i + 1 {
     target_chars.push(chars[i])
   }
-  let pattern = trim_string(String::from_array(pattern_chars))
-  let target = trim_string(String::from_array(target_chars))
+  let pattern = @common.trim_ascii_spaces(String::from_array(pattern_chars))
+  let target = @common.trim_ascii_spaces(String::from_array(target_chars))
   if pattern.length() == 0 || target.length() == 0 {
     return None
   }
@@ -345,24 +345,7 @@ fn parse_rule(rule_str : String) -> SolidRule? {
 }
 
 // split_lines: use @common (SoT)
-
-///|
-fn trim_string(s : String) -> String {
-  let chars = s.to_array()
-  let mut start = 0
-  let mut end = chars.length()
-  while start < end && (chars[start] == ' ' || chars[start] == '\t') {
-    start = start + 1
-  }
-  while end > start && (chars[end - 1] == ' ' || chars[end - 1] == '\t') {
-    end = end - 1
-  }
-  let result : Array[Char] = []
-  for i = start; i < end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
+// trim_string: use @common.trim_ascii_spaces (SoT)
 
 ///|
 /// Find cross-directory matches above threshold.

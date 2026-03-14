@@ -59,7 +59,7 @@ pub struct DocAnalysis {
 ///|
 /// Load project info from moon.mod.json.
 pub fn load_project_info(dir : String) -> ProjectInfo {
-  let path = normalize_path(dir) + "/moon.mod.json"
+  let path = @common.normalize_path(dir) + "/moon.mod.json"
   try {
     let content = @fs.read_file_to_string(path)
     parse_moon_mod_json(content)
@@ -196,7 +196,7 @@ fn extract_json_array(json : String, key : String) -> Array[String] {
 pub fn analyze_documentation(dir : String) -> DocAnalysis {
   let packages : Array[PackageAnalysis] = []
   let all_items : Array[PubItem] = []
-  let normalized_dir = normalize_path(dir)
+  let normalized_dir = @common.normalize_path(dir)
   let filter = @filter.FilterConfig::from_project_root(normalized_dir)
   collect_packages(normalized_dir, packages, "", filter)
   // Aggregate stats
@@ -320,18 +320,18 @@ fn analyze_mbt_file(
     let mut doc_buffer : Array[String] = []
     let mut in_doc_block = false
     for i, line in lines {
-      let trimmed = trim_string(line)
+      let trimmed = @common.trim_ascii_spaces(line)
       // Check for doc comment
       if trimmed.has_prefix("///|") {
         in_doc_block = true
         doc_buffer = []
       } else if in_doc_block && trimmed.has_prefix("///") {
         let doc_line = if trimmed.length() > 3 {
-          substring(trimmed, 3, trimmed.length())
+          @common.substring(trimmed, 3, trimmed.length())
         } else {
           ""
         }
-        doc_buffer.push(trim_string(doc_line))
+        doc_buffer.push(@common.trim_ascii_spaces(doc_line))
       } else if in_doc_block {
         // End of doc block, check if next line is pub declaration
         if trimmed.has_prefix("pub ") {
@@ -364,12 +364,12 @@ fn parse_pub_declaration(
   line_num : Int,
   doc_lines : Array[String],
 ) -> PubItem? {
-  let trimmed = trim_string(line)
+  let trimmed = @common.trim_ascii_spaces(line)
   let has_doc = doc_lines.length() > 0
   let doc_preview = if has_doc && doc_lines[0].length() > 0 {
     let preview = doc_lines[0]
     if preview.length() > 60 {
-      substring(preview, 0, 60) + "..."
+      @common.substring(preview, 0, 60) + "..."
     } else {
       preview
     }
@@ -378,7 +378,7 @@ fn parse_pub_declaration(
   }
   // Parse pub fn
   if trimmed.has_prefix("pub fn ") {
-    let rest = substring(trimmed, 7, trimmed.length())
+    let rest = @common.substring(trimmed, 7, trimmed.length())
     let name = extract_identifier(rest)
     if name.length() > 0 {
       return Some({
@@ -393,7 +393,7 @@ fn parse_pub_declaration(
   }
   // Parse pub struct
   if trimmed.has_prefix("pub struct ") {
-    let rest = substring(trimmed, 11, trimmed.length())
+    let rest = @common.substring(trimmed, 11, trimmed.length())
     let name = extract_identifier(rest)
     if name.length() > 0 {
       return Some({
@@ -408,7 +408,7 @@ fn parse_pub_declaration(
   }
   // Parse pub enum
   if trimmed.has_prefix("pub enum ") {
-    let rest = substring(trimmed, 9, trimmed.length())
+    let rest = @common.substring(trimmed, 9, trimmed.length())
     let name = extract_identifier(rest)
     if name.length() > 0 {
       return Some({
@@ -423,7 +423,7 @@ fn parse_pub_declaration(
   }
   // Parse pub type
   if trimmed.has_prefix("pub type ") {
-    let rest = substring(trimmed, 9, trimmed.length())
+    let rest = @common.substring(trimmed, 9, trimmed.length())
     let name = extract_identifier(rest)
     if name.length() > 0 {
       return Some({
@@ -438,7 +438,7 @@ fn parse_pub_declaration(
   }
   // Parse pub trait
   if trimmed.has_prefix("pub trait ") {
-    let rest = substring(trimmed, 10, trimmed.length())
+    let rest = @common.substring(trimmed, 10, trimmed.length())
     let name = extract_identifier(rest)
     if name.length() > 0 {
       return Some({
@@ -453,7 +453,7 @@ fn parse_pub_declaration(
   }
   // Parse pub let (constants)
   if trimmed.has_prefix("pub let ") {
-    let rest = substring(trimmed, 8, trimmed.length())
+    let rest = @common.substring(trimmed, 8, trimmed.length())
     let name = extract_identifier(rest)
     if name.length() > 0 {
       return Some({
@@ -494,48 +494,7 @@ fn is_ident_char(c : Char) -> Bool {
 
 // use @common (SoT) — split_lines
 
-///|
-fn trim_string(s : String) -> String {
-  let chars = s.to_array()
-  let mut start = 0
-  let mut end = chars.length()
-  while start < end && (chars[start] == ' ' || chars[start] == '\t') {
-    start = start + 1
-  }
-  while end > start && (chars[end - 1] == ' ' || chars[end - 1] == '\t') {
-    end = end - 1
-  }
-  let result : Array[Char] = []
-  for i = start; i < end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
-fn substring(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  let result : Array[Char] = []
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  for i = start; i < actual_end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
-fn normalize_path(path : String) -> String {
-  if path.has_suffix("/") {
-    let chars = path.to_array()
-    let result : Array[Char] = []
-    for i = 0; i < chars.length() - 1; i = i + 1 {
-      result.push(chars[i])
-    }
-    String::from_array(result)
-  } else {
-    path
-  }
-}
+// use @common (SoT) — trim_ascii_spaces, substring, normalize_path
 
 ///|
 fn sort_pub_items(items : Array[PubItem]) -> Unit {

@@ -93,13 +93,13 @@ fn is_specific_token(token : String) -> Bool {
 
 ///|
 fn add_specific_token(tokens : Map[String, Bool], token : String) -> Unit {
-  let normalized = lower_string(trim_string(token))
+  let normalized = lower_string(@common.trim_ascii_spaces(token))
   if not(is_specific_token(normalized)) {
     return
   }
   tokens.set(normalized, true)
   if normalized.has_suffix("s") && normalized.length() >= 5 {
-    let singular = substring(normalized, 0, normalized.length() - 1)
+    let singular = @common.substring(normalized, 0, normalized.length() - 1)
     if is_specific_token(singular) {
       tokens.set(singular, true)
     }
@@ -143,7 +143,7 @@ fn normalize_feature_token_text(text : String) -> String {
       (first == '[' && last == ']') ||
       (first == '(' && last == ')') ||
       (first == '{' && last == '}') {
-      return substring(text, 1, text.length() - 1)
+      return @common.substring(text, 1, text.length() - 1)
     }
   }
   text
@@ -180,7 +180,7 @@ fn file_stem(path : String) -> String {
   let base = @config_paths.basename(path)
   let ext = @config_paths.extension(path)
   if ext.length() > 0 && base.has_suffix(ext) {
-    substring(base, 0, base.length() - ext.length())
+    @common.substring(base, 0, base.length() - ext.length())
   } else {
     base
   }
@@ -195,7 +195,7 @@ fn build_feature_token_kinds(
   match spec.get_feature(feature_name) {
     Some(values) =>
       for value in values {
-        let normalized = lower_string(trim_string(value))
+        let normalized = lower_string(@common.trim_ascii_spaces(value))
         if normalized.length() > 0 {
           kinds.set(normalized, true)
         }

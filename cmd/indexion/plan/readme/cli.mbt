@@ -140,7 +140,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     show_help()
     return
   }
-  let target_dir = normalize_path(config.target_dir)
+  let target_dir = @common.normalize_path(config.target_dir)
   // Load KGF registry for ignore patterns
   let registry = load_registry_from_paths(config.specs_dir, target_dir)
   // Detect project type and get spec
@@ -362,11 +362,11 @@ fn discover_docs_recursive(
   let local_config = filter_config.with_gitignore_from_dir(current_dir)
   for entry in entries {
     let full_path = current_dir + "/" + entry
-    if entry.has_suffix(".md") && not(is_directory(full_path)) {
+    if entry.has_suffix(".md") && not(@common.is_directory(full_path)) {
       let rel_path = @common.make_relative_path(full_path, base_dir)
       let title = extract_doc_title(full_path)
       docs.push({ path: rel_path, title })
-    } else if is_directory(full_path) {
+    } else if @common.is_directory(full_path) {
       if not(local_config.should_skip_dir(entry)) {
         discover_docs_recursive(base_dir, full_path, docs, local_config)
       }
@@ -380,7 +380,7 @@ fn extract_doc_title(path : String) -> String {
   let content = @fs.read_file_to_string(path) catch { _ => return "" }
   let lines = @common.split_lines(content)
   for line in lines {
-    let trimmed = trim_str(line)
+    let trimmed = @common.trim_ascii_spaces(line)
     if trimmed.has_prefix("# ") {
       // Extract title after "# "
       let chars = trimmed.to_array()
@@ -447,7 +447,7 @@ fn discover_packages_recursive(
   // Recurse into subdirectories
   for entry in entries {
     let full_path = current_dir + "/" + entry
-    if is_directory(full_path) {
+    if @common.is_directory(full_path) {
       // Use filter to skip excluded directories
       if not(local_config.should_skip_dir(entry)) {
         discover_packages_recursive(base_dir, full_path, packages, local_config)
@@ -462,7 +462,7 @@ fn count_pub_items(file_path : String) -> Int {
   let mut count = 0
   let lines = @common.split_lines(content)
   for line in lines {
-    let trimmed = trim_str(line)
+    let trimmed = @common.trim_ascii_spaces(line)
     if trimmed.has_prefix("pub fn ") ||
       trimmed.has_prefix("pub struct ") ||
       trimmed.has_prefix("pub enum ") ||
@@ -474,14 +474,7 @@ fn count_pub_items(file_path : String) -> Int {
   count
 }
 
-///|
-fn is_directory(path : String) -> Bool {
-  @fs.is_dir(path) catch {
-    _ => false
-  }
-}
-
-// use @common (SoT)
+// use @common (SoT) — is_directory
 
 // Rendering
 
@@ -829,45 +822,6 @@ fn render_plans_json(
 
 // Utilities
 
-///|
-fn normalize_path(path : String) -> String {
-  if path.has_suffix("/") {
-    let chars = path.to_array()
-    let result : Array[Char] = []
-    for i = 0; i < chars.length() - 1; i = i + 1 {
-      result.push(chars[i])
-    }
-    String::from_array(result)
-  } else {
-    path
-  }
-}
+// use @common (SoT) — normalize_path
 
-// use @common (SoT)
-
-///|
-fn trim_str(s : String) -> String {
-  let chars = s.to_array()
-  let mut start = 0
-  let mut end = chars.length()
-  while start < end &&
-        (chars[start] == ' ' || chars[start] == '\t' || chars[start] == '\r') {
-    start = start + 1
-  }
-  while end > start &&
-        (
-          chars[end - 1] == ' ' ||
-          chars[end - 1] == '\t' ||
-          chars[end - 1] == '\r'
-        ) {
-    end = end - 1
-  }
-  if start >= end {
-    return ""
-  }
-  let result : Array[Char] = []
-  for i = start; i < end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
+// use @common (SoT) — trim_str → @common.trim_ascii_spaces

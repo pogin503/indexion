@@ -242,13 +242,7 @@ fn load_graph_from_file(path : String) -> @graph.CodeGraph? {
   }
 }
 
-///|
-/// Check if path is a directory.
-fn is_directory(path : String) -> Bool {
-  @fs.is_dir(path) catch {
-    _ => false
-  }
-}
+// use @common (SoT) — is_directory
 
 ///|
 /// Load existing index or create new one.
@@ -340,7 +334,7 @@ async fn run_build_async(config : CliConfig) -> Unit {
   log_progress("Building digest index from: " + config.input_path)
   log_progress("Provider: " + provider_name(digest_config.embedding_provider))
   // Detect input type and build graph
-  let graph = if is_directory(config.input_path) {
+  let graph = if @common.is_directory(config.input_path) {
     match build_graph_from_source(config.input_path, config.specs_dir) {
       Some(g) => g
       None => return
