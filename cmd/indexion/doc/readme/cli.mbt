@@ -112,9 +112,7 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> ReadmeConfig {
       let value = @common.get_arg_value(arg, 9)
       config = { ..config, format: value }
     } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      let prefix_len = if arg.has_prefix("--output=") { 9 } else { 3 }
-      let value = @common.get_arg_value(arg, prefix_len)
-      config = { ..config, output: Some(value) }
+      config = { ..config, output: Some(@common.parse_output_arg(arg).unwrap()) }
     } else if arg.has_prefix("--template=") {
       let value = @common.get_arg_value(arg, 11)
       config = { ..config, template: Some(value) }

@@ -435,6 +435,18 @@ pub fn truncate(s : String, max_len : Int) -> String {
 }
 
 ///|
+/// Parse --output= or -o= argument, returning Some(value) if matched.
+pub fn parse_output_arg(arg : String) -> String? {
+  if arg.has_prefix("--output=") {
+    Some(get_arg_value(arg, 9))
+  } else if arg.has_prefix("-o=") {
+    Some(get_arg_value(arg, 3))
+  } else {
+    None
+  }
+}
+
+///|
 /// Extract substring from start (inclusive) to end (exclusive).
 pub fn substring(s : String, start : Int, end : Int) -> String {
   let chars = s.to_array()

@@ -114,8 +114,7 @@ fn parse_args_state(args : Array[String], start_idx : Int) -> ParsedArgsState {
     if arg == "--help" || arg == "-h" {
       config = { ..config, show_help: true }
     } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      let prefix_len = if arg.has_prefix("--output=") { 9 } else { 3 }
-      config = { ..config, output: @common.get_arg_value(arg, prefix_len) }
+      config = { ..config, output: @common.parse_output_arg(arg).unwrap() }
     } else if arg.has_prefix("--format=") {
       config = { ..config, format: @common.get_arg_value(arg, 9) }
       state = { ..state, explicit_format: true }
