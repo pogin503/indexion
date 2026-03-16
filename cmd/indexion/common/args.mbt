@@ -188,37 +188,29 @@ pub fn make_relative_path(path : String, base : String) -> String {
 }
 
 ///|
-/// Extract dirname prefix from display_name (before ':').
-/// Example: "pkg1:auth/client.ts" -> "pkg1"
-pub fn get_dirname_prefix(display_name : String) -> String {
+/// Split display_name at ':' into (prefix, relative).
+/// Example: "pkg1:auth/client.ts" -> ("pkg1", "auth/client.ts")
+/// If no ':', returns ("", display_name).
+pub fn split_display_name(display_name : String) -> (String, String) {
   let chars = display_name.to_array()
   for i = 0; i < chars.length(); i = i + 1 {
     if chars[i] == ':' {
-      let result : Array[Char] = []
-      for j = 0; j < i; j = j + 1 {
-        result.push(chars[j])
-      }
-      return String::from_array(result)
+      return (substring(display_name, 0, i), substring(display_name, i + 1, chars.length()))
     }
   }
-  "" // No prefix means single directory mode
+  ("", display_name)
+}
+
+///|
+/// Extract dirname prefix from display_name (before ':').
+pub fn get_dirname_prefix(display_name : String) -> String {
+  split_display_name(display_name).0
 }
 
 ///|
 /// Get relative part from display_name (after ':').
-/// Example: "pkg1:auth/client.ts" -> "auth/client.ts"
 pub fn get_relative_part(display_name : String) -> String {
-  let chars = display_name.to_array()
-  for i = 0; i < chars.length(); i = i + 1 {
-    if chars[i] == ':' {
-      let result : Array[Char] = []
-      for j = i + 1; j < chars.length(); j = j + 1 {
-        result.push(chars[j])
-      }
-      return String::from_array(result)
-    }
-  }
-  display_name
+  split_display_name(display_name).1
 }
 
 ///|
@@ -475,13 +467,14 @@ pub fn is_directory(path : String) -> Bool {
 }
 
 ///|
-/// Extract a string value from a JSON-like text by key.
-/// Simple pattern-based extraction (no full JSON parser).
-pub fn extract_json_string(json : String, key : String) -> String {
+/// Find the character position after a JSON key pattern `"key":` in a string.
+/// Returns -1 if not found.
+fn find_json_key_position(
+  chars : Array[Char],
+  key : String,
+) -> Int {
   let pattern = "\"" + key + "\":"
-  let chars = json.to_array()
   let pat_chars = pattern.to_array()
-  let mut start = -1
   for i = 0; i < chars.length() - pat_chars.length(); i = i + 1 {
     let mut found = true
     for j = 0; j < pat_chars.length(); j = j + 1 {
@@ -491,10 +484,18 @@ pub fn extract_json_string(json : String, key : String) -> String {
       }
     }
     if found {
-      start = i + pat_chars.length()
-      break
+      return i + pat_chars.length()
     }
   }
+  -1
+}
+
+///|
+/// Extract a string value from a JSON-like text by key.
+/// Simple pattern-based extraction (no full JSON parser).
+pub fn extract_json_string(json : String, key : String) -> String {
+  let chars = json.to_array()
+  let mut start = find_json_key_position(chars, key)
   if start < 0 {
     return ""
   }
@@ -521,23 +522,8 @@ pub fn extract_json_string(json : String, key : String) -> String {
 /// Simple pattern-based extraction (no full JSON parser).
 pub fn extract_json_array(json : String, key : String) -> Array[String] {
   let result : Array[String] = []
-  let pattern = "\"" + key + "\":"
   let chars = json.to_array()
-  let pat_chars = pattern.to_array()
-  let mut start = -1
-  for i = 0; i < chars.length() - pat_chars.length(); i = i + 1 {
-    let mut found = true
-    for j = 0; j < pat_chars.length(); j = j + 1 {
-      if chars[i + j] != pat_chars[j] {
-        found = false
-        break
-      }
-    }
-    if found {
-      start = i + pat_chars.length()
-      break
-    }
-  }
+  let mut start = find_json_key_position(chars, key)
   if start < 0 {
     return result
   }

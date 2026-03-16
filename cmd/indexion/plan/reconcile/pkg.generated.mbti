@@ -206,6 +206,7 @@ pub struct ReconcileConfig {
   git_preferred : Bool
   mtime_fallback : Bool
   logical_review_mode : String
+  parallel : Bool
   show_help : Bool
 }
 pub fn ReconcileConfig::default() -> Self

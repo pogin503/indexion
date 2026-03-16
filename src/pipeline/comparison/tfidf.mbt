@@ -45,13 +45,13 @@ pub fn compare_with_prefilter(
     return { matches: [], file_count: files.length(), pairs_compared: 0 }
   }
   let n = files.length()
-  let candidate_pairs = if n > 10 {
+  let candidate_pairs = if n > prefilter_min_files {
     let file_pairs : Array[(String, String)] = []
     for file in files {
       file_pairs.push((file.display_name, file.content))
     }
     let registry = @kgf_features.load_registry()
-    @candidates.tfidf_prefilter(file_pairs, registry, threshold * 0.5)
+    @candidates.tfidf_prefilter(file_pairs, registry, threshold * prefilter_factor)
   } else {
     @candidates.brute_force(n)
   }

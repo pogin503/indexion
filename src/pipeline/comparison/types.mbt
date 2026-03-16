@@ -87,6 +87,16 @@ pub fn BatchResult::get_matches(self : BatchResult) -> Array[SimilarityMatch] {
 }
 
 ///|
+/// File count below which brute-force pair enumeration is used
+/// instead of TF-IDF pre-filtering.
+let prefilter_min_files : Int = 10
+
+///|
+/// TF-IDF threshold relaxation factor for pre-filtering.
+/// Lower means more candidates pass the pre-filter.
+let prefilter_factor : Double = 0.5
+
+///|
 /// Run batch comparison with the specified strategy.
 pub fn compare(files : Array[FileEntry], config : BatchConfig) -> BatchResult {
   match config.strategy {

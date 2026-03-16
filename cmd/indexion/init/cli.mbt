@@ -198,6 +198,20 @@ fn write_file_if_ok(path : String, content : String, force : Bool) -> Bool {
 }
 
 ///|
+/// Write shared reconcile configuration sections to a buffer.
+fn write_reconcile_sections(buf : StringBuilder) -> Unit {
+  buf.write_string("[reconcile.time]\n")
+  buf.write_string("# git_preferred = true\n")
+  buf.write_string("# mtime_fallback = true\n")
+  buf.write_string("\n")
+  buf.write_string("[reconcile.mapping]\n")
+  buf.write_string("# allow_file_fallback = true\n")
+  buf.write_string("\n")
+  buf.write_string("[reconcile.output]\n")
+  buf.write_string("# default_format = \"json\"\n")
+}
+
+///|
 fn generate_global_config_template() -> String {
   let buf = StringBuilder::new()
   buf.write_string("# indexion global configuration\n")
@@ -210,15 +224,7 @@ fn generate_global_config_template() -> String {
   buf.write_string("# threshold_seconds = 60\n")
   buf.write_string("# max_candidates = 200\n")
   buf.write_string("\n")
-  buf.write_string("[reconcile.time]\n")
-  buf.write_string("# git_preferred = true\n")
-  buf.write_string("# mtime_fallback = true\n")
-  buf.write_string("\n")
-  buf.write_string("[reconcile.mapping]\n")
-  buf.write_string("# allow_file_fallback = true\n")
-  buf.write_string("\n")
-  buf.write_string("[reconcile.output]\n")
-  buf.write_string("# default_format = \"json\"\n")
+  write_reconcile_sections(buf)
   buf.to_string()
 }
 
@@ -239,15 +245,7 @@ fn generate_project_config_template() -> String {
   buf.write_string("# threshold_seconds = 60\n")
   buf.write_string("# max_candidates = 200\n")
   buf.write_string("\n")
-  buf.write_string("[reconcile.time]\n")
-  buf.write_string("# git_preferred = true\n")
-  buf.write_string("# mtime_fallback = true\n")
-  buf.write_string("\n")
-  buf.write_string("[reconcile.mapping]\n")
-  buf.write_string("# allow_file_fallback = true\n")
-  buf.write_string("\n")
-  buf.write_string("[reconcile.output]\n")
-  buf.write_string("# default_format = \"json\"\n")
+  write_reconcile_sections(buf)
   buf.to_string()
 }
 

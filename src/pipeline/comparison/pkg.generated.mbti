@@ -6,9 +6,13 @@ pub fn compare(Array[FileEntry], BatchConfig) -> BatchResult
 
 pub fn compare_apted(Array[FileEntry], Double) -> BatchResult
 
+pub fn compare_hybrid(Array[FileEntry], Double) -> BatchResult
+
 pub fn compare_tfidf(Array[FileEntry], Double) -> BatchResult
 
 pub fn compare_tsed(Array[FileEntry], Double) -> BatchResult
+
+pub fn compare_with_prefilter(Array[FileEntry], Double, (String, String) -> Double) -> BatchResult
 
 pub fn filter_cross_directory(Array[SimilarityMatch]) -> Array[SimilarityMatch]
 

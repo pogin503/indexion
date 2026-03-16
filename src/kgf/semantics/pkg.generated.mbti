@@ -2,6 +2,7 @@
 package "trkbt10/indexion/src/kgf/semantics"
 
 import {
+  "moonbitlang/core/ref",
   "trkbt10/indexion/src/core/graph",
   "trkbt10/indexion/src/kgf/types",
 }
@@ -49,8 +50,8 @@ pub struct SemEvalCtx {
   root : String
   language : String
   scopes : Array[ScopeEntry]
-  sym_seq : Ref[Int]
-  call_seq : Ref[Int]
+  sym_seq : @ref.Ref[Int]
+  call_seq : @ref.Ref[Int]
   call_stack : Array[String]
   events : Array[(String, Map[String, Json])]
   file_exists : (String) -> Bool

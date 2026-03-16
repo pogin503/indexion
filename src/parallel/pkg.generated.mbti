@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/parallel"
+
+// Values
+pub fn available() -> Bool
+
+pub fn cpu_count() -> Int
+
+pub fn run_parallel(Array[() -> String]) -> Array[String]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

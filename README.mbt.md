@@ -6,10 +6,12 @@
 
 ## Features
 
-- **Similarity Analysis**: Find duplicated or similar code patterns
-- **Refactoring Planning**: Generate actionable refactoring checklists
-- **Documentation Generation**: KGF-based intelligent doc extraction
-- **Multi-language Support**: Extensible via KGF specifications
+- **Hybrid Similarity Analysis**: Dynamic TF-IDF + APTED comparison auto-selects the best strategy per dataset
+- **Refactoring Planning**: File-level and function-level duplicate detection with structural analysis
+- **Documentation Generation**: KGF-based intelligent doc extraction and coverage analysis
+- **Documentation Drift Detection**: Inverted-index-accelerated reconciliation
+- **Fork-based Parallelism**: Multi-process execution for large codebases on native targets
+- **Multi-language Support**: 60+ languages via extensible KGF specifications
 
 ## Commands
 

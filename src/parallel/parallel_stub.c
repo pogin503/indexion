@@ -142,3 +142,4 @@ int32_t indexion_parallel_cpu_count(void) {
   return n > 0 ? (int32_t)n : 1;
 #endif
 }
+

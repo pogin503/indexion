@@ -26,7 +26,11 @@ pub fn run_parallel(tasks : Array[() -> String]) -> Array[String] {
     return results
   }
   flush_stdio_native()
-  let dir = "/tmp/indexion_par_" + getpid_native().to_string()
+  let base = match @config.get_global_cache_dir() {
+    Some(d) => d
+    None => "/tmp"
+  }
+  let dir = base + "/parallel_" + getpid_native().to_string()
   let _ = mkdir_native(dir)
   let workers : Array[(Int, String)] = []
   let mut all_forked = true

@@ -38,7 +38,11 @@ pub fn parse_double(String) -> Double
 
 pub fn parse_int(String) -> Int
 
+pub fn parse_output_arg(String) -> String?
+
 pub fn split_by_slash(String) -> Array[String]
+
+pub fn split_display_name(String) -> (String, String)
 
 pub fn split_lines(String) -> Array[String]
 

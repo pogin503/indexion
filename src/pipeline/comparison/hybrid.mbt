@@ -1,14 +1,43 @@
 ///|
+/// Tuning parameters for hybrid comparison.
+/// Controls the dynamic switching between TF-IDF and APTED.
+priv struct HybridParams {
+  /// TF-IDF prefilter relaxation (lower = more candidates)
+  prefilter_factor : Double
+  /// Strict prefilter relaxation
+  strict_prefilter_factor : Double
+  /// Max avg tree size before skipping APTED
+  max_avg_tree_size : Int
+  /// Avg tree size considered "small" (cheap APTED)
+  small_tree_size : Int
+  /// File count thresholds for brute-force / prefilter / strict / skip
+  brute_force_max_files : Int
+  prefilter_max_files : Int
+  strict_max_files : Int
+  /// Max tree nodes per pair for APTED (strict mode)
+  strict_max_nodes : Int
+  /// Max tree nodes per pair for APTED (normal mode)
+  normal_max_nodes : Int
+}
+
+///|
+fn HybridParams::default() -> HybridParams {
+  {
+    prefilter_factor: 0.5,
+    strict_prefilter_factor: 0.7,
+    max_avg_tree_size: 200,
+    small_tree_size: 50,
+    brute_force_max_files: 20,
+    prefilter_max_files: 200,
+    strict_max_files: 500,
+    strict_max_nodes: 100,
+    normal_max_nodes: 500,
+  }
+}
+
+///|
 /// Dynamic hybrid comparison: combines TF-IDF (fast lexical) and
 /// APTED (precise structural) based on dataset characteristics.
-///
-/// Dynamic strategy:
-///   avg_tree > 200 nodes:         TF-IDF only (APTED too expensive)
-///   n <= 20,  small trees:        brute-force APTED (precision first)
-///   n <= 200, small trees:        TF-IDF prefilter → APTED
-///   n <= 200, medium trees:       TF-IDF prefilter → APTED
-///   n <= 500, any:                strict prefilter → APTED on small trees
-///   n > 500:                      TF-IDF only (speed first)
 
 ///|
 /// Hybrid comparison with automatic strategy selection.
@@ -51,7 +80,8 @@ pub fn compare_hybrid(
     0
   }
   // Dynamic strategy selection
-  let apted_mode = select_apted_mode(n, avg_tree_size)
+  let params = HybridParams::default()
+  let apted_mode = select_apted_mode(n, avg_tree_size, params)
   if apted_mode == 0 {
     return tfidf_to_result(tfidf_pairs, files)
   }
@@ -60,11 +90,13 @@ pub fn compare_hybrid(
     @candidates.brute_force(n)
   } else if apted_mode == 2 {
     @candidates.normalize_pairs(
-      batch.all_pairs_above_threshold(threshold * 0.5),
+      batch.all_pairs_above_threshold(threshold * params.prefilter_factor),
     )
   } else {
     @candidates.normalize_pairs(
-      batch.all_pairs_above_threshold(threshold * 0.7),
+      batch.all_pairs_above_threshold(
+        threshold * params.strict_prefilter_factor,
+      ),
     )
   }
   // Score candidates with APTED, merge with TF-IDF
@@ -74,7 +106,11 @@ pub fn compare_hybrid(
     tfidf_scores.set(@candidates.pair_key(i, j), sim)
   }
   let cost_config = @apted.CostConfig::default()
-  let max_nodes = if apted_mode == 3 { 100 } else { 500 }
+  let max_nodes = if apted_mode == 3 {
+    params.strict_max_nodes
+  } else {
+    params.normal_max_nodes
+  }
   let matches : Array[SimilarityMatch] = []
   let seen : Map[String, Bool] = {}
   let mut pairs_compared = 0
@@ -136,24 +172,28 @@ pub fn compare_hybrid(
 
 ///|
 /// 0=TF-IDF only, 1=brute_force APTED, 2=prefilter APTED, 3=strict prefilter
-fn select_apted_mode(file_count : Int, avg_tree_size : Int) -> Int {
-  if avg_tree_size > 200 {
+fn select_apted_mode(
+  file_count : Int,
+  avg_tree_size : Int,
+  params : HybridParams,
+) -> Int {
+  if avg_tree_size > params.max_avg_tree_size {
     return 0
   }
-  if avg_tree_size <= 50 {
-    if file_count <= 20 {
+  if avg_tree_size <= params.small_tree_size {
+    if file_count <= params.brute_force_max_files {
       return 1
     }
-    if file_count <= 200 {
+    if file_count <= params.prefilter_max_files {
       return 2
     }
     return 3
   }
-  if file_count <= 10 {
+  if file_count <= params.brute_force_max_files / 2 {
     1
-  } else if file_count <= 100 {
+  } else if file_count <= params.prefilter_max_files / 2 {
     2
-  } else if file_count <= 500 {
+  } else if file_count <= params.strict_max_files {
     3
   } else {
     0

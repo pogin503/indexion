@@ -96,6 +96,7 @@ struct FileCluster {
 // get_arg_value, parse_double: use @common (SoT)
 
 ///|
+/// Parse CLI arguments into a refactoring plan configuration.
 pub fn parse_args(args : Array[String], start_idx : Int) -> RefactorPlanConfig {
   let mut config = RefactorPlanConfig::default()
   for i = start_idx; i < args.length(); i = i + 1 {
@@ -133,6 +134,7 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> RefactorPlanConfig {
 }
 
 ///|
+/// Print usage information for the refactor subcommand.
 pub fn show_help() -> Unit {
   println(
     "indexion plan refactor - Generate refactoring plan from similarity analysis",
@@ -462,6 +464,7 @@ fn extract_project_name(path : String) -> String {
 }
 
 ///|
+/// Entry point for the refactor subcommand.
 pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_args(args, start_idx)
   if config.show_help {

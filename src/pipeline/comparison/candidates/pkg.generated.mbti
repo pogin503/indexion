@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/pipeline/comparison/candidates"
+
+import {
+  "trkbt10/indexion/src/kgf/registry",
+}
+
+// Values
+pub fn brute_force(Int) -> Array[(Int, Int)]
+
+pub fn normalize_pairs(Array[(Int, Int, Double)]) -> Array[(Int, Int)]
+
+pub fn pair_key(Int, Int) -> String
+
+pub fn tfidf_prefilter(Array[(String, String)], @registry.KGFRegistry?, Double) -> Array[(Int, Int)]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

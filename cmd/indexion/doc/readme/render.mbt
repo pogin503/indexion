@@ -122,13 +122,25 @@ pub fn write_output(
 }
 
 ///|
-/// Write per-package README files.
+/// Write per-package README files with package header.
+/// Skips packages that already have a README.md to avoid overwriting
+/// hand-written documentation.
 pub fn write_per_package(docs : Array[(PackageInfo, ExtractedDoc)]) -> Unit {
   for item in docs {
     let (pkg, doc) = item
     let readme_path = pkg.path + "/README.md"
+    if @fs.path_exists(readme_path) {
+      println("  Skipped (exists): " + readme_path)
+      continue
+    }
+    let buf = StringBuilder::new()
+    buf.write_string("# ")
+    buf.write_string(pkg.name)
+    buf.write_string("\n\n")
+    buf.write_string(doc.content)
+    buf.write_string("\n")
     try {
-      @fs.write_string_to_file(readme_path, doc.content + "\n")
+      @fs.write_string_to_file(readme_path, buf.to_string())
       println("  Generated: " + readme_path)
     } catch {
       e => println("  Error writing " + readme_path + ": " + e.to_string())

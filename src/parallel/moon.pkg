@@ -1,6 +1,7 @@
 import {
   "moonbitlang/core/encoding/utf8" @utf8,
   "moonbitlang/x/fs" @fs,
+  "trkbt10/indexion/src/config" @config,
 }
 
 options(

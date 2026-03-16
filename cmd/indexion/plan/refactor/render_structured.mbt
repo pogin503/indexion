@@ -512,40 +512,17 @@ fn render_similarity_summary(
 
 ///|
 fn extract_directory(path : String) -> String {
-  let chars = path.to_array()
-  let mut last_slash = -1
-  for i = 0; i < chars.length(); i = i + 1 {
-    if chars[i] == '/' || chars[i] == '\\' {
-      last_slash = i
-    }
-  }
-  if last_slash < 0 {
-    return "."
-  }
-  let result : Array[Char] = []
-  for i = 0; i < last_slash; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
+  @common.parent_dir(path)
 }
 
 ///|
 fn extract_filename(path : String) -> String {
-  let chars = path.to_array()
-  let mut last_slash = -1
-  for i = 0; i < chars.length(); i = i + 1 {
-    if chars[i] == '/' || chars[i] == '\\' {
-      last_slash = i
-    }
+  let parts = @common.split_by_slash(path)
+  if parts.length() == 0 {
+    path
+  } else {
+    parts[parts.length() - 1]
   }
-  if last_slash < 0 {
-    return path
-  }
-  let result : Array[Char] = []
-  for i = last_slash + 1; i < chars.length(); i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
 }
 
 ///|

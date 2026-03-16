@@ -42,12 +42,12 @@ fn compare_trees_core(
     all_trees.push(trees)
   }
   let n = files.length()
-  let candidate_pairs = if n > 10 {
+  let candidate_pairs = if n > prefilter_min_files {
     let file_pairs : Array[(String, String)] = []
     for file in files {
       file_pairs.push((file.display_name, file.content))
     }
-    @candidates.tfidf_prefilter(file_pairs, registry, threshold * 0.5)
+    @candidates.tfidf_prefilter(file_pairs, registry, threshold * prefilter_factor)
   } else {
     @candidates.brute_force(n)
   }

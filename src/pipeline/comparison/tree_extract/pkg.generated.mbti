@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/pipeline/comparison/tree_extract"
+
+import {
+  "trkbt10/indexion/src/kgf/registry",
+  "trkbt10/indexion/src/similarity/apted",
+}
+
+// Values
+pub fn extract(String, String, @registry.KGFRegistry?) -> Array[@apted.TreeNode]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

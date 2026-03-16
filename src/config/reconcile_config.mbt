@@ -148,7 +148,7 @@ pub fn parse_reconcile_toml_config(content : String) -> ReconcileFileConfig {
       section = trim_quotes(substring(line, 1, line.length() - 1))
       continue
     }
-    let eq_idx = last_index_of_char(line, '=')
+    let eq_idx = find_last_char(line, '=')
     if eq_idx <= 0 {
       continue
     }
@@ -609,13 +609,4 @@ fn split_lines(content : String) -> Array[String] {
 }
 
 ///|
-fn last_index_of_char(text : String, target : Char) -> Int {
-  let chars = text.to_array()
-  let mut idx = -1
-  for i, ch in chars {
-    if ch == target {
-      idx = i
-    }
-  }
-  idx
-}
+// find_last_char: use paths.mbt (SoT)

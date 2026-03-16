@@ -90,17 +90,23 @@ fn is_specific_token(token : String) -> Bool {
   if normalized.length() < 2 || is_all_digits(normalized) {
     return false
   }
-  if normalized == "db" ||
-    normalized == "md" ||
-    normalized == "kgf" ||
-    normalized == "json" ||
-    normalized == "toml" {
+  // Tokens with separators are specific regardless of length
+  if normalized.contains("_") ||
+    normalized.contains("-") ||
+    normalized.contains(".") {
     return true
   }
-  normalized.length() >= 5 ||
-  normalized.contains("_") ||
-  normalized.contains("-") ||
-  normalized.contains(".")
+  // Short tokens (2-4 chars) are specific if they contain mixed case or digits
+  if normalized.length() < 5 {
+    let mut has_digit = false
+    for ch in normalized {
+      if is_ascii_digit(ch) {
+        has_digit = true
+      }
+    }
+    return has_digit
+  }
+  true
 }
 
 ///|

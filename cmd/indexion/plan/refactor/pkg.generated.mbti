@@ -56,6 +56,16 @@ pub struct DuplicateBlockJSON {
 
 type FileCluster
 
+pub struct FunctionDuplicate {
+  func1 : String
+  func2 : String
+  file1 : String
+  file2 : String
+  similarity : Double
+  same_file : Bool
+}
+pub impl ToJson for FunctionDuplicate
+
 pub struct PlanSummary {
   total_clusters : Int
   total_files_analyzed : Int
@@ -79,6 +89,7 @@ pub fn RefactorPlanConfig::default() -> Self
 pub struct RefactorPlanJSON {
   config : ConfigSummary
   clusters : Array[ClusterJSON]
+  function_duplicates : Array[FunctionDuplicate]
   mut summary : PlanSummary
 }
 pub fn RefactorPlanJSON::add_cluster(Self, ClusterJSON) -> Unit

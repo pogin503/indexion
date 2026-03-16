@@ -150,7 +150,7 @@ pub fn render_markdown(plan : RefactorPlanJSON) -> String {
             dup.start_line2.to_string() +
             "`\n",
           )
-          buf.write_string("  ```moonbit\n")
+          buf.write_string("  ```\n")
           let preview_lines = @common.split_lines(dup.preview)
           for line in preview_lines {
             buf.write_string("  " + line + "\n")

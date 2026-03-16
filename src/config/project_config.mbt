@@ -56,7 +56,7 @@ pub fn parse_project_toml_config(content : String) -> ProjectFileConfig {
       section = trim_quotes(substring(line, 1, line.length() - 1))
       continue
     }
-    let eq_idx = last_index_of_char(line, '=')
+    let eq_idx = find_last_char(line, '=')
     if eq_idx <= 0 {
       continue
     }
