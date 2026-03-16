@@ -67,7 +67,7 @@ pub fn RefactorPlanConfig::default() -> RefactorPlanConfig {
   {
     target_dir: "",
     threshold: 0.7,
-    strategy: "tfidf",
+    strategy: "hybrid",
     includes: [],
     excludes: [],
     output: "",
@@ -188,24 +188,6 @@ pub fn show_help() -> Unit {
 
 // collect_files: use @common (SoT)
 
-///|
-/// Calculate similarity between two texts.
-fn calc_similarity(text1 : String, text2 : String, strategy : String) -> Double {
-  match strategy {
-    "ncd" => {
-      let s = @ncd.NCDStrategy::new()
-      s.similarity(text1, text2)
-    }
-    "tfidf" => {
-      let s = @tfidf_strategy.TfidfStrategy::new()
-      s.similarity(text1, text2)
-    }
-    _ => {
-      let s = @hybrid.HybridStrategy::new()
-      s.similarity(text1, text2)
-    }
-  }
-}
 
 ///|
 /// Find connected components (clusters) using Union-Find.
@@ -577,71 +559,43 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
   let sim_started = @env.now()
   let pairs : Array[SimilarPair] = []
-  let mut effective_threshold = config.threshold
-  if config.strategy == "tfidf" {
-    // Tokenize files with KGF where available
-    if show_progress {
-      println("      Tokenizing with KGF lexer...")
+  let effective_threshold = config.threshold
+  if config.strategy == "tfidf" || config.strategy == "hybrid" {
+    // Use batch comparison (hybrid combines TF-IDF + APTED)
+    let entries : Array[@batch.FileEntry] = []
+    for f in files {
+      entries.push(@batch.FileEntry::new(f.0, f.1))
     }
-    let tok_started = @env.now()
-    let (tokenized, _) = @kgf_features.tokenize_files_with_kgf(files, registry)
-    if show_progress {
-      println(
-        "      Tokenized " +
-        tokenized.length().to_string() +
-        " files (" +
-        @common.elapsed_ms(tok_started).to_string() +
-        "ms)",
-      )
-      println("      Building TF-IDF vectors...")
+    let result = if config.strategy == "hybrid" {
+      @batch.compare_hybrid(entries, config.threshold)
+    } else {
+      @batch.compare_tfidf(entries, config.threshold)
     }
-    let build_started = @env.now()
-    let batch = @tfidf.TfidfBatch::from_tokens(tokenized)
-    if show_progress {
-      println(
-        "      Vectors built (" +
-        @common.elapsed_ms(build_started).to_string() +
-        "ms)",
-      )
-      // Adaptive threshold: for large file sets, start with a higher threshold
-      // and step down if too few results, to avoid O(n²) explosion
-      println("      Searching pairs...")
-    }
-    let (results, adapted) = adaptive_tfidf_search(
-      batch, files.length(), config.threshold,
-    )
-    effective_threshold = adapted
-    if show_progress && effective_threshold > config.threshold {
-      println(
-        "      Adaptive threshold: " +
-        config.threshold.to_string() +
-        " -> " +
-        effective_threshold.to_string(),
-      )
-    }
-    for result in results {
-      let (i, j, sim) = result
-      pairs.push({ file1: files[i].0, file2: files[j].0, similarity: sim })
+    for m in result.matches {
+      pairs.push({ file1: m.file1, file2: m.file2, similarity: m.similarity })
     }
   } else {
-    // Fallback for NCD/Hybrid strategies
-    let total_pairs = files.length() * (files.length() - 1) / 2
+    // NCD: use batch comparison with TF-IDF pre-filtering
     if show_progress {
       println(
-        "      Comparing " +
-        total_pairs.to_string() +
-        " pairs (" +
+        "      Comparing pairs with pre-filtering (" +
         config.strategy +
         ")...",
       )
     }
-    for i = 0; i < files.length(); i = i + 1 {
-      for j = i + 1; j < files.length(); j = j + 1 {
-        let sim = calc_similarity(files[i].1, files[j].1, config.strategy)
-        if sim >= config.threshold {
-          pairs.push({ file1: files[i].0, file2: files[j].0, similarity: sim })
-        }
-      }
+    let entries : Array[@batch.FileEntry] = []
+    for f in files {
+      entries.push(@batch.FileEntry::new(f.0, f.1))
+    }
+    let score_fn : (String, String) -> Double = match config.strategy {
+      "ncd" => fn(t1, t2) { @ncd.NCDStrategy::new().similarity(t1, t2) }
+      _ => fn(t1, t2) { @hybrid.HybridStrategy::new().similarity(t1, t2) }
+    }
+    let result = @batch.compare_with_prefilter(
+      entries, config.threshold, score_fn,
+    )
+    for m in result.matches {
+      pairs.push({ file1: m.file1, file2: m.file2, similarity: m.similarity })
     }
   }
   if show_progress {
@@ -678,11 +632,17 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   let plan = build_refactor_plan(
     clusters, config, file_contents, effective_threshold~, registry~,
   )
+  // Function-level duplicate detection (including same-file)
+  let func_dups = find_function_duplicates(files, config.threshold, registry)
+  let plan = { ..plan, function_duplicates: func_dups }
   if show_progress {
     println(
       "      Plan build: " +
       @common.elapsed_ms(plan_started).to_string() +
-      "ms",
+      "ms" +
+      " (function duplicates: " +
+      func_dups.length().to_string() +
+      ")",
     )
   }
   // [4/4] Render to selected format/style
@@ -729,6 +689,118 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
 
 // marker_matches: use @glob.glob_match (SoT)
 // ancestor_dirs, parent_dir: use @common (SoT)
+
+///|
+/// Detect structurally similar functions across and within files using TF-IDF.
+/// This catches same-file duplicates (e.g., compare_apted ≈ compare_tsed)
+/// and cross-file small-function duplicates that file-level TF-IDF misses.
+fn find_function_duplicates(
+  files : Array[(String, String)],
+  threshold : Double,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[FunctionDuplicate] {
+  let reg = match registry {
+    Some(r) => r
+    None => return []
+  }
+  // Extract functions from all files
+  let func_names : Array[String] = []
+  let func_bodies : Array[String] = []
+  let func_files : Array[String] = []
+  for file in files {
+    let (path, content) = file
+    let lang = match reg.detect_from_path(path) {
+      Some(l) => l
+      None => continue
+    }
+    let spec = match reg.get_spec(lang) {
+      Some(s) => s
+      None => continue
+    }
+    let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+    let tokens = lexer.tokenize(content)
+    let functions = @kgf_features.extract_functions(tokens, path)
+    let lines = @common.split_lines(content)
+    // Build token index → line number
+    let token_lines : Array[Int] = Array::make(tokens.length(), 1)
+    let mut line = 1
+    for i, tok in tokens {
+      token_lines[i] = line
+      if tok.get_kind() == "NL" {
+        line += 1
+      }
+    }
+    for func in functions {
+      let start_line = if func.get_start() < token_lines.length() {
+        token_lines[func.get_start()]
+      } else {
+        1
+      }
+      let end_line = if func.get_end() < token_lines.length() {
+        token_lines[func.get_end() - 1]
+      } else {
+        lines.length()
+      }
+      // Extract function body text
+      let body_lines : Array[String] = []
+      for li = start_line - 1; li < end_line && li < lines.length(); li = li + 1 {
+        body_lines.push(lines[li])
+      }
+      if body_lines.length() < 5 {
+        continue
+      }
+      let body = body_lines
+        .iter()
+        .fold(
+          init="",
+          fn(acc, l) { if acc.length() == 0 { l } else { acc + "\n" + l } },
+        )
+      func_names.push(func.get_name())
+      func_bodies.push(body)
+      func_files.push(path)
+    }
+  }
+  if func_bodies.length() < 2 {
+    return []
+  }
+  // Tokenize function bodies with KGF and compare via TF-IDF
+  let func_pairs : Array[(String, String)] = []
+  for i in 0..<func_bodies.length() {
+    func_pairs.push((func_files[i], func_bodies[i]))
+  }
+  let (tokenized, _) = @kgf_features.tokenize_files_with_kgf(
+    func_pairs, registry,
+  )
+  let batch = @tfidf.TfidfBatch::from_tokens(tokenized)
+  let pairs = batch.all_pairs_above_threshold(threshold)
+  let duplicates : Array[FunctionDuplicate] = []
+  for pair in pairs {
+    let (i, j, sim) = pair
+    let same_file = func_files[i] == func_files[j]
+    // Skip if same function name in same file (self-match from overloads)
+    if same_file && func_names[i] == func_names[j] {
+      continue
+    }
+    duplicates.push({
+      func1: func_names[i],
+      func2: func_names[j],
+      file1: func_files[i],
+      file2: func_files[j],
+      similarity: sim,
+      same_file,
+    })
+  }
+  duplicates.sort_by(fn(a, b) {
+    if a.similarity > b.similarity {
+      -1
+    } else if a.similarity < b.similarity {
+      1
+    } else {
+      0
+    }
+  })
+  duplicates
+}
 
 ///|
 /// Adaptive TF-IDF search: for large file sets, start with a higher threshold

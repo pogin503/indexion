@@ -53,6 +53,17 @@ pub struct ClusterJSON {
 }
 
 ///|
+/// A pair of structurally similar functions detected across or within files.
+pub struct FunctionDuplicate {
+  func1 : String
+  func2 : String
+  file1 : String
+  file2 : String
+  similarity : Double
+  same_file : Bool
+} derive(ToJson)
+
+///|
 /// Summary statistics for the plan.
 pub struct PlanSummary {
   total_clusters : Int
@@ -65,6 +76,7 @@ pub struct PlanSummary {
 pub struct RefactorPlanJSON {
   config : ConfigSummary
   clusters : Array[ClusterJSON]
+  function_duplicates : Array[FunctionDuplicate]
   mut summary : PlanSummary
 }
 
@@ -74,6 +86,7 @@ pub fn RefactorPlanJSON::new(config : ConfigSummary) -> RefactorPlanJSON {
   {
     config,
     clusters: [],
+    function_duplicates: [],
     summary: { total_clusters: 0, total_files_analyzed: 0, max_similarity: 0.0 },
   }
 }

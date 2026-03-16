@@ -185,28 +185,6 @@ fn filter_cross_dir_pairs(pairs : Array[FilePair]) -> Array[FilePair] {
   result
 }
 
-///|
-/// Calculate similarity between two texts.
-fn calc_similarity(
-  text1 : String,
-  text2 : String,
-  strategy : String,
-) -> (Double, Double) {
-  match strategy {
-    "ncd" => {
-      let s = @ncd.NCDStrategy::new()
-      (s.distance(text1, text2), s.similarity(text1, text2))
-    }
-    "tfidf" => {
-      let s = @tfidf_strategy.TfidfStrategy::new()
-      (s.distance(text1, text2), s.similarity(text1, text2))
-    }
-    _ => {
-      let s = @hybrid.HybridStrategy::new()
-      (s.distance(text1, text2), s.similarity(text1, text2))
-    }
-  }
-}
 
 ///|
 fn pair_threshold_for_format(format : String, threshold : Double) -> Double {
@@ -293,29 +271,25 @@ fn calculate_pairs(
   strategy : String,
   min_similarity : Double,
 ) -> Array[FilePair] {
+  let entries : Array[@batch.FileEntry] = []
+  for f in files {
+    entries.push(@batch.FileEntry::new(f.0, f.1))
+  }
+  let score_fn : (String, String) -> Double = match strategy {
+    "ncd" => fn(t1, t2) { @ncd.NCDStrategy::new().similarity(t1, t2) }
+    _ => fn(t1, t2) { @hybrid.HybridStrategy::new().similarity(t1, t2) }
+  }
+  let result = @batch.compare_with_prefilter(
+    entries, min_similarity, score_fn,
+  )
   let pairs : Array[FilePair] = []
-  for i = 0; i < files.length(); i = i + 1 {
-    if files.length() > 10 {
-      println(
-        "      [" +
-        (i + 1).to_string() +
-        "/" +
-        files.length().to_string() +
-        "] " +
-        @common.truncate(files[i].0, 40),
-      )
-    }
-    for j = i + 1; j < files.length(); j = j + 1 {
-      let (dist, sim) = calc_similarity(files[i].1, files[j].1, strategy)
-      if sim >= min_similarity {
-        pairs.push({
-          file1: files[i].0,
-          file2: files[j].0,
-          similarity: sim,
-          _distance: dist,
-        })
-      }
-    }
+  for m in result.matches {
+    pairs.push({
+      file1: m.file1,
+      file2: m.file2,
+      similarity: m.similarity,
+      _distance: 1.0 - m.similarity,
+    })
   }
   pairs
 }

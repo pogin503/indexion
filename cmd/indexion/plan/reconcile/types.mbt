@@ -15,6 +15,7 @@ pub struct ReconcileConfig {
   git_preferred : Bool
   mtime_fallback : Bool
   logical_review_mode : String
+  parallel : Bool
   show_help : Bool
 } derive(Eq, Show)
 
@@ -36,6 +37,7 @@ pub fn ReconcileConfig::default() -> ReconcileConfig {
     git_preferred: false,
     mtime_fallback: true,
     logical_review_mode: "queue",
+    parallel: true,
     show_help: false,
   }
 }

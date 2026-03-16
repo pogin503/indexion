@@ -28,6 +28,18 @@ priv struct AggregateBucket {
 priv struct FragmentMatchSignals {
   exact_tokens : Map[String, Bool]
   reference_tokens : Map[String, Bool]
+  lowered_text : String
+}
+
+///|
+/// Pre-computed lowered search terms for a code unit.
+priv struct UnitMatchTerms {
+  lowered_name : String
+  lowered_qualified_dot : String
+  lowered_qualified_colon : String
+  lowered_inline : String
+  lowered_base : String
+  has_ns : Bool
 }
 
 ///|
@@ -390,52 +402,10 @@ fn build_fragment_terms(
   terms
 }
 
-///|
-fn terms_overlap(left : String, right : String) -> Bool {
-  if left == right {
-    return true
-  }
-  let (shorter, longer) = if left.length() <= right.length() {
-    (left, right)
-  } else {
-    (right, left)
-  }
-  shorter.length() >= 6 && longer.contains(shorter)
-}
 
 ///|
-/// Find shared terms between two token maps.
-/// Optimized: exact matches via Map lookup (O(n)), then fuzzy only for remaining.
-fn shared_terms(
-  left : Map[String, Bool],
-  right : Map[String, Bool],
-) -> Array[String] {
-  let shared : Array[String] = []
-  let found : Map[String, Bool] = {}
-  // Phase 1: exact matches via Map lookup — O(n)
-  for left_entry in left {
-    if right.contains(left_entry.0) {
-      shared.push(left_entry.0)
-      found.set(left_entry.0, true)
-    }
-  }
-  // Phase 2: fuzzy contains matches for remaining — only long terms
-  for left_entry in left {
-    if found.contains(left_entry.0) || left_entry.0.length() < 6 {
-      continue
-    }
-    for right_entry in right {
-      if terms_overlap(left_entry.0, right_entry.0) {
-        shared.push(left_entry.0)
-        break
-      }
-    }
-  }
-  shared.sort()
-  shared
-}
-
-///|
+/// Build module coverage index using inverted index for O(tokens) lookups
+/// instead of O(modules × fragments × tokens²) brute force.
 fn build_module_coverage_index(
   units : Array[CodeUnit],
   fragments : Array[DocFragment],
@@ -450,22 +420,53 @@ fn build_module_coverage_index(
   let fragment_terms = build_fragment_terms(
     fragments, registry, root_dir, doc_roots,
   )
+  // Build inverted index: token → [fragment_id]
+  let token_to_frags : Map[String, Array[String]] = {}
+  for entry in fragment_terms {
+    let frag_id = entry.0
+    let terms = entry.1
+    for term_entry in terms {
+      match token_to_frags.get(term_entry.0) {
+        Some(list) => list.push(frag_id)
+        None => token_to_frags.set(term_entry.0, [frag_id])
+      }
+    }
+  }
   let coverage : Map[String, Bool] = {}
   for module_entry in module_signals {
     let signals = module_entry.1
-    let mut covered = false
-    for fragment in fragments {
-      let terms = match fragment_terms.get(fragment.id) {
-        Some(value) => value
-        None => continue
+    // Count token overlaps per fragment via inverted index
+    let frag_overlap : Map[String, Int] = {}
+    for token_entry in signals.tokens {
+      match token_to_frags.get(token_entry.0) {
+        Some(frag_ids) =>
+          for frag_id in frag_ids {
+            let count = match frag_overlap.get(frag_id) {
+              Some(c) => c
+              None => 0
+            }
+            frag_overlap.set(frag_id, count + 1)
+          }
+        None => ()
       }
-      let overlaps = shared_terms(signals.tokens, terms)
-      if overlaps.length() < 2 {
+    }
+    // Check fragments with >= 2 token overlaps for anchor hit
+    let mut covered = false
+    for frag_entry in frag_overlap {
+      if frag_entry.1 < 2 {
         continue
       }
-      let anchor_hits = shared_terms(signals.anchors, terms)
-      if anchor_hits.length() > 0 {
-        covered = true
+      let frag_terms_map = match fragment_terms.get(frag_entry.0) {
+        Some(t) => t
+        None => continue
+      }
+      for anchor_entry in signals.anchors {
+        if frag_terms_map.contains(anchor_entry.0) {
+          covered = true
+          break
+        }
+      }
+      if covered {
         break
       }
     }
@@ -477,13 +478,6 @@ fn build_module_coverage_index(
 }
 
 ///|
-fn contains_term(text : String, term : String) -> Bool {
-  let normalized_text = lower_string(text)
-  let normalized_term = lower_string(term)
-  normalized_text.contains(normalized_term)
-}
-
-///|
 fn build_fragment_match_signals(
   fragments : Array[DocFragment],
   registry : @registry.KGFRegistry,
@@ -491,6 +485,7 @@ fn build_fragment_match_signals(
   let signals : Map[String, FragmentMatchSignals] = {}
   for fragment in fragments {
     let source_text = fragment.title + "\n" + fragment.content
+    let lowered_text = lower_string(source_text)
     let exact_tokens = build_exact_token_index(source_text)
     let reference_tokens : Map[String, Bool] = {}
     match registry.get_spec(fragment.spec) {
@@ -499,7 +494,10 @@ fn build_fragment_match_signals(
           spec, "reference_token_kinds",
         )
         if reference_kinds.is_empty() {
-          signals.set(fragment.id, { exact_tokens, reference_tokens })
+          signals.set(
+            fragment.id,
+            { exact_tokens, reference_tokens, lowered_text },
+          )
           continue
         }
         let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
@@ -517,47 +515,83 @@ fn build_fragment_match_signals(
       }
       None => ()
     }
-    signals.set(fragment.id, { exact_tokens, reference_tokens })
+    signals.set(
+      fragment.id,
+      { exact_tokens, reference_tokens, lowered_text },
+    )
   }
   signals
 }
 
 ///|
-fn match_fragment(
+/// Optimized match using pre-computed lowered text and unit terms.
+fn match_fragment_with_terms(
   unit : CodeUnit,
-  fragment : DocFragment,
+  terms : UnitMatchTerms,
   signals : FragmentMatchSignals,
   allow_file_fallback : Bool,
 ) -> (Int, String, Array[String]) {
-  let source_text = fragment.title + "\n" + fragment.content
-  let text = lower_string(source_text)
+  let text = signals.lowered_text
   let matched : Array[String] = []
-  let qualified_dot = unit.ns + "." + unit.name
-  let qualified_colon = unit.ns + "::" + unit.name
-  if unit.ns.length() > 0 && contains_term(text, qualified_dot) {
-    matched.push(qualified_dot)
+  if terms.has_ns && text.contains(terms.lowered_qualified_dot) {
+    matched.push(unit.ns + "." + unit.name)
     return (100, "qualified_symbol", matched)
   }
-  if unit.ns.length() > 0 && contains_term(text, qualified_colon) {
-    matched.push(qualified_colon)
+  if terms.has_ns && text.contains(terms.lowered_qualified_colon) {
+    matched.push(unit.ns + "::" + unit.name)
     return (95, "qualified_symbol", matched)
   }
-  if contains_term(text, "`" + lower_string(unit.name) + "`") {
+  if text.contains(terms.lowered_inline) {
     matched.push(unit.name)
     return (92, "inline_symbol", matched)
   }
-  if signals.reference_tokens.contains(lower_string(unit.name)) {
+  if signals.reference_tokens.contains(terms.lowered_name) {
     matched.push(unit.name)
     return (85, "symbol_name", matched)
   }
-  if allow_file_fallback {
-    let base = @config_paths.basename(unit.module_path)
-    if base.length() > 0 && signals.exact_tokens.contains(lower_string(base)) {
-      matched.push(base)
-      return (45, "file_name", matched)
-    }
+  if allow_file_fallback &&
+    terms.lowered_base.length() > 0 &&
+    signals.exact_tokens.contains(terms.lowered_base) {
+    matched.push(@config_paths.basename(unit.module_path))
+    return (45, "file_name", matched)
   }
   (0, "none", matched)
+}
+
+///|
+/// Build pre-computed match terms for a code unit.
+fn unit_match_terms(unit : CodeUnit) -> UnitMatchTerms {
+  let lowered_name = lower_string(unit.name)
+  let has_ns = unit.ns.length() > 0
+  {
+    lowered_name,
+    lowered_qualified_dot: if has_ns {
+      lower_string(unit.ns + "." + unit.name)
+    } else {
+      ""
+    },
+    lowered_qualified_colon: if has_ns {
+      lower_string(unit.ns + "::" + unit.name)
+    } else {
+      ""
+    },
+    lowered_inline: "`" + lowered_name + "`",
+    lowered_base: lower_string(@config_paths.basename(unit.module_path)),
+    has_ns,
+  }
+}
+
+///|
+/// Compatibility wrapper for tests (computes terms on the fly).
+fn match_fragment(
+  unit : CodeUnit,
+  _fragment : DocFragment,
+  signals : FragmentMatchSignals,
+  allow_file_fallback : Bool,
+) -> (Int, String, Array[String]) {
+  match_fragment_with_terms(
+    unit, unit_match_terms(unit), signals, allow_file_fallback,
+  )
 }
 
 ///|
@@ -731,34 +765,79 @@ fn candidate_id(unit : CodeUnit, fragment : DocFragment?) -> String {
 }
 
 ///|
-fn build_candidates(
-  units : Array[CodeUnit],
+/// Build inverted index: token → [fragment array index].
+/// Used to narrow candidate fragments for each unit.
+fn build_fragment_inverted_index(
   fragments : Array[DocFragment],
+  fragment_signals : Map[String, FragmentMatchSignals],
+) -> Map[String, Array[Int]] {
+  let index : Map[String, Array[Int]] = {}
+  for i, fragment in fragments {
+    let signals = match fragment_signals.get(fragment.id) {
+      Some(v) => v
+      None => continue
+    }
+    for entry in signals.exact_tokens {
+      match index.get(entry.0) {
+        Some(list) => list.push(i)
+        None => index.set(entry.0, [i])
+      }
+    }
+    for entry in signals.reference_tokens {
+      match index.get(entry.0) {
+        Some(list) => list.push(i)
+        None => index.set(entry.0, [i])
+      }
+    }
+  }
+  index
+}
+
+///|
+/// Match a range of code units [start, end) against candidate fragments.
+/// Uses inverted index to avoid O(units × all_fragments) brute force.
+fn match_units_batch(
+  units : Array[CodeUnit],
+  start : Int,
+  end : Int,
+  fragments : Array[DocFragment],
+  module_coverage : Map[String, Bool],
+  fragment_signals : Map[String, FragmentMatchSignals],
+  inverted_index : Map[String, Array[Int]],
   config : ReconcileConfig,
-  registry : @registry.KGFRegistry,
-) -> CandidateBuildResult {
+) -> (Array[ReconcileCandidate], Int) {
   let candidates : Array[ReconcileCandidate] = []
-  let module_coverage = build_module_coverage_index(
-    units,
-    fragments,
-    registry,
-    config.target_dir,
-    config.documents.doc_paths,
-  )
-  let fragment_signals = build_fragment_match_signals(fragments, registry)
   let mut module_covered_symbols = 0
-  for unit in units {
+  let empty_signals : FragmentMatchSignals = {
+    exact_tokens: {},
+    reference_tokens: {},
+    lowered_text: "",
+  }
+  for i = start; i < end; i = i + 1 {
+    let unit = units[i]
+    // Pre-compute lowered terms once per unit (not per fragment)
+    let terms = unit_match_terms(unit)
+    // Use inverted index to find candidate fragments
+    let candidate_set : Map[Int, Bool] = {}
+    match inverted_index.get(terms.lowered_name) {
+      Some(indices) => for idx in indices { candidate_set.set(idx, true) }
+      None => ()
+    }
+    if config.allow_file_fallback && terms.lowered_base.length() > 0 {
+      match inverted_index.get(terms.lowered_base) {
+        Some(indices) => for idx in indices { candidate_set.set(idx, true) }
+        None => ()
+      }
+    }
     let matches : Array[(Int, String, Array[String], DocFragment)] = []
-    for fragment in fragments {
+    for idx_entry in candidate_set {
+      let fragment = fragments[idx_entry.0]
       let signals = match fragment_signals.get(fragment.id) {
         Some(value) => value
-        None => { exact_tokens: {}, reference_tokens: {} }
+        None => empty_signals
       }
-      let (score, match_kind, matched_terms) = match_fragment(
-        unit,
-        fragment,
-        signals,
-        config.allow_file_fallback,
+      let (score, match_kind, matched_terms) = match_fragment_with_terms(
+        unit, terms, signals, config.allow_file_fallback,
       )
       if score > 0 {
         matches.push((score, match_kind, matched_terms, fragment))
@@ -848,6 +927,29 @@ fn build_candidates(
       needs_logical_review: true,
     })
   }
+  (candidates, module_covered_symbols)
+}
+
+///|
+fn build_candidates(
+  units : Array[CodeUnit],
+  fragments : Array[DocFragment],
+  config : ReconcileConfig,
+  registry : @registry.KGFRegistry,
+) -> CandidateBuildResult {
+  let module_coverage = build_module_coverage_index(
+    units,
+    fragments,
+    registry,
+    config.target_dir,
+    config.documents.doc_paths,
+  )
+  let fragment_signals = build_fragment_match_signals(fragments, registry)
+  let inverted_index = build_fragment_inverted_index(fragments, fragment_signals)
+  let (candidates, module_covered_symbols) = match_units_batch(
+    units, 0, units.length(), fragments, module_coverage, fragment_signals,
+    inverted_index, config,
+  )
   candidates.sort_by(fn(a, b) {
     let status_cmp = status_priority(a.status).compare(
       status_priority(b.status),

@@ -1,0 +1,12 @@
+import {
+  "moonbitlang/core/encoding/utf8" @utf8,
+  "moonbitlang/x/fs" @fs,
+}
+
+options(
+  "native-stub": [ "parallel_stub.c" ],
+  targets: {
+    "host_native.mbt": [ "native" ],
+    "host_stub.mbt": [ "wasm", "wasm-gc", "js", "llvm" ],
+  },
+)

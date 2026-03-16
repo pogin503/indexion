@@ -177,6 +177,8 @@ fn parse_args_state(args : Array[String], start_idx : Int) -> ParsedArgsState {
     } else if arg == "--logical-review=queue" {
       config = { ..config, logical_review_mode: "queue" }
       state = { ..state, explicit_logical_review_mode: true }
+    } else if arg == "--no-parallel" {
+      config = { ..config, parallel: false }
     } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
       config = { ..config, target_dir: arg }
     }
@@ -451,6 +453,7 @@ pub fn show_help() -> Unit {
     "  --mtime-only           Skip git timestamps and rely on file mtimes",
   )
   println("  --logical-review=MODE  queue or off (default: queue)")
+  println("  --no-parallel          Disable parallel processing")
   println("  --help                 Show this help message")
   println("")
   println("Config files:")

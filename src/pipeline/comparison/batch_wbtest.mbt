@@ -12,7 +12,7 @@ test "FileEntry::new creates entry" {
 test "BatchConfig::new creates default config" {
   let config = BatchConfig::new()
   assert_true(config.threshold > 0.79 && config.threshold < 0.81)
-  assert_eq(config.strategy, "tfidf")
+  assert_eq(config.strategy, "hybrid")
 }
 
 ///|

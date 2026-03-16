@@ -152,12 +152,18 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     discover_opts,
   )
   let project_markers = registry.get_project_markers()
-  let code_units = build_code_units_fast(discovered_paths, registry)
-  let (doc_fragments, doc_file_states, used_specs) = collect_document_fragments(
-    discovered_paths, config, registry,
-  )
-  let code_file_states = collect_code_file_states(code_units, config)
-  let all_file_states = code_file_states + doc_file_states
+  let use_parallel = config.parallel && @parallel.available()
+  let (code_units, doc_fragments, all_file_states, used_specs) = if use_parallel {
+    parallel_extract(discovered_paths, config, registry)
+  } else {
+    let code_units = build_code_units_fast(discovered_paths, registry)
+    let (doc_fragments, doc_file_states, used_specs) = collect_document_fragments(
+      discovered_paths, config, registry,
+    )
+    let code_file_states = collect_code_file_states(code_units, config)
+    let all_file_states = code_file_states + doc_file_states
+    (code_units, doc_fragments, all_file_states, used_specs)
+  }
   let config_hash = build_config_hash(config)
   let source_fingerprint = build_source_fingerprint(
     config_hash, all_file_states,
@@ -170,9 +176,17 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     }
     None => ()
   }
-  let candidate_build = build_candidates(
-    code_units, doc_fragments, config, registry,
-  )
+  let candidate_build = if use_parallel {
+    build_candidates_parallel(
+      code_units,
+      doc_fragments,
+      config,
+      registry,
+      @parallel.cpu_count(),
+    )
+  } else {
+    build_candidates(code_units, doc_fragments, config, registry)
+  }
   let raw_aggregate_suggestions = build_aggregate_suggestions(
     candidate_build.candidates,
     [],

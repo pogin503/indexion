@@ -203,6 +203,62 @@ pub fn render_markdown(plan : RefactorPlanJSON) -> String {
       buf.write_string("---\n\n")
     }
   }
+  // Function-level duplicates (same-file and cross-file)
+  if plan.function_duplicates.length() > 0 {
+    buf.write_string("---\n\n")
+    buf.write_string("## Function-Level Duplicates\n\n")
+    buf.write_string(
+      "Structurally similar functions detected (including same-file):\n\n",
+    )
+    buf.write_string("| Function 1 | File 1 | Function 2 | File 2 | Similarity |\n")
+    buf.write_string("|---|---|---|---|---|\n")
+    let max_func_dups = 30
+    let mut func_dup_count = 0
+    for dup in plan.function_duplicates {
+      if func_dup_count >= max_func_dups {
+        break
+      }
+      buf.write_string(
+        "| `" +
+        dup.func1 +
+        "` | `" +
+        dup.file1 +
+        "` | `" +
+        dup.func2 +
+        "` | `" +
+        dup.file2 +
+        "` | " +
+        @common.format_percent(dup.similarity) +
+        " |\n",
+      )
+      func_dup_count += 1
+    }
+    buf.write_string("\n")
+    // Show file locations for same-file duplicates
+    let same_file_dups : Array[FunctionDuplicate] = []
+    for dup in plan.function_duplicates {
+      if dup.same_file {
+        same_file_dups.push(dup)
+      }
+    }
+    if same_file_dups.length() > 0 {
+      buf.write_string("**Same-file duplicates** (extract to shared function with parameter):\n\n")
+      for dup in same_file_dups {
+        buf.write_string(
+          "- `" +
+          dup.func1 +
+          "` ≈ `" +
+          dup.func2 +
+          "` in `" +
+          dup.file1 +
+          "` (" +
+          @common.format_percent(dup.similarity) +
+          ")\n",
+        )
+      }
+      buf.write_string("\n")
+    }
+  }
   buf.to_string()
 }
 
