@@ -24,6 +24,7 @@ pub struct SolidConfig {
   excludes : Array[String] // glob patterns to exclude
   output : String // output file path (empty = stdout)
   format : String // output format: "md", "json"
+  specs_dir : String // KGF specs directory
   show_help : Bool
 }
 
@@ -41,6 +42,7 @@ pub fn SolidConfig::default() -> SolidConfig {
     excludes: [],
     output: "",
     format: "md",
+    specs_dir: "kgfs",
     show_help: false,
   }
 }
@@ -102,6 +104,9 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> SolidConfig {
     } else if arg.has_prefix("--format=") {
       let value = @common.get_arg_value(arg, 9)
       config = { ..config, format: value }
+    } else if arg.has_prefix("--specs-dir=") {
+      let value = @common.get_arg_value(arg, 12)
+      config = { ..config, specs_dir: value }
     }
   }
   config
@@ -135,6 +140,7 @@ pub fn show_help() -> Unit {
   println(
     "  --format=FORMAT      Output format: md, json, github-issue (default: md)",
   )
+  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
   println("  --help               Show this help message")
   println("")
   println("Rule syntax:")
@@ -359,7 +365,11 @@ fn find_cross_matches(config : SolidConfig) -> Array[FileMatch] {
   if files.length() < 2 {
     return matches
   }
-  let registry = @kgf_features.load_registry(target_dirs=config.from_dirs)
+  let explicit = if config.specs_dir != "kgfs" { config.specs_dir } else { "" }
+  let registry = @kgf_features.load_registry(
+    explicit_path=explicit,
+    target_dirs=config.from_dirs,
+  )
   // Check if using tree-based strategy
   let is_tree_strategy = config.strategy == "apted" || config.strategy == "tsed"
   let pairs : Array[(Int, Int, Double)] = if is_tree_strategy {

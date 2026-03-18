@@ -34,6 +34,7 @@ pub struct UnwrapConfig {
   include_self : Bool
   include_bare : Bool
   mode : String // "report", "dry-run", "fix"
+  specs_dir : String // KGF specs directory
   show_help : Bool
 }
 
@@ -49,6 +50,7 @@ pub fn UnwrapConfig::default() -> UnwrapConfig {
     include_self: false,
     include_bare: false,
     mode: "report",
+    specs_dir: "kgfs",
     show_help: false,
   }
 }
@@ -79,6 +81,8 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> UnwrapConfig {
       config = { ..config, mode: "dry-run" }
     } else if arg == "--fix" {
       config = { ..config, mode: "fix" }
+    } else if arg.has_prefix("--specs-dir=") {
+      config = { ..config, specs_dir: @common.get_arg_value(arg, 12) }
     } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
       config = { ..config, target_dir: arg }
     }
@@ -119,6 +123,7 @@ pub fn show_help() -> Unit {
   println(
     "  --include-bare       Include bare constructor wrappers (no qualifier)",
   )
+  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
   println("  --help               Show this help message")
   println("")
   println("Examples:")
@@ -154,7 +159,11 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("Directory: " + config.target_dir)
     println("")
   }
-  let registry = @kgf_features.load_registry(target_dir=config.target_dir)
+  let explicit = if config.specs_dir != "kgfs" { config.specs_dir } else { "" }
+  let registry = @kgf_features.load_registry(
+    explicit_path=explicit,
+    target_dir=config.target_dir,
+  )
   // [1/4] Collect files
   if show_progress {
     println("[1/4] Collecting files...")

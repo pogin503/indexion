@@ -58,6 +58,7 @@ pub struct RefactorPlanConfig {
   format : String // output format: "md", "json", "text"
   style : String // output style: "raw" (similarity), "structured" (plan)
   project_name : String // project name for structured output
+  specs_dir : String // KGF specs directory
   show_help : Bool
 }
 
@@ -74,6 +75,7 @@ pub fn RefactorPlanConfig::default() -> RefactorPlanConfig {
     format: "md",
     style: "raw",
     project_name: "",
+    specs_dir: "kgfs",
     show_help: false,
   }
 }
@@ -126,6 +128,9 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> RefactorPlanConfig {
     } else if arg.has_prefix("--name=") {
       let value = @common.get_arg_value(arg, 7)
       config = { ..config, project_name: value }
+    } else if arg.has_prefix("--specs-dir=") {
+      let value = @common.get_arg_value(arg, 12)
+      config = { ..config, specs_dir: value }
     } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
       config = { ..config, target_dir: arg }
     }
@@ -160,6 +165,7 @@ pub fn show_help() -> Unit {
   )
   println("  --style=STYLE        Output style: raw, structured (default: raw)")
   println("  --name=NAME          Project name for structured output")
+  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
   println("  --help               Show this help message")
   println("")
   println("Styles:")
@@ -492,7 +498,11 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("")
   }
   // Load KGF registry for language detection
-  let registry = @kgf_features.load_registry(target_dir=config.target_dir)
+  let explicit = if config.specs_dir != "kgfs" { config.specs_dir } else { "" }
+  let registry = @kgf_features.load_registry(
+    explicit_path=explicit,
+    target_dir=config.target_dir,
+  )
   // Detect project type from marker files (search target dir and ancestors)
   let detected_markers : Array[String] = []
   match registry {

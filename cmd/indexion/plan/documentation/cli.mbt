@@ -18,6 +18,7 @@
 /// | `--format=FORMAT` | Output format: md, json, github-issue | md |
 /// | `--template=FILE` | GitHub Issue Form template (.yml) | - |
 /// | `--name=NAME` | Project name (auto-detect from moon.mod.json) | - |
+/// | `--specs-dir=DIR` | KGF specs directory | kgfs |
 
 ///|
 /// CLI configuration for the documentation plan subcommand.
@@ -28,6 +29,7 @@ pub struct DocPlanConfig {
   format : String // "md", "json", "github-issue"
   template : String // path to GitHub Issue Form template
   project_name : String
+  specs_dir : String // KGF specs directory
   show_help : Bool
 }
 
@@ -41,6 +43,7 @@ pub fn DocPlanConfig::default() -> DocPlanConfig {
     format: "md",
     template: "",
     project_name: "",
+    specs_dir: "kgfs",
     show_help: false,
   }
 }
@@ -69,6 +72,9 @@ pub fn parse_args(args : Array[String], start_idx : Int) -> DocPlanConfig {
     } else if arg.has_prefix("--name=") {
       let value = @common.get_arg_value(arg, 7)
       config = { ..config, project_name: value }
+    } else if arg.has_prefix("--specs-dir=") {
+      let value = @common.get_arg_value(arg, 12)
+      config = { ..config, specs_dir: value }
     } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
       config = { ..config, target_dir: arg }
     }
@@ -96,6 +102,7 @@ pub fn show_help() -> Unit {
   println(
     "  --name=NAME          Project name (auto-detect from moon.mod.json)",
   )
+  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
   println("  --help               Show this help message")
   println("")
   println("Styles:")
@@ -137,7 +144,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     project_info.name
   }
   // Analyze documentation coverage
-  let analysis = analyze_documentation(config.target_dir)
+  let analysis = analyze_documentation(config.target_dir, specs_dir=config.specs_dir)
   // Generate output based on format
   let output_content = render_output(
     config, analysis, project_info, project_name,

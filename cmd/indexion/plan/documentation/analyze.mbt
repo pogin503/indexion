@@ -91,12 +91,19 @@ fn parse_moon_mod_json(content : String) -> ProjectInfo {
 
 ///|
 /// Analyze documentation coverage in directory.
-pub fn analyze_documentation(dir : String) -> DocAnalysis {
+pub fn analyze_documentation(
+  dir : String,
+  specs_dir~ : String = "kgfs",
+) -> DocAnalysis {
   let packages : Array[PackageAnalysis] = []
   let all_items : Array[PubItem] = []
   let normalized_dir = @common.normalize_path(dir)
   let filter = @filter.FilterConfig::from_project_root(normalized_dir)
-  let registry = @kgf_features.load_registry(target_dir=normalized_dir)
+  let explicit = if specs_dir != "kgfs" { specs_dir } else { "" }
+  let registry = @kgf_features.load_registry(
+    explicit_path=explicit,
+    target_dir=normalized_dir,
+  )
   collect_packages(normalized_dir, packages, "", filter, registry)
   // Aggregate stats
   let mut total_pub = 0
@@ -144,6 +151,10 @@ fn collect_packages(
     if not(@fs.is_dir(dir)) {
       return
     }
+    // Load nested .gitignore/.indexionignore if present
+    let local_filter = filter
+      .with_gitignore_from_dir(dir)
+      .with_indexionignore_from_dir(dir)
     let entries = @fs.read_dir(dir)
     let mbt_files : Array[String] = []
     let mut has_moon_pkg = false
@@ -161,19 +172,19 @@ fn collect_packages(
         } else {
           entry
         }
-        match filter.should_include(file_rel, false) {
+        match local_filter.should_include(file_rel, false) {
           @filter.FilterResult::Include => mbt_files.push(entry)
           @filter.FilterResult::Exclude(_) => ()
         }
       } else if @fs.is_dir(path) {
         // Use filter to check if directory should be skipped
-        if not(filter.should_skip_dir(entry)) {
+        if not(local_filter.should_skip_dir(entry)) {
           let sub_rel = if rel_path.length() > 0 {
             rel_path + "/" + entry
           } else {
             entry
           }
-          collect_packages(path, packages, sub_rel, filter, registry)
+          collect_packages(path, packages, sub_rel, local_filter, registry)
         }
       }
     }
