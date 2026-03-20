@@ -690,16 +690,11 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
       }
   }
   // Output
-  if config.output.length() > 0 {
-    try {
-      @fs.write_string_to_file(config.output, output_content)
-      println("Refactoring plan written to: " + config.output)
-    } catch {
-      e => println("Error writing file: " + e.to_string())
-    }
-  } else {
-    println(output_content)
-  }
+  @common.write_output(
+    config.output,
+    output_content,
+    label="Refactoring plan",
+  )
 }
 
 // format_github_issue: use @plan_render.GitHubIssue::format (SoT)
@@ -820,44 +815,6 @@ fn find_function_duplicates(
     }
   })
   duplicates
-}
-
-///|
-/// Adaptive TF-IDF search: for large file sets, start with a higher threshold
-/// and step down until we get enough results or reach the base threshold.
-///
-/// This avoids the pathological case where a low threshold produces hundreds of
-/// thousands of candidate pairs in the inverted index, making cosine evaluation
-/// extremely slow.
-fn adaptive_tfidf_search(
-  batch : @tfidf.TfidfBatch,
-  file_count : Int,
-  base_threshold : Double,
-) -> (Array[(Int, Int, Double)], Double) {
-  // For small file sets, just use the base threshold directly
-  let adaptive_file_threshold = 200
-  if file_count <= adaptive_file_threshold {
-    return (batch.all_pairs_above_threshold(base_threshold), base_threshold)
-  }
-  // Step down from 0.9 to base_threshold
-  let steps : Array[Double] = [0.9, 0.85, 0.8, 0.75]
-  let max_pairs = 10000
-  for step in steps {
-    if step <= base_threshold {
-      break
-    }
-    let results = batch.all_pairs_above_threshold(step)
-    if results.length() > 0 {
-      // If we got a reasonable number, return with this threshold
-      if results.length() <= max_pairs {
-        return (results, step)
-      }
-      // Too many even at this threshold, use it anyway (it's the best we can do)
-      return (results, step)
-    }
-  }
-  // Fall back to base threshold
-  (batch.all_pairs_above_threshold(base_threshold), base_threshold)
 }
 
 // elapsed_ms: use @common (SoT)

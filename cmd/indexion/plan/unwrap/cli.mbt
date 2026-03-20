@@ -388,16 +388,11 @@ fn output_plan(
     "text" => render_text(plan)
     _ => render_markdown(plan)
   }
-  if config.output.length() > 0 {
-    try {
-      @fs.write_string_to_file(config.output, output_content)
-      println("Unwrap report written to: " + config.output)
-    } catch {
-      e => println("Error writing file: " + e.to_string())
-    }
-  } else {
-    println(output_content)
-  }
+  @common.write_output(
+    config.output,
+    output_content,
+    label="Unwrap report",
+  )
 }
 
 ///|

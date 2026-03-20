@@ -569,3 +569,60 @@ pub fn extract_json_array(json : String, key : String) -> Array[String] {
   }
   result
 }
+
+///|
+/// Join lines with newline separator.
+pub fn join_lines(lines : Array[String]) -> String {
+  let buf = StringBuilder::new()
+  for i, line in lines {
+    if i > 0 {
+      buf.write_char('\n')
+    }
+    buf.write_string(line)
+  }
+  buf.to_string()
+}
+
+///|
+/// Render a markdown inline code list with label.
+/// Writes "- **label**: `item1`, `item2`\n" to the buffer.
+pub fn render_inline_code_list(
+  buf : StringBuilder,
+  label : String,
+  items : Array[String],
+) -> Unit {
+  if items.length() == 0 {
+    return
+  }
+  buf.write_string("- **" + label + "**: ")
+  for i, item in items {
+    if i > 0 {
+      buf.write_string(", ")
+    }
+    buf.write_string("`" + item + "`")
+  }
+  buf.write_string("\n")
+}
+
+///|
+/// Write content to a file or stdout.
+/// If output is empty or "-", prints to stdout.
+/// Otherwise, ensures parent directory exists and writes to file.
+pub fn write_output(
+  output : String,
+  content : String,
+  label~ : String = "Output",
+) -> Unit {
+  if output.length() == 0 || output == "-" {
+    println(content)
+    return
+  }
+  @config_paths.ensure_parent_dir(output)
+  @fs.write_string_to_file(output, content) catch {
+    e => {
+      println("Error writing file: " + e.to_string())
+      return
+    }
+  }
+  println(label + " written to: " + output)
+}

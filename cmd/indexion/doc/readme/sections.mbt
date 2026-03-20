@@ -175,7 +175,7 @@ fn is_digit_char(ch : Char) -> Bool {
 ///|
 fn to_lower_char(ch : Char) -> Char {
   if ch >= 'A' && ch <= 'Z' {
-    Char::from_int(ch.to_int() + 32)
+    (ch.to_int() + 32).unsafe_to_char()
   } else {
     ch
   }

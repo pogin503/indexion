@@ -363,9 +363,7 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         if is_non_capturing {
           group_start = group_start + 2
         }
-        let group_pattern = pattern[group_start:group_end].to_string() catch {
-          _ => ""
-        }
+        let group_pattern = pattern[group_start:group_end].to_string()
         // Check for alternation in group
         if group_pattern.contains("|") {
           let alternatives = split_by_alternation(group_pattern)
@@ -465,14 +463,14 @@ fn split_by_alternation(pattern : String) -> Array[String] {
       Some('\\') => pos = pos + 1
       Some('|') =>
         if depth == 0 {
-          result.push(pattern[start:pos].to_string() catch { _ => "" })
+          result.push(pattern[start:pos].to_string())
           start = pos + 1
         }
       _ => ()
     }
     pos = pos + 1
   }
-  result.push(pattern[start:pattern.length()].to_string() catch { _ => "" })
+  result.push(pattern[start:pattern.length()].to_string())
   result
 }
 
@@ -1172,9 +1170,7 @@ fn match_compiled_with_chars(
     Some(end_pos) =>
       MatchResult::success(
         end_pos,
-        input[pos:end_pos].to_string() catch {
-          _ => ""
-        },
+        input[pos:end_pos].to_string(),
       )
     None => MatchResult::failure()
   }

@@ -79,7 +79,7 @@ fn Lexer::try_match(
           if token_def.skip {
             return Some((token_def, end_pos_value, None))
           } else {
-            let text = input[pos:end_pos_value].to_string() catch { _ => "" }
+            let text = input[pos:end_pos_value].to_string()
             return Some((token_def, end_pos_value, Some(text)))
           }
         }
@@ -115,12 +115,12 @@ fn extract_value_with_strip(
     if strip >= text.length() {
       return Some("")
     }
-    let stripped = text[strip:].to_string() catch { _ => "" }
+    let stripped = text[strip:].to_string()
     // Also trim leading space after strip (common for doc comments)
     if stripped.length() > 0 {
       let first = stripped[0].to_int().unsafe_to_char()
       if first == ' ' {
-        return Some(stripped[1:].to_string() catch { _ => "" })
+        return Some(stripped[1:].to_string())
       }
     }
     return Some(stripped)
@@ -137,7 +137,7 @@ fn extract_value(text : String) -> String? {
     let first = text[0].to_int().unsafe_to_char()
     let last = text[text.length() - 1].to_int().unsafe_to_char()
     if (first == '"' && last == '"') || (first == '\'' && last == '\'') {
-      return Some(text[1:text.length() - 1].to_string() catch { _ => "" })
+      return Some(text[1:text.length() - 1].to_string())
     }
   }
   None

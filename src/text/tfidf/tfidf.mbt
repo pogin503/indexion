@@ -66,7 +66,7 @@ pub fn build_tfidf_vector(
 
 ///|
 /// Calculate the square root using Newton's method.
-fn sqrt(x : Double) -> Double {
+pub fn sqrt(x : Double) -> Double {
   if x <= 0.0 {
     return 0.0
   }

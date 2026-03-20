@@ -192,18 +192,6 @@ fn extract_title_from_content(content : String) -> String? {
 // use @common (SoT): split_lines
 
 ///|
-fn join_with_newlines(parts : Array[String]) -> String {
-  let buf = StringBuilder::new()
-  for i, part in parts {
-    if i > 0 {
-      buf.write_string("\n\n")
-    }
-    buf.write_string(part)
-  }
-  buf.to_string()
-}
-
-///|
 /// Extract summary text from doc content (text before second ## heading).
 pub fn extract_summary(content : String) -> String {
   let lines = @common.split_lines(content)
@@ -222,17 +210,5 @@ pub fn extract_summary(content : String) -> String {
     }
     result.push(line)
   }
-  join_lines(result)
-}
-
-///|
-fn join_lines(lines : Array[String]) -> String {
-  let buf = StringBuilder::new()
-  for i, line in lines {
-    if i > 0 {
-      buf.write_char('\n')
-    }
-    buf.write_string(line)
-  }
-  buf.to_string()
+  @common.join_lines(result)
 }

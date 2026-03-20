@@ -108,20 +108,6 @@ pub fn show_help() -> Unit {
   println("  indexion doc graph --title=\"API Dependencies\" src/api/")
 }
 
-///|
-/// Write output to file or stdout.
-fn write_output(output : String, content : String) -> Unit {
-  if output == "-" {
-    println(content)
-  } else {
-    try {
-      @fs.write_string_to_file(output, content)
-      println("Written to: " + output)
-    } catch {
-      e => println("Error writing file: " + e.to_string())
-    }
-  }
-}
 
 ///|
 /// Generate JSON output with dependencies and circular references.
@@ -259,7 +245,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   // Handle empty graph case
   if output.length() == 0 {
     if config.format == "json" {
-      write_output(
+      @common.write_output(
         config.output,
         "{\"dependencies\":[],\"circular_dependencies\":[],\"statistics\":{\"total_dependencies\":0,\"circular_count\":0}}",
       )
@@ -268,7 +254,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     }
     return
   }
-  write_output(config.output, output)
+  @common.write_output(config.output, output)
   // Print summary to stderr if outputting to file
   if config.output != "-" {
     println("Dependencies: " + deps.length().to_string())

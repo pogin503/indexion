@@ -307,7 +307,7 @@ fn ensure_dir_exists(path : String) -> Unit {
     }
   }
   if last_slash > 0 {
-    let parent = path[0:last_slash].to_string() catch { _ => "" }
+    let parent = path[0:last_slash].to_string()
     if not(@fs.path_exists(parent)) {
       @fs.create_dir(parent) catch {
         _ => ()

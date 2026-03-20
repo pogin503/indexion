@@ -191,7 +191,7 @@ fn parse_fst_action(json : Json) -> @types.FstAction? {
       }
     "buf" => Some(@types.FstAction::buf())
     "flush" =>
-      if json is { "pad": Number(pad), .. } {
+      if json is { "pad": Number(pad, ..), .. } {
         Some(@types.FstAction::flush(pad.to_int()))
       } else {
         None

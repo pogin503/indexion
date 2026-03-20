@@ -13,6 +13,7 @@ pub suberror UpdateError {
 }
 
 ///|
+/// Format update error as human-readable string.
 pub fn UpdateError::to_string(self : UpdateError) -> String {
   match self {
     NetworkError(msg) => "network error: " + msg

@@ -169,7 +169,7 @@ fn build_code_units_fast(
         kind,
         "",
         module_id,
-        inline_doc.or(""),
+        inline_doc.unwrap_or(""),
       ])
       units.push({
         symbol_id,

@@ -167,7 +167,7 @@ fn extract_markdown_fragments(
     if paragraph.length() == 0 {
       return
     }
-    let text = @common.trim_ascii_spaces(join_lines(paragraph))
+    let text = @common.trim_ascii_spaces(@common.join_lines(paragraph))
     paragraph.clear()
     if text.length() == 0 {
       return
@@ -217,7 +217,7 @@ fn extract_plaintext_fragments(
     if paragraph.length() == 0 {
       return
     }
-    let text = @common.trim_ascii_spaces(join_lines(paragraph))
+    let text = @common.trim_ascii_spaces(@common.join_lines(paragraph))
     paragraph.clear()
     if text.length() == 0 {
       return

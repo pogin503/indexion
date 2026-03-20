@@ -50,7 +50,7 @@
 
 ///|
 /// Main entry point.
-fn main {
+async fn main {
   let args = @sys.get_cli_args()
 
   // Find subcommand (skip program name)
@@ -62,8 +62,7 @@ fn main {
     "plan" => @plan_cli.run(args, 2)
     "doc" => @doc_cli.run(args, 2)
     "kgf" => @kgf_cli.run(args, 2)
-    "digest" =>
-      println("digest command temporarily disabled (vcdb API update needed)")
+    "digest" => @digest_cli.run(args, 2)
     "sim" | "similarity" => @similarity_cli.run(args, 2)
     "segment" | "seg" => @segment_cli.run(args, 2)
     "perf" => @perf_cli.run(args, 2)

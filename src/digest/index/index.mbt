@@ -43,19 +43,7 @@ pub fn BuildResult::new() -> BuildResult {
   { indexed_count: 0, skipped_count: 0, removed_count: 0, errors: [] }
 }
 
-///|
-/// Calculate the square root using Newton's method.
-fn sqrt(x : Double) -> Double {
-  if x <= 0.0 {
-    return 0.0
-  }
-  let mut guess = x / 2.0
-  for i = 0; i < 20; i = i + 1 {
-    ignore(i)
-    guess = (guess + x / guess) / 2.0
-  }
-  guess
-}
+// sqrt: use @tfidf.sqrt (SoT)
 
 ///|
 /// Natural logarithm approximation.
@@ -162,7 +150,7 @@ pub fn TfidfEmbeddingProvider::embed(
     norm = norm + v * v
   }
   if norm > 0.0 {
-    norm = sqrt(norm)
+    norm = @tfidf.sqrt(norm)
     for i = 0; i < vector.length(); i = i + 1 {
       vector[i] = vector[i] / norm
     }

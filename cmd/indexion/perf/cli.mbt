@@ -266,7 +266,5 @@ fn parse_int(text : String, fallback : Int) -> Int {
 ///|
 /// Returns substring from start index; falls back to empty string on bounds issues.
 fn slice_from(text : String, start : Int) -> String {
-  text[start:].to_string() catch {
-    _ => ""
-  }
+  text[start:].to_string()
 }

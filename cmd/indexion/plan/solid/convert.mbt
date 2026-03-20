@@ -11,6 +11,7 @@ pub struct SolidPlanJSON {
 }
 
 ///|
+/// Configuration section of the solid plan output.
 pub struct SolidConfigJSON {
   sources : Array[String]
   target : String
@@ -19,6 +20,7 @@ pub struct SolidConfigJSON {
 }
 
 ///|
+/// Summary statistics for the solid plan.
 pub struct SolidSummaryJSON {
   total_matches : Int
   matched_by_rules : Int
@@ -26,12 +28,14 @@ pub struct SolidSummaryJSON {
 }
 
 ///|
+/// Group of files to extract to a common target path.
 pub struct ExtractionGroup {
   target_path : String
   files : Array[ExtractionFile]
 }
 
 ///|
+/// A file candidate for extraction with similarity score.
 pub struct ExtractionFile {
   relative_path : String
   similarity : Double
@@ -39,6 +43,7 @@ pub struct ExtractionFile {
 }
 
 ///|
+/// A file that matched similarity threshold but no extraction rule.
 pub struct UnmatchedFile {
   relative_path : String
   similarity : Double

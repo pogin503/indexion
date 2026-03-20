@@ -131,7 +131,7 @@ fn parse_embedding_line(line : String) -> (String, Array[Double])? {
       let vec : Array[Double] = []
       for item in arr {
         match item {
-          Number(n) => vec.push(n)
+          Number(n, ..) => vec.push(n)
           _ => return None
         }
       }

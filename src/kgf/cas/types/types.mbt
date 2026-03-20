@@ -114,9 +114,9 @@ pub fn ModuleChunk::add_edge(self : ModuleChunk, edge : @graph.Edge) -> Unit {
 /// Add an external reference to the chunk.
 pub fn ModuleChunk::add_external_ref(
   self : ModuleChunk,
-  ref : SymbolicRef,
+  sym_ref : SymbolicRef,
 ) -> Unit {
-  self.external_refs.push(ref)
+  self.external_refs.push(sym_ref)
 }
 
 ///|

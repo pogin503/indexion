@@ -13,26 +13,8 @@ pub fn render_markdown(plan : UnwrapPlanJSON) -> String {
   // Configuration
   buf.write_string("## Configuration\n\n")
   buf.write_string("- **Directory**: `" + plan.config.target_dir + "`\n")
-  if plan.config.includes.length() > 0 {
-    buf.write_string("- **Includes**: ")
-    for i, inc in plan.config.includes {
-      if i > 0 {
-        buf.write_string(", ")
-      }
-      buf.write_string("`" + inc + "`")
-    }
-    buf.write_string("\n")
-  }
-  if plan.config.excludes.length() > 0 {
-    buf.write_string("- **Excludes**: ")
-    for i, exc in plan.config.excludes {
-      if i > 0 {
-        buf.write_string(", ")
-      }
-      buf.write_string("`" + exc + "`")
-    }
-    buf.write_string("\n")
-  }
+  @common.render_inline_code_list(buf, "Includes", plan.config.includes)
+  @common.render_inline_code_list(buf, "Excludes", plan.config.excludes)
   buf.write_string("\n")
   // Summary
   if plan.candidates.length() == 0 {

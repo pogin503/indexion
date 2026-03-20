@@ -196,16 +196,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     }
   }
   // Output
-  if config.output.length() > 0 {
-    try {
-      @fs.write_string_to_file(config.output, output)
-      println("Plan written to: " + config.output)
-    } catch {
-      e => println("Error writing file: " + e.to_string())
-    }
-  } else {
-    println(output)
-  }
+  @common.write_output(config.output, output, label="Plan")
 }
 
 ///|

@@ -1,18 +1,3 @@
-///|
-fn write_output(output : String, content : String) -> Unit {
-  if output.length() == 0 || output == "-" {
-    println(content)
-    return
-  }
-  @config_paths.ensure_parent_dir(output)
-  @fs.write_string_to_file(output, content) catch {
-    e => {
-      println("Error writing output: " + e.to_string())
-      return
-    }
-  }
-  println("Reconcile report written to: " + output)
-}
 
 ///|
 fn collect_document_fragments(
@@ -171,7 +156,11 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   match
     maybe_use_cache(manifest, config_hash, source_fingerprint, config.index_dir) {
     Some(report) => {
-      write_output(config.output, render_output(report, config.format))
+      @common.write_output(
+        config.output,
+        render_output(report, config.format),
+        label="Reconcile report",
+      )
       return
     }
     None => ()
@@ -262,5 +251,9 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   save_manifest(config.index_dir, manifest_to_save)
   save_record_db(config.index_dir, sync_result.db)
   cleanup_stale_index(config.index_dir)
-  write_output(config.output, render_output(report, config.format))
+  @common.write_output(
+    config.output,
+    render_output(report, config.format),
+    label="Reconcile report",
+  )
 }

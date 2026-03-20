@@ -74,11 +74,11 @@ fn parse_doc_config_json(content : String) -> DocConfig? {
     _ => return None
   }
   let version = match root.get("version") {
-    Some(v) => parse_doc_json_string(v).or("1.0")
+    Some(v) => parse_doc_json_string(v).unwrap_or("1.0")
     None => "1.0"
   }
   let spec = match root.get("spec") {
-    Some(v) => parse_doc_json_string(v).or("")
+    Some(v) => parse_doc_json_string(v).unwrap_or("")
     None => ""
   }
   let output = match root.get("output") {
@@ -102,11 +102,11 @@ fn parse_doc_output_config(value : Json) -> DocOutputConfig {
     _ => return { format: "markdown", filename: "README.md" }
   }
   let format = match obj.get("format") {
-    Some(v) => parse_doc_json_string(v).or("markdown")
+    Some(v) => parse_doc_json_string(v).unwrap_or("markdown")
     None => "markdown"
   }
   let filename = match obj.get("filename") {
-    Some(v) => parse_doc_json_string(v).or("README.md")
+    Some(v) => parse_doc_json_string(v).unwrap_or("README.md")
     None => "README.md"
   }
   { format, filename }
@@ -131,22 +131,22 @@ fn parse_doc_package_entry(value : Json) -> DocPackageEntry? {
     _ => return None
   }
   let path = match obj.get("path") {
-    Some(v) => parse_doc_json_string(v).or("")
+    Some(v) => parse_doc_json_string(v).unwrap_or("")
     None => return None
   }
   if path.length() == 0 {
     return None
   }
   let title = match obj.get("title") {
-    Some(v) => parse_doc_json_string(v).or("")
+    Some(v) => parse_doc_json_string(v).unwrap_or("")
     None => ""
   }
   let description = match obj.get("description") {
-    Some(v) => parse_doc_json_string(v).or("")
+    Some(v) => parse_doc_json_string(v).unwrap_or("")
     None => ""
   }
   let include_in_root = match obj.get("include_in_root") {
-    Some(v) => parse_doc_json_bool(v).or(false)
+    Some(v) => parse_doc_json_bool(v).unwrap_or(false)
     None => false
   }
   let sections = match obj.get("sections") {
@@ -162,11 +162,11 @@ fn parse_doc_root_config(value : Json) -> DocRootConfig {
     _ => return { template: "", output: "README.md", sections: [] }
   }
   let template = match obj.get("template") {
-    Some(v) => parse_doc_json_string(v).or("")
+    Some(v) => parse_doc_json_string(v).unwrap_or("")
     None => ""
   }
   let output = match obj.get("output") {
-    Some(v) => parse_doc_json_string(v).or("README.md")
+    Some(v) => parse_doc_json_string(v).unwrap_or("README.md")
     None => "README.md"
   }
   let sections = match obj.get("sections") {
@@ -195,27 +195,27 @@ fn parse_doc_root_section(value : Json) -> DocRootSection? {
     _ => return None
   }
   let section_type = match obj.get("type") {
-    Some(v) => parse_doc_json_string(v).or("")
+    Some(v) => parse_doc_json_string(v).unwrap_or("")
     None => return None
   }
   match section_type {
     "static" => {
       let file = match obj.get("file") {
-        Some(v) => parse_doc_json_string(v).or("")
+        Some(v) => parse_doc_json_string(v).unwrap_or("")
         None => return None
       }
       Some(DocRootSection::Static(file))
     }
     "toc" => {
       let title = match obj.get("title") {
-        Some(v) => parse_doc_json_string(v).or("Contents")
+        Some(v) => parse_doc_json_string(v).unwrap_or("Contents")
         None => "Contents"
       }
       Some(DocRootSection::Toc(title))
     }
     "packages" => {
       let filter = match obj.get("filter") {
-        Some(v) => parse_doc_json_string(v).or("**")
+        Some(v) => parse_doc_json_string(v).unwrap_or("**")
         None => "**"
       }
       Some(DocRootSection::Packages(filter))

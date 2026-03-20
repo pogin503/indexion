@@ -56,131 +56,107 @@ fn detect_from_extension(ext : String) -> DetectedLang {
 }
 
 ///|
-/// Check if content looks like TypeScript/JavaScript.
-fn looks_like_typescript(content : String) -> Bool {
-  has_pattern(content, "import ") ||
-  has_pattern(content, "export ") ||
-  has_pattern(content, "function ") ||
-  has_pattern(content, "const ") ||
-  has_pattern(content, "class ") ||
-  has_pattern(content, "interface ") ||
-  has_pattern(content, "type ") ||
-  has_pattern(content, "=> {")
+/// Check if content matches any of the given patterns.
+fn has_any_pattern(content : String, patterns : FixedArray[String]) -> Bool {
+  for pattern in patterns {
+    if has_pattern(content, pattern) {
+      return true
+    }
+  }
+  false
 }
 
 ///|
-/// Check if content looks like Python.
-fn looks_like_python(content : String) -> Bool {
-  has_pattern(content, "def ") ||
-  has_pattern(content, "class ") ||
-  has_pattern(content, "import ") ||
-  has_pattern(content, "from ") ||
-  has_pattern(content, "if __name__") ||
-  has_pattern(content, "\"\"\"")
-}
-
-///|
-/// Check if content looks like MoonBit.
-fn looks_like_moonbit(content : String) -> Bool {
-  has_pattern(content, "fn ") ||
-  has_pattern(content, "pub fn ") ||
-  has_pattern(content, "struct ") ||
-  has_pattern(content, "enum ") ||
-  has_pattern(content, "///|") ||
-  has_pattern(content, "derive(")
-}
-
-///|
-/// Check if content looks like Go.
-fn looks_like_go(content : String) -> Bool {
-  has_pattern(content, "package ") ||
-  has_pattern(content, "func ") ||
-  (has_pattern(content, "type ") && has_pattern(content, " struct {")) ||
-  has_pattern(content, "import (")
-}
-
-///|
-/// Check if content looks like Rust.
-fn looks_like_rust(content : String) -> Bool {
-  (has_pattern(content, "fn ") && has_pattern(content, "-> ")) ||
-  has_pattern(content, "impl ") ||
-  has_pattern(content, "use ") ||
-  has_pattern(content, "mod ") ||
-  has_pattern(content, "pub fn ") ||
-  has_pattern(content, "#[")
-}
-
-///|
-/// Check if content looks like HTML.
-fn looks_like_html(content : String) -> Bool {
-  has_pattern(content, "<!DOCTYPE") ||
-  has_pattern(content, "<html") ||
-  has_pattern(content, "<head") ||
-  has_pattern(content, "<body")
-}
-
-///|
-/// Check if content looks like CSS.
-fn looks_like_css(content : String) -> Bool {
-  has_pattern(content, "{") &&
+/// Language signature patterns for content-based detection.
+/// Each entry: (DetectedLang, check function).
+let lang_signatures : Array[
+  (DetectedLang, (String) -> Bool),
+] = [
+  // Order matters: more specific languages first to avoid false positives
   (
-    has_pattern(content, "color:") ||
-    has_pattern(content, "background:") ||
-    has_pattern(content, "margin:") ||
-    has_pattern(content, "padding:") ||
-    has_pattern(content, "display:")
-  )
-}
+    DetectedLang::MoonBit,
+    fn(c) {
+      has_any_pattern(c, ["fn ", "pub fn ", "struct ", "enum ", "///|", "derive("])
+    },
+  ),
+  (
+    DetectedLang::Rust,
+    fn(c) {
+      (has_pattern(c, "fn ") && has_pattern(c, "-> ")) ||
+      has_any_pattern(c, ["impl ", "use ", "mod ", "pub fn ", "#["])
+    },
+  ),
+  (
+    DetectedLang::Go,
+    fn(c) {
+      has_any_pattern(c, ["package ", "func ", "import ("]) ||
+      (has_pattern(c, "type ") && has_pattern(c, " struct {"))
+    },
+  ),
+  (
+    DetectedLang::Python,
+    fn(c) {
+      has_any_pattern(
+        c,
+        ["def ", "class ", "import ", "from ", "if __name__", "\"\"\""],
+      )
+    },
+  ),
+  (
+    DetectedLang::TypeScript,
+    fn(c) {
+      has_any_pattern(
+        c,
+        [
+          "import ", "export ", "function ", "const ", "class ", "interface ",
+          "type ", "=> {",
+        ],
+      )
+    },
+  ),
+  (
+    DetectedLang::Html,
+    fn(c) {
+      has_any_pattern(c, ["<!DOCTYPE", "<html", "<head", "<body"])
+    },
+  ),
+  (
+    DetectedLang::Css,
+    fn(c) {
+      has_pattern(c, "{") &&
+      has_any_pattern(
+        c,
+        ["color:", "background:", "margin:", "padding:", "display:"],
+      )
+    },
+  ),
+  (
+    DetectedLang::Markdown,
+    fn(c) {
+      has_any_pattern(c, ["# ", "## ", "```"]) ||
+      (has_pattern(c, "- ") && has_pattern(c, "\n- "))
+    },
+  ),
+  (
+    DetectedLang::Sql,
+    fn(c) {
+      let upper = to_upper(c)
+      has_any_pattern(
+        upper,
+        ["SELECT ", "CREATE TABLE", "INSERT INTO", "UPDATE ", "DELETE FROM"],
+      )
+    },
+  ),
+]
 
 ///|
-/// Check if content looks like Markdown.
-fn looks_like_markdown(content : String) -> Bool {
-  has_pattern(content, "# ") ||
-  has_pattern(content, "## ") ||
-  has_pattern(content, "```") ||
-  (has_pattern(content, "- ") && has_pattern(content, "\n- "))
-}
-
-///|
-/// Check if content looks like SQL.
-fn looks_like_sql(content : String) -> Bool {
-  let upper = to_upper(content)
-  has_pattern(upper, "SELECT ") ||
-  has_pattern(upper, "CREATE TABLE") ||
-  has_pattern(upper, "INSERT INTO") ||
-  has_pattern(upper, "UPDATE ") ||
-  has_pattern(upper, "DELETE FROM")
-}
-
-///|
-/// Detect language from file content.
+/// Detect language from file content using signature table.
 fn detect_from_content(content : String) -> DetectedLang {
-  if looks_like_moonbit(content) {
-    return DetectedLang::MoonBit
-  }
-  if looks_like_rust(content) {
-    return DetectedLang::Rust
-  }
-  if looks_like_go(content) {
-    return DetectedLang::Go
-  }
-  if looks_like_python(content) {
-    return DetectedLang::Python
-  }
-  if looks_like_typescript(content) {
-    return DetectedLang::TypeScript
-  }
-  if looks_like_html(content) {
-    return DetectedLang::Html
-  }
-  if looks_like_css(content) {
-    return DetectedLang::Css
-  }
-  if looks_like_markdown(content) {
-    return DetectedLang::Markdown
-  }
-  if looks_like_sql(content) {
-    return DetectedLang::Sql
+  for entry in lang_signatures {
+    let (lang, check) = entry
+    if check(content) {
+      return lang
+    }
   }
   DetectedLang::Unknown
 }

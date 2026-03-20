@@ -10,17 +10,7 @@ fn lower_string(s : String) -> String {
 // parse_int: use @common (SoT)
 // split_lines: use @common (SoT)
 
-///|
-fn join_lines(lines : Array[String]) -> String {
-  let buf = StringBuilder::new()
-  for i, line in lines {
-    if i > 0 {
-      buf.write_string("\n")
-    }
-    buf.write_string(line)
-  }
-  buf.to_string()
-}
+// join_lines: use @common (SoT)
 
 ///|
 fn is_blank_line(line : String) -> Bool {

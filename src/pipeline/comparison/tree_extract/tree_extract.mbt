@@ -12,21 +12,18 @@ pub fn extract(
   registry : @kgf_registry.KGFRegistry?,
 ) -> Array[@apted.TreeNode] {
   let trees : Array[@apted.TreeNode] = []
-  guard registry.is_empty() == false else {
+  guard registry is Some(reg) else {
     trees.push(content_to_simple_tree(content))
     return trees
   }
-  let reg = registry.unwrap()
-  guard reg.detect_from_path(display_name).is_empty() == false else {
+  guard reg.detect_from_path(display_name) is Some(lang) else {
     trees.push(content_to_simple_tree(content))
     return trees
   }
-  let lang = reg.detect_from_path(display_name).unwrap()
-  guard reg.get_spec(lang).is_empty() == false else {
+  guard reg.get_spec(lang) is Some(spec) else {
     trees.push(content_to_simple_tree(content))
     return trees
   }
-  let spec = reg.get_spec(lang).unwrap()
   let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
   let kgf_tokens = lexer.tokenize(content)
   let funcs = @kgf_features.extract_function_trees(kgf_tokens, display_name)

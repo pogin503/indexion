@@ -36,8 +36,8 @@ fn apply_one(
   step : String,
   fsts : Map[String, CompiledFst],
 ) -> String raise Error {
-  if starts_with(step, "fst:") {
-    let fst_name = substr_from(step, 4)
+  if step.has_prefix("fst:") {
+    let fst_name = step[4:].to_string()
     match fsts.get(fst_name) {
       Some(fst) => run_fst(fst, input)
       None => raise Failure::Failure("Unknown preprocess FST: \{fst_name}")
@@ -49,35 +49,8 @@ fn apply_one(
   }
 }
 
-///|
-/// Checks if a string starts with a prefix.
-fn starts_with(text : String, prefix : String) -> Bool {
-  if prefix.length() > text.length() {
-    return false
-  }
-  let text_arr = text.to_array()
-  let prefix_arr = prefix.to_array()
-  for i in 0..<prefix.length() {
-    if text_arr[i] != prefix_arr[i] {
-      return false
-    }
-  }
-  true
-}
-
-///|
-/// Gets a substring from start to the end of the string.
-fn substr_from(text : String, start : Int) -> String {
-  if start >= text.length() {
-    return ""
-  }
-  let arr = text.to_array()
-  let result = StringBuilder::new()
-  for i = start; i < arr.length(); i = i + 1 {
-    result.write_char(arr[i])
-  }
-  result.to_string()
-}
+// starts_with: use String::has_prefix (builtin)
+// substr_from: use String::substring (builtin)
 
 ///|
 /// Converts a base64 string to hexadecimal.

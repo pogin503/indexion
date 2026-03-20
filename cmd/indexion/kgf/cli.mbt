@@ -65,7 +65,7 @@ fn KgfConfig::default() -> KgfConfig {
 
 ///|
 /// Main entry point for kgf command.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
+pub async fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_args(args, start_idx)
   if config.show_help {
     show_help()
@@ -145,31 +145,23 @@ fn run_list() -> Unit {
 
 ///|
 /// Update KGF specs from GitHub.
-fn run_kgf_update() -> Unit {
-  @async.with_event_loop(async fn(_tg) {
-    @kgf_manage.update_kgfs() catch {
-      err => {
-        println("Error: " + err.to_string())
-        return
-      }
+async fn run_kgf_update() -> Unit {
+  @kgf_manage.update_kgfs() catch {
+    err => {
+      println("Error: " + err.to_string())
+      return
     }
-  }) catch {
-    err => println("Error: " + err.to_string())
   }
 }
 
 ///|
 /// Add a single KGF spec from GitHub.
-fn run_kgf_add(spec_name : String) -> Unit {
-  @async.with_event_loop(async fn(_tg) {
-    @kgf_manage.add_kgf(spec_name) catch {
-      err => {
-        println("Error: " + err.to_string())
-        return
-      }
+async fn run_kgf_add(spec_name : String) -> Unit {
+  @kgf_manage.add_kgf(spec_name) catch {
+    err => {
+      println("Error: " + err.to_string())
+      return
     }
-  }) catch {
-    err => println("Error: " + err.to_string())
   }
 }
 

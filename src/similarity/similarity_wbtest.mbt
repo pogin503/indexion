@@ -51,17 +51,17 @@ test "HybridConfig::create handles negative weights" {
 
 ///|
 test "StrategyKind::parse parses valid names" {
-  assert_true(StrategyKind::parse("ncd").is_empty() == false)
-  assert_true(StrategyKind::parse("tfidf").is_empty() == false)
-  assert_true(StrategyKind::parse("hybrid").is_empty() == false)
-  assert_true(StrategyKind::parse("apted").is_empty() == false)
-  assert_true(StrategyKind::parse("tsed").is_empty() == false)
+  assert_true(StrategyKind::parse("ncd") is Some(_))
+  assert_true(StrategyKind::parse("tfidf") is Some(_))
+  assert_true(StrategyKind::parse("hybrid") is Some(_))
+  assert_true(StrategyKind::parse("apted") is Some(_))
+  assert_true(StrategyKind::parse("tsed") is Some(_))
 }
 
 ///|
 test "StrategyKind::parse returns None for invalid names" {
-  assert_true(StrategyKind::parse("invalid").is_empty())
-  assert_true(StrategyKind::parse("").is_empty())
+  assert_true(StrategyKind::parse("invalid") is None)
+  assert_true(StrategyKind::parse("") is None)
 }
 
 ///|

@@ -148,7 +148,7 @@ test "get_module returns module or None" {
   let graph = CodeGraph::new()
   assert_eq(graph.get_module("nonexistent"), None)
   let _ = graph.get_or_add_module("pkg/foo")
-  assert_true(graph.get_module("pkg/foo").is_some())
+  assert_true(graph.get_module("pkg/foo") is Some(_))
 }
 
 ///|
@@ -162,7 +162,7 @@ test "get_symbol returns symbol or None" {
     ns="foo",
     module_id="pkg/foo",
   )
-  assert_true(graph.get_symbol("pkg/foo#Sym").is_some())
+  assert_true(graph.get_symbol("pkg/foo#Sym") is Some(_))
 }
 
 ///|

@@ -153,7 +153,7 @@ fn update_field(
   _idx : Int,
 ) -> FormField {
   match field {
-    FormField::Markdown(md) =>
+    FormField::Markdown(_) =>
       if line.has_prefix("value:") {
         let val = extract_yaml_value(line, "value:")
         FormField::Markdown({ value: val })

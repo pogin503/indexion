@@ -186,7 +186,7 @@ fn lower(s : String) -> String {
   let result : Array[Char] = []
   for c in chars {
     if c >= 'A' && c <= 'Z' {
-      result.push(Char::from_int(c.to_int() + 32))
+      result.push((c.to_int() + 32).unsafe_to_char())
     } else {
       result.push(c)
     }

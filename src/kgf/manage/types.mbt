@@ -8,6 +8,7 @@ pub suberror KgfManageError {
 }
 
 ///|
+/// Format error as human-readable string.
 pub fn KgfManageError::to_string(self : KgfManageError) -> String {
   match self {
     NetworkError(msg) => "network error: " + msg

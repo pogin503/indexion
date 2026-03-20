@@ -188,7 +188,7 @@ fn declaration_kind(kind : String) -> String? {
     kind == "KW_function" ||
     kind == "KW_def" ||
     kind == "KW_func" {
-    return Some(kind.substring(start=3))
+    return Some(kind[3:].to_string())
   }
   // Type declarations
   if kind == "KW_struct" ||
@@ -197,11 +197,11 @@ fn declaration_kind(kind : String) -> String? {
     kind == "KW_type" ||
     kind == "KW_trait" ||
     kind == "KW_interface" {
-    return Some(kind.substring(start=3))
+    return Some(kind[3:].to_string())
   }
   // Variable/constant declarations
   if kind == "KW_let" || kind == "KW_const" || kind == "KW_var" {
-    return Some(kind.substring(start=3))
+    return Some(kind[3:].to_string())
   }
   None
 }

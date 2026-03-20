@@ -61,15 +61,13 @@ pub fn show_help() -> Unit {
 
 ///|
 /// Entry point for the update subcommand.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
+pub async fn run(args : Array[String], start_idx : Int) -> Unit {
   let config = parse_args(args, start_idx)
   if config.show_help {
     show_help()
     return
   }
-  @async.with_event_loop(async fn(_tg) { run_async(config) }) catch {
-    err => println("Error: " + err.to_string())
-  }
+  run_async(config)
 }
 
 ///|
