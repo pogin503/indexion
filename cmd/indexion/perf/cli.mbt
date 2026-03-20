@@ -49,13 +49,15 @@ fn run_kgf(args : Array[String], start_idx : Int) -> Unit {
       show_help()
       return
     } else if arg.has_prefix("--spec=") {
-      spec_path = slice_from(arg, 7)
+      spec_path = @common.get_arg_value(arg, 7)
     } else if arg.has_prefix("--input=") {
-      input_path = slice_from(arg, 8)
+      input_path = @common.get_arg_value(arg, 8)
     } else if arg.has_prefix("--iterations=") {
-      iterations = parse_int(slice_from(arg, 13), 20)
+      let v = @common.parse_int(@common.get_arg_value(arg, 13))
+      if v > 0 { iterations = v }
     } else if arg.has_prefix("--warmup=") {
-      warmup = parse_int(slice_from(arg, 9), 3)
+      let v = @common.parse_int(@common.get_arg_value(arg, 9))
+      if v >= 0 { warmup = v }
     }
   }
   if iterations <= 0 {
@@ -126,59 +128,65 @@ fn run_kgf(args : Array[String], start_idx : Int) -> Unit {
     )
   }
 
-  let criterion = @benchmark.Criterion::new()
-  criterion.add(
-    @benchmark.Task::new(
-      "tokenize_reuse_lexer",
-      fn() { let _ = lexer.tokenize(source_text) },
-      count=iterations,
-    ),
-  )
-  criterion.add(
-    @benchmark.Task::new(
+  // Run benchmarks
+  let benchmarks : Array[(String, () -> Unit)] = [
+    ("tokenize_reuse_lexer", fn() { let _ = lexer.tokenize(source_text) }),
+    (
       "tokenize_rebuild_lexer",
       fn() { let _ = tokenize_with_rebuild(spec, source_text) },
-      count=iterations,
     ),
-  )
-  criterion.add(
-    @benchmark.Task::new(
+    (
       "parse_only",
       fn() {
         let _ = @kgf_peg.run_parse_filtered(
           peg, spec, start_rule, tokens, active_rules,
         )
       },
-      count=iterations,
     ),
-  )
-  criterion.add(
-    @benchmark.Task::new(
+    (
       "full_pipeline_reuse_lexer",
       fn() {
         let _ = run_full_pipeline_reuse_lexer(
-          spec, peg, lexer, source_text, input_path, file_exists, start_rule, active_rules,
+          spec, peg, lexer, source_text, input_path, file_exists, start_rule,
+          active_rules,
         )
       },
-      count=iterations,
     ),
-  )
-  criterion.add(
-    @benchmark.Task::new(
+    (
       "full_pipeline_rebuild_lexer",
       fn() {
         let _ = run_full_pipeline_rebuild_lexer(
-          spec, peg, source_text, input_path, file_exists, start_rule, active_rules,
+          spec, peg, source_text, input_path, file_exists, start_rule,
+          active_rules,
         )
       },
-      count=iterations,
     ),
-  )
-
-  let results = criterion.run()
-  for entry in results {
-    println(entry.1.to_string())
+  ]
+  for bench in benchmarks {
+    let (name, task) = bench
+    run_bench(name, task, iterations)
   }
+}
+
+///|
+/// Run a single benchmark: execute task N times and report timing.
+fn run_bench(name : String, task : () -> Unit, iterations : Int) -> Unit {
+  let start = @env.now()
+  for _ in 0..<iterations {
+    task()
+  }
+  let elapsed = @common.elapsed_ms(start)
+  let avg = elapsed.to_double() / iterations.to_double()
+  println(
+    name +
+    ": " +
+    elapsed.to_string() +
+    "ms total, " +
+    avg.to_string() +
+    "ms/iter (" +
+    iterations.to_string() +
+    " iterations)",
+  )
 }
 
 ///|
@@ -263,8 +271,3 @@ fn parse_int(text : String, fallback : Int) -> Int {
   }
 }
 
-///|
-/// Returns substring from start index; falls back to empty string on bounds issues.
-fn slice_from(text : String, start : Int) -> String {
-  text[start:].to_string()
-}

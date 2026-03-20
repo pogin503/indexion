@@ -20,26 +20,32 @@
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/similarity",
-      "title": "sim",
-      "include_in_root": true,
-      "sections": ["overview", "usage"]
-    },
-    {
-      "path": "cmd/indexion/doc",
-      "title": "doc",
-      "include_in_root": true,
-      "sections": ["overview"]
-    },
-    {
       "path": "cmd/indexion/plan/unwrap",
       "title": "plan unwrap",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
     {
+      "path": "cmd/indexion/plan/solid",
+      "title": "plan solid",
+      "include_in_root": true,
+      "sections": ["overview", "usage"]
+    },
+    {
+      "path": "cmd/indexion/plan/reconcile",
+      "title": "plan reconcile",
+      "include_in_root": true,
+      "sections": ["overview", "usage"]
+    },
+    {
       "path": "cmd/indexion/doc/readme",
       "title": "doc readme",
+      "include_in_root": true,
+      "sections": ["overview", "usage"]
+    },
+    {
+      "path": "cmd/indexion/similarity",
+      "title": "sim",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     }

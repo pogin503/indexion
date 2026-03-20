@@ -41,13 +41,15 @@ pub fn render_section_common(
   level : Int,
   style : RenderStyle,
 ) -> Unit {
-  // Heading
-  for i = 0; i < level; i = i + 1 {
-    buf.write_string("#")
+  // Heading (skip for anonymous sections with empty heading)
+  if section.heading.length() > 0 {
+    for i = 0; i < level; i = i + 1 {
+      buf.write_string("#")
+    }
+    buf.write_string(" ")
+    buf.write_string(section.heading)
+    buf.write_string("\n\n")
   }
-  buf.write_string(" ")
-  buf.write_string(section.heading)
-  buf.write_string("\n\n")
   // Content
   render_content_common(buf, section.content, level, style)
 }

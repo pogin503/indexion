@@ -85,17 +85,3 @@ pub struct CheckboxOption {
   required : Bool
 }
 
-///|
-/// Markdown template (legacy .md format).
-pub struct MarkdownTemplate {
-  content : String
-  placeholders : Array[TemplatePlaceholder]
-}
-
-///|
-/// A placeholder in a template.
-pub struct TemplatePlaceholder {
-  key : String
-  start_pos : Int
-  end_pos : Int
-}

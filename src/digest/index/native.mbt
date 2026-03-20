@@ -166,7 +166,7 @@ pub async fn DigestIndex::query_native(
   let hits = self.db.search(vector, top_k, None)
   let results : Array[@types.QueryHit] = []
   for hit in hits {
-    let vid = hit.id.inner()
+    let vid = hit.id.0
     for entry in self.manifest.functions {
       match entry.1.vector_id {
         Some(v) =>

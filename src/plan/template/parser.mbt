@@ -10,7 +10,6 @@ pub fn parse_issue_form(content : String) -> IssueFormTemplate {
   let mut i = 0
   let mut in_body = false
   let mut current_field : FormField? = None
-  let mut indent_stack : Array[Int] = []
   while i < lines.length() {
     let line = lines[i]
     let trimmed = trim_string(line)
@@ -59,7 +58,6 @@ pub fn parse_issue_form(content : String) -> IssueFormTemplate {
         }
       } else if trimmed == "body:" {
         in_body = true
-        indent_stack = []
       }
       i = i + 1
       continue
@@ -75,7 +73,6 @@ pub fn parse_issue_form(content : String) -> IssueFormTemplate {
         // Start new field
         let field_type = extract_yaml_value(trimmed, "- type:")
         current_field = Some(create_empty_field(field_type))
-        indent_stack = [indent]
       } else if trimmed.has_prefix("type:") && indent > 0 {
         // Type on separate line after -
         let field_type = extract_yaml_value(trimmed, "type:")

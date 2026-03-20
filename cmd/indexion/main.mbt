@@ -24,10 +24,17 @@
 /// | Command | Description |
 /// |---------|-------------|
 /// | `explore` | Analyze file similarity in a directory |
-/// | `segment` | Split text into contextual segments |
 /// | `plan refactor` | Generate refactoring plan from similarity |
-/// | `doc gen` | Generate documentation from source |
+/// | `plan documentation` | Analyze documentation coverage |
+/// | `plan unwrap` | Detect unnecessary wrapper functions |
+/// | `plan solid` | Plan cross-package code extraction |
+/// | `plan reconcile` | Detect implementation/documentation drift |
+/// | `doc graph` | Generate dependency graph |
+/// | `doc readme` | Generate README from source doc comments |
+/// | `digest` | Purpose-based function index |
+/// | `kgf` | KGF spec management and inspection |
 /// | `sim` | Calculate text similarity/distance |
+/// | `segment` | Split text into contextual segments |
 /// | `perf kgf` | Run KGF parser performance benchmarks |
 ///
 /// ## Quick Start
@@ -39,8 +46,8 @@
 /// # Generate refactoring plan
 /// indexion plan refactor --threshold=0.8 src/
 ///
-/// # Generate documentation
-/// indexion doc gen src/
+/// # Generate dependency graph
+/// indexion doc graph --format=mermaid src/
 /// ```
 ///
 /// ## Configuration
@@ -89,8 +96,9 @@ fn show_help() -> Unit {
   println("  init        Initialize indexion configuration")
   println("  explore     Analyze similarity across files in a directory")
   println("  segment     Split text into contextual segments")
-  println("  plan        Generate planning documents (refactor, etc.)")
-  println("  doc         Documentation commands (gen, etc.)")
+  println("  plan        Generate planning documents (refactor, solid, unwrap, etc.)")
+  println("  doc         Documentation commands (graph, readme, init)")
+  println("  digest      Purpose-based function index (build, query, stats)")
   println(
     "  kgf         KGF spec management (list, update, add) and inspection",
   )
@@ -103,9 +111,9 @@ fn show_help() -> Unit {
   println("Run 'indexion <command> --help' for more information on a command.")
   println("")
   println("Examples:")
-  println("  indexion explore kgfs/")
-  println("  indexion plan refactor --threshold=0.7 src/")
-  println("  indexion doc gen --format=markdown src/")
+  println("  indexion explore --format=list src/")
+  println("  indexion plan refactor --threshold=0.8 src/")
+  println("  indexion doc graph --format=mermaid src/")
   println("  indexion sim \"hello world\" \"hello there\"")
   println("  indexion perf kgf --iterations=30")
 }

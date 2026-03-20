@@ -163,6 +163,241 @@ fn trim_section_content(content : String) -> String {
 }
 
 ///|
+/// Count the heading level of a line (number of leading # characters).
+/// Returns 0 if not a heading.
+fn heading_level(line : String) -> Int {
+  let chars = line.to_array()
+  let mut count = 0
+  while count < chars.length() && chars[count] == '#' {
+    count = count + 1
+  }
+  // Must be followed by a space to be a valid heading
+  if count > 0 && count < chars.length() && chars[count] == ' ' {
+    count
+  } else {
+    0
+  }
+}
+
+///|
+/// Extract heading text (without # prefix).
+fn heading_text(line : String) -> String {
+  let level = heading_level(line)
+  if level == 0 {
+    return ""
+  }
+  let chars = line.to_array()
+  let start = level + 1 // skip # chars and space
+  if start >= chars.length() {
+    return ""
+  }
+  let result : Array[Char] = []
+  for i = start; i < chars.length(); i = i + 1 {
+    result.push(chars[i])
+  }
+  String::from_array(result)
+}
+
+///|
+/// Collect lines into a trimmed text block.
+fn lines_to_text(lines : Array[String]) -> String {
+  let buf = StringBuilder::new()
+  for i, line in lines {
+    if i > 0 {
+      buf.write_char('\n')
+    }
+    buf.write_string(line)
+  }
+  trim_section_content(buf.to_string())
+}
+
+///|
+/// Parse Markdown content into a hierarchical array of PlanSections.
+/// Heading levels are represented as nesting depth, not literal # counts.
+pub fn parse_markdown_to_sections(
+  content : String,
+) -> Array[@plan_types.PlanSection] {
+  let lines = split_content_lines(content)
+  let result : Array[@plan_types.PlanSection] = []
+  // Find the minimum heading level in the document (base level), skipping code fences
+  let mut min_level = 99
+  let mut in_fence_scan = false
+  for line in lines {
+    if line.has_prefix("```") || line.has_prefix("~~~") {
+      in_fence_scan = not(in_fence_scan)
+      continue
+    }
+    if not(in_fence_scan) {
+      let level = heading_level(line)
+      if level > 0 && level < min_level {
+        min_level = level
+      }
+    }
+  }
+  if min_level == 99 {
+    // No headings at all — return entire content as single anonymous section
+    let text = trim_section_content(content)
+    if text.length() > 0 {
+      result.push(
+        @plan_types.PlanSection::new("", "", @plan_types.SectionContent::text(text)),
+      )
+    }
+    return result
+  }
+  // Parse into flat section list: (heading_level, heading_text, content_lines)
+  // Tracks code fences to avoid treating # inside code blocks as headings
+  let flat : Array[(Int, String, Array[String])] = []
+  let mut current_lines : Array[String] = []
+  let mut current_heading = ""
+  let mut current_level = 0
+  let mut in_code_fence = false
+  for line in lines {
+    // Track code fences (``` or ~~~)
+    if line.has_prefix("```") || line.has_prefix("~~~") {
+      in_code_fence = not(in_code_fence)
+      current_lines.push(line)
+      continue
+    }
+    let level = heading_level(line)
+    if level > 0 && not(in_code_fence) {
+      // Flush previous section
+      if current_heading.length() > 0 || current_lines.length() > 0 {
+        flat.push((current_level, current_heading, current_lines))
+      }
+      current_heading = heading_text(line)
+      current_level = level
+      current_lines = []
+    } else {
+      current_lines.push(line)
+    }
+  }
+  // Flush last section
+  if current_heading.length() > 0 || current_lines.length() > 0 {
+    flat.push((current_level, current_heading, current_lines))
+  }
+  // Build nested structure recursively
+  build_nested_sections(flat, 0, flat.length(), min_level)
+}
+
+///|
+/// Build nested PlanSections from a flat section list.
+/// Processes sections from index `start` to `end`, grouping children under
+/// sections at `base_level`.
+fn build_nested_sections(
+  flat : Array[(Int, String, Array[String])],
+  start : Int,
+  end : Int,
+  base_level : Int,
+) -> Array[@plan_types.PlanSection] {
+  let result : Array[@plan_types.PlanSection] = []
+  let mut i = start
+  while i < end {
+    let (level, heading, lines) = flat[i]
+    if level == 0 {
+      // Pre-heading content (level 0 means no heading)
+      let text = lines_to_text(lines)
+      if text.length() > 0 {
+        result.push(
+          @plan_types.PlanSection::new(
+            "", "", @plan_types.SectionContent::text(text),
+          ),
+        )
+      }
+      i = i + 1
+    } else if level == base_level {
+      // Find where this section ends (next section at same or higher level)
+      let mut section_end = i + 1
+      while section_end < end {
+        let (next_level, _, _) = flat[section_end]
+        if next_level > 0 && next_level <= base_level {
+          break
+        }
+        section_end = section_end + 1
+      }
+      // Build content: own text + nested children
+      let own_text = lines_to_text(lines)
+      let children = build_nested_sections(
+        flat, i + 1, section_end, base_level + 1,
+      )
+      let id = normalize_section_name(heading)
+      if children.length() == 0 {
+        // Leaf section: just text content
+        result.push(
+          @plan_types.PlanSection::new(
+            id, heading, @plan_types.SectionContent::text(own_text),
+          ),
+        )
+      } else {
+        // Section with children: own text as anonymous first child + nested children
+        let nested : Array[@plan_types.PlanSection] = []
+        if own_text.length() > 0 {
+          nested.push(
+            @plan_types.PlanSection::new(
+              "", "", @plan_types.SectionContent::text(own_text),
+            ),
+          )
+        }
+        for child in children {
+          nested.push(child)
+        }
+        result.push(
+          @plan_types.PlanSection::new(
+            id,
+            heading,
+            @plan_types.SectionContent::nested(nested),
+          ),
+        )
+      }
+      i = section_end
+    } else {
+      // Section at deeper level than base — treat as child
+      // This shouldn't normally happen at the top call, but handle gracefully
+      let text = lines_to_text(lines)
+      if text.length() > 0 || heading.length() > 0 {
+        result.push(
+          @plan_types.PlanSection::new(
+            normalize_section_name(heading),
+            heading,
+            @plan_types.SectionContent::text(text),
+          ),
+        )
+      }
+      i = i + 1
+    }
+  }
+  result
+}
+
+///|
+/// Filter parsed sections by section names (e.g., ["overview", "usage"]).
+/// "overview" matches the anonymous pre-heading section.
+pub fn filter_parsed_sections(
+  sections : Array[@plan_types.PlanSection],
+  names : Array[String],
+) -> Array[@plan_types.PlanSection] {
+  if names.is_empty() {
+    return sections
+  }
+  let normalized = normalize_section_names(names)
+  let result : Array[@plan_types.PlanSection] = []
+  let include_overview = contains_section_name(normalized, "overview")
+  for section in sections {
+    if section.heading.length() == 0 {
+      // Anonymous section = overview
+      if include_overview {
+        result.push(section)
+      }
+    } else {
+      let name = normalize_section_name(section.heading)
+      if contains_section_name(normalized, name) {
+        result.push(section)
+      }
+    }
+  }
+  result
+}
+
+///|
 fn is_alpha_char(ch : Char) -> Bool {
   (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
 }
