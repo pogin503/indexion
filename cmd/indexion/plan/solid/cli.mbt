@@ -25,7 +25,6 @@ pub struct SolidConfig {
   output : String // output file path (empty = stdout)
   format : String // output format: "md", "json"
   specs_dir : String // KGF specs directory
-  show_help : Bool
 }
 
 ///|
@@ -43,7 +42,6 @@ pub fn SolidConfig::default() -> SolidConfig {
     output: "",
     format: "md",
     specs_dir: "kgfs",
-    show_help: false,
   }
 }
 
@@ -65,110 +63,146 @@ priv struct FileMatch {
 }
 
 ///|
-/// Parse command line arguments.
-pub fn parse_args(args : Array[String], start_idx : Int) -> SolidConfig {
-  let mut config = SolidConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--from=") {
-      let value = @common.get_arg_value(arg, 7)
-      let dirs = @common.parse_comma_list(value)
-      for d in dirs {
-        config.from_dirs.push(d)
+/// Create SolidConfig from argparse matches.
+pub fn SolidConfig::from_matches(matches : @argparse.Matches) -> SolidConfig {
+  // --from supports comma-separated values for backwards compatibility
+  let from_dirs : Array[String] = []
+  match matches.values.get("from") {
+    Some(arr) =>
+      for v in arr {
+        let parts = @common.parse_comma_list(v)
+        for d in parts {
+          from_dirs.push(d)
+        }
       }
-    } else if arg.has_prefix("--to=") {
-      let value = @common.get_arg_value(arg, 5)
-      config = { ..config, to_dir: value }
-    } else if arg.has_prefix("--rules=") {
-      let value = @common.get_arg_value(arg, 8)
-      config = { ..config, rules_file: value }
-    } else if arg.has_prefix("--rule=") {
-      let value = @common.get_arg_value(arg, 7)
-      config.inline_rules.push(value)
-    } else if arg.has_prefix("--threshold=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, threshold: @common.parse_double(value) }
-    } else if arg.has_prefix("--strategy=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, strategy: value }
-    } else if arg.has_prefix("--include=") {
-      let value = @common.get_arg_value(arg, 10)
-      config.includes.push(value)
-    } else if arg.has_prefix("--exclude=") {
-      let value = @common.get_arg_value(arg, 10)
-      config.excludes.push(value)
-    } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      config = { ..config, output: @common.parse_output_arg(arg).unwrap() }
-    } else if arg.has_prefix("--format=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, format: value }
-    } else if arg.has_prefix("--specs-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, specs_dir: value }
-    }
+    _ => ()
   }
-  config
-}
-
-// get_arg_value and parse_double are in @common (SoT)
-
-///|
-/// Print usage information for the solid subcommand.
-pub fn show_help() -> Unit {
-  println(
-    "indexion plan solid - Generate solidification plan for common code extraction",
-  )
-  println("")
-  println("Usage:")
-  println("  indexion plan solid --from=pkg1/,pkg2/ --to=components/")
-  println("  indexion plan solid --from=pkg1/,pkg2/ --rules=.solidrc")
-  println("")
-  println("Options:")
-  println("  --from=DIRS          Source directories (comma-separated)")
-  println("  --to=DIR             Target directory for extraction")
-  println("  --rules=FILE         Rules file (.solidrc)")
-  println("  --rule=RULE          Inline rule (can be repeated)")
-  println("  --threshold=FLOAT    Similarity threshold (default: 0.9)")
-  println(
-    "  --strategy=NAME      Similarity strategy: tfidf, apted, tsed (default: tfidf)",
-  )
-  println("  --include=PATTERN    Include files matching pattern")
-  println("  --exclude=PATTERN    Exclude files matching pattern")
-  println("  --output=FILE, -o=   Output file path (default: stdout)")
-  println(
-    "  --format=FORMAT      Output format: md, json, github-issue (default: md)",
-  )
-  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
-  println("  --help               Show this help message")
-  println("")
-  println("Rule syntax:")
-  println("  pattern -> target")
-  println("  auth/** -> auth/        # relative (requires --to)")
-  println("  auth/** -> @pkg/auth/   # absolute (@ prefix)")
-  println("")
-  println("Examples:")
-  println(
-    "  indexion plan solid --from=org-dashboard/src,store-dashboard/src --to=components/",
-  )
-  println(
-    "  indexion plan solid --from=pkg1,pkg2 --rule=\"auth/** -> auth/\" --rule=\"layout/** -> layout/\"",
-  )
+  let to_dir = match matches.values.get("to") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let rules_file = match matches.values.get("rules") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let inline_rules = match matches.values.get("rule") {
+    Some(arr) => arr
+    _ => []
+  }
+  let threshold = match matches.values.get("threshold") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        @common.parse_double(arr[0])
+      } else {
+        0.9
+      }
+    _ => 0.9
+  }
+  let strategy = match matches.values.get("strategy") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "tfidf" }
+    _ => "tfidf"
+  }
+  let includes = match matches.values.get("include") {
+    Some(arr) => arr
+    _ => []
+  }
+  let excludes = match matches.values.get("exclude") {
+    Some(arr) => arr
+    _ => []
+  }
+  let output = match matches.values.get("output") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let format = match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "md" }
+    _ => "md"
+  }
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
+  }
+  {
+    from_dirs,
+    to_dir,
+    rules_file,
+    inline_rules,
+    threshold,
+    strategy,
+    includes,
+    excludes,
+    output,
+    format,
+    specs_dir,
+  }
 }
 
 ///|
-/// Run the solid command.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Define the solid command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "solid",
+    about="Generate solidification plan for common code extraction",
+    options=[
+      @argparse.OptionArg(
+        "from",
+        action=Append,
+        about="Source directories (comma-separated or repeatable)",
+      ),
+      @argparse.OptionArg("to", about="Target directory for extraction"),
+      @argparse.OptionArg("rules", about="Rules file (.solidrc)"),
+      @argparse.OptionArg(
+        "rule",
+        action=Append,
+        about="Inline rule (repeatable)",
+      ),
+      @argparse.OptionArg("threshold", about="Similarity threshold (0.0-1.0)", default_values=[
+        "0.9",
+      ]),
+      @argparse.OptionArg(
+        "strategy",
+        about="Similarity strategy: tfidf, apted, tsed",
+        default_values=["tfidf"],
+      ),
+      @argparse.OptionArg(
+        "include",
+        action=Append,
+        about="Include files matching glob pattern (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "exclude",
+        action=Append,
+        about="Exclude files matching glob pattern (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "output",
+        short='o',
+        about="Output file path (default: stdout)",
+      ),
+      @argparse.OptionArg(
+        "format",
+        about="Output format: md, json, github-issue",
+        default_values=["md"],
+      ),
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+    ],
+  )
+}
+
+///|
+/// Entry point using argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = SolidConfig::from_matches(matches)
+  run_with_config(config)
+}
+
+///|
+/// Run the solid command with a pre-built configuration.
+fn run_with_config(config : SolidConfig) -> Unit {
   if config.from_dirs.length() < 2 {
     println("Error: At least 2 source directories required (--from=dir1,dir2)")
-    println("")
-    show_help()
     return
   }
   // Parse rules
@@ -356,9 +390,8 @@ fn find_cross_matches(config : SolidConfig) -> Array[FileMatch] {
   if files.length() < 2 {
     return matches
   }
-  let explicit = if config.specs_dir != "kgfs" { config.specs_dir } else { "" }
   let registry = @kgf_features.load_registry(
-    explicit_path=explicit,
+    specs_dir=config.specs_dir,
     target_dirs=config.from_dirs,
   )
   // Check if using tree-based strategy

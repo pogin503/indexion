@@ -56,70 +56,49 @@
 /// - Doc config: `doc.json` for documentation generation settings
 
 ///|
+fn build_command() -> @argparse.Command {
+  @argparse.Command(
+    "indexion",
+    about="Source code exploration and documentation tool",
+    version=@update.current_version,
+    subcommand_required=true,
+    subcommands=[
+      @init_cli.command(),
+      @explore_cli.command(),
+      @plan_cli.command(),
+      @doc_cli.command(),
+      @kgf_cli.command(),
+      @digest_cli.command(),
+      @similarity_cli.command(),
+      @segment_cli.command(),
+      @perf_cli.command(),
+      @update_cli.command(),
+    ],
+  )
+}
+
+///|
 /// Main entry point.
 async fn main {
-  let args = @sys.get_cli_args()
-
-  // Find subcommand (skip program name)
-  let subcommand = if args.length() > 1 { args[1] } else { "help" }
-
-  match subcommand {
-    "init" => @init_cli.run(args, 2)
-    "explore" => @explore_cli.run(args, 2)
-    "plan" => @plan_cli.run(args, 2)
-    "doc" => @doc_cli.run(args, 2)
-    "kgf" => @kgf_cli.run(args, 2)
-    "digest" => @digest_cli.run(args, 2)
-    "sim" | "similarity" => @similarity_cli.run(args, 2)
-    "segment" | "seg" => @segment_cli.run(args, 2)
-    "perf" => @perf_cli.run(args, 2)
-    "update" => @update_cli.run(args, 2)
-    "version" | "-v" | "--version" => show_version()
-    "help" | "-h" | "--help" => show_help()
-    _ => {
-      println("Unknown command: " + subcommand)
-      println("")
-      show_help()
+  let cmd = build_command()
+  let matches = cmd.parse() catch {
+    err => {
+      println(err.to_string())
+      return
     }
   }
-}
-
-///|
-/// Show main help message.
-fn show_help() -> Unit {
-  println("indexion - Source code exploration and documentation tool")
-  println("")
-  println("Usage:")
-  println("  indexion <command> [options]")
-  println("")
-  println("Commands:")
-  println("  init        Initialize indexion configuration")
-  println("  explore     Analyze similarity across files in a directory")
-  println("  segment     Split text into contextual segments")
-  println("  plan        Generate planning documents (refactor, solid, unwrap, etc.)")
-  println("  doc         Documentation commands (graph, readme, init)")
-  println("  digest      Purpose-based function index (build, query, stats)")
-  println(
-    "  kgf         KGF spec management (list, update, add) and inspection",
-  )
-  println("  sim         Calculate text similarity/distance")
-  println("  perf        Performance benchmark commands")
-  println("  update      Check for and install updates")
-  println("  help        Show this help message")
-  println("  version     Show version information")
-  println("")
-  println("Run 'indexion <command> --help' for more information on a command.")
-  println("")
-  println("Examples:")
-  println("  indexion explore --format=list src/")
-  println("  indexion plan refactor --threshold=0.8 src/")
-  println("  indexion doc graph --format=mermaid src/")
-  println("  indexion sim \"hello world\" \"hello there\"")
-  println("  indexion perf kgf --iterations=30")
-}
-
-///|
-/// Show version information.
-fn show_version() -> Unit {
-  println("indexion version " + @update.current_version)
+  guard matches.subcommand is Some((name, sub)) else { return }
+  match name {
+    "init" => @init_cli.run_matches(sub)
+    "explore" => @explore_cli.run_matches(sub)
+    "plan" => @plan_cli.dispatch(sub)
+    "doc" => @doc_cli.dispatch(sub)
+    "kgf" => @kgf_cli.run_matches(sub)
+    "digest" => @digest_cli.run_matches(sub)
+    "sim" => @similarity_cli.run_matches(sub)
+    "segment" => @segment_cli.run_matches(sub)
+    "perf" => @perf_cli.dispatch(sub)
+    "update" => @update_cli.run_matches(sub)
+    _ => ()
+  }
 }

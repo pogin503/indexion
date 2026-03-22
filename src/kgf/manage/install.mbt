@@ -5,17 +5,14 @@
 pub async fn install_kgfs_from_dir(
   src_kgfs : String,
 ) -> Unit raise KgfManageError {
-  let data_dir = match @config.get_global_data_dir() {
+  let dst_kgfs = match @config.get_kgfs_install_dir() {
     Some(dir) => dir
     None =>
-      match @config.get_install_dir() {
-        Some(dir) => dir
-        None =>
-          raise KgfManageError::InstallError("Cannot determine data directory")
-      }
+      raise KgfManageError::InstallError(
+        "Cannot determine kgfs install directory",
+      )
   }
-  let dst_kgfs = @config.join_path(data_dir, "kgfs")
-  @platform.ensure_dir_async(data_dir) catch {
+  @platform.ensure_dir_async(@config.dirname(dst_kgfs)) catch {
     err =>
       raise KgfManageError::InstallError(
         "Failed to create data directory: " + err.to_string(),
@@ -46,15 +43,14 @@ pub async fn install_single_kgf(
   relative_path : String,
   content : Bytes,
 ) -> Unit raise KgfManageError {
-  let data_dir = match @config.get_global_data_dir() {
+  let kgfs_dir = match @config.get_kgfs_install_dir() {
     Some(dir) => dir
     None =>
-      raise KgfManageError::InstallError("Cannot determine data directory")
+      raise KgfManageError::InstallError(
+        "Cannot determine kgfs install directory",
+      )
   }
-  let dst_path = @config.join_path(
-    @config.join_path(data_dir, "kgfs"),
-    relative_path,
-  )
+  let dst_path = @config.join_path(kgfs_dir, relative_path)
   // Ensure parent directory exists
   let parent = @config.dirname(dst_path)
   @platform.ensure_dir_async(parent) catch {

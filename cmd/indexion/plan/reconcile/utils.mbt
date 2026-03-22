@@ -1,7 +1,3 @@
-// get_arg_value: use @common (SoT)
-// substring: use @common (SoT)
-// trim_string: use @common.trim_ascii_spaces (SoT)
-
 ///|
 fn lower_string(s : String) -> String {
   s.to_lower()
@@ -50,18 +46,6 @@ fn preview_text(text : String, max_len? : Int = 120) -> String {
 ///|
 fn make_hash(parts : Array[String]) -> String {
   @cas_hash.compute_hash(parts.join("\u0000")).to_string()
-}
-
-///|
-fn last_index_of(s : String, ch : Char) -> Int {
-  let chars = s.to_array()
-  let mut idx = -1
-  for i, current in chars {
-    if current == ch {
-      idx = i
-    }
-  }
-  idx
 }
 
 ///|

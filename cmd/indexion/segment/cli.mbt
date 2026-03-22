@@ -1,30 +1,4 @@
 ///|
-/// # indexion segment
-///
-/// Split text file into contextual segments.
-///
-/// ## Usage
-///
-/// ```bash
-/// indexion segment [options] <input-file> <output-dir>
-/// ```
-///
-/// ## Options
-///
-/// | Option | Description | Default |
-/// |--------|-------------|---------|
-/// | `--strategy=NAME` | Algorithm: `window`, `tfidf`, `punctuation` | window |
-/// | `--min-size=INT` | Minimum segment size in chars | 100 |
-/// | `--max-size=INT` | Maximum segment size in chars | 2000 |
-/// | `--target-size=INT` | Target segment size in chars | 500 |
-/// | `--threshold=FLOAT` | Divergence threshold | 0.42 |
-/// | `--adaptive` | Use adaptive threshold mode | false |
-/// | `--hybrid` | Use NCD+TF-IDF hybrid mode | false |
-/// | `--ncd-weight=FLOAT` | NCD weight in hybrid mode | 0.5 |
-/// | `--tfidf-weight=FLOAT` | TF-IDF weight in hybrid mode | 0.5 |
-/// | `--prefix=NAME` | Output file prefix | segment |
-
-///|
 /// CLI configuration.
 pub struct SegmentConfig {
   input_file : String
@@ -40,117 +14,156 @@ pub struct SegmentConfig {
   ncd_weight : Double
   tfidf_weight : Double
   prefix : String
-  show_help : Bool
 }
 
 ///|
-/// Create default configuration.
-pub fn SegmentConfig::default() -> SegmentConfig {
-  {
-    input_file: "",
-    output_dir: "",
-    strategy: "window",
-    min_size: 100,
-    max_size: 2000,
-    target_size: 500,
-    threshold: 0.42,
-    window_size: 3,
-    adaptive: true,
-    hybrid: false,
-    ncd_weight: 0.5,
-    tfidf_weight: 0.5,
-    prefix: "segment",
-    show_help: false,
-  }
-}
-
-// get_arg_value, parse_double: use @common (SoT)
-// parse_int: use @common (SoT)
-
-///|
-/// Parse command line arguments into SegmentConfig.
-pub fn parse_args(args : Array[String], start_idx : Int) -> SegmentConfig {
-  let mut config = SegmentConfig::default()
-  let positional : Array[String] = []
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg == "--adaptive" {
-      config = { ..config, adaptive: true }
-    } else if arg == "--hybrid" {
-      config = { ..config, hybrid: true, adaptive: true }
-    } else if arg.has_prefix("--ncd-weight=") {
-      let value = @common.get_arg_value(arg, 13)
-      config = { ..config, ncd_weight: @common.parse_double(value) }
-    } else if arg.has_prefix("--tfidf-weight=") {
-      let value = @common.get_arg_value(arg, 15)
-      config = { ..config, tfidf_weight: @common.parse_double(value) }
-    } else if arg.has_prefix("--strategy=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, strategy: value }
-    } else if arg.has_prefix("--min-size=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, min_size: @common.parse_int(value) }
-    } else if arg.has_prefix("--max-size=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, max_size: @common.parse_int(value) }
-    } else if arg.has_prefix("--target-size=") {
-      let value = @common.get_arg_value(arg, 14)
-      config = { ..config, target_size: @common.parse_int(value) }
-    } else if arg.has_prefix("--threshold=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, threshold: @common.parse_double(value) }
-    } else if arg.has_prefix("--window-size=") {
-      let value = @common.get_arg_value(arg, 14)
-      config = { ..config, window_size: @common.parse_int(value) }
-    } else if arg.has_prefix("--prefix=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, prefix: value }
-    } else if not(arg.has_prefix("-")) {
-      positional.push(arg)
+/// Create configuration from argparse Matches.
+pub fn SegmentConfig::from_matches(
+  matches : @argparse.Matches,
+) -> SegmentConfig {
+  let get_str = fn(key : String, default_ : String) -> String {
+    match matches.values.get(key) {
+      Some(arr) => if arr.length() > 0 { arr[0] } else { default_ }
+      None => default_
     }
   }
-  if positional.length() >= 1 {
-    config = { ..config, input_file: positional[0] }
+  let get_int = fn(key : String, default_ : Int) -> Int {
+    match matches.values.get(key) {
+      Some(arr) =>
+        if arr.length() > 0 {
+          @common.parse_int(arr[0])
+        } else {
+          default_
+        }
+      None => default_
+    }
   }
-  if positional.length() >= 2 {
-    config = { ..config, output_dir: positional[1] }
+  let get_double = fn(key : String, default_ : Double) -> Double {
+    match matches.values.get(key) {
+      Some(arr) =>
+        if arr.length() > 0 {
+          @common.parse_double(arr[0])
+        } else {
+          default_
+        }
+      None => default_
+    }
   }
-  config
+  let get_flag = fn(key : String, default_ : Bool) -> Bool {
+    match matches.flags.get(key) {
+      Some(v) => v
+      None => default_
+    }
+  }
+  let hybrid = get_flag("hybrid", false)
+  let adaptive = if hybrid { true } else { get_flag("adaptive", true) }
+  {
+    input_file: get_str("input-file", ""),
+    output_dir: get_str("output-dir", ""),
+    strategy: get_str("strategy", "window"),
+    min_size: get_int("min-size", 100),
+    max_size: get_int("max-size", 2000),
+    target_size: get_int("target-size", 500),
+    threshold: get_double("threshold", 0.42),
+    window_size: get_int("window-size", 3),
+    adaptive,
+    hybrid,
+    ncd_weight: get_double("ncd-weight", 0.5),
+    tfidf_weight: get_double("tfidf-weight", 0.5),
+    prefix: get_str("prefix", "segment"),
+  }
 }
 
 ///|
-/// Display help message for segment command.
-pub fn show_help() -> Unit {
-  println("indexion segment - Split text into contextual segments")
-  println("")
-  println("Usage:")
-  println("  indexion segment [options] <input-file> <output-dir>")
-  println("")
-  println("Options:")
-  println(
-    "  --strategy=NAME      Strategy: window, tfidf, punctuation (default: window)",
+/// Define the segment command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command::new(
+    "segment",
+    about="Split text into contextual segments",
+    flags=[
+      @argparse.FlagArg::new(
+        "adaptive",
+        about="Use adaptive threshold mode (default)",
+      ),
+      @argparse.FlagArg::new(
+        "hybrid",
+        about="Use NCD+TF-IDF hybrid mode (best quality)",
+      ),
+    ],
+    options=[
+      @argparse.OptionArg::new(
+        "strategy",
+        about="Strategy: window, tfidf, punctuation",
+        default_values=["window"],
+      ),
+      @argparse.OptionArg::new(
+        "min-size",
+        about="Minimum segment size in chars",
+        default_values=["100"],
+      ),
+      @argparse.OptionArg::new(
+        "max-size",
+        about="Maximum segment size in chars",
+        default_values=["2000"],
+      ),
+      @argparse.OptionArg::new(
+        "target-size",
+        about="Target segment size in chars",
+        default_values=["500"],
+      ),
+      @argparse.OptionArg::new("threshold", about="Divergence threshold", default_values=[
+        "0.42",
+      ]),
+      @argparse.OptionArg::new(
+        "window-size",
+        about="Window size for divergence",
+        default_values=["3"],
+      ),
+      @argparse.OptionArg::new(
+        "ncd-weight",
+        about="NCD weight in hybrid mode",
+        default_values=["0.5"],
+      ),
+      @argparse.OptionArg::new(
+        "tfidf-weight",
+        about="TF-IDF weight in hybrid mode",
+        default_values=["0.5"],
+      ),
+      @argparse.OptionArg::new("prefix", about="Output file prefix", default_values=[
+        "segment",
+      ]),
+    ],
+    positionals=[
+      @argparse.PositionArg::new(
+        "input-file",
+        about="Input text file",
+        num_args=@argparse.ValueRange::single(),
+      ),
+      @argparse.PositionArg::new(
+        "output-dir",
+        about="Output directory",
+        num_args=@argparse.ValueRange::single(),
+      ),
+    ],
   )
-  println("  --min-size=INT       Minimum segment size in chars (default: 100)")
-  println(
-    "  --max-size=INT       Maximum segment size in chars (default: 2000)",
-  )
-  println("  --target-size=INT    Target segment size in chars (default: 500)")
-  println("  --threshold=FLOAT    Divergence threshold (default: 0.42)")
-  println("  --window-size=INT    Window size for divergence (default: 3)")
-  println("  --adaptive           Use adaptive threshold mode (default)")
-  println("  --hybrid             Use NCD+TF-IDF hybrid mode (best quality)")
-  println("  --ncd-weight=FLOAT   NCD weight in hybrid mode (default: 0.5)")
-  println("  --tfidf-weight=FLOAT TF-IDF weight in hybrid mode (default: 0.5)")
-  println("  --prefix=NAME        Output file prefix (default: segment)")
-  println("  --help               Show this help message")
-  println("")
-  println("Examples:")
-  println("  indexion segment kokoro.txt ./output/")
-  println("  indexion segment --adaptive --max-size=3000 novel.txt ./chapters/")
-  println("  indexion segment --hybrid novel.txt ./chapters/")
-  println("  indexion segment --prefix=chapter novel.txt ./output/")
+}
+
+///|
+/// Run the segment command from argparse Matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = SegmentConfig::from_matches(matches)
+
+  if config.input_file.length() == 0 {
+    println("Error: Input file required.")
+    return
+  }
+
+  if config.output_dir.length() == 0 {
+    println("Error: Output directory required.")
+    return
+  }
+
+  run_with_config(config)
 }
 
 ///|
@@ -175,29 +188,8 @@ fn pad_number(n : Int, width : Int) -> String {
 // use @common (SoT) — substring
 
 ///|
-/// Run the segment command with given arguments.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-
-  if config.show_help {
-    show_help()
-    return
-  }
-
-  if config.input_file.length() == 0 {
-    println("Error: Input file required.")
-    println("")
-    show_help()
-    return
-  }
-
-  if config.output_dir.length() == 0 {
-    println("Error: Output directory required.")
-    println("")
-    show_help()
-    return
-  }
-
+/// Run the segment command with a parsed config.
+fn run_with_config(config : SegmentConfig) -> Unit {
   // Read input file
   let text = @fs.read_file_to_string(config.input_file) catch {
     e => {

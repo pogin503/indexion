@@ -1,6 +1,8 @@
 ///|
-test "solid: parse_args splits comma-separated source directories via common parser" {
-  let config = parse_args(["--from=apps/web, apps/admin ,pkg/shared"], 0)
+test "solid: from_matches splits comma-separated source directories via common parser" {
+  let cmd = command()
+  let matches = cmd.parse(argv=["--from=apps/web, apps/admin ,pkg/shared"][:])
+  let config = SolidConfig::from_matches(matches)
   assert_eq(config.from_dirs, ["apps/web", "apps/admin", "pkg/shared"])
 }
 

@@ -1,11 +1,115 @@
 ///|
+fn document_symbol_kinds_for_path(
+  path : String,
+  registry : @registry.KGFRegistry,
+) -> Map[String, Bool] {
+  let fallback = default_document_symbol_kinds()
+  match registry.detect_from_path(path) {
+    Some(lang) =>
+      match registry.get_spec(lang) {
+        Some(spec) =>
+          match spec.get_feature("document_symbol_kinds") {
+            Some(values) => {
+              let configured : Map[String, Bool] = {}
+              for value in values {
+                let normalized = lower_string(@common.trim_ascii_spaces(value))
+                if normalized.length() > 0 {
+                  configured.set(normalized, true)
+                }
+              }
+              if configured.is_empty() {
+                fallback
+              } else {
+                configured
+              }
+            }
+            None => fallback
+          }
+        None => fallback
+      }
+    None => fallback
+  }
+}
+
+///|
+fn should_include_symbol(
+  kind : String,
+  module_path : String,
+  registry : @registry.KGFRegistry,
+) -> Bool {
+  document_symbol_kinds_for_path(module_path, registry).contains(
+    lower_string(kind),
+  )
+}
+
+///|
+fn extract_code_units(
+  graph : @graph.CodeGraph,
+  registry : @registry.KGFRegistry,
+) -> Array[CodeUnit] {
+  let units : Array[CodeUnit] = []
+  for entry in graph.get_symbols() {
+    let symbol = entry.1
+    let module_path = match graph.get_module(symbol.module_id) {
+      Some(module_node) =>
+        match module_node.file {
+          Some(file) => file
+          None => symbol.module_id
+        }
+      None => symbol.module_id
+    }
+    if not(should_include_symbol(symbol.kind, module_path, registry)) {
+      continue
+    }
+    let code_hash = make_hash([
+      symbol.id,
+      symbol.name,
+      symbol.kind,
+      symbol.ns,
+      module_path,
+      match symbol.doc {
+        Some(doc) => doc
+        None => ""
+      },
+    ])
+    units.push({
+      symbol_id: symbol.id,
+      name: symbol.name,
+      kind: symbol.kind,
+      ns: symbol.ns,
+      module_id: symbol.module_id,
+      module_path,
+      inline_doc: symbol.doc,
+      code_hash,
+    })
+  }
+  units.sort_by(fn(a, b) { a.symbol_id.compare(b.symbol_id) })
+  units
+}
+
+///|
+fn match_fragment(
+  unit : CodeUnit,
+  _fragment : DocFragment,
+  signals : FragmentMatchSignals,
+  allow_file_fallback : Bool,
+) -> (Int, String, Array[String]) {
+  match_fragment_with_terms(
+    unit,
+    unit_match_terms(unit),
+    signals,
+    allow_file_fallback,
+  )
+}
+
+///|
 fn temp_reconcile_dir(prefix : String) -> String {
   prefix + @env.now().to_string()
 }
 
 ///|
 fn load_test_registry() -> @registry.KGFRegistry {
-  @registry.KGFRegistry::load_from_dir("kgfs")
+  @kgf_features.load_registry_or_empty(target_dir=".")
 }
 
 ///|
@@ -30,7 +134,8 @@ fn remove_dir_if_exists(path : String) -> Unit {
 test "reconcile: resolve_config keeps default index dir under target root" {
   let dir = temp_reconcile_dir(".indexion/reconcile-config-default-")
   @config_paths.ensure_dir_recursive(dir)
-  let config = resolve_config([dir], 0)
+  let matches = try! command().parse(argv=[dir][:], env={})
+  let config = resolve_config_from_matches(matches)
   assert_eq(config.target_dir, dir)
   assert_eq(config.index_dir, dir + "/.indexion/cache/reconcile")
   remove_dir_if_exists(dir)
@@ -40,7 +145,8 @@ test "reconcile: resolve_config keeps default index dir under target root" {
 test "reconcile: resolve_config applies package-docs preset" {
   let dir = temp_reconcile_dir(".indexion/reconcile-config-scope-package-")
   @config_paths.ensure_dir_recursive(dir)
-  let config = resolve_config(["--scope=package-docs", dir], 0)
+  let matches = try! command().parse(argv=["--scope=package-docs", dir][:], env={})
+  let config = resolve_config_from_matches(matches)
   assert_eq(config.documents.scope_name, "package-docs")
   assert_eq(config.documents.doc_paths, ["README.md", "docs/**/*.md"])
   assert_eq(config.documents.doc_specs, ["markdown"])
@@ -52,10 +158,13 @@ test "reconcile: resolve_config applies package-docs preset" {
 test "reconcile: explicit doc filters override scope preset defaults" {
   let dir = temp_reconcile_dir(".indexion/reconcile-config-scope-explicit-")
   @config_paths.ensure_dir_recursive(dir)
-  let config = resolve_config(
-    ["--scope=tree-docs", "--doc=notes/**/*.txt", "--doc-spec=plaintext", dir],
-    0,
+  let matches = try! command().parse(
+    argv=[
+        "--scope=tree-docs", "--doc=notes/**/*.txt", "--doc-spec=plaintext", dir,
+      ][:],
+    env={},
   )
+  let config = resolve_config_from_matches(matches)
   assert_eq(config.documents.scope_name, "tree-docs")
   assert_eq(config.documents.doc_paths, ["notes/**/*.txt"])
   assert_eq(config.documents.doc_specs, ["plaintext"])
@@ -76,13 +185,14 @@ test "reconcile: explicit cli filters win over file config filters" {
   @fs.write_string_to_file(config_path, config_content) catch {
     _ => ()
   }
-  let config = resolve_config(
-    [
-      "--scope=tree-docs", "--doc=notes/**/*.txt", "--doc-spec=plaintext", "--threshold-seconds=30",
-      dir,
-    ],
-    0,
+  let matches = try! command().parse(
+    argv=[
+        "--scope=tree-docs", "--doc=notes/**/*.txt", "--doc-spec=plaintext", "--threshold-seconds=30",
+        dir,
+      ][:],
+    env={},
   )
+  let config = resolve_config_from_matches(matches)
   assert_eq(config.documents.scope_name, "tree-docs")
   assert_eq(config.documents.doc_paths, ["notes/**/*.txt"])
   assert_eq(config.documents.doc_specs, ["plaintext"])
@@ -102,7 +212,8 @@ test "reconcile: explicit cli filters clear implicit file scope label" {
   @fs.write_string_to_file(config_path, config_content) catch {
     _ => ()
   }
-  let config = resolve_config(["--doc=notes/**/*.txt", dir], 0)
+  let matches = try! command().parse(argv=["--doc=notes/**/*.txt", dir][:], env={})
+  let config = resolve_config_from_matches(matches)
   assert_eq(config.documents.scope_name, "custom")
   assert_eq(config.documents.doc_paths, ["notes/**/*.txt"])
   remove_file_if_exists(config_path)
@@ -135,7 +246,8 @@ test "reconcile: resolve_config rebases config-relative paths" {
   @fs.write_string_to_file(config_path, config_content) catch {
     _ => ()
   }
-  let config = resolve_config([dir], 0)
+  let matches = try! command().parse(argv=[dir][:], env={})
+  let config = resolve_config_from_matches(matches)
   assert_eq(config.config_path, config_path)
   assert_eq(config.index_dir, dir + "/.cache/reconcile-db")
   assert_eq(
@@ -150,13 +262,14 @@ test "reconcile: resolve_config rebases config-relative paths" {
 test "reconcile: resolve_config rebases cli relative paths to target root" {
   let dir = temp_reconcile_dir(".indexion/reconcile-config-cli-")
   @config_paths.ensure_dir_recursive(dir)
-  let config = resolve_config(
-    [
-      "--index-dir=.cache/reconcile-db", "--review-results=.indexion/reconcile/reviews.json",
-      dir,
-    ],
-    0,
+  let matches = try! command().parse(
+    argv=[
+        "--index-dir=.cache/reconcile-db", "--review-results=.indexion/reconcile/reviews.json",
+        dir,
+      ][:],
+    env={},
   )
+  let config = resolve_config_from_matches(matches)
   assert_eq(config.index_dir, dir + "/.cache/reconcile-db")
   assert_eq(
     config.review_results_path,

@@ -162,14 +162,10 @@ fn render_table_common(
     if style.table_separator_spaced {
       match align {
         Left => buf.write_string(" :--- |")
-        Center => buf.write_string(" :---: |")
-        Right => buf.write_string(" ---: |")
       }
     } else {
       match align {
         Left => buf.write_string(":---|")
-        Center => buf.write_string(":---:|")
-        Right => buf.write_string("---:|")
       }
     }
   }

@@ -168,8 +168,6 @@ pub fn TableData::add_row(self : TableData, row : Array[String]) -> Unit {
 /// Table column alignment.
 pub enum TableAlign {
   Left
-  Center
-  Right
 }
 
 ///|

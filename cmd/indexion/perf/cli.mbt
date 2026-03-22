@@ -1,64 +1,58 @@
 ///|
-/// Show help message for performance commands.
-pub fn show_help() -> Unit {
-  println("indexion perf - Performance benchmark commands")
-  println("")
-  println("Usage:")
-  println("  indexion perf kgf [options]")
-  println("")
-  println("Options:")
-  println("  --spec=FILE        KGF spec file (default: kgfs/moonbit.kgf)")
-  println(
-    "  --input=FILE       Input source file (default: src/docgen/build/pipeline.mbt)",
+/// Define the perf command with kgf subcommand for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command::new(
+    "perf",
+    about="Performance benchmark commands",
+    subcommand_required=true,
+    subcommands=[
+      @argparse.Command::new("kgf", about="KGF parse benchmark", options=[
+        @argparse.OptionArg::new("spec", about="KGF spec file", default_values=[
+          "kgfs/moonbit.kgf",
+        ]),
+        @argparse.OptionArg::new("input", about="Input source file", default_values=[
+          "src/docgen/build/pipeline.mbt",
+        ]),
+        @argparse.OptionArg::new(
+          "iterations",
+          about="Iterations per benchmark",
+          default_values=["20"],
+        ),
+        @argparse.OptionArg::new("warmup", about="Warmup iterations", default_values=[
+          "3",
+        ]),
+      ]),
+    ],
   )
-  println("  --iterations=N     Iterations per benchmark (default: 20)")
-  println("  --warmup=N         Warmup iterations (default: 3)")
-  println("  --help             Show this help message")
 }
 
 ///|
-/// Dispatch performance subcommands.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  if start_idx >= args.length() {
-    show_help()
-    return
-  }
-  let subcommand = args[start_idx]
-  match subcommand {
-    "kgf" => run_kgf(args, start_idx + 1)
-    "help" | "--help" | "-h" => show_help()
-    _ => {
-      println("Unknown perf command: " + subcommand)
-      println("")
-      show_help()
-    }
+/// Dispatch from argparse Matches.
+pub fn dispatch(matches : @argparse.Matches) -> Unit {
+  match matches.subcommand {
+    Some(("kgf", sub_matches)) => run_kgf_matches(sub_matches)
+    _ => println("Unknown perf subcommand. Use --help for usage.")
   }
 }
 
 ///|
-/// Run KGF parse benchmark.
-fn run_kgf(args : Array[String], start_idx : Int) -> Unit {
-  let mut spec_path = "kgfs/moonbit.kgf"
-  let mut input_path = "src/docgen/build/pipeline.mbt"
-  let mut iterations = 20
-  let mut warmup = 3
-
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      show_help()
-      return
-    } else if arg.has_prefix("--spec=") {
-      spec_path = @common.get_arg_value(arg, 7)
-    } else if arg.has_prefix("--input=") {
-      input_path = @common.get_arg_value(arg, 8)
-    } else if arg.has_prefix("--iterations=") {
-      let v = @common.parse_int(@common.get_arg_value(arg, 13))
-      if v > 0 { iterations = v }
-    } else if arg.has_prefix("--warmup=") {
-      let v = @common.parse_int(@common.get_arg_value(arg, 9))
-      if v >= 0 { warmup = v }
+/// Run KGF parse benchmark from argparse Matches.
+fn run_kgf_matches(matches : @argparse.Matches) -> Unit {
+  let get_str = fn(key : String, default_ : String) -> String {
+    match matches.values.get(key) {
+      Some(arr) => if arr.length() > 0 { arr[0] } else { default_ }
+      None => default_
     }
+  }
+  let spec_path = get_str("spec", "kgfs/moonbit.kgf")
+  let input_path = get_str("input", "src/docgen/build/pipeline.mbt")
+  let mut iterations = match matches.values.get("iterations") {
+    Some(arr) => if arr.length() > 0 { @common.parse_int(arr[0]) } else { 20 }
+    None => 20
+  }
+  let mut warmup = match matches.values.get("warmup") {
+    Some(arr) => if arr.length() > 0 { @common.parse_int(arr[0]) } else { 3 }
+    None => 3
   }
   if iterations <= 0 {
     iterations = 20
@@ -147,8 +141,7 @@ fn run_kgf(args : Array[String], start_idx : Int) -> Unit {
       "full_pipeline_reuse_lexer",
       fn() {
         let _ = run_full_pipeline_reuse_lexer(
-          spec, peg, lexer, source_text, input_path, file_exists, start_rule,
-          active_rules,
+          spec, peg, lexer, source_text, input_path, file_exists, start_rule, active_rules,
         )
       },
     ),
@@ -156,8 +149,7 @@ fn run_kgf(args : Array[String], start_idx : Int) -> Unit {
       "full_pipeline_rebuild_lexer",
       fn() {
         let _ = run_full_pipeline_rebuild_lexer(
-          spec, peg, source_text, input_path, file_exists, start_rule,
-          active_rules,
+          spec, peg, source_text, input_path, file_exists, start_rule, active_rules,
         )
       },
     ),
@@ -249,25 +241,3 @@ fn tokenize_with_rebuild(
   let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
   lexer.tokenize(source_text).length()
 }
-
-///|
-/// Parses an integer, returning a fallback on error.
-fn parse_int(text : String, fallback : Int) -> Int {
-  if text.length() == 0 {
-    return fallback
-  }
-  let chars = text.to_array()
-  let mut value = 0
-  for c in chars {
-    if c < '0' || c > '9' {
-      return fallback
-    }
-    value = value * 10 + (c.to_int() - '0'.to_int())
-  }
-  if value < 0 {
-    fallback
-  } else {
-    value
-  }
-}
-

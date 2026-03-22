@@ -1168,10 +1168,7 @@ fn match_compiled_with_chars(
 ) -> MatchResult {
   match match_compiled_end_pos_with_chars(compiled, input_chars, pos) {
     Some(end_pos) =>
-      MatchResult::success(
-        end_pos,
-        input[pos:end_pos].to_string(),
-      )
+      MatchResult::success(end_pos, input[pos:end_pos].to_string())
     None => MatchResult::failure()
   }
 }

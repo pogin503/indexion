@@ -24,6 +24,7 @@
 /// | `--ext=EXT` | File extension filter (repeatable) | all |
 /// | `--include=PATTERN` | Include files matching glob pattern | * |
 /// | `--exclude=PATTERN` | Exclude files matching glob pattern | - |
+/// | `--specs-dir=DIR` | KGF specs directory | kgfs |
 ///
 /// ## Examples
 ///
@@ -61,7 +62,7 @@ pub struct ExploreConfig {
   extensions : Array[String] // file extensions to include
   includes : Array[String] // glob patterns to include
   excludes : Array[String] // glob patterns to exclude
-  show_help : Bool
+  specs_dir : String
 }
 
 ///|
@@ -75,8 +76,113 @@ pub fn ExploreConfig::default() -> ExploreConfig {
     extensions: [],
     includes: [],
     excludes: [],
-    show_help: false,
+    specs_dir: "kgfs",
   }
+}
+
+///|
+/// Create ExploreConfig from argparse matches.
+pub fn ExploreConfig::from_matches(
+  matches : @argparse.Matches,
+) -> ExploreConfig {
+  let format = match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "matrix" }
+    _ => "matrix"
+  }
+  let strategy = match matches.values.get("strategy") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "tfidf" }
+    _ => "tfidf"
+  }
+  let threshold = match matches.values.get("threshold") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        @common.parse_double(arr[0])
+      } else {
+        0.5
+      }
+    _ => 0.5
+  }
+  let extensions = match matches.values.get("ext") {
+    Some(arr) => arr
+    _ => []
+  }
+  let includes = match matches.values.get("include") {
+    Some(arr) => arr
+    _ => []
+  }
+  let excludes = match matches.values.get("exclude") {
+    Some(arr) => arr
+    _ => []
+  }
+  let target_dirs = match matches.values.get("directory") {
+    Some(arr) => arr
+    _ => []
+  }
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
+  }
+  {
+    target_dirs,
+    format,
+    strategy,
+    threshold,
+    extensions,
+    includes,
+    excludes,
+    specs_dir,
+  }
+}
+
+///|
+/// Define the explore command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "explore",
+    about="Analyze similarity across files in a directory",
+    options=[
+      @argparse.OptionArg(
+        "format",
+        about="Output format: matrix, list, cluster, json",
+        default_values=["matrix"],
+      ),
+      @argparse.OptionArg(
+        "strategy",
+        about="Similarity strategy: tfidf, ncd, hybrid, apted, tsed",
+        default_values=["tfidf"],
+      ),
+      @argparse.OptionArg(
+        "threshold",
+        about="Min similarity for list/json/cluster output",
+        default_values=["0.5"],
+      ),
+      @argparse.OptionArg(
+        "ext",
+        action=Append,
+        about="File extension to include (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "include",
+        action=Append,
+        about="Include files matching glob pattern (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "exclude",
+        action=Append,
+        about="Exclude files matching glob pattern (repeatable)",
+      ),
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "directory",
+        num_args=@argparse.ValueRange(lower=0),
+        about="Target directories to analyze",
+      ),
+    ],
+  )
 }
 
 ///|
@@ -86,86 +192,6 @@ priv struct FilePair {
   file2 : String
   similarity : Double
   _distance : Double
-}
-
-// get_arg_value and parse_double are now in @common (SoT)
-
-///|
-/// Parse command line arguments into ExploreConfig.
-pub fn parse_explore_args(
-  args : Array[String],
-  start_idx : Int,
-) -> ExploreConfig {
-  let mut config = ExploreConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--format=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, format: value }
-    } else if arg.has_prefix("--strategy=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, strategy: value }
-    } else if arg.has_prefix("--threshold=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, threshold: @common.parse_double(value) }
-    } else if arg.has_prefix("--ext=") {
-      let value = @common.get_arg_value(arg, 6)
-      config.extensions.push(value)
-    } else if arg.has_prefix("--include=") {
-      let value = @common.get_arg_value(arg, 10)
-      config.includes.push(value)
-    } else if arg.has_prefix("--exclude=") {
-      let value = @common.get_arg_value(arg, 10)
-      config.excludes.push(value)
-    } else if not(arg.has_prefix("-")) {
-      config.target_dirs.push(arg)
-    }
-  }
-  config
-}
-
-///|
-/// Display help message for explore command.
-pub fn show_explore_help() -> Unit {
-  println("indexion explore - Analyze similarity across files")
-  println("")
-  println("Usage:")
-  println("  indexion explore [options] <directory>")
-  println("")
-  println("Options:")
-  println(
-    "  --format=FORMAT      Output format: matrix, list, cluster, json (default: matrix)",
-  )
-  println(
-    "  --strategy=NAME      Similarity strategy: tfidf, ncd, hybrid, apted, tsed (default: tfidf)",
-  )
-  println(
-    "                       apted/tsed: function-level tree edit distance",
-  )
-  println(
-    "  --threshold=FLOAT    Min similarity for list/json/cluster output (default: 0.5)",
-  )
-  println("  --ext=EXT            File extension to include (can be repeated)")
-  println(
-    "  --include=PATTERN    Include files matching pattern (can be repeated)",
-  )
-  println(
-    "  --exclude=PATTERN    Exclude files matching pattern (can be repeated)",
-  )
-  println("  --help               Show this help message")
-  println("")
-  println("Examples:")
-  println("  indexion explore kgfs/")
-  println("  indexion explore --format=list --strategy=tfidf src/")
-  println("  indexion explore --format=cluster --threshold=0.7 kgfs/")
-  println("  indexion explore --ext=.mbt --ext=.kgf .")
-  println("  indexion explore --include=*.ts --include=*.tsx src/")
-  println("")
-  println("Function-level similarity (apted/tsed):")
-  println("  indexion explore --strategy=apted --format=list src/")
-  println("  indexion explore --strategy=tsed --threshold=0.8 src/")
 }
 
 // collect_files: use @common (SoT)
@@ -461,17 +487,11 @@ fn output_json(
 // truncate: use @common (SoT)
 
 ///|
-/// Run the explore command with given arguments.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_explore_args(args, start_idx)
-  if config.show_help {
-    show_explore_help()
-    return
-  }
+/// Run the explore command from argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = ExploreConfig::from_matches(matches)
   if config.target_dirs.length() == 0 {
     println("Error: Directory path required.")
-    println("")
-    show_explore_help()
     return
   }
   println("=== indexion explore ===")
@@ -511,7 +531,10 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   )
   // Check if using tree-based strategy (function-level comparison)
   let is_tree_strategy = config.strategy == "apted" || config.strategy == "tsed"
-  let registry = @kgf_features.load_registry(target_dirs=config.target_dirs)
+  let registry = @kgf_features.load_registry(
+    specs_dir=config.specs_dir,
+    target_dirs=config.target_dirs,
+  )
   let pairs = if is_tree_strategy {
     calculate_function_pairs(files, config.strategy, min_similarity, registry)
   } else if config.strategy == "tfidf" {

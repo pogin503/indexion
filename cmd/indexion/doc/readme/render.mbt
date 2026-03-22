@@ -99,29 +99,6 @@ pub fn render_raw(docs : Array[(PackageInfo, ExtractedDoc)]) -> String {
 }
 
 ///|
-/// Write output to file or stdout based on config.
-pub fn write_output(
-  content : String,
-  output_path : String?,
-  to_stdout : Bool,
-) -> Unit {
-  if to_stdout {
-    println(content)
-  } else {
-    match output_path {
-      Some(path) =>
-        try {
-          @fs.write_string_to_file(path, content)
-          println("Written to: " + path)
-        } catch {
-          e => println("Error writing " + path + ": " + e.to_string())
-        }
-      None => println(content)
-    }
-  }
-}
-
-///|
 /// Write per-package README files with package header.
 /// Skips packages that already have a README.md to avoid overwriting
 /// hand-written documentation.

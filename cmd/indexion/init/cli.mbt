@@ -16,77 +16,64 @@ pub struct InitConfig {
   target_dir : String
   is_global : Bool
   force : Bool
-  show_help : Bool
 }
 
 ///|
 /// Create a default InitConfig with current directory as target.
 pub fn InitConfig::default() -> InitConfig {
-  { target_dir: ".", is_global: false, force: false, show_help: false }
+  { target_dir: ".", is_global: false, force: false }
 }
 
 ///|
-/// Parse command-line arguments for the init subcommand.
-pub fn parse_args(args : Array[String], start_idx : Int) -> InitConfig {
+/// Create InitConfig from argparse Matches.
+pub fn InitConfig::from_matches(matches : @argparse.Matches) -> InitConfig {
   let mut config = InitConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg == "--global" || arg == "-g" {
-      config = { ..config, is_global: true }
-    } else if arg == "--force" || arg == "-f" {
-      config = { ..config, force: true }
-    } else if not(arg.has_prefix("-")) && config.target_dir == "." {
-      config = { ..config, target_dir: arg }
-    }
+  match matches.flags.get("global") {
+    Some(true) => config = { ..config, is_global: true }
+    _ => ()
+  }
+  match matches.flags.get("force") {
+    Some(true) => config = { ..config, force: true }
+    _ => ()
+  }
+  match matches.values.get("directory") {
+    Some(dirs) =>
+      if dirs.length() > 0 {
+        config = { ..config, target_dir: dirs[0] }
+      }
+    None => ()
   }
   config
 }
 
 ///|
-/// Display help text for the init subcommand.
-pub fn show_help() -> Unit {
-  println("indexion init - Initialize indexion configuration")
-  println("")
-  println("Usage:")
-  println("  indexion init [options] [directory]")
-  println("")
-  println("Options:")
-  println("  --global, -g     Initialize global configuration")
-  println("  --force, -f      Overwrite existing files")
-  println("  --help, -h       Show this help message")
-  println("")
-  println("Project initialization creates:")
-  println("  .indexion.toml           Project configuration")
-  println("  .indexion/cache/         Cache directory")
-  println("  .indexion/state/         State directory")
-  println("  .indexion/local/         Local overrides (gitignored)")
-  println("")
-  println("Global initialization creates:")
-  println("  <config-dir>/config.toml   Global configuration")
-  println("")
-  println("Optional: Create <data-dir>/kgfs/ manually for global KGF specs")
-  println("")
-  println("Config directories by OS:")
-  println("  macOS: ~/Library/Application Support/Indexion/")
-  println("  Linux: ~/.config/indexion/")
-  println("  Windows: %APPDATA%\\Indexion\\")
-  println("")
-  println("Examples:")
-  println("  indexion init              # Init current directory")
-  println("  indexion init ./myproject  # Init specific directory")
-  println("  indexion init --global     # Init global config")
+/// Define the init command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "init",
+    about="Initialize indexion configuration",
+    flags=[
+      @argparse.FlagArg(
+        "global",
+        short='g',
+        about="Initialize global configuration",
+      ),
+      @argparse.FlagArg("force", short='f', about="Overwrite existing files"),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "directory",
+        about="Target directory (default: current directory)",
+        num_args=@argparse.ValueRange(lower=0, upper=1),
+      ),
+    ],
+  )
 }
 
 ///|
-/// Entry point for the init subcommand.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Entry point for the init subcommand using argparse Matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = InitConfig::from_matches(matches)
   if config.is_global {
     run_global_init(config.force)
   } else {
@@ -114,7 +101,9 @@ fn run_global_init(force : Bool) -> Unit {
   @config.ensure_dir_recursive(config_dir)
   // Create config.toml
   let config_path = @config.join_path(config_dir, "config.toml")
-  let kgfs_dir = @config.join_path(data_dir, "kgfs")
+  let kgfs_dir = @config.get_kgfs_install_dir().unwrap_or(
+    @config.join_path(data_dir, "kgfs"),
+  )
   let files_created : Array[String] = []
   if write_file_if_ok(config_path, generate_global_config_template(), force) {
     files_created.push(config_path)

@@ -263,7 +263,7 @@ fn extract_toml_fragments(
       )
       continue
     }
-    let eq_idx = last_index_of(line, '=')
+    let eq_idx = @config_paths.find_last_char(line, '=')
     if eq_idx <= 0 {
       fragments.push(
         make_fragment(

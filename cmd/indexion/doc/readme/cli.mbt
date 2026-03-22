@@ -57,11 +57,10 @@ pub struct ReadmeConfig {
   excludes : Array[String]
   recursive : Bool
   format : String
-  output : String?
+  output : String
   template : String?
   config_path : String?
   per_package : Bool
-  show_help : Bool
 }
 
 ///|
@@ -73,106 +72,110 @@ pub fn ReadmeConfig::default() -> ReadmeConfig {
     includes: [],
     excludes: [],
     recursive: true,
-    format: "markdown",
-    output: None,
+    format: "md",
+    output: "",
     template: None,
     config_path: None,
     per_package: false,
-    show_help: false,
   }
 }
 
-// use @common (SoT): get_arg_value
-
 ///|
-/// Parse CLI arguments into a README generation configuration.
-pub fn parse_args(args : Array[String], start_idx : Int) -> ReadmeConfig {
-  let mut config = ReadmeConfig::default()
-  let paths : Array[String] = []
-  let includes : Array[String] = []
-  let excludes : Array[String] = []
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg == "--recursive" {
-      config = { ..config, recursive: true }
-    } else if arg == "--no-recursive" {
-      config = { ..config, recursive: false }
-    } else if arg == "--per-package" {
-      config = { ..config, per_package: true }
-    } else if arg.has_prefix("--specs-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, specs_dir: value }
-    } else if arg.has_prefix("--include=") {
-      let value = @common.get_arg_value(arg, 10)
-      includes.push(value)
-    } else if arg.has_prefix("--exclude=") {
-      let value = @common.get_arg_value(arg, 10)
-      excludes.push(value)
-    } else if arg.has_prefix("--format=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, format: value }
-    } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      config = {
-        ..config,
-        output: Some(@common.parse_output_arg(arg).unwrap()),
-      }
-    } else if arg.has_prefix("--template=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, template: Some(value) }
-    } else if arg.has_prefix("--config=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, config_path: Some(value) }
-    } else if not(arg.has_prefix("-")) {
-      paths.push(arg)
-    }
+/// Create ReadmeConfig from argparse matches.
+pub fn ReadmeConfig::from_matches(matches : @argparse.Matches) -> ReadmeConfig {
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
   }
-  // Default path if none specified
-  if paths.length() == 0 {
-    paths.push(".")
+  let includes = matches.values.get("include").unwrap_or([])
+  let excludes = matches.values.get("exclude").unwrap_or([])
+  let recursive = matches.flags.get("recursive").unwrap_or(true)
+  let format = match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "md" }
+    _ => "md"
   }
-  { ..config, paths, includes, excludes }
+  let output = match matches.values.get("output") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let template : String? = match matches.values.get("template") {
+    Some(arr) => if arr.length() > 0 { Some(arr[0]) } else { None }
+    _ => None
+  }
+  let config_path : String? = match matches.values.get("config") {
+    Some(arr) => if arr.length() > 0 { Some(arr[0]) } else { None }
+    _ => None
+  }
+  let per_package = matches.flags.get("per-package").unwrap_or(false)
+  let paths = match matches.values.get("paths") {
+    Some(arr) if arr.length() > 0 => arr
+    _ => ["."]
+  }
+  {
+    paths,
+    specs_dir,
+    includes,
+    excludes,
+    recursive,
+    format,
+    output,
+    template,
+    config_path,
+    per_package,
+  }
 }
 
 ///|
-/// Print usage information for the doc readme subcommand.
-pub fn show_help() -> Unit {
-  println("indexion doc readme - Extract documentation from source files")
-  println("")
-  println("Usage:")
-  println("  indexion doc readme [options] [paths...]")
-  println("")
-  println("Options:")
-  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
-  println("  --include=PATTERN    Include packages matching glob (repeatable)")
-  println("  --exclude=PATTERN    Exclude packages matching glob (repeatable)")
-  println("  --recursive          Scan directories recursively (default)")
-  println("  --no-recursive       Do not scan recursively")
-  println(
-    "  --format=FORMAT      Output format: markdown, json, raw (default: markdown)",
-  )
-  println("  --output=FILE        Write output to file (default: stdout)")
-  println("  -o=FILE              Short form of --output")
-  println("  --template=FILE      Use template file for generation")
-  println("  --config=FILE        Use doc.json configuration file")
-  println("  --per-package        Generate README.md in each package directory")
-  println("  --help               Show this help message")
-  println("")
-  println("Template Syntax:")
-  println("  {{include:path}}     Include file contents")
-  println("  {{packages}}         List of all discovered packages")
-  println("")
-  println("Examples:")
-  println(
-    "  indexion doc readme                                  # Extract from current dir",
-  )
-  println(
-    "  indexion doc readme --format=json src/               # JSON output",
-  )
-  println("  indexion doc readme --include=\"cmd/*\" --exclude=\"*test*\"")
-  println(
-    "  indexion doc readme --template=docs/templates/readme.md --output=README.md",
+/// Define the readme command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "readme",
+    about="Extract documentation from source files and generate README files",
+    options=[
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+      @argparse.OptionArg(
+        "include",
+        action=Append,
+        about="Include packages matching glob (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "exclude",
+        action=Append,
+        about="Exclude packages matching glob (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "format",
+        about="Output format: markdown, json, raw",
+        default_values=["md"],
+      ),
+      @argparse.OptionArg(
+        "output",
+        short='o',
+        about="Write output to file (default: stdout)",
+      ),
+      @argparse.OptionArg("template", about="Use template file for generation"),
+      @argparse.OptionArg("config", about="Use doc.json configuration file"),
+    ],
+    flags=[
+      @argparse.FlagArg(
+        "recursive",
+        negatable=true,
+        about="Scan directories recursively (default: true)",
+      ),
+      @argparse.FlagArg(
+        "per-package",
+        about="Generate README.md in each package directory",
+      ),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "paths",
+        num_args=@argparse.ValueRange(lower=0),
+        about="Paths to scan",
+      ),
+    ],
   )
 }
 
@@ -184,13 +187,9 @@ fn log_progress(msg : String) -> Unit {
 }
 
 ///|
-/// Entry point for the doc readme subcommand.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Run the doc readme command from argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = ReadmeConfig::from_matches(matches)
   // If --config is specified, use doc.json-based generation
   match config.config_path {
     Some(config_path) => {
@@ -201,11 +200,14 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
   // Stage 1: Load KGF specs to get ignore patterns.
   log_progress("[1/4] Loading KGF specs...")
-  let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
-  if registry.spec_count() == 0 {
-    println("Warning: No KGF specs found in " + config.specs_dir)
-  } else {
+  let registry = @kgf_features.load_registry_or_empty(
+    specs_dir=config.specs_dir,
+    target_dirs=config.paths,
+  )
+  if registry.spec_count() > 0 {
     log_progress("      Loaded " + registry.spec_count().to_string() + " specs")
+  } else {
+    println("Warning: No KGF specs found")
   }
   // Stage 2: Collect candidate files using KGF ignore patterns.
   log_progress("[2/4] Discovering files...")
@@ -229,7 +231,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
         let ctx = TemplateContext::new(base_dir, [])
         match render_template_file(template_path, ctx) {
           Some(content) =>
-            write_output(content, config.output, config.output is None)
+            @common.write_output(config.output, content, label="Readme")
           None =>
             println("Error: Could not read template file: " + template_path)
         }
@@ -288,7 +290,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
       let ctx = TemplateContext::new(base_dir, docs)
       match render_template_file(template_path, ctx) {
         Some(content) =>
-          write_output(content, config.output, config.output is None)
+          @common.write_output(config.output, content, label="Readme")
         None => println("Error: Could not read template file: " + template_path)
       }
     }
@@ -301,7 +303,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
           Json => render_json(docs)
           Raw => render_raw(docs)
         }
-        write_output(content, config.output, config.output is None)
+        @common.write_output(config.output, content, label="Readme")
       }
   }
 }

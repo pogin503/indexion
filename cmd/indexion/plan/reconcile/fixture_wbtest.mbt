@@ -1,4 +1,26 @@
 ///|
+fn build_code_graph(
+  target_dir : String,
+  specs_dir : String,
+) -> (@registry.KGFRegistry, Array[String], @graph.CodeGraph) {
+  let registry = @kgf_features.load_registry_or_empty(specs_dir~, target_dir~)
+  let kgf_ignore = registry.collect_ignore_patterns()
+  let discover_opts = @pipeline.DiscoverOptions::new(
+    kgf_ignore~,
+    root_dir=target_dir,
+  )
+  let discovered_paths = @pipeline.discover_files(
+    discovery_roots(target_dir),
+    discover_opts,
+  )
+  let files = @pipeline.collect_supported_files(discovered_paths, registry)
+  let specs = registry.to_specs_map()
+  let config = @doc_build.DocConfig::new(files, specs, root_path=target_dir)
+  let (_output, graph) = @doc_build.build_with_graph(config)
+  (registry, discovered_paths, graph)
+}
+
+///|
 fn get_fixtures_dir() -> String {
   let paths = [
     "fixtures", "../fixtures", "../../fixtures", "../../../fixtures", "../../../../fixtures",

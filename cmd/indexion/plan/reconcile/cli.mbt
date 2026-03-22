@@ -1,4 +1,3 @@
-
 ///|
 fn collect_document_fragments(
   discovered_paths : Array[String],
@@ -99,17 +98,18 @@ fn maybe_use_cache(
 }
 
 ///|
-/// Entry point for the reconcile subcommand.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = resolve_config(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Entry point for the reconcile subcommand via argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = resolve_config_from_matches(matches)
+  run_with_config(config)
+}
+
+///|
+fn run_with_config(config : ReconcileConfig) -> Unit {
   if config.target_dir.length() == 0 {
     println("Error: directory path required.")
     println("")
-    show_help()
+    println(command().render_help())
     return
   }
   let generated_at = current_epoch_seconds()
@@ -126,7 +126,10 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     db
   }
   // Fast path: KGF lexer-only symbol extraction (no PEG parse)
-  let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
+  let registry = @kgf_features.load_registry_or_empty(
+    specs_dir=config.specs_dir,
+    target_dir=config.target_dir,
+  )
   let kgf_ignore = registry.collect_ignore_patterns()
   let discover_opts = @pipeline.DiscoverOptions::new(
     kgf_ignore~,

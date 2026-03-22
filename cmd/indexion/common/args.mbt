@@ -3,21 +3,6 @@
 /// SoT for argument parsing functions used across CLI commands.
 
 ///|
-/// Extract value after '=' in argument.
-/// Example: get_arg_value("--foo=bar", 6) returns "bar"
-pub fn get_arg_value(arg : String, prefix_len : Int) -> String {
-  let chars = arg.to_array()
-  if prefix_len >= chars.length() {
-    return ""
-  }
-  let result : Array[Char] = []
-  for i = prefix_len; i < chars.length(); i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
 /// Parse a double from string.
 /// Handles negative numbers and decimal points.
 pub fn parse_double(s : String) -> Double {
@@ -436,18 +421,6 @@ pub fn truncate(s : String, max_len : Int) -> String {
 }
 
 ///|
-/// Parse --output= or -o= argument, returning Some(value) if matched.
-pub fn parse_output_arg(arg : String) -> String? {
-  if arg.has_prefix("--output=") {
-    Some(get_arg_value(arg, 9))
-  } else if arg.has_prefix("-o=") {
-    Some(get_arg_value(arg, 3))
-  } else {
-    None
-  }
-}
-
-///|
 /// Extract substring from start (inclusive) to end (exclusive).
 pub fn substring(s : String, start : Int, end : Int) -> String {
   let chars = s.to_array()
@@ -611,7 +584,7 @@ pub fn render_inline_code_list(
 pub fn write_output(
   output : String,
   content : String,
-  label~ : String = "Output",
+  label? : String = "Output",
 ) -> Unit {
   if output.length() == 0 || output == "-" {
     println(content)

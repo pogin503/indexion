@@ -1,5 +1,6 @@
 import {
   "trkbt10/indexion/src/update" @update_core,
+  "moonbitlang/core/argparse",
 }
 
 options(

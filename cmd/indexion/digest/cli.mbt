@@ -17,7 +17,6 @@ pub struct CliConfig {
   top_k : Int
   min_score : Double
   specs_dir : String
-  show_help : Bool
 }
 
 ///|
@@ -34,59 +33,183 @@ pub fn CliConfig::default() -> CliConfig {
     top_k: 10,
     min_score: 0.1,
     specs_dir: "kgfs",
-    show_help: false,
   }
 }
 
-// get_arg_value, parse_double: use @common (SoT)
-// parse_int: use @common (SoT)
-
 ///|
-/// Parse CLI arguments.
-pub fn parse_args(args : Array[String], start_idx : Int) -> CliConfig {
+/// Create CliConfig from argparse Matches.
+pub fn CliConfig::from_matches(matches : @argparse.Matches) -> CliConfig {
   let mut config = CliConfig::default()
-  let positional : Array[String] = []
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--dim=") {
-      let value = @common.get_arg_value(arg, 6)
-      config = { ..config, dim: @common.parse_int(value) }
-    } else if arg.has_prefix("--strategy=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, strategy: value }
-    } else if arg.has_prefix("--top-k=") {
-      let value = @common.get_arg_value(arg, 8)
-      config = { ..config, top_k: @common.parse_int(value) }
-    } else if arg.has_prefix("--min-score=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, min_score: @common.parse_double(value) }
-    } else if arg.has_prefix("--index-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, index_dir: value }
-    } else if arg.has_prefix("--provider=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, provider: value }
-    } else if arg.has_prefix("--specs=") {
-      let value = @common.get_arg_value(arg, 8)
-      config = { ..config, specs_dir: value }
-    } else if not(arg.has_prefix("-")) {
-      positional.push(arg)
-    }
+  // Global options
+  match matches.values.get("dim") {
+    Some(vals) =>
+      if vals.length() > 0 {
+        config = { ..config, dim: @common.parse_int(vals[0]) }
+      }
+    None => ()
   }
-  // Parse positional arguments
-  if positional.length() >= 1 {
-    config = { ..config, command: positional[0] }
+  match matches.values.get("strategy") {
+    Some(vals) =>
+      if vals.length() > 0 {
+        config = { ..config, strategy: vals[0] }
+      }
+    None => ()
   }
-  if positional.length() >= 2 {
-    if config.command == "build" {
-      config = { ..config, input_path: positional[1] }
-    } else if config.command == "query" {
-      config = { ..config, purpose: positional[1] }
+  match matches.values.get("top-k") {
+    Some(vals) =>
+      if vals.length() > 0 {
+        config = { ..config, top_k: @common.parse_int(vals[0]) }
+      }
+    None => ()
+  }
+  match matches.values.get("min-score") {
+    Some(vals) =>
+      if vals.length() > 0 {
+        config = { ..config, min_score: @common.parse_double(vals[0]) }
+      }
+    None => ()
+  }
+  match matches.values.get("index-dir") {
+    Some(vals) =>
+      if vals.length() > 0 {
+        config = { ..config, index_dir: vals[0] }
+      }
+    None => ()
+  }
+  match matches.values.get("provider") {
+    Some(vals) =>
+      if vals.length() > 0 {
+        config = { ..config, provider: vals[0] }
+      }
+    None => ()
+  }
+  match matches.values.get("specs") {
+    Some(vals) =>
+      if vals.length() > 0 {
+        config = { ..config, specs_dir: vals[0] }
+      }
+    None => ()
+  }
+  // Subcommand dispatch
+  match matches.subcommand {
+    Some((name, sub_matches)) => {
+      config = { ..config, command: name }
+      match name {
+        "build" =>
+          match sub_matches.values.get("input") {
+            Some(vals) =>
+              if vals.length() > 0 {
+                config = { ..config, input_path: vals[0] }
+              }
+            None => ()
+          }
+        "query" =>
+          match sub_matches.values.get("purpose") {
+            Some(vals) =>
+              if vals.length() > 0 {
+                config = { ..config, purpose: vals[0] }
+              }
+            None => ()
+          }
+        _ => ()
+      }
     }
+    None => ()
   }
   config
+}
+
+///|
+/// Define the digest command for argparse.
+pub fn command() -> @argparse.Command {
+  let dim_default = @dconfig.DEFAULT_TFIDF_DIM.to_string()
+  @argparse.Command(
+    "digest",
+    about="Purpose-based function index",
+    arg_required_else_help=true,
+    subcommand_required=true,
+    options=[
+      @argparse.OptionArg(
+        "provider",
+        about="Embedding provider: tfidf, openai, auto",
+        default_values=["auto"],
+        global=true,
+      ),
+      @argparse.OptionArg(
+        "index-dir",
+        about="Index directory",
+        default_values=[@dconfig.DEFAULT_INDEX_DIR],
+        global=true,
+      ),
+      @argparse.OptionArg(
+        "dim",
+        about="TF-IDF dimension (ignored for openai)",
+        default_values=[dim_default],
+        global=true,
+      ),
+      @argparse.OptionArg(
+        "strategy",
+        about="vcdb: bruteforce, hnsw, ivf",
+        default_values=["hnsw"],
+        global=true,
+      ),
+      @argparse.OptionArg(
+        "specs",
+        about="KGF specs directory",
+        default_values=["kgfs"],
+        global=true,
+      ),
+      @argparse.OptionArg(
+        "top-k",
+        about="Number of results",
+        default_values=["10"],
+        global=true,
+      ),
+      @argparse.OptionArg(
+        "min-score",
+        about="Minimum similarity score",
+        default_values=["0.1"],
+        global=true,
+      ),
+    ],
+    subcommands=[
+      @argparse.Command(
+        "build",
+        about="Build/update index from source directory or graph.json",
+        positionals=[
+          @argparse.PositionArg(
+            "input",
+            about="Source directory or graph.json path",
+            num_args=@argparse.ValueRange(lower=0, upper=1),
+          ),
+        ],
+      ),
+      @argparse.Command("query", about="Search functions by purpose", positionals=[
+        @argparse.PositionArg(
+          "purpose",
+          about="Purpose query string",
+          num_args=@argparse.ValueRange::single(),
+        ),
+      ]),
+      @argparse.Command("stats", about="Show index statistics"),
+    ],
+  )
+}
+
+///|
+/// Entry point for the digest subcommand using argparse Matches.
+pub async fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = CliConfig::from_matches(matches)
+  match config.command {
+    "build" => run_build_async(config)
+    "query" => run_query_async(config)
+    "stats" => run_stats(config)
+    _ => {
+      println("Unknown command: " + config.command)
+      println("")
+      println(command().render_help())
+    }
+  }
 }
 
 ///|
@@ -99,27 +222,6 @@ fn log_progress(msg : String) -> Unit {
 /// Write error message (TODO: use stderr when available).
 fn log_error(msg : String) -> Unit {
   println("Error: " + msg)
-}
-
-///|
-/// Main entry point (async to support OpenAI embeddings).
-pub async fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help || config.command == "" {
-    show_help()
-    return
-  }
-  match config.command {
-    "build" => run_build_async(config)
-    "query" => run_query_async(config)
-    "stats" => run_stats(config)
-    "help" => show_help()
-    _ => {
-      println("Unknown command: " + config.command)
-      println("")
-      show_help()
-    }
-  }
 }
 
 ///|
@@ -187,7 +289,10 @@ fn build_graph_from_source(
   specs_dir : String,
 ) -> @graph.CodeGraph? {
   log_progress("Loading language specs...")
-  let registry = @registry.KGFRegistry::load_from_dir(specs_dir)
+  let registry = @kgf_features.load_registry_or_empty(
+    specs_dir~,
+    target_dir=source_dir,
+  )
   log_progress("Collecting files...")
   let kgf_ignore = registry.collect_ignore_patterns()
   let discover_opts = @pipeline.DiscoverOptions::new(kgf_ignore~)
@@ -553,53 +658,4 @@ fn run_stats(config : CliConfig) -> Unit {
   println("  Total symbols: " + graph.symbol_count().to_string())
   println("  Total modules: " + graph.module_count().to_string())
   println("  Total edges: " + graph.edge_count().to_string())
-}
-
-///|
-/// Show help.
-fn show_help() -> Unit {
-  println("indexion digest - Purpose-based function index")
-  println("")
-  println("USAGE:")
-  println("  indexion digest build [options] <path>")
-  println("  indexion digest query [options] \"<purpose>\"")
-  println("  indexion digest stats")
-  println("")
-  println("COMMANDS:")
-  println("  build   Build/update index from source directory or graph.json")
-  println("  query   Search functions by purpose")
-  println("  stats   Show index statistics")
-  println("")
-  println("OPTIONS:")
-  println(
-    "  --provider=NAME    Embedding provider: tfidf, openai, auto (default: auto)",
-  )
-  println("  --index-dir=DIR    Index directory (default: .indexion/digest)")
-  println(
-    "  --dim=INT          TF-IDF dimension (default: 256, ignored for openai)",
-  )
-  println("  --strategy=NAME    vcdb: bruteforce, hnsw, ivf (default: hnsw)")
-  println("  --specs=DIR        KGF specs directory (default: kgfs)")
-  println("  --top-k=INT        Number of results (default: 10)")
-  println("  --min-score=FLOAT  Minimum similarity score (default: 0.1)")
-  println("  -h, --help         Show this help")
-  println("")
-  println("EXAMPLES:")
-  println("  # Build with TF-IDF (fast, local)")
-  println("  indexion digest build src/")
-  println("")
-  println("  # Build with OpenAI embeddings (better quality)")
-  println("  export OPENAI_API_KEY=sk-...")
-  println("  indexion digest build src/ --provider=openai")
-  println("")
-  println("  # Build from existing graph.json")
-  println("  indexion digest build graph.json")
-  println("")
-  println("  # Query (auto-detects provider from index)")
-  println("  indexion digest query \"read file contents\"")
-  println("")
-  println("PROVIDER SELECTION:")
-  println("  auto     Use OpenAI if OPENAI_API_KEY is set, else TF-IDF")
-  println("  tfidf    Local TF-IDF (fast, no API key needed)")
-  println("  openai   OpenAI text-embedding-3-small (requires OPENAI_API_KEY)")
 }

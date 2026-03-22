@@ -116,12 +116,7 @@ fn extract_module_docs(graph : @graph.CodeGraph, pkg_path : String) -> String {
   symbols.sort_by(fn(a, b) { b.2.length() - a.2.length() })
   if symbols.length() > 0 {
     buf.write_string("## API\n\n")
-    let max_listed = 15
-    let mut listed = 0
     for item in symbols {
-      if listed >= max_listed {
-        break
-      }
       let (name, kind, doc) = item
       buf.write_string("- **`")
       buf.write_string(name)
@@ -130,17 +125,8 @@ fn extract_module_docs(graph : @graph.CodeGraph, pkg_path : String) -> String {
       buf.write_string(") — ")
       buf.write_string(first_doc_line(doc))
       buf.write_string("\n")
-      listed += 1
-    }
-    if total_symbols > listed {
-      buf.write_string("\nAnd ")
-      buf.write_string((total_symbols - listed).to_string())
-      buf.write_string(" more symbols.\n")
     }
     buf.write_string("\n")
-  } else if total_symbols > 0 && not(has_overview) {
-    buf.write_string(total_symbols.to_string())
-    buf.write_string(" public symbols.\n\n")
   }
   // Fallback: edge attrs (legacy)
   if not(has_overview) && total_symbols == 0 {

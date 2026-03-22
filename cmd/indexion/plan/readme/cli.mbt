@@ -23,11 +23,10 @@
 pub struct ReadmePlanConfig {
   target_dir : String
   output : String
-  format : String // "markdown", "json"
+  format : String // "md", "json"
   specs_dir : String // KGF specs directory
   template : String // Template file to analyze for {{include:...}}
   plans_dir : String // Output directory for plan files (default: .plans)
-  show_help : Bool
 }
 
 ///|
@@ -36,111 +35,96 @@ pub fn ReadmePlanConfig::default() -> ReadmePlanConfig {
   {
     target_dir: ".",
     output: "",
-    format: "markdown",
+    format: "md",
     specs_dir: "kgfs",
     template: "",
     plans_dir: ".indexion/plans",
-    show_help: false,
   }
 }
 
-// use @common (SoT)
-
 ///|
-/// Parse command line arguments into ReadmePlanConfig.
-pub fn parse_args(args : Array[String], start_idx : Int) -> ReadmePlanConfig {
-  let mut config = ReadmePlanConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      config = { ..config, output: @common.parse_output_arg(arg).unwrap() }
-    } else if arg.has_prefix("--format=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, format: value }
-    } else if arg.has_prefix("--specs-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, specs_dir: value }
-    } else if arg.has_prefix("--template=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, template: value }
-    } else if arg.has_prefix("--plans-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, plans_dir: value }
-    } else if not(arg.has_prefix("-")) && config.target_dir == "." {
-      config = { ..config, target_dir: arg }
-    }
+/// Create ReadmePlanConfig from argparse matches.
+pub fn ReadmePlanConfig::from_matches(
+  matches : @argparse.Matches,
+) -> ReadmePlanConfig {
+  let output = match matches.values.get("output") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
   }
-  config
+  let format = match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "md" }
+    _ => "md"
+  }
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
+  }
+  let template = match matches.values.get("template") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let plans_dir = match matches.values.get("plans-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/plans" }
+    _ => ".indexion/plans"
+  }
+  let target_dir = match matches.values.get("directory") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "." }
+    _ => "."
+  }
+  { target_dir, output, format, specs_dir, template, plans_dir }
 }
 
 ///|
-/// Display help message for plan readme command.
-pub fn show_help() -> Unit {
-  println("indexion plan readme - Generate README documentation writing plans")
-  println("")
-  println("Usage:")
-  println("  indexion plan readme --template=FILE [options] [directory]")
-  println("")
-  println("Options:")
-  println(
-    "  --template=FILE      Template file with {{include:...}} placeholders (required)",
-  )
-  println(
-    "  --plans-dir=DIR      Output directory for plans (default: .indexion/plans)",
-  )
-  println("  --output=FILE, -o=   Output summary file path (default: stdout)")
-  println(
-    "  --format=FORMAT      Output format: markdown, json (default: markdown)",
-  )
-  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
-  println("  --help               Show this help message")
-  println("")
-  println("Output:")
-  println(
-    "  For each {{include:docs/foo.md}} in template, generates .indexion/plans/foo.md",
-  )
-  println("  with project analysis and writing guidance.")
-  println("")
-  println("Workflow:")
-  println("  1. indexion doc init                  # Generate template")
-  println(
-    "  2. indexion plan readme --template=.indexion/state/templates/readme.md",
-  )
-  println("                                        # Generate writing plans")
-  println("  3. Write docs/ files based on plans   # Manual or LLM")
-  println(
-    "  4. indexion doc readme --template=.indexion/state/templates/readme.md -o=README.md",
-  )
-  println("")
-  println("Examples:")
-  println(
-    "  indexion plan readme --template=.indexion/state/templates/readme.md",
-  )
-  println(
-    "  indexion plan readme --template=.indexion/state/templates/readme.md --plans-dir=plans/",
+/// Define the readme plan command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "readme",
+    about="Generate README documentation writing plans",
+    options=[
+      @argparse.OptionArg(
+        "output",
+        short='o',
+        about="Output summary file path (default: stdout)",
+      ),
+      @argparse.OptionArg("format", about="Output format: markdown, json", default_values=[
+        "md",
+      ]),
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+      @argparse.OptionArg(
+        "template",
+        about="Template file with {{include:...}} placeholders",
+      ),
+      @argparse.OptionArg("plans-dir", about="Output directory for plans", default_values=[
+        ".indexion/plans",
+      ]),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "directory",
+        num_args=@argparse.ValueRange(lower=0),
+        about="Target directory",
+      ),
+    ],
   )
 }
 
 ///|
-/// Run the plan readme command with given arguments.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Run the plan readme command from argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = ReadmePlanConfig::from_matches(matches)
   // Template is required for plan generation
   if config.template.length() == 0 {
     println("Error: --template=FILE is required.")
-    println("")
-    show_help()
     return
   }
   let target_dir = @common.normalize_path(config.target_dir)
   // Load KGF registry for ignore patterns
-  let registry = load_registry_from_paths(config.specs_dir, target_dir)
+  let registry = @kgf_features.load_registry_or_empty(
+    specs_dir=config.specs_dir,
+    target_dir~,
+  )
   // Detect project type and get spec
   let (project_info, lang_spec) = detect_project_with_kgf(target_dir, registry)
   // Read template and extract include paths
@@ -207,21 +191,6 @@ priv struct ProjectInfo {
 ///|
 fn ProjectInfo::default() -> ProjectInfo {
   { name: "project", description: "" }
-}
-
-///|
-/// Load KGF registry using the centralized kgfs directory resolution.
-/// Uses @kgf_features.load_registry() which delegates to the config SoT.
-fn load_registry_from_paths(
-  specs_dir : String,
-  target_dir : String,
-) -> @kgf_registry.KGFRegistry {
-  // Use SoT: explicit path takes priority if not default
-  let explicit = if specs_dir != "kgfs" { specs_dir } else { "" }
-  match @kgf_features.load_registry(explicit_path=explicit, target_dir~) {
-    Some(reg) => reg
-    None => @kgf_registry.KGFRegistry::new()
-  }
 }
 
 ///|

@@ -29,85 +29,63 @@ pub struct InitConfig {
   target_dir : String
   specs_dir : String // KGF specs directory
   force : Bool // overwrite existing files
-  show_help : Bool
 }
 
 ///|
 /// Create default InitConfig.
 pub fn InitConfig::default() -> InitConfig {
-  { target_dir: ".", specs_dir: "kgfs", force: false, show_help: false }
+  { target_dir: ".", specs_dir: "kgfs", force: false }
 }
 
-// get_arg_value: use @common (SoT)
-
 ///|
-/// Parse command line arguments into InitConfig.
-pub fn parse_args(args : Array[String], start_idx : Int) -> InitConfig {
-  let mut config = InitConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg == "--force" || arg == "-f" {
-      config = { ..config, force: true }
-    } else if arg.has_prefix("--specs-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, specs_dir: value }
-    } else if not(arg.has_prefix("-")) && config.target_dir == "." {
-      config = { ..config, target_dir: arg }
-    }
+/// Create InitConfig from argparse matches.
+pub fn InitConfig::from_matches(matches : @argparse.Matches) -> InitConfig {
+  let target_dir = match matches.values.get("directory") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "." }
+    _ => "."
   }
-  config
-}
-
-///|
-/// Display help message for doc init command.
-pub fn show_help() -> Unit {
-  println("indexion doc init - Initialize documentation template structure")
-  println("")
-  println("Usage:")
-  println("  indexion doc init [options] [directory]")
-  println("")
-  println("Options:")
-  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
-  println("  --force, -f          Overwrite existing files")
-  println("  --help               Show this help message")
-  println("")
-  println("Generated Files:")
-  println(
-    "  .indexion/state/templates/readme.md   README template with placeholders",
-  )
-  println("")
-  println("Workflow:")
-  println("  1. indexion doc init                  # Generate template")
-  println(
-    "  2. indexion plan readme --template=.indexion/state/templates/readme.md",
-  )
-  println("                                        # Generate writing plans")
-  println("  3. Write docs/ files based on plans   # Manual or LLM")
-  println(
-    "  4. indexion doc readme --template=.indexion/state/templates/readme.md -o=README.md",
-  )
-  println("")
-  println("Examples:")
-  println("  indexion doc init                    # Init in current directory")
-  println("  indexion doc init ./myproject        # Init in specific directory")
-  println(
-    "  indexion doc init --force            # Overwrite existing template",
-  )
-}
-
-///|
-/// Run the doc init command with given arguments.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
   }
+  let force = matches.flags.get("force").unwrap_or(false)
+  { target_dir, specs_dir, force }
+}
+
+///|
+/// Define the init command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "init",
+    about="Initialize documentation template structure",
+    options=[
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+    ],
+    flags=[
+      @argparse.FlagArg("force", short='f', about="Overwrite existing files"),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "directory",
+        num_args=@argparse.ValueRange(lower=0, upper=1),
+        about="Target directory",
+      ),
+    ],
+  )
+}
+
+///|
+/// Run the doc init command from argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = InitConfig::from_matches(matches)
   let target_dir = @common.normalize_path(config.target_dir)
   // Load KGF registry
-  let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
+  let registry = @kgf_features.load_registry_or_empty(
+    specs_dir=config.specs_dir,
+    target_dir~,
+  )
   // Detect project type and load info
   let (info, lang_spec) = detect_project_info(target_dir, registry)
   let _ = lang_spec

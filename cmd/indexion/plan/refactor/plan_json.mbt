@@ -64,6 +64,21 @@ pub struct FunctionDuplicate {
 } derive(ToJson)
 
 ///|
+/// A string literal occurrence in a specific file.
+pub struct MagicStringOccurrence {
+  file : String
+  line : Int
+} derive(ToJson)
+
+///|
+/// A group of identical string literals found across multiple files.
+pub struct MagicStringGroup {
+  value : String
+  occurrences : Array[MagicStringOccurrence]
+  file_count : Int
+} derive(ToJson)
+
+///|
 /// Summary statistics for the plan.
 pub struct PlanSummary {
   total_clusters : Int
@@ -77,6 +92,7 @@ pub struct RefactorPlanJSON {
   config : ConfigSummary
   clusters : Array[ClusterJSON]
   function_duplicates : Array[FunctionDuplicate]
+  magic_strings : Array[MagicStringGroup]
   mut summary : PlanSummary
 }
 
@@ -87,6 +103,7 @@ pub fn RefactorPlanJSON::new(config : ConfigSummary) -> RefactorPlanJSON {
     config,
     clusters: [],
     function_duplicates: [],
+    magic_strings: [],
     summary: { total_clusters: 0, total_files_analyzed: 0, max_similarity: 0.0 },
   }
 }
@@ -139,6 +156,12 @@ pub fn RefactorPlanJSON::to_json(self : RefactorPlanJSON) -> Json {
     clusters_arr.push(cluster_to_json(cluster))
   }
   root.set("clusters", Json::array(clusters_arr))
+  // Magic strings
+  let magic_arr : Array[Json] = []
+  for group in self.magic_strings {
+    magic_arr.push(group.to_json())
+  }
+  root.set("magic_strings", Json::array(magic_arr))
   // Summary
   let summary_obj : Map[String, Json] = Map::new()
   summary_obj.set("total_clusters", self.summary.total_clusters.to_json())

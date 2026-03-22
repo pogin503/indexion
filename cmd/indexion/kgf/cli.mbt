@@ -46,7 +46,6 @@ priv struct KgfConfig {
   show_tokens : Bool
   show_events : Bool
   show_edges : Bool
-  mut show_help : Bool
 }
 
 ///|
@@ -59,20 +58,127 @@ fn KgfConfig::default() -> KgfConfig {
     show_tokens: true,
     show_events: true,
     show_edges: true,
-    show_help: false,
   }
 }
 
 ///|
-/// Main entry point for kgf command.
-pub async fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
+/// Create KgfConfig from argparse Matches.
+fn KgfConfig::from_matches(matches : @argparse.Matches) -> KgfConfig {
+  let mut config = KgfConfig::default()
+  // Global options
+  match matches.values.get("spec") {
+    Some(vals) =>
+      if vals.length() > 0 && vals[0].length() > 0 {
+        config.spec_name = vals[0]
+      }
+    None => ()
   }
+  match matches.values.get("kgf-dir") {
+    Some(vals) => if vals.length() > 0 { config.kgf_dir = vals[0] }
+    None => ()
+  }
+  // Subcommand dispatch
+  match matches.subcommand {
+    Some((name, sub_matches)) => {
+      config.subcommand = name
+      match name {
+        "add" =>
+          match sub_matches.values.get("spec-name") {
+            Some(vals) => if vals.length() > 0 { config.file_path = vals[0] }
+            None => ()
+          }
+        "inspect" | "tokens" | "events" | "edges" => {
+          match sub_matches.values.get("file") {
+            Some(vals) => if vals.length() > 0 { config.file_path = vals[0] }
+            None => ()
+          }
+          match name {
+            "tokens" =>
+              config = { ..config, show_events: false, show_edges: false }
+            "events" =>
+              config = { ..config, show_tokens: false, show_edges: false }
+            "edges" =>
+              config = { ..config, show_tokens: false, show_events: false }
+            _ => ()
+          }
+        }
+        _ => ()
+      }
+    }
+    None => ()
+  }
+  config
+}
+
+///|
+/// Define the kgf command for argparse.
+pub fn command() -> @argparse.Command {
+  let global_options : Array[@argparse.OptionArg] = [
+    @argparse.OptionArg(
+      "spec",
+      about="Specify KGF spec name (auto-detect if omitted)",
+      default_values=[""],
+      global=true,
+    ),
+    @argparse.OptionArg(
+      "kgf-dir",
+      about="KGF specs directory",
+      default_values=["kgfs"],
+      global=true,
+    ),
+  ]
+  let file_positional : Array[@argparse.PositionArg] = [
+    @argparse.PositionArg(
+      "file",
+      about="File to inspect",
+      num_args=@argparse.ValueRange::single(),
+    ),
+  ]
+  @argparse.Command(
+    "kgf",
+    about="KGF spec management and inspection",
+    options=global_options[:],
+    subcommand_required=true,
+    arg_required_else_help=true,
+    subcommands=[
+      @argparse.Command("list", about="List installed KGF specs"),
+      @argparse.Command("update", about="Update all specs from GitHub"),
+      @argparse.Command("add", about="Download and install a single spec", positionals=[
+        @argparse.PositionArg(
+          "spec-name",
+          about="Name of the spec to add",
+          num_args=@argparse.ValueRange::single(),
+        ),
+      ]),
+      @argparse.Command(
+        "inspect",
+        about="Full inspection (tokens, events, edges)",
+        positionals=file_positional[:],
+      ),
+      @argparse.Command(
+        "tokens",
+        about="Show tokenization only",
+        positionals=file_positional[:],
+      ),
+      @argparse.Command(
+        "events",
+        about="Show parse events only",
+        positionals=file_positional[:],
+      ),
+      @argparse.Command(
+        "edges",
+        about="Show generated edges only",
+        positionals=file_positional[:],
+      ),
+    ],
+  )
+}
+
+///|
+/// Entry point for the kgf subcommand using argparse Matches.
+pub async fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = KgfConfig::from_matches(matches)
   match config.subcommand {
-    // Management subcommands (no file_path required)
     "list" => run_list()
     "update" => run_kgf_update()
     "add" => {
@@ -84,12 +190,11 @@ pub async fn run(args : Array[String], start_idx : Int) -> Unit {
       }
       run_kgf_add(config.file_path)
     }
-    // Inspection subcommands (file_path required)
     "inspect" | "tokens" | "events" | "edges" => {
       if config.file_path.length() == 0 {
         println("Error: No file specified")
         println("")
-        show_help()
+        println(command().render_help())
         return
       }
       match config.subcommand {
@@ -102,7 +207,7 @@ pub async fn run(args : Array[String], start_idx : Int) -> Unit {
     }
     _ => {
       println("Unknown subcommand: \{config.subcommand}")
-      show_help()
+      println(command().render_help())
     }
   }
 }
@@ -177,33 +282,6 @@ fn pad_right(s : String, width : Int) -> String {
     buf.write_char(' ')
   }
   buf.to_string()
-}
-
-///|
-/// Parse command line arguments.
-fn parse_args(args : Array[String], start_idx : Int) -> KgfConfig {
-  let config = KgfConfig::default()
-  let mut i = start_idx
-  let mut subcommand_set = false
-  while i < args.length() {
-    let arg = args[i]
-    if arg.has_prefix("--spec=") {
-      config.spec_name = substr_from(arg, 7)
-    } else if arg.has_prefix("--kgf-dir=") {
-      config.kgf_dir = substr_from(arg, 10)
-    } else if arg == "--help" || arg == "-h" {
-      config.show_help = true
-    } else if arg.has_prefix("-") {
-      println("Warning: Unknown option: \{arg}")
-    } else if not(subcommand_set) {
-      config.subcommand = arg
-      subcommand_set = true
-    } else {
-      config.file_path = arg
-    }
-    i += 1
-  }
-  config
 }
 
 ///|
@@ -391,17 +469,6 @@ fn format_attrs(attrs : Map[String, String]) -> String {
 }
 
 ///|
-/// Substring from index.
-fn substr_from(s : String, start : Int) -> String {
-  let chars = s.to_array()
-  let result : Array[Char] = []
-  for i = start; i < chars.length(); i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
 /// Escape string for display.
 fn escape_string(s : String) -> String {
   let chars = s.to_array()
@@ -432,35 +499,4 @@ fn escape_string(s : String) -> String {
     }
   }
   String::from_array(result)
-}
-
-///|
-/// Show help message.
-fn show_help() -> Unit {
-  println("indexion kgf - KGF spec management and inspection")
-  println("")
-  println("Usage:")
-  println("  indexion kgf <subcommand> [options] [file]")
-  println("")
-  println("Management:")
-  println("  list      List installed KGF specs")
-  println("  update    Update all specs from GitHub")
-  println("  add       Download and install a single spec")
-  println("")
-  println("Inspection:")
-  println("  inspect   Full inspection (tokens, events, edges)")
-  println("  tokens    Show tokenization only")
-  println("  events    Show parse events only")
-  println("  edges     Show generated edges only")
-  println("")
-  println("Options:")
-  println("  --spec=NAME      Specify KGF spec name (auto-detect if omitted)")
-  println("  --kgf-dir=PATH   KGF specs directory (default: kgfs)")
-  println("  --help, -h       Show this help message")
-  println("")
-  println("Examples:")
-  println("  indexion kgf list")
-  println("  indexion kgf update")
-  println("  indexion kgf add moonbit")
-  println("  indexion kgf inspect Cargo.toml")
 }

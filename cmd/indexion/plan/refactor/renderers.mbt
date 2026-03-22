@@ -245,6 +245,42 @@ pub fn render_markdown(plan : RefactorPlanJSON) -> String {
       buf.write_string("\n")
     }
   }
+  // Repeated string literals (magic strings)
+  if plan.magic_strings.length() > 0 {
+    buf.write_string("---\n\n")
+    buf.write_string("## Repeated String Literals\n\n")
+    buf.write_string(
+      "String literals appearing in 2+ files (potential constants or SoT candidates):\n\n",
+    )
+    buf.write_string("| Value | Files | Occurrences |\n")
+    buf.write_string("|-------|-------|-------------|\n")
+    for group in plan.magic_strings {
+      buf.write_string("| `\"")
+      buf.write_string(group.value)
+      buf.write_string("\"` | ")
+      buf.write_string(group.file_count.to_string())
+      buf.write_string(" files | ")
+      buf.write_string(group.occurrences.length().to_string())
+      buf.write_string(" occurrences |\n")
+    }
+    buf.write_string("\n")
+    // Details per group (collapsible)
+    for group in plan.magic_strings {
+      buf.write_string("<details>\n<summary><code>\"")
+      buf.write_string(group.value)
+      buf.write_string("\"</code> — ")
+      buf.write_string(group.file_count.to_string())
+      buf.write_string(" files</summary>\n\n")
+      for occ in group.occurrences {
+        buf.write_string("- `")
+        buf.write_string(occ.file)
+        buf.write_string(":")
+        buf.write_string(occ.line.to_string())
+        buf.write_string("`\n")
+      }
+      buf.write_string("\n</details>\n\n")
+    }
+  }
   buf.to_string()
 }
 

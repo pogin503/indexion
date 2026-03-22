@@ -65,7 +65,7 @@ pub fn format_results(hits : Array[@types.QueryHit]) -> String {
     match hit.function.symbol.doc {
       Some(doc) => {
         let short_doc = if doc.length() > 60 {
-          (doc[0:60].to_string()) + "..."
+          doc[0:60].to_string() + "..."
         } else {
           doc
         }

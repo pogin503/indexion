@@ -1,9 +1,12 @@
 import {
   "moonbitlang/core/encoding/utf8" @utf8,
-  "moonbitlang/core/env" @env,
-  "moonbitlang/x/fs" @fs,
   "trkbt10/indexion/src/config" @config_paths,
 }
+
+import {
+  "moonbitlang/core/env" @env,
+  "moonbitlang/x/fs" @fs,
+} for "wbtest"
 
 options(
   "native-stub": [ "git_stub.c" ],

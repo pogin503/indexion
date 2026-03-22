@@ -59,7 +59,6 @@ pub struct RefactorPlanConfig {
   style : String // output style: "raw" (similarity), "structured" (plan)
   project_name : String // project name for structured output
   specs_dir : String // KGF specs directory
-  show_help : Bool
 }
 
 ///|
@@ -76,7 +75,6 @@ pub fn RefactorPlanConfig::default() -> RefactorPlanConfig {
     style: "raw",
     project_name: "",
     specs_dir: "kgfs",
-    show_help: false,
   }
 }
 
@@ -95,103 +93,126 @@ struct FileCluster {
   pairs : Array[SimilarPair] // pairs within this cluster
 }
 
-// get_arg_value, parse_double: use @common (SoT)
-
 ///|
-/// Parse CLI arguments into a refactoring plan configuration.
-pub fn parse_args(args : Array[String], start_idx : Int) -> RefactorPlanConfig {
-  let mut config = RefactorPlanConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--threshold=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, threshold: @common.parse_double(value) }
-    } else if arg.has_prefix("--strategy=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, strategy: value }
-    } else if arg.has_prefix("--include=") {
-      let value = @common.get_arg_value(arg, 10)
-      config.includes.push(value)
-    } else if arg.has_prefix("--exclude=") {
-      let value = @common.get_arg_value(arg, 10)
-      config.excludes.push(value)
-    } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      config = { ..config, output: @common.parse_output_arg(arg).unwrap() }
-    } else if arg.has_prefix("--format=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, format: value }
-    } else if arg.has_prefix("--style=") {
-      let value = @common.get_arg_value(arg, 8)
-      config = { ..config, style: value }
-    } else if arg.has_prefix("--name=") {
-      let value = @common.get_arg_value(arg, 7)
-      config = { ..config, project_name: value }
-    } else if arg.has_prefix("--specs-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, specs_dir: value }
-    } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
-      config = { ..config, target_dir: arg }
-    }
+/// Create RefactorPlanConfig from argparse matches.
+pub fn RefactorPlanConfig::from_matches(
+  matches : @argparse.Matches,
+) -> RefactorPlanConfig {
+  let threshold = match matches.values.get("threshold") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        @common.parse_double(arr[0])
+      } else {
+        0.7
+      }
+    _ => 0.7
   }
-  config
+  let strategy = match matches.values.get("strategy") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "hybrid" }
+    _ => "hybrid"
+  }
+  let includes = match matches.values.get("include") {
+    Some(arr) => arr
+    _ => []
+  }
+  let excludes = match matches.values.get("exclude") {
+    Some(arr) => arr
+    _ => []
+  }
+  let output = match matches.values.get("output") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let format = match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "md" }
+    _ => "md"
+  }
+  let style = match matches.values.get("style") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "raw" }
+    _ => "raw"
+  }
+  let project_name = match matches.values.get("name") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
+  }
+  let target_dir = match matches.values.get("directory") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  {
+    target_dir,
+    threshold,
+    strategy,
+    includes,
+    excludes,
+    output,
+    format,
+    style,
+    project_name,
+    specs_dir,
+  }
 }
 
 ///|
-/// Print usage information for the refactor subcommand.
-pub fn show_help() -> Unit {
-  println(
-    "indexion plan refactor - Generate refactoring plan from similarity analysis",
+/// Define the refactor command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "refactor",
+    about="Generate refactoring plan from similarity analysis",
+    options=[
+      @argparse.OptionArg("threshold", about="Similarity threshold (0.0-1.0)", default_values=[
+        "0.7",
+      ]),
+      @argparse.OptionArg("strategy", about="Algorithm: hybrid, tfidf, ncd", default_values=[
+        "hybrid",
+      ]),
+      @argparse.OptionArg(
+        "include",
+        action=Append,
+        about="Include files matching glob pattern (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "exclude",
+        action=Append,
+        about="Exclude files matching glob pattern (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "output",
+        short='o',
+        about="Output file path (default: stdout)",
+      ),
+      @argparse.OptionArg(
+        "format",
+        about="Output format: md, json, text, github-issue",
+        default_values=["md"],
+      ),
+      @argparse.OptionArg("style", about="Output style: raw, structured", default_values=[
+        "raw",
+      ]),
+      @argparse.OptionArg("name", about="Project name for structured output"),
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "directory",
+        num_args=@argparse.ValueRange(lower=1),
+        about="Target directory to analyze",
+      ),
+    ],
   )
-  println("")
-  println("Usage:")
-  println("  indexion plan refactor [options] <directory>")
-  println("")
-  println("Options:")
-  println("  --threshold=FLOAT    Similarity threshold (default: 0.7 = 70%)")
-  println(
-    "  --strategy=NAME      Similarity strategy: hybrid, ncd, tfidf (default: tfidf)",
-  )
-  println(
-    "  --include=PATTERN    Include files matching pattern (can be repeated)",
-  )
-  println(
-    "  --exclude=PATTERN    Exclude files matching pattern (can be repeated)",
-  )
-  println("  --output=FILE, -o=   Output file path (default: stdout)")
-  println(
-    "  --format=FORMAT      Output format: md, json, text, github-issue (default: md)",
-  )
-  println("  --style=STYLE        Output style: raw, structured (default: raw)")
-  println("  --name=NAME          Project name for structured output")
-  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
-  println("  --help               Show this help message")
-  println("")
-  println("Styles:")
-  println("  raw          Raw similarity analysis with duplicate detection")
-  println(
-    "  structured   Comprehensive refactoring plan with phases/checklists",
-  )
-  println("")
-  println("Formats:")
-  println("  md           Standard Markdown output")
-  println("  json         JSON intermediate representation")
-  println("  text         Plain text output")
-  println("  github-issue GitHub Issue format with labels and checklist")
-  println("")
-  println("Examples:")
-  println("  indexion plan refactor src/")
-  println("  indexion plan refactor --threshold=0.8 --exclude=*_test.mbt src/")
-  println("  indexion plan refactor --style=structured --name=myproject src/")
-  println(
-    "  indexion plan refactor --include=*.mbt --exclude=*_wbtest.mbt -o=refactor.md src/",
-  )
-  println("")
-  println("Patterns:")
-  println("  *           Match any characters")
-  println("  *_test.mbt  Match files ending with _test.mbt")
-  println("  test/*      Match files in test directory")
+}
+
+///|
+/// Entry point using argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = RefactorPlanConfig::from_matches(matches)
+  run_with_config(config)
 }
 
 // collect_files: use @common (SoT)
@@ -469,17 +490,10 @@ fn extract_project_name(path : String) -> String {
 }
 
 ///|
-/// Entry point for the refactor subcommand.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Entry point with a pre-built configuration.
+fn run_with_config(config : RefactorPlanConfig) -> Unit {
   if config.target_dir.length() == 0 {
     println("Error: Directory path required.")
-    println("")
-    show_help()
     return
   }
   // Progress output goes to stderr-equivalent: only print when stdout is not
@@ -498,9 +512,8 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
     println("")
   }
   // Load KGF registry for language detection
-  let explicit = if config.specs_dir != "kgfs" { config.specs_dir } else { "" }
   let registry = @kgf_features.load_registry(
-    explicit_path=explicit,
+    specs_dir=config.specs_dir,
     target_dir=config.target_dir,
   )
   // Detect project type from marker files (search target dir and ancestors)
@@ -651,7 +664,13 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   )
   // Function-level duplicate detection (including same-file)
   let func_dups = find_function_duplicates(files, config.threshold, registry)
-  let plan = { ..plan, function_duplicates: func_dups }
+  // Magic string detection (repeated string literals across files)
+  let magic_strs = find_magic_strings(files, registry)
+  let plan = {
+    ..plan,
+    function_duplicates: func_dups,
+    magic_strings: magic_strs,
+  }
   if show_progress {
     println(
       "      Plan build: " +
@@ -659,6 +678,8 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
       "ms" +
       " (function duplicates: " +
       func_dups.length().to_string() +
+      ", magic strings: " +
+      magic_strs.length().to_string() +
       ")",
     )
   }
@@ -690,11 +711,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
       }
   }
   // Output
-  @common.write_output(
-    config.output,
-    output_content,
-    label="Refactoring plan",
-  )
+  @common.write_output(config.output, output_content, label="Refactoring plan")
 }
 
 // format_github_issue: use @plan_render.GitHubIssue::format (SoT)
@@ -818,3 +835,83 @@ fn find_function_duplicates(
 }
 
 // elapsed_ms: use @common (SoT)
+
+///|
+/// Detect string literals that appear in 2+ files.
+fn find_magic_strings(
+  files : Array[(String, String)],
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[MagicStringGroup] {
+  let min_length = 4
+  let min_files = 2
+  // value → Array[(file, line)]
+  let occurrences : Map[String, Array[(String, Int)]] = {}
+  for item in files {
+    let (path, content) = item
+    let reg = match registry {
+      Some(r) => r
+      None => continue
+    }
+    let lang = match reg.detect_from_path(path) {
+      Some(l) => l
+      None => continue
+    }
+    let spec = match reg.get_spec(lang) {
+      Some(s) => s
+      None => continue
+    }
+    let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+    let tokens = lexer.tokenize(content)
+    // Build line number tracking
+    let mut line = 1
+    for tok in tokens {
+      let kind = tok.get_kind()
+      if kind == "NL" {
+        line += 1
+        continue
+      }
+      if is_string_token_kind(kind) {
+        let value = tok.get_value()
+        if value.length() >= min_length {
+          match occurrences.get(value) {
+            Some(arr) => arr.push((path, line))
+            None => occurrences.set(value, [(path, line)])
+          }
+        }
+      }
+    }
+  }
+  // Filter to strings appearing in 2+ distinct files
+  let result : Array[MagicStringGroup] = []
+  for entry in occurrences {
+    let value = entry.0
+    let locs = entry.1
+    let files_seen : Map[String, Bool] = {}
+    for loc in locs {
+      files_seen.set(loc.0, true)
+    }
+    if files_seen.length() >= min_files {
+      let occ : Array[MagicStringOccurrence] = []
+      for loc in locs {
+        occ.push({ file: loc.0, line: loc.1 })
+      }
+      result.push({ value, occurrences: occ, file_count: files_seen.length() })
+    }
+  }
+  // Sort by file_count desc, then occurrence count desc
+  result.sort_by(fn(a, b) {
+    if a.file_count != b.file_count {
+      b.file_count - a.file_count
+    } else {
+      b.occurrences.length() - a.occurrences.length()
+    }
+  })
+  result
+}
+
+///|
+/// Check if a token kind represents a string literal.
+/// Uses naming convention from KGF specs rather than hardcoding language names.
+fn is_string_token_kind(kind : String) -> Bool {
+  kind.to_lower().contains("string") || kind == "Docstring"
+}

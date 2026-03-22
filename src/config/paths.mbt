@@ -16,9 +16,7 @@ pub fn join_path(base : String, child : String) -> String {
   } else if child.length() == 0 {
     normalize_path(base)
   } else {
-    try {
-      @osenv_path.join([base, child])
-    } catch {
+    @osenv_path.join([base, child]) catch {
       _ => normalize_path(base + "/" + child)
     }
   }
@@ -344,6 +342,21 @@ pub fn find_kgfs_dir(
 }
 
 ///|
+/// Get the kgfs installation directory (SoT for write path).
+/// Returns the OS-standard data directory with kgfs subdirectory.
+/// Used by `kgf install`, `update`, and `init --global`.
+pub fn get_kgfs_install_dir() -> String? {
+  match get_global_data_dir() {
+    Some(data_dir) => Some(join_path(data_dir, "kgfs"))
+    None =>
+      match get_install_dir() {
+        Some(dir) => Some(join_path(dir, "kgfs"))
+        None => None
+      }
+  }
+}
+
+///|
 fn normalize_kgfs_target_dirs(
   target_dir : String,
   target_dirs : Array[String],
@@ -425,7 +438,7 @@ fn is_valid_file(path : String) -> Bool {
 }
 
 ///|
-fn find_last_char(text : String, target : Char) -> Int {
+pub fn find_last_char(text : String, target : Char) -> Int {
   let chars = text.to_array()
   let mut idx = -1
   for i, ch in chars {

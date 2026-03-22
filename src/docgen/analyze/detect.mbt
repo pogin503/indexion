@@ -69,14 +69,14 @@ fn has_any_pattern(content : String, patterns : FixedArray[String]) -> Bool {
 ///|
 /// Language signature patterns for content-based detection.
 /// Each entry: (DetectedLang, check function).
-let lang_signatures : Array[
-  (DetectedLang, (String) -> Bool),
-] = [
+let lang_signatures : Array[(DetectedLang, (String) -> Bool)] = [
   // Order matters: more specific languages first to avoid false positives
   (
     DetectedLang::MoonBit,
     fn(c) {
-      has_any_pattern(c, ["fn ", "pub fn ", "struct ", "enum ", "///|", "derive("])
+      has_any_pattern(c, [
+        "fn ", "pub fn ", "struct ", "enum ", "///|", "derive(",
+      ])
     },
   ),
   (
@@ -96,38 +96,31 @@ let lang_signatures : Array[
   (
     DetectedLang::Python,
     fn(c) {
-      has_any_pattern(
-        c,
-        ["def ", "class ", "import ", "from ", "if __name__", "\"\"\""],
-      )
+      has_any_pattern(c, [
+        "def ", "class ", "import ", "from ", "if __name__", "\"\"\"",
+      ])
     },
   ),
   (
     DetectedLang::TypeScript,
     fn(c) {
-      has_any_pattern(
-        c,
-        [
-          "import ", "export ", "function ", "const ", "class ", "interface ",
-          "type ", "=> {",
-        ],
-      )
+      has_any_pattern(c, [
+        "import ", "export ", "function ", "const ", "class ", "interface ", "type ",
+        "=> {",
+      ])
     },
   ),
   (
     DetectedLang::Html,
-    fn(c) {
-      has_any_pattern(c, ["<!DOCTYPE", "<html", "<head", "<body"])
-    },
+    fn(c) { has_any_pattern(c, ["<!DOCTYPE", "<html", "<head", "<body"]) },
   ),
   (
     DetectedLang::Css,
     fn(c) {
       has_pattern(c, "{") &&
-      has_any_pattern(
-        c,
-        ["color:", "background:", "margin:", "padding:", "display:"],
-      )
+      has_any_pattern(c, [
+        "color:", "background:", "margin:", "padding:", "display:",
+      ])
     },
   ),
   (
@@ -141,10 +134,9 @@ let lang_signatures : Array[
     DetectedLang::Sql,
     fn(c) {
       let upper = to_upper(c)
-      has_any_pattern(
-        upper,
-        ["SELECT ", "CREATE TABLE", "INSERT INTO", "UPDATE ", "DELETE FROM"],
-      )
+      has_any_pattern(upper, [
+        "SELECT ", "CREATE TABLE", "INSERT INTO", "UPDATE ", "DELETE FROM",
+      ])
     },
   ),
 ]

@@ -99,9 +99,8 @@ pub fn analyze_documentation(
   let all_items : Array[PubItem] = []
   let normalized_dir = @common.normalize_path(dir)
   let filter = @filter.FilterConfig::from_project_root(normalized_dir)
-  let explicit = if specs_dir != "kgfs" { specs_dir } else { "" }
   let registry = @kgf_features.load_registry(
-    explicit_path=explicit,
+    specs_dir~,
     target_dir=normalized_dir,
   )
   collect_packages(normalized_dir, packages, "", filter, registry)

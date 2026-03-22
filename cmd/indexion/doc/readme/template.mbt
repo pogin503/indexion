@@ -64,7 +64,7 @@ fn extract_substring(chars : Array[Char], start : Int, end : Int) -> String {
 /// Resolve a placeholder to its value.
 fn resolve_placeholder(placeholder : String, ctx : TemplateContext) -> String {
   if placeholder.has_prefix("include:") {
-    let path = substring_from(placeholder, 8)
+    let path = @common.substring(placeholder, 8, placeholder.length())
     resolve_include(path, ctx.base_dir)
   } else {
     match placeholder {
@@ -103,28 +103,27 @@ fn is_module_doc_content(content : String) -> Bool {
 }
 
 ///|
-fn substring_from(s : String, start : Int) -> String {
-  let chars = s.to_array()
-  if start >= chars.length() {
-    return ""
-  }
-  let buf : Array[Char] = []
-  for i = start; i < chars.length(); i = i + 1 {
-    buf.push(chars[i])
-  }
-  String::from_array(buf)
-}
-
-///|
 /// Resolve {{include:path}} placeholder.
+/// Tries CWD-relative first, then base_dir-relative as fallback.
+/// Prints a warning instead of silently returning empty on failure.
 fn resolve_include(path : String, base_dir : String) -> String {
-  let full_path = if path.has_prefix("/") {
-    path
-  } else {
-    base_dir + "/" + path
+  if path.has_prefix("/") {
+    return @fs.read_file_to_string(path) catch {
+      _ => {
+        println("Warning: {{include:" + path + "}} — file not found")
+        ""
+      }
+    }
   }
-  @fs.read_file_to_string(full_path) catch {
-    _ => ""
+  // Try CWD-relative first (plan convention), then base_dir-relative
+  @fs.read_file_to_string(path) catch {
+    _ =>
+      @fs.read_file_to_string(base_dir + "/" + path) catch {
+        _ => {
+          println("Warning: {{include:" + path + "}} — file not found")
+          ""
+        }
+      }
   }
 }
 

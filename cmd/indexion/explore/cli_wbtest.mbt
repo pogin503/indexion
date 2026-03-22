@@ -1,12 +1,13 @@
 ///|
-test "parse_explore_args: include and exclude patterns" {
-  let config = parse_explore_args(
-    [
-      "--format=list", "--threshold=0.7", "--include=*.ts", "--include=*.tsx", "--exclude=*.d.ts",
-      "src",
-    ],
-    0,
+test "from_matches: include and exclude patterns" {
+  let cmd = command()
+  let matches = cmd.parse(
+    argv=[
+        "--format=list", "--threshold=0.7", "--include=*.ts", "--include=*.tsx",
+        "--exclude=*.d.ts", "src",
+      ][:],
   )
+  let config = ExploreConfig::from_matches(matches)
   assert_eq(config.format, "list")
   assert_eq(config.target_dirs.length(), 1)
   assert_eq(config.target_dirs[0], "src")

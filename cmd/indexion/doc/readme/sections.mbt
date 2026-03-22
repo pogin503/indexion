@@ -63,7 +63,7 @@ pub fn extract_overview(content : String) -> String {
     }
   }
   let _ = found_first_heading
-  trim_section_content(result.to_string())
+  @common.trim_ascii_spaces(result.to_string())
 }
 
 ///|
@@ -140,29 +140,6 @@ fn split_content_lines(content : String) -> Array[String] {
 }
 
 ///|
-fn trim_section_content(content : String) -> String {
-  let chars = content.to_array()
-  let mut start = 0
-  let mut end = chars.length()
-  // Trim leading whitespace/newlines
-  while start < end && is_whitespace_char(chars[start]) {
-    start = start + 1
-  }
-  // Trim trailing whitespace/newlines
-  while end > start && is_whitespace_char(chars[end - 1]) {
-    end = end - 1
-  }
-  if start >= end {
-    return ""
-  }
-  let result : Array[Char] = []
-  for i = start; i < end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
 /// Count the heading level of a line (number of leading # characters).
 /// Returns 0 if not a heading.
 fn heading_level(line : String) -> Int {
@@ -208,7 +185,7 @@ fn lines_to_text(lines : Array[String]) -> String {
     }
     buf.write_string(line)
   }
-  trim_section_content(buf.to_string())
+  @common.trim_ascii_spaces(buf.to_string())
 }
 
 ///|
@@ -236,10 +213,14 @@ pub fn parse_markdown_to_sections(
   }
   if min_level == 99 {
     // No headings at all — return entire content as single anonymous section
-    let text = trim_section_content(content)
+    let text = @common.trim_ascii_spaces(content)
     if text.length() > 0 {
       result.push(
-        @plan_types.PlanSection::new("", "", @plan_types.SectionContent::text(text)),
+        @plan_types.PlanSection::new(
+          "",
+          "",
+          @plan_types.SectionContent::text(text),
+        ),
       )
     }
     return result
@@ -299,7 +280,9 @@ fn build_nested_sections(
       if text.length() > 0 {
         result.push(
           @plan_types.PlanSection::new(
-            "", "", @plan_types.SectionContent::text(text),
+            "",
+            "",
+            @plan_types.SectionContent::text(text),
           ),
         )
       }
@@ -317,14 +300,19 @@ fn build_nested_sections(
       // Build content: own text + nested children
       let own_text = lines_to_text(lines)
       let children = build_nested_sections(
-        flat, i + 1, section_end, base_level + 1,
+        flat,
+        i + 1,
+        section_end,
+        base_level + 1,
       )
       let id = normalize_section_name(heading)
       if children.length() == 0 {
         // Leaf section: just text content
         result.push(
           @plan_types.PlanSection::new(
-            id, heading, @plan_types.SectionContent::text(own_text),
+            id,
+            heading,
+            @plan_types.SectionContent::text(own_text),
           ),
         )
       } else {
@@ -333,7 +321,9 @@ fn build_nested_sections(
         if own_text.length() > 0 {
           nested.push(
             @plan_types.PlanSection::new(
-              "", "", @plan_types.SectionContent::text(own_text),
+              "",
+              "",
+              @plan_types.SectionContent::text(own_text),
             ),
           )
         }
@@ -414,9 +404,4 @@ fn to_lower_char(ch : Char) -> Char {
   } else {
     ch
   }
-}
-
-///|
-fn is_whitespace_char(ch : Char) -> Bool {
-  ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
 }

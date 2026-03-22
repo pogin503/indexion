@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/argparse" @argparse,
   "moonbitlang/x/fs" @fs,
   "moonbitlang/core/env" @env,
   "trkbt10/indexion/cmd/indexion/common" @common,

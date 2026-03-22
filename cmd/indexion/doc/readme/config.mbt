@@ -21,16 +21,16 @@ pub fn run_with_doc_config(
     " package entries",
   )
   // Determine output file
-  let output_path = match cli_config.output {
-    Some(path) => path
-    None => doc_config.root.output
+  let output_path = if cli_config.output.length() > 0 {
+    cli_config.output
+  } else {
+    doc_config.root.output
   }
   log_progress("[2/3] Building document IR...")
   let doc = build_root_document(doc_config)
   let result = @plan_render.render_markdown(doc)
   log_progress("[3/3] Writing output...")
-  write_output(result, Some(output_path), false)
-  println("Written to: " + output_path)
+  @common.write_output(output_path, result, label="Readme")
 }
 
 ///|
@@ -60,7 +60,9 @@ fn build_root_document(
         let parsed = parse_markdown_to_sections(content)
         for s in parsed {
           // Skip the first heading that became the document title
-          if not(title_extracted) && s.heading == title && s.heading.length() > 0 {
+          if not(title_extracted) &&
+            s.heading == title &&
+            s.heading.length() > 0 {
             title_extracted = true
             // Add children of the title section as top-level sections
             match s.content {
@@ -146,13 +148,17 @@ fn flush_pending_toc(
   if children.length() > 0 {
     doc.add_section(
       @plan_types.PlanSection::new(
-        "toc", title, @plan_types.SectionContent::nested(children),
+        "toc",
+        title,
+        @plan_types.SectionContent::nested(children),
       ),
     )
   } else {
     doc.add_section(
       @plan_types.PlanSection::new(
-        "toc", title, @plan_types.SectionContent::text(""),
+        "toc",
+        title,
+        @plan_types.SectionContent::text(""),
       ),
     )
   }
@@ -256,33 +262,19 @@ fn filter_packages(
 fn glob_match_path(pattern : String, path : String) -> Bool {
   // Handle "cmd/**" pattern
   if pattern.has_suffix("/**") {
-    let prefix = substring_config(pattern, 0, pattern.length() - 3)
+    let prefix = @common.substring(pattern, 0, pattern.length() - 3)
     return path.has_prefix(prefix)
   }
   // Handle "cmd/*" pattern
   if pattern.has_suffix("/*") {
-    let prefix = substring_config(pattern, 0, pattern.length() - 2)
+    let prefix = @common.substring(pattern, 0, pattern.length() - 2)
     if not(path.has_prefix(prefix)) {
       return false
     }
     // Check that there's no additional / after the prefix
-    let rest = substring_config(path, prefix.length() + 1, path.length())
+    let rest = @common.substring(path, prefix.length() + 1, path.length())
     return not(rest.contains("/"))
   }
   // Exact match
   pattern == path
-}
-
-///|
-fn substring_config(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  if start >= end || start >= chars.length() {
-    return ""
-  }
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  let result : Array[Char] = []
-  for i = start; i < actual_end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
 }

@@ -1,9 +1,12 @@
 import {
   "moonbitlang/x/fs" @fs,
+}
+
+import {
   "trkbt10/indexion/src/core/graph" @graph,
   "trkbt10/indexion/src/kgf/lexer" @lexer,
   "trkbt10/indexion/src/kgf/peg" @peg,
   "trkbt10/indexion/src/kgf/registry" @registry,
   "trkbt10/indexion/src/kgf/semantics" @semantics,
   "trkbt10/indexion/src/kgf/features" @features,
-}
+} for "wbtest"

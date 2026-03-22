@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/argparse" @argparse,
   "moonbitlang/core/env" @env,
   "trkbt10/indexion/src/similarity/apted" @apted,
   "trkbt10/indexion/src/similarity/ncd" @ncd,

@@ -13,8 +13,8 @@
 ///
 /// | Option | Description | Default |
 /// |--------|-------------|---------|
-/// | `--output=FILE` | Output file (- for stdout) | - |
-/// | `--specs=DIR` | KGF specs directory | kgfs |
+/// | `--output=FILE` | Output file | stdout |
+/// | `--specs-dir=DIR` | KGF specs directory | kgfs |
 /// | `--title=TEXT` | Diagram title | Module Dependencies |
 /// | `--format=FORMAT` | Output format: mermaid, json, dot, d2, text | mermaid |
 ///
@@ -39,75 +39,75 @@ pub struct GraphConfig {
   title : String
   format : String
   input_paths : Array[String]
-  show_help : Bool
 }
 
 ///|
 /// Create default configuration.
 pub fn GraphConfig::default() -> GraphConfig {
   {
-    output: "-",
+    output: "",
     specs_dir: "kgfs",
     title: "Module Dependencies",
     format: "mermaid",
     input_paths: [],
-    show_help: false,
   }
 }
 
-// get_arg_value: use @common (SoT)
-
 ///|
-/// Parse command line arguments.
-pub fn parse_args(args : Array[String], start_idx : Int) -> GraphConfig {
-  let mut config = GraphConfig::default()
-  let paths : Array[String] = []
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--output=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, output: value }
-    } else if arg.has_prefix("--specs=") {
-      let value = @common.get_arg_value(arg, 8)
-      config = { ..config, specs_dir: value }
-    } else if arg.has_prefix("--title=") {
-      let value = @common.get_arg_value(arg, 8)
-      config = { ..config, title: value }
-    } else if arg.has_prefix("--format=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, format: value }
-    } else if not(arg.has_prefix("-")) {
-      paths.push(arg)
-    }
+/// Create GraphConfig from argparse matches.
+pub fn GraphConfig::from_matches(matches : @argparse.Matches) -> GraphConfig {
+  let output = match matches.values.get("output") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
   }
-  { ..config, input_paths: paths }
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
+  }
+  let title = match matches.values.get("title") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "Module Dependencies" }
+    _ => "Module Dependencies"
+  }
+  let format = match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "mermaid" }
+    _ => "mermaid"
+  }
+  let input_paths = match matches.values.get("files") {
+    Some(arr) if arr.length() > 0 => arr
+    _ => ["."]
+  }
+  { output, specs_dir, title, format, input_paths }
 }
 
 ///|
-/// Show help message.
-pub fn show_help() -> Unit {
-  println("indexion doc graph - Generate dependency graph in Mermaid format")
-  println("")
-  println("Usage:")
-  println("  indexion doc graph [options] [files...]")
-  println("")
-  println("Options:")
-  println("  --output=FILE    Output file (- for stdout, default: -)")
-  println("  --specs=DIR      KGF specs directory (default: kgfs)")
-  println("  --title=TEXT     Diagram title (default: Module Dependencies)")
-  println(
-    "  --format=FORMAT  Output format: mermaid, json, dot, d2, text (default: mermaid)",
+/// Define the graph command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "graph",
+    about="Generate dependency graph in Mermaid format",
+    options=[
+      @argparse.OptionArg("output", about="Output file (default: stdout)"),
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+      @argparse.OptionArg("title", about="Diagram title", default_values=[
+        "Module Dependencies",
+      ]),
+      @argparse.OptionArg(
+        "format",
+        about="Output format: mermaid, json, dot, d2, text",
+        default_values=["mermaid"],
+      ),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "files",
+        num_args=@argparse.ValueRange(lower=0),
+        about="Input files or directories",
+      ),
+    ],
   )
-  println("  --help           Show this help message")
-  println("")
-  println("Examples:")
-  println("  indexion doc graph src/")
-  println("  indexion doc graph --output=deps.md src/")
-  println("  indexion doc graph --title=\"API Dependencies\" src/api/")
 }
-
 
 ///|
 /// Generate JSON output with dependencies and circular references.
@@ -160,17 +160,9 @@ fn print_progress(info : (Int, Int, String)) -> Unit {
 }
 
 ///|
-/// Run the graph command.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
-  if config.input_paths.length() == 0 {
-    println("No input files found.")
-    return
-  }
+/// Run the graph command from argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = GraphConfig::from_matches(matches)
   let mut has_existing_input = false
   for path in config.input_paths {
     let exists = (@fs.is_dir(path) || @fs.is_file(path)) catch { _ => false }
@@ -185,7 +177,10 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
   // Stage 1: Load KGF specs to get ignore patterns.
   println("Loading language specs...")
-  let registry = @registry.KGFRegistry::load_from_dir(config.specs_dir)
+  let registry = @kgf_features.load_registry_or_empty(
+    specs_dir=config.specs_dir,
+    target_dirs=config.input_paths,
+  )
   // Stage 2: Collect candidate files using KGF ignore patterns.
   println("Collecting files...")
   let kgf_ignore = registry.collect_ignore_patterns()
@@ -256,7 +251,7 @@ pub fn run(args : Array[String], start_idx : Int) -> Unit {
   }
   @common.write_output(config.output, output)
   // Print summary to stderr if outputting to file
-  if config.output != "-" {
+  if config.output.length() > 0 {
     println("Dependencies: " + deps.length().to_string())
     if circulars.length() > 0 {
       println("Circular references: " + circulars.length().to_string())

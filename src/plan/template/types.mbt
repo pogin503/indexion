@@ -84,4 +84,3 @@ pub struct CheckboxOption {
   label : String
   required : Bool
 }
-

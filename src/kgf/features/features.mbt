@@ -143,12 +143,23 @@ pub fn build_line_func_map(
 
 ///|
 /// Load KGF registry from kgfs directory if available.
+/// `specs_dir` is the CLI --specs-dir value. The default "kgfs" triggers
+/// auto-detection; any other value is treated as an explicit path.
 pub fn load_registry(
+  specs_dir? : String = "kgfs",
   explicit_path? : String = "",
   target_dir? : String = ".",
   target_dirs? : Array[String] = [],
 ) -> @kgf_registry.KGFRegistry? {
-  match find_kgfs_dir(explicit_path~, target_dir~, target_dirs~) {
+  let resolved_explicit = if explicit_path.length() > 0 {
+    explicit_path
+  } else if specs_dir != "kgfs" {
+    specs_dir
+  } else {
+    ""
+  }
+  match
+    find_kgfs_dir(explicit_path=resolved_explicit, target_dir~, target_dirs~) {
     Some(dir) => {
       let reg = @kgf_registry.KGFRegistry::load_from_dir(dir)
       if reg.spec_count() > 0 {
@@ -158,6 +169,20 @@ pub fn load_registry(
       }
     }
     None => None
+  }
+}
+
+///|
+/// Load KGF registry, returning an empty registry if none found.
+/// Convenience wrapper over `load_registry` for commands that always need a registry.
+pub fn load_registry_or_empty(
+  specs_dir? : String = "kgfs",
+  target_dir? : String = ".",
+  target_dirs? : Array[String] = [],
+) -> @kgf_registry.KGFRegistry {
+  match load_registry(specs_dir~, target_dir~, target_dirs~) {
+    Some(r) => r
+    None => @kgf_registry.KGFRegistry::new()
   }
 }
 

@@ -585,22 +585,6 @@ fn unit_match_terms(unit : CodeUnit) -> UnitMatchTerms {
 }
 
 ///|
-/// Compatibility wrapper for tests (computes terms on the fly).
-fn match_fragment(
-  unit : CodeUnit,
-  _fragment : DocFragment,
-  signals : FragmentMatchSignals,
-  allow_file_fallback : Bool,
-) -> (Int, String, Array[String]) {
-  match_fragment_with_terms(
-    unit,
-    unit_match_terms(unit),
-    signals,
-    allow_file_fallback,
-  )
-}
-
-///|
 fn build_code_anchor(unit : CodeUnit) -> CodeAnchor {
   {
     symbol_id: unit.symbol_id,

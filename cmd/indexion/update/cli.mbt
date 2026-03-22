@@ -14,59 +14,52 @@
 pub struct UpdateConfig {
   check_only : Bool
   force : Bool
-  show_help : Bool
 }
 
 ///|
 /// Create a default UpdateConfig with all options disabled.
 pub fn UpdateConfig::default() -> UpdateConfig {
-  { check_only: false, force: false, show_help: false }
+  { check_only: false, force: false }
 }
 
 ///|
-/// Parse command-line arguments for the update subcommand.
-pub fn parse_args(args : Array[String], start_idx : Int) -> UpdateConfig {
+/// Create UpdateConfig from argparse Matches.
+pub fn UpdateConfig::from_matches(matches : @argparse.Matches) -> UpdateConfig {
   let mut config = UpdateConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg == "--check" {
-      config = { ..config, check_only: true }
-    } else if arg == "--force" {
-      config = { ..config, force: true }
-    }
+  match matches.flags.get("check") {
+    Some(true) => config = { ..config, check_only: true }
+    _ => ()
+  }
+  match matches.flags.get("force") {
+    Some(true) => config = { ..config, force: true }
+    _ => ()
   }
   config
 }
 
 ///|
-/// Display help text for the update subcommand.
-pub fn show_help() -> Unit {
-  println("indexion update - Check for updates and install the latest version")
-  println("")
-  println("Usage:")
-  println("  indexion update [options]")
-  println("")
-  println("Options:")
-  println("  --check      Check for updates only (do not download)")
-  println("  --force      Reinstall even if already on latest version")
-  println("  --help, -h   Show this help message")
-  println("")
-  println("Examples:")
-  println("  indexion update          # Update to latest version")
-  println("  indexion update --check  # Check if an update is available")
-  println("  indexion update --force  # Force reinstall current version")
+/// Define the update command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "update",
+    about="Check for updates and install the latest version",
+    flags=[
+      @argparse.FlagArg(
+        "check",
+        about="Check for updates only (do not download)",
+      ),
+      @argparse.FlagArg(
+        "force",
+        about="Reinstall even if already on latest version",
+      ),
+    ],
+  )
 }
 
 ///|
-/// Entry point for the update subcommand.
-pub async fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Entry point for the update subcommand using argparse Matches.
+pub async fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = UpdateConfig::from_matches(matches)
   run_async(config)
 }
 

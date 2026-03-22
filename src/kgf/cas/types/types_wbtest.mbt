@@ -8,7 +8,9 @@ test "ContentHash::from_string and to_string" {
 
 ///|
 test "SymbolicRef::new" {
-  let sym_ref = SymbolicRef::new("npm:lodash", "moduleDependsOn", "import lodash")
+  let sym_ref = SymbolicRef::new(
+    "npm:lodash", "moduleDependsOn", "import lodash",
+  )
   assert_eq(sym_ref.ref_str, "npm:lodash")
   assert_eq(sym_ref.edge_kind, "moduleDependsOn")
   assert_eq(sym_ref.via, "import lodash")

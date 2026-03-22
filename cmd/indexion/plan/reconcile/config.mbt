@@ -30,21 +30,6 @@ fn update_documents_scope_name(
 }
 
 ///|
-fn append_document_path(
-  config : ReconcileConfig,
-  path : String,
-) -> ReconcileConfig {
-  let doc_paths = config.documents.doc_paths.copy()
-  doc_paths.push(path)
-  let documents = @config_paths.resolve_reconcile_document_scope(
-    config.documents.scope_name,
-    doc_paths~,
-    doc_specs=config.documents.doc_specs,
-  )
-  { ..config, documents, }
-}
-
-///|
 fn replace_document_paths(
   config : ReconcileConfig,
   doc_paths : Array[String],
@@ -53,21 +38,6 @@ fn replace_document_paths(
     config.documents.scope_name,
     doc_paths~,
     doc_specs=config.documents.doc_specs,
-  )
-  { ..config, documents, }
-}
-
-///|
-fn append_document_spec(
-  config : ReconcileConfig,
-  spec : String,
-) -> ReconcileConfig {
-  let doc_specs = config.documents.doc_specs.copy()
-  doc_specs.push(spec)
-  let documents = @config_paths.resolve_reconcile_document_scope(
-    config.documents.scope_name,
-    doc_paths=config.documents.doc_paths,
-    doc_specs~,
   )
   { ..config, documents, }
 }
@@ -83,119 +53,6 @@ fn replace_document_specs(
     doc_specs~,
   )
   { ..config, documents, }
-}
-
-///|
-fn parsed_args_state() -> ParsedArgsState {
-  {
-    config: ReconcileConfig::default(),
-    explicit_format: false,
-    explicit_doc_scope: false,
-    explicit_specs_dir: false,
-    explicit_index_dir: false,
-    explicit_review_results_path: false,
-    explicit_threshold_seconds: false,
-    explicit_max_candidates: false,
-    explicit_doc_paths: false,
-    explicit_doc_specs: false,
-    explicit_allow_file_fallback: false,
-    explicit_git_preferred: false,
-    explicit_mtime_fallback: false,
-    explicit_logical_review_mode: false,
-  }
-}
-
-///|
-fn parse_args_state(args : Array[String], start_idx : Int) -> ParsedArgsState {
-  let mut state = parsed_args_state()
-  let mut config = state.config
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      config = { ..config, output: @common.parse_output_arg(arg).unwrap() }
-    } else if arg.has_prefix("--format=") {
-      config = { ..config, format: @common.get_arg_value(arg, 9) }
-      state = { ..state, explicit_format: true }
-    } else if arg.has_prefix("--scope=") {
-      config = update_documents_scope_name(
-        config,
-        @common.get_arg_value(arg, 8),
-      )
-      state = { ..state, explicit_doc_scope: true }
-    } else if arg.has_prefix("--specs=") || arg.has_prefix("--specs-dir=") {
-      let prefix_len = if arg.has_prefix("--specs-dir=") { 12 } else { 8 }
-      config = { ..config, specs_dir: @common.get_arg_value(arg, prefix_len) }
-      state = { ..state, explicit_specs_dir: true }
-    } else if arg.has_prefix("--index-dir=") {
-      config = { ..config, index_dir: @common.get_arg_value(arg, 12) }
-      state = { ..state, explicit_index_dir: true }
-    } else if arg.has_prefix("--config=") {
-      config = { ..config, config_path: @common.get_arg_value(arg, 9) }
-    } else if arg.has_prefix("--review-results=") {
-      config = { ..config, review_results_path: @common.get_arg_value(arg, 17) }
-      state = { ..state, explicit_review_results_path: true }
-    } else if arg.has_prefix("--threshold-seconds=") {
-      config = {
-        ..config,
-        threshold_seconds: @common.parse_int(@common.get_arg_value(arg, 20)),
-      }
-      state = { ..state, explicit_threshold_seconds: true }
-    } else if arg.has_prefix("--max-candidates=") {
-      config = {
-        ..config,
-        max_candidates: @common.parse_int(@common.get_arg_value(arg, 17)),
-      }
-      state = { ..state, explicit_max_candidates: true }
-    } else if arg.has_prefix("--doc=") {
-      let path = @common.get_arg_value(arg, 6)
-      config = if state.explicit_doc_paths {
-        append_document_path(config, path)
-      } else {
-        replace_document_paths(config, [path])
-      }
-      state = { ..state, explicit_doc_paths: true }
-    } else if arg.has_prefix("--doc-spec=") {
-      let spec = @common.get_arg_value(arg, 11)
-      config = if state.explicit_doc_specs {
-        append_document_spec(config, spec)
-      } else {
-        replace_document_specs(config, [spec])
-      }
-      state = { ..state, explicit_doc_specs: true }
-    } else if arg == "--no-file-fallback" {
-      config = { ..config, allow_file_fallback: false }
-      state = { ..state, explicit_allow_file_fallback: true }
-    } else if arg == "--git" {
-      config = { ..config, git_preferred: true }
-      state = { ..state, explicit_git_preferred: true }
-    } else if arg == "--mtime-only" {
-      config = { ..config, git_preferred: false, mtime_fallback: true }
-      state = {
-        ..state,
-        explicit_git_preferred: true,
-        explicit_mtime_fallback: true,
-      }
-    } else if arg == "--logical-review=off" {
-      config = { ..config, logical_review_mode: "off" }
-      state = { ..state, explicit_logical_review_mode: true }
-    } else if arg == "--logical-review=queue" {
-      config = { ..config, logical_review_mode: "queue" }
-      state = { ..state, explicit_logical_review_mode: true }
-    } else if arg == "--no-parallel" {
-      config = { ..config, parallel: false }
-    } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
-      config = { ..config, target_dir: arg }
-    }
-  }
-  { ..state, config, }
-}
-
-///|
-/// Parse CLI arguments into a reconcile configuration.
-pub fn parse_args(args : Array[String], start_idx : Int) -> ReconcileConfig {
-  parse_args_state(args, start_idx).config
 }
 
 ///|
@@ -356,9 +213,246 @@ fn resolve_inherited_config_path(
 }
 
 ///|
-/// Parse CLI arguments and merge with file-based configuration.
-pub fn resolve_config(args : Array[String], start_idx : Int) -> ReconcileConfig {
-  let parsed = parse_args_state(args, start_idx)
+/// Define the reconcile command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "reconcile",
+    about="Detect implementation/documentation drift",
+    options=[
+      @argparse.OptionArg(
+        "output",
+        short='o',
+        about="Output file path (default: stdout)",
+      ),
+      @argparse.OptionArg(
+        "format",
+        about="Output format: json, md, github-issue",
+        default_values=["json"],
+      ),
+      @argparse.OptionArg(
+        "scope",
+        about="Doc scope preset: custom, package-docs, tree-docs",
+      ),
+      @argparse.OptionArg(
+        "specs-dir",
+        about="KGF specs directory (default: auto-detect)",
+      ),
+      @argparse.OptionArg(
+        "index-dir",
+        about="Cache directory (default: .indexion/cache/reconcile)",
+      ),
+      @argparse.OptionArg(
+        "config",
+        about="Explicit config file (.indexion.toml or .json)",
+      ),
+      @argparse.OptionArg(
+        "review-results",
+        about="Apply logical review decisions from JSON",
+      ),
+      @argparse.OptionArg(
+        "threshold-seconds",
+        about="Drift threshold in seconds",
+        default_values=["60"],
+      ),
+      @argparse.OptionArg(
+        "max-candidates",
+        about="Maximum candidates in output",
+        default_values=["200"],
+      ),
+      @argparse.OptionArg(
+        "doc",
+        action=Append,
+        about="Restrict document paths (repeatable)",
+      ),
+      @argparse.OptionArg(
+        "doc-spec",
+        action=Append,
+        about="Restrict document KGF specs (repeatable)",
+      ),
+      @argparse.OptionArg("logical-review", about="queue or off", default_values=[
+        "queue",
+      ]),
+    ],
+    flags=[
+      @argparse.FlagArg::new(
+        "no-file-fallback",
+        about="Disable basename/file-path fallback matching",
+      ),
+      @argparse.FlagArg::new(
+        "git",
+        about="Prefer git timestamps over file mtimes",
+      ),
+      @argparse.FlagArg::new(
+        "mtime-only",
+        about="Skip git timestamps and rely on file mtimes",
+      ),
+      @argparse.FlagArg::new("no-parallel", about="Disable parallel processing"),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "directory",
+        num_args=@argparse.ValueRange(lower=0),
+        about="Target directory to analyze",
+      ),
+    ],
+  )
+}
+
+///|
+fn is_from_argv(matches : @argparse.Matches, key : String) -> Bool {
+  match matches.sources.get(key) {
+    Some(@argparse.Argv) => true
+    _ => false
+  }
+}
+
+///|
+fn parse_args_state_from_matches(
+  matches : @argparse.Matches,
+) -> ParsedArgsState {
+  let mut config = ReconcileConfig::default()
+  // output
+  match matches.values.get("output") {
+    Some(arr) => if arr.length() > 0 { config = { ..config, output: arr[0] } }
+    _ => ()
+  }
+  // format
+  match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { config = { ..config, format: arr[0] } }
+    _ => ()
+  }
+  // scope
+  match matches.values.get("scope") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = update_documents_scope_name(config, arr[0])
+      }
+    _ => ()
+  }
+  // specs-dir
+  match matches.values.get("specs-dir") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, specs_dir: arr[0] }
+      }
+    _ => ()
+  }
+  // index-dir
+  match matches.values.get("index-dir") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, index_dir: arr[0] }
+      }
+    _ => ()
+  }
+  // config
+  match matches.values.get("config") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, config_path: arr[0] }
+      }
+    _ => ()
+  }
+  // review-results
+  match matches.values.get("review-results") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, review_results_path: arr[0] }
+      }
+    _ => ()
+  }
+  // threshold-seconds
+  match matches.values.get("threshold-seconds") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, threshold_seconds: @common.parse_int(arr[0]) }
+      }
+    _ => ()
+  }
+  // max-candidates
+  match matches.values.get("max-candidates") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, max_candidates: @common.parse_int(arr[0]) }
+      }
+    _ => ()
+  }
+  // doc (repeatable)
+  let explicit_doc_paths = is_from_argv(matches, "doc")
+  match matches.values.get("doc") {
+    Some(arr) if explicit_doc_paths =>
+      config = replace_document_paths(config, arr.copy())
+    _ => ()
+  }
+  // doc-spec (repeatable)
+  let explicit_doc_specs = is_from_argv(matches, "doc-spec")
+  match matches.values.get("doc-spec") {
+    Some(arr) if explicit_doc_specs =>
+      config = replace_document_specs(config, arr.copy())
+    _ => ()
+  }
+  // logical-review
+  match matches.values.get("logical-review") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, logical_review_mode: arr[0] }
+      }
+    _ => ()
+  }
+  // no-file-fallback (flag)
+  match matches.flags.get("no-file-fallback") {
+    Some(true) => config = { ..config, allow_file_fallback: false }
+    _ => ()
+  }
+  // git (flag)
+  match matches.flags.get("git") {
+    Some(true) => config = { ..config, git_preferred: true }
+    _ => ()
+  }
+  // mtime-only (flag)
+  match matches.flags.get("mtime-only") {
+    Some(true) =>
+      config = { ..config, git_preferred: false, mtime_fallback: true }
+    _ => ()
+  }
+  // no-parallel (flag)
+  match matches.flags.get("no-parallel") {
+    Some(true) => config = { ..config, parallel: false }
+    _ => ()
+  }
+  // directory (positional)
+  match matches.values.get("directory") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        config = { ..config, target_dir: arr[0] }
+      }
+    _ => ()
+  }
+  {
+    config,
+    explicit_format: is_from_argv(matches, "format"),
+    explicit_doc_scope: is_from_argv(matches, "scope"),
+    explicit_specs_dir: is_from_argv(matches, "specs-dir"),
+    explicit_index_dir: is_from_argv(matches, "index-dir"),
+    explicit_review_results_path: is_from_argv(matches, "review-results"),
+    explicit_threshold_seconds: is_from_argv(matches, "threshold-seconds"),
+    explicit_max_candidates: is_from_argv(matches, "max-candidates"),
+    explicit_doc_paths,
+    explicit_doc_specs,
+    explicit_allow_file_fallback: is_from_argv(matches, "no-file-fallback"),
+    explicit_git_preferred: is_from_argv(matches, "git") ||
+    is_from_argv(matches, "mtime-only"),
+    explicit_mtime_fallback: is_from_argv(matches, "mtime-only"),
+    explicit_logical_review_mode: is_from_argv(matches, "logical-review"),
+  }
+}
+
+///|
+/// Parse argparse matches and merge with file-based configuration.
+pub fn resolve_config_from_matches(
+  matches : @argparse.Matches,
+) -> ReconcileConfig {
+  let parsed = parse_args_state_from_matches(matches)
   let cli = parsed.config
   let target_dir = @config_paths.normalize_path(
     if cli.target_dir.length() > 0 {
@@ -420,59 +514,4 @@ pub fn resolve_config(args : Array[String], start_idx : Int) -> ReconcileConfig 
       resolve_specs_dir(target_dir)
     },
   })
-}
-
-///|
-/// Print usage information for the reconcile subcommand.
-pub fn show_help() -> Unit {
-  println("indexion plan reconcile - Detect implementation/documentation drift")
-  println("")
-  println("Usage:")
-  println("  indexion plan reconcile [options] <directory>")
-  println("")
-  println("Options:")
-  println("  --output=FILE, -o=     Output file path (default: stdout)")
-  println(
-    "  --format=FORMAT        Output format: json, md, github-issue (default: json)",
-  )
-  println(
-    "  --scope=MODE           Doc scope preset: custom, package-docs, tree-docs",
-  )
-  println("  --specs=DIR            KGF specs directory (default: auto-detect)")
-  println(
-    "  --index-dir=DIR        Cache directory (default: .indexion/cache/reconcile)",
-  )
-  println(
-    "  --config=FILE          Explicit config file (.indexion.toml or .json)",
-  )
-  println("  --review-results=FILE  Apply logical review decisions from JSON")
-  println("  --threshold-seconds=N  Drift threshold in seconds (default: 60)")
-  println(
-    "  --max-candidates=N     Maximum candidates in output (default: 200)",
-  )
-  println("  --doc=GLOB             Restrict document paths (repeatable)")
-  println("  --doc-spec=NAME        Restrict document KGF specs (repeatable)")
-  println(
-    "  --no-file-fallback     Disable basename/file-path fallback matching",
-  )
-  println(
-    "  --mtime-only           Skip git timestamps and rely on file mtimes",
-  )
-  println("  --logical-review=MODE  queue or off (default: queue)")
-  println("  --no-parallel          Disable parallel processing")
-  println("  --help                 Show this help message")
-  println("")
-  println("Config files:")
-  println("  .indexion.toml is preferred over .indexion.json")
-  println("")
-  println("Examples:")
-  println("  indexion plan reconcile .")
-  println("  indexion plan reconcile --format=md src/")
-  println(
-    "  indexion plan reconcile --scope=package-docs cmd/indexion/plan/reconcile",
-  )
-  println("  indexion plan reconcile --scope=tree-docs cmd/indexion/plan")
-  println(
-    "  indexion plan reconcile --doc='docs/**/*.md' --doc='spec/**/*.toml' .",
-  )
 }

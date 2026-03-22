@@ -1,7 +1,10 @@
 import {
+  "moonbitlang/core/argparse" @argparse,
+  "moonbitlang/x/fs" @fs,
+  "mizchi/x/sys" @sys,
   "trkbt10/indexion/cmd/indexion/common" @common,
   "trkbt10/indexion/src/core/graph" @graph,
-  "trkbt10/indexion/src/kgf/registry" @registry,
+  "trkbt10/indexion/src/kgf/features" @kgf_features,
   "trkbt10/indexion/src/digest/types" @types,
   "trkbt10/indexion/src/digest/index" @index,
   "trkbt10/indexion/src/digest/config" @dconfig,
@@ -10,6 +13,4 @@ import {
   "trkbt10/indexion/src/digest/embed" @embed,
   "trkbt10/indexion/src/pipeline" @pipeline,
   "trkbt10/indexion/src/docgen/build" @build,
-  "moonbitlang/x/fs" @fs,
-  "mizchi/x/sys" @sys,
 }

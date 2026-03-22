@@ -53,6 +53,12 @@ indexion searches for KGF specs in this order:
 5. `kgfs/` in the current working directory
 6. OS-standard data directory `.../kgfs/` when non-empty
 
+### Claude Code Skills
+
+```bash
+claude plugin marketplace add trkbt10/indexion-skills
+```
+
 ### Requirements
 
 - MoonBit toolchain (for building from source)

@@ -30,7 +30,6 @@ pub struct DocPlanConfig {
   template : String // path to GitHub Issue Form template
   project_name : String
   specs_dir : String // KGF specs directory
-  show_help : Bool
 }
 
 ///|
@@ -44,96 +43,86 @@ pub fn DocPlanConfig::default() -> DocPlanConfig {
     template: "",
     project_name: "",
     specs_dir: "kgfs",
-    show_help: false,
   }
 }
 
-// use @common (SoT) — get_arg_value
-
 ///|
-/// Parse command line arguments into documentation plan configuration.
-pub fn parse_args(args : Array[String], start_idx : Int) -> DocPlanConfig {
-  let mut config = DocPlanConfig::default()
-  for i = start_idx; i < args.length(); i = i + 1 {
-    let arg = args[i]
-    if arg == "--help" || arg == "-h" {
-      config = { ..config, show_help: true }
-    } else if arg.has_prefix("--output=") || arg.has_prefix("-o=") {
-      config = { ..config, output: @common.parse_output_arg(arg).unwrap() }
-    } else if arg.has_prefix("--style=") {
-      let value = @common.get_arg_value(arg, 8)
-      config = { ..config, style: value }
-    } else if arg.has_prefix("--format=") {
-      let value = @common.get_arg_value(arg, 9)
-      config = { ..config, format: value }
-    } else if arg.has_prefix("--template=") {
-      let value = @common.get_arg_value(arg, 11)
-      config = { ..config, template: value }
-    } else if arg.has_prefix("--name=") {
-      let value = @common.get_arg_value(arg, 7)
-      config = { ..config, project_name: value }
-    } else if arg.has_prefix("--specs-dir=") {
-      let value = @common.get_arg_value(arg, 12)
-      config = { ..config, specs_dir: value }
-    } else if not(arg.has_prefix("-")) && config.target_dir.length() == 0 {
-      config = { ..config, target_dir: arg }
-    }
+/// Create DocPlanConfig from argparse matches.
+pub fn DocPlanConfig::from_matches(
+  matches : @argparse.Matches,
+) -> DocPlanConfig {
+  let output = match matches.values.get("output") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
   }
-  config
+  let style = match matches.values.get("style") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "full" }
+    _ => "full"
+  }
+  let format = match matches.values.get("format") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "md" }
+    _ => "md"
+  }
+  let template = match matches.values.get("template") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let project_name = match matches.values.get("name") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  let specs_dir = match matches.values.get("specs-dir") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
+    _ => "kgfs"
+  }
+  let target_dir = match matches.values.get("directory") {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
+    _ => ""
+  }
+  { target_dir, output, style, format, template, project_name, specs_dir }
 }
 
 ///|
-/// Print usage information for the documentation subcommand.
-pub fn show_help() -> Unit {
-  println(
-    "indexion plan documentation - Generate documentation coverage analysis",
-  )
-  println("")
-  println("Usage:")
-  println("  indexion plan documentation [options] <directory>")
-  println("")
-  println("Options:")
-  println("  --output=FILE, -o=   Output file path (default: stdout)")
-  println("  --style=STYLE        Output style: coverage, full (default: full)")
-  println(
-    "  --format=FORMAT      Output format: md, json, github-issue (default: md)",
-  )
-  println("  --template=FILE      GitHub Issue Form template (.yml)")
-  println(
-    "  --name=NAME          Project name (auto-detect from moon.mod.json)",
-  )
-  println("  --specs-dir=DIR      KGF specs directory (default: kgfs)")
-  println("  --help               Show this help message")
-  println("")
-  println("Styles:")
-  println("  coverage   Documentation coverage analysis only")
-  println("  full       Complete documentation plan with action items")
-  println("")
-  println("Formats:")
-  println("  md           Standard Markdown output")
-  println("  json         JSON intermediate representation")
-  println("  github-issue GitHub Issue format with title and body")
-  println("")
-  println("Examples:")
-  println("  indexion plan documentation src/")
-  println("  indexion plan documentation --format=github-issue src/")
-  println(
-    "  indexion plan documentation --template=.github/ISSUE_TEMPLATE/doc.yml src/",
+/// Define the documentation command for argparse.
+pub fn command() -> @argparse.Command {
+  @argparse.Command(
+    "documentation",
+    about="Generate documentation coverage analysis",
+    options=[
+      @argparse.OptionArg(
+        "output",
+        short='o',
+        about="Output file path (default: stdout)",
+      ),
+      @argparse.OptionArg("style", about="Output style: coverage, full", default_values=[
+        "full",
+      ]),
+      @argparse.OptionArg(
+        "format",
+        about="Output format: md, json, github-issue",
+        default_values=["md"],
+      ),
+      @argparse.OptionArg("template", about="GitHub Issue Form template (.yml)"),
+      @argparse.OptionArg(
+        "name",
+        about="Project name (auto-detect from moon.mod.json)",
+      ),
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+    ],
+    positionals=[
+      @argparse.PositionArg("directory", about="Target directory to analyze"),
+    ],
   )
 }
 
 ///|
-/// Run the documentation plan command with the given arguments.
-pub fn run(args : Array[String], start_idx : Int) -> Unit {
-  let config = parse_args(args, start_idx)
-  if config.show_help {
-    show_help()
-    return
-  }
+/// Run the documentation plan command from argparse matches.
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
+  let config = DocPlanConfig::from_matches(matches)
   if config.target_dir.length() == 0 {
     println("Error: Directory path required.")
-    println("")
-    show_help()
     return
   }
   // Load project info from moon.mod.json if available
