@@ -112,12 +112,19 @@ fn eval_attr_def(
   } else {
     scope.set_value(name, sym_id)
   }
-  // Add declares edge from module to symbol
+  // Add declares edge from module to symbol (with kind/name/doc attrs)
+  let edge_attrs : Map[String, String] = {}
+  edge_attrs.set("name", name)
+  edge_attrs.set("kind", kind)
+  match doc {
+    Some(d) => edge_attrs.set("doc", d)
+    None => ()
+  }
   ctx.graph.add_edge(
     @graph.EdgeKind::from_string("declares"),
     ctx.file,
     sym_id,
-    attrs={},
+    attrs=edge_attrs,
   )
 }
 

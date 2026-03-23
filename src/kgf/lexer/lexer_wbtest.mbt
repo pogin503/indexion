@@ -463,3 +463,96 @@ test "pattern_matcher: group with {n}" {
   let result2 = match_pattern("(ab){3}", "abab", 0)
   assert_eq(result2.matched, false)
 }
+
+///|
+test "pattern_matcher: non-greedy quantifier with backtracking" {
+  // Non-greedy .*? stops at first match of subsequent element
+  let r1 = match_pattern(".*?\\*", "Hello *", 0)
+  assert_eq(r1.matched, true)
+  assert_eq(r1.text, "Hello *")
+  // Non-greedy [\\s\\S]*? works across any character (including whitespace)
+  let r2 = match_pattern("[\\s\\S]*?\\*", "Hello *", 0)
+  assert_eq(r2.matched, true)
+  assert_eq(r2.text, "Hello *")
+  // Greedy backtracking: .* followed by a literal still matches
+  let r3 = match_pattern(".*\\*", "Hello *", 0)
+  assert_eq(r3.matched, true)
+  assert_eq(r3.text, "Hello *")
+}
+
+///|
+test "pattern_matcher: block comment patterns" {
+  // JSDoc comment /** ... */
+  let r1 = match_pattern("\\/\\*\\*[\\s\\S]*?\\*\\/", "/** Hello */\nexport", 0)
+  assert_eq(r1.matched, true)
+  assert_eq(r1.text, "/** Hello */")
+  // Multi-line block comment
+  let r2 = match_pattern(
+    "\\/\\*[\\s\\S]*?\\*\\/", "/* line1\nline2 */\ncode", 0,
+  )
+  assert_eq(r2.matched, true)
+  assert_eq(r2.text, "/* line1\nline2 */")
+  // Greedy vs non-greedy: picks first closing */
+  let r3 = match_pattern("\\/\\*[\\s\\S]*?\\*\\/", "/* a */ /* b */", 0)
+  assert_eq(r3.matched, true)
+  assert_eq(r3.text, "/* a */")
+}
+
+///|
+test "pattern_matcher: positive lookahead (?=...)" {
+  // url followed by ( - lookahead doesn't consume (
+  let r1 = match_pattern("url(?=\\()", "url(foo)", 0)
+  assert_eq(r1.matched, true)
+  assert_eq(r1.text, "url")
+  // Identifier followed by = (ATTR_NAME pattern)
+  let r2 = match_pattern("[a-z]+(?=\\s*=)", "name = value", 0)
+  assert_eq(r2.matched, true)
+  assert_eq(r2.text, "name")
+  // Lookahead fails when condition not met
+  let r3 = match_pattern("url(?=\\()", "url foo", 0)
+  assert_eq(r3.matched, false)
+}
+
+///|
+test "pattern_matcher: negative lookahead (?!...)" {
+  // Match $ not followed by {
+  let r1 = match_pattern("\\$(?!\\{)", "$x", 0)
+  assert_eq(r1.matched, true)
+  assert_eq(r1.text, "$")
+  // Negative lookahead fails when condition IS met
+  let r2 = match_pattern("\\$(?!\\{)", "${x}", 0)
+  assert_eq(r2.matched, false)
+  // Negative lookahead in alternation (template literal pattern)
+  let r3 = match_pattern("\\$(?!\\{)|\\$\\{[^}]*\\}", "$x ${name}", 0)
+  assert_eq(r3.matched, true)
+  assert_eq(r3.text, "$")
+}
+
+///|
+test "pattern_matcher: lookahead in non-capturing group" {
+  // Pattern: (?:(?![abc])[a-z])+ — match lowercase letters except a,b,c
+  let r1 = match_pattern("(?:(?![abc])[a-z])+", "defgh", 0)
+  assert_eq(r1.matched, true)
+  assert_eq(r1.text, "defgh")
+  // Stops at 'a'
+  let r2 = match_pattern("(?:(?![abc])[a-z])+", "deafgh", 0)
+  assert_eq(r2.matched, true)
+  assert_eq(r2.text, "de")
+}
+
+///|
+test "pattern_matcher: unicode escape \\uXXXX" {
+  // Check: what code point is 東?
+  let east = '東'
+  inspect(east.to_int(), content="26481") // 0x6771
+  // \u6771 should match 東
+  let r0 = match_pattern("\\u6771", "東京都", 0)
+  inspect(r0.matched, content="true")
+  // Single char match in char class
+  let r1a = match_pattern("[\\u6771]", "東", 0)
+  inspect(r1a.matched, content="true")
+  // Unicode range in char class
+  let r1 = match_pattern("[\\u4e00-\\u9fff]+", "東京都", 0)
+  inspect(r1.matched, content="true")
+  inspect(r1.text, content="東京都")
+}

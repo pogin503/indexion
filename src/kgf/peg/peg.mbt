@@ -114,9 +114,9 @@ pub fn build_peg(spec : @types.KGFSpec) -> PEG raise {
     fast_rule_ids.set(name, fast_nodes.length())
     fast_nodes.push(FEmpty) // placeholder
   }
-  // Second pass: compile rule bodies with rule IDs already known
-  for name, rule_def in spec.rules {
-    let node = parse_expr(rule_def.expr)
+  // Second pass: compile rule bodies using ASTs from Phase 1
+  for name, _ in spec.rules {
+    let node = ast.get(name).unwrap()
     let body_node_id = compile_fast_node(
       node, fast_nodes, tokens, token_ids, fast_rule_ids,
     )
@@ -152,13 +152,13 @@ fn compile_fast_node(
     Empty => FEmpty
     Sym(name) =>
       if tokens.contains(name) {
-        // Token reference - use pre-computed token ID
         let tid = token_ids.get(name).unwrap_or(0)
         FToken(tid)
       } else {
-        // Rule reference - use pre-computed rule node ID
-        let rid = rule_ids.get(name).unwrap_or(0)
-        FRuleRef(rid, name)
+        match rule_ids.get(name) {
+          Some(rid) => FRuleRef(rid, name)
+          None => FFail // Undefined symbol — always fails to match
+        }
       }
     Seq(nodes) => {
       let children : Array[Int] = []

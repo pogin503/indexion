@@ -35,6 +35,7 @@ pub enum CompiledNode {
 /// Token IDs and rule node IDs are pre-computed at compile time.
 enum FastCompiledNode {
   FEmpty
+  FFail // Always fails to match (used for undefined symbol references)
   FToken(Int) // token_id only
   FRuleRef(Int, String) // rule_node_id, rule_name (name needed for callback)
   FSeq(Array[Int])

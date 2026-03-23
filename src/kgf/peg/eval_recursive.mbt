@@ -72,6 +72,7 @@ fn eval_node_rec(
   let compiled = ctx.peg.fast_nodes[node_id]
   match compiled {
     FEmpty => { ok: true, end_pos: pos, labels: empty_labels() }
+    FFail => { ok: false, end_pos: pos, labels: empty_labels() }
     FToken(expected_id) =>
       if pos < ctx.tokens.length() && ctx.token_ids[pos] == expected_id {
         // Use token reference - defer Map creation

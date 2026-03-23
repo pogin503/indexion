@@ -55,6 +55,7 @@ priv enum PatternElement {
   StringEnd // \z - absolute end of string
   Group(Array[QuantifiedElement])
   Alternation(Array[Array[QuantifiedElement]])
+  Lookahead(Array[QuantifiedElement], Bool) // elements, positive (true=(?=...), false=(?!...))
 }
 
 ///|
@@ -74,6 +75,7 @@ priv enum Quantifier {
 priv struct QuantifiedElement {
   element : PatternElement
   quantifier : Quantifier
+  lazy_ : Bool
 }
 
 ///|
@@ -97,6 +99,42 @@ priv enum FirstCharFilter {
 
 ///|
 /// Gets a character from a string at the given index safely.
+
+///|
+/// Parses a Unicode escape \uXXXX from the pattern. Returns (char, new_pos).
+fn parse_unicode_escape(pattern : String, start : Int) -> (Char, Int)? {
+  // Need exactly 4 hex digits
+  if start + 4 > pattern.length() {
+    return None
+  }
+  let mut value = 0
+  for i = 0; i < 4; i = i + 1 {
+    let ch = Int::unsafe_to_char(pattern[start + i].to_int())
+    let digit = match ch {
+      '0' => 0
+      '1' => 1
+      '2' => 2
+      '3' => 3
+      '4' => 4
+      '5' => 5
+      '6' => 6
+      '7' => 7
+      '8' => 8
+      '9' => 9
+      'a' | 'A' => 10
+      'b' | 'B' => 11
+      'c' | 'C' => 12
+      'd' | 'D' => 13
+      'e' | 'E' => 14
+      'f' | 'F' => 15
+      _ => return None
+    }
+    value = value * 16 + digit
+  }
+  Some((Int::unsafe_to_char(value), start + 4))
+}
+
+///|
 fn get_char_at(s : String, index : Int) -> Char? {
   if index >= 0 && index < s.length() {
     Some(Int::unsafe_to_char(s[index].to_int()))
@@ -158,9 +196,9 @@ fn parse_char_class(
             pos = pos + 1
           }
           Some('S') => {
-            // \S - non-whitespace (approximated as printable ASCII excluding whitespace)
-            // Add ranges for non-whitespace printable characters
-            ranges.push(('!', '~')) // Printable ASCII excluding space
+            // \S - non-whitespace: '!' (33) through U+FFFF covers all non-whitespace
+            // Consistent with Escape('S') which uses not(is_whitespace(c))
+            ranges.push(('!', '\u{FFFF}'))
             pos = pos + 1
           }
           Some('d') => {
@@ -169,11 +207,9 @@ fn parse_char_class(
             pos = pos + 1
           }
           Some('D') => {
-            // \D - non-digits (approximated)
-            ranges.push(('A', 'Z'))
-            ranges.push(('a', 'z'))
-            ranges.push((' ', '/')) // space through /
-            ranges.push((':', '@')) // : through @
+            // \D - non-digits: everything except '0'-'9'
+            ranges.push(('\u0001', '/')) // U+0001 through '/' (before '0')
+            ranges.push((':', '\u{FFFF}')) // ':' (after '9') through U+FFFF
             pos = pos + 1
           }
           Some('w') => {
@@ -185,13 +221,55 @@ fn parse_char_class(
             pos = pos + 1
           }
           Some('W') => {
-            // \W - non-word characters (approximated as common punctuation)
-            ranges.push((' ', '/'))
-            ranges.push((':', '@'))
-            ranges.push(('[', '`'))
-            ranges.push(('{', '~'))
+            // \W - non-word characters: everything except [A-Za-z0-9_]
+            ranges.push(('\u0001', '/')) // before '0'
+            ranges.push((':', '@')) // between '9' and 'A'
+            ranges.push(('[', '^')) // between 'Z' and '_'
+            ranges.push(('`', '`')) // between '_' and 'a'
+            ranges.push(('{', '\u{FFFF}')) // after 'z'
             pos = pos + 1
           }
+          Some('u') =>
+            // \uXXXX - Unicode escape
+            match parse_unicode_escape(pattern, pos + 1) {
+              Some((ch, new_pos)) =>
+                // Check for range: \uXXXX-\uYYYY or \uXXXX-c
+                if get_char_at(pattern, new_pos) == Some('-') &&
+                  get_char_at(pattern, new_pos + 1) != Some(']') {
+                  // Range end could be \uYYYY or a literal char
+                  if get_char_at(pattern, new_pos + 1) == Some('\\') &&
+                    get_char_at(pattern, new_pos + 2) == Some('u') {
+                    match parse_unicode_escape(pattern, new_pos + 3) {
+                      Some((end_ch, end_pos)) => {
+                        ranges.push((ch, end_ch))
+                        pos = end_pos
+                      }
+                      None => {
+                        ranges.push((ch, ch))
+                        pos = new_pos
+                      }
+                    }
+                  } else {
+                    match get_char_at(pattern, new_pos + 1) {
+                      Some(end_c) => {
+                        ranges.push((ch, end_c))
+                        pos = new_pos + 2
+                      }
+                      None => {
+                        ranges.push((ch, ch))
+                        pos = new_pos
+                      }
+                    }
+                  }
+                } else {
+                  ranges.push((ch, ch))
+                  pos = new_pos
+                }
+              None => {
+                ranges.push(('u', 'u'))
+                pos = pos + 1
+              }
+            }
           Some(c) => {
             let escaped_char = match c {
               'n' => '\n'
@@ -326,6 +404,12 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
           Some('B') => (NonWordBoundary, pos + 2)
           Some('A') => (StringStart, pos + 2)
           Some('z') => (StringEnd, pos + 2)
+          Some('u') =>
+            // \uXXXX Unicode escape
+            match parse_unicode_escape(pattern, pos + 2) {
+              Some((ch, new_pos)) => (Literal(ch), new_pos)
+              None => (Escape('u'), pos + 2)
+            }
           Some(c) => (Escape(c), pos + 2)
           None => return None
         }
@@ -340,9 +424,13 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
       Some('(') => {
         // Group - find matching close paren
         let mut group_start = pos + 1
-        // Check for non-capturing group marker (?:...)
+        // Check for group prefix: (?:...) (?=...) (?!...)
         let is_non_capturing = get_char_at(pattern, group_start) == Some('?') &&
           get_char_at(pattern, group_start + 1) == Some(':')
+        let is_pos_lookahead = get_char_at(pattern, group_start) == Some('?') &&
+          get_char_at(pattern, group_start + 1) == Some('=')
+        let is_neg_lookahead = get_char_at(pattern, group_start) == Some('?') &&
+          get_char_at(pattern, group_start + 1) == Some('!')
         let mut depth = 1
         let mut group_end = group_start
         while group_end < pattern.length() && depth > 0 {
@@ -359,13 +447,19 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         if depth != 0 {
           return None
         }
-        // Skip ?:  prefix if non-capturing group
-        if is_non_capturing {
+        // Skip prefix (?:, (?=, (?!
+        if is_non_capturing || is_pos_lookahead || is_neg_lookahead {
           group_start = group_start + 2
         }
         let group_pattern = pattern[group_start:group_end].to_string()
-        // Check for alternation in group
-        if group_pattern.contains("|") {
+        // Lookahead — zero-width assertion
+        if is_pos_lookahead || is_neg_lookahead {
+          match parse_pattern(group_pattern) {
+            Some(elems) => (Lookahead(elems, is_pos_lookahead), group_end + 1)
+            None => return None
+          }
+        } else if group_pattern.contains("|") {
+          // Check for alternation in group
           let alternatives = split_by_alternation(group_pattern)
           let parsed_alternatives : Array[Array[QuantifiedElement]] = []
           for alt in alternatives {
@@ -400,12 +494,13 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
     }
     pos = new_pos
     // Check for quantifier
+    let mut lazy_ = false
     let quantifier = match get_char_at(pattern, pos) {
       Some('*') => {
         pos = pos + 1
-        // Check for non-greedy
         if get_char_at(pattern, pos) == Some('?') {
           pos = pos + 1
+          lazy_ = true
         }
         ZeroOrMore
       }
@@ -413,6 +508,7 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         pos = pos + 1
         if get_char_at(pattern, pos) == Some('?') {
           pos = pos + 1
+          lazy_ = true
         }
         OneOrMore
       }
@@ -420,6 +516,7 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         pos = pos + 1
         if get_char_at(pattern, pos) == Some('?') {
           pos = pos + 1
+          lazy_ = true
         }
         ZeroOrOne
       }
@@ -434,7 +531,7 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         }
       _ => One
     }
-    elements.push({ element, quantifier })
+    elements.push({ element, quantifier, lazy_ })
   }
   Some(elements)
 }
@@ -520,7 +617,7 @@ fn match_char(
         in_class
       }
     }
-    Group(_) | Alternation(_) => false // Should not be called directly
+    Group(_) | Alternation(_) | Lookahead(_) => false // Should not be called directly
     WordBoundary | NonWordBoundary => false // Zero-width assertions, handled in match_quantified
     StartAnchor | EndAnchor | StringStart | StringEnd => false // Anchors, handled in match_quantified
   }
@@ -619,6 +716,21 @@ fn match_quantified(
         pos,
         case_insensitive,
       )
+    Lookahead(elements, positive) => {
+      // Zero-width assertion: check if elements match at pos without consuming
+      let matched = match
+        match_elements_backtrack(
+          elements, 0, input_chars, pos, case_insensitive,
+        ) {
+        Some(_) => true
+        None => false
+      }
+      if matched == positive {
+        Some(pos) // Zero-width: don't advance position
+      } else {
+        None
+      }
+    }
     _ =>
       match_simple(
         qe.element,
@@ -760,7 +872,80 @@ fn match_simple(
 }
 
 ///|
-/// Matches a group of elements.
+/// Collects all valid end positions for a repeated match_once function.
+/// Returns positions ordered for backtracking (greedy: max→min, lazy: min→max).
+fn collect_repeat_positions(
+  match_once : (Int) -> Int?,
+  quantifier : Quantifier,
+  lazy_ : Bool,
+  pos : Int,
+) -> Array[Int] {
+  // Collect all positions reachable by repeating match_once
+  let all_positions : Array[Int] = [pos] // 0 repeats = pos
+  let mut current = pos
+  let max_repeats = match quantifier {
+    Between(_, m) => m
+    Exactly(n) => n
+    _ => 2147483647 // max repeats
+  }
+  let mut count = 0
+  while count < max_repeats {
+    match match_once(current) {
+      Some(new_pos) =>
+        if new_pos == current {
+          break // Empty match, stop
+        } else {
+          current = new_pos
+          count = count + 1
+          all_positions.push(current)
+        }
+      None => break
+    }
+  }
+  // Filter by quantifier bounds
+  let (lo, hi) = match quantifier {
+    One => (1, 1)
+    ZeroOrMore => (0, count)
+    OneOrMore => (1, count)
+    ZeroOrOne => (0, if count > 0 { 1 } else { 0 })
+    Exactly(n) => (n, n)
+    AtLeast(n) => (n, count)
+    Between(n, m) => (n, if m < count { m } else { count })
+  }
+  let valid : Array[Int] = []
+  for i = lo; i <= hi; i = i + 1 {
+    if i < all_positions.length() {
+      valid.push(all_positions[i])
+    }
+  }
+  if not(lazy_) {
+    // Greedy: reverse to try max first
+    valid.rev_in_place()
+  }
+  valid
+}
+
+///|
+/// Returns all possible end positions for a group with a quantifier.
+fn match_group_positions(
+  elements : Array[QuantifiedElement],
+  quantifier : Quantifier,
+  lazy_ : Bool,
+  input_chars : Array[Char],
+  pos : Int,
+  case_insensitive : Bool,
+) -> Array[Int] {
+  fn match_once(start_pos : Int) -> Int? {
+    match_elements_backtrack(
+      elements, 0, input_chars, start_pos, case_insensitive,
+    )
+  }
+
+  collect_repeat_positions(match_once, quantifier, lazy_, pos)
+}
+
+///|
+/// Matches a group of elements (legacy — returns first greedy match).
 fn match_group(
   elements : Array[QuantifiedElement],
   quantifier : Quantifier,
@@ -768,130 +953,44 @@ fn match_group(
   pos : Int,
   case_insensitive : Bool,
 ) -> Int? {
-  fn match_group_once(start_pos : Int) -> Int? {
-    let mut current = start_pos
-    for elem in elements {
-      match match_quantified(elem, input_chars, current, case_insensitive) {
-        Some(new_pos) => current = new_pos
-        None => return None
-      }
-    }
-    Some(current)
-  }
-
-  match quantifier {
-    One => match_group_once(pos)
-    ZeroOrOne =>
-      match match_group_once(pos) {
-        Some(end_pos) => Some(end_pos)
-        None => Some(pos)
-      }
-    ZeroOrMore => {
-      let mut current = pos
-      while true {
-        match match_group_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              break
-            } else {
-              current = new_pos
-            }
-          None => break
-        }
-      }
-      Some(current)
-    }
-    OneOrMore =>
-      match match_group_once(pos) {
-        Some(first_end) => {
-          let mut current = first_end
-          while true {
-            match match_group_once(current) {
-              Some(new_pos) =>
-                if new_pos == current {
-                  break
-                } else {
-                  current = new_pos
-                }
-              None => break
-            }
-          }
-          Some(current)
-        }
-        None => None
-      }
-    Exactly(n) => {
-      let mut current = pos
-      for i = 0; i < n; i = i + 1 {
-        match match_group_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              return None // Empty match doesn't count
-            } else {
-              current = new_pos
-            }
-          None => return None
-        }
-      }
-      Some(current)
-    }
-    AtLeast(n) => {
-      let mut current = pos
-      let mut count = 0
-      // Match at least n times
-      for i = 0; i < n; i = i + 1 {
-        match match_group_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              return None
-            } else {
-              current = new_pos
-              count = count + 1
-            }
-          None => return None
-        }
-      }
-      // Then match as many more as possible
-      while true {
-        match match_group_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              break
-            } else {
-              current = new_pos
-            }
-          None => break
-        }
-      }
-      Some(current)
-    }
-    Between(n, m) => {
-      let mut current = pos
-      let mut count = 0
-      // Match up to m times
-      while count < m {
-        match match_group_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              break
-            } else {
-              current = new_pos
-              count = count + 1
-            }
-          None => break
-        }
-      }
-      if count >= n {
-        Some(current)
-      } else {
-        None
-      }
-    }
+  let positions = match_group_positions(
+    elements, quantifier, false, input_chars, pos, case_insensitive,
+  )
+  if positions.length() > 0 {
+    Some(positions[0])
+  } else {
+    None
   }
 }
 
 ///|
-/// Matches alternation (a|b|c pattern).
+/// Returns all possible end positions for an alternation with a quantifier.
+fn match_alternation_positions(
+  alternatives : Array[Array[QuantifiedElement]],
+  quantifier : Quantifier,
+  lazy_ : Bool,
+  input_chars : Array[Char],
+  pos : Int,
+  case_insensitive : Bool,
+) -> Array[Int] {
+  fn match_once(start_pos : Int) -> Int? {
+    for alt in alternatives {
+      match
+        match_elements_backtrack(
+          alt, 0, input_chars, start_pos, case_insensitive,
+        ) {
+        Some(end_pos) => return Some(end_pos)
+        None => continue
+      }
+    }
+    None
+  }
+
+  collect_repeat_positions(match_once, quantifier, lazy_, pos)
+}
+
+///|
+/// Matches alternation (a|b|c pattern) — legacy, returns first greedy match.
 fn match_alternation(
   alternatives : Array[Array[QuantifiedElement]],
   quantifier : Quantifier,
@@ -899,131 +998,13 @@ fn match_alternation(
   pos : Int,
   case_insensitive : Bool,
 ) -> Int? {
-  fn match_alt_once(start_pos : Int) -> Int? {
-    for alt in alternatives {
-      let mut current = start_pos
-      let mut matched = true
-      for elem in alt {
-        match match_quantified(elem, input_chars, current, case_insensitive) {
-          Some(new_pos) => current = new_pos
-          None => {
-            matched = false
-            break
-          }
-        }
-      }
-      if matched {
-        return Some(current)
-      }
-    }
+  let positions = match_alternation_positions(
+    alternatives, quantifier, false, input_chars, pos, case_insensitive,
+  )
+  if positions.length() > 0 {
+    Some(positions[0])
+  } else {
     None
-  }
-
-  match quantifier {
-    One => match_alt_once(pos)
-    ZeroOrOne =>
-      match match_alt_once(pos) {
-        Some(end_pos) => Some(end_pos)
-        None => Some(pos)
-      }
-    ZeroOrMore => {
-      let mut current = pos
-      while true {
-        match match_alt_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              break
-            } else {
-              current = new_pos
-            }
-          None => break
-        }
-      }
-      Some(current)
-    }
-    OneOrMore =>
-      match match_alt_once(pos) {
-        Some(first_end) => {
-          let mut current = first_end
-          while true {
-            match match_alt_once(current) {
-              Some(new_pos) =>
-                if new_pos == current {
-                  break
-                } else {
-                  current = new_pos
-                }
-              None => break
-            }
-          }
-          Some(current)
-        }
-        None => None
-      }
-    Exactly(n) => {
-      let mut current = pos
-      for i = 0; i < n; i = i + 1 {
-        match match_alt_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              return None
-            } else {
-              current = new_pos
-            }
-          None => return None
-        }
-      }
-      Some(current)
-    }
-    AtLeast(n) => {
-      let mut current = pos
-      // Match at least n times
-      for i = 0; i < n; i = i + 1 {
-        match match_alt_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              return None
-            } else {
-              current = new_pos
-            }
-          None => return None
-        }
-      }
-      // Then match as many more as possible
-      while true {
-        match match_alt_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              break
-            } else {
-              current = new_pos
-            }
-          None => break
-        }
-      }
-      Some(current)
-    }
-    Between(n, m) => {
-      let mut current = pos
-      let mut count = 0
-      while count < m {
-        match match_alt_once(current) {
-          Some(new_pos) =>
-            if new_pos == current {
-              break
-            } else {
-              current = new_pos
-              count = count + 1
-            }
-          None => break
-        }
-      }
-      if count >= n {
-        Some(current)
-      } else {
-        None
-      }
-    }
   }
 }
 
@@ -1098,6 +1079,181 @@ fn extract_first_char_filter(
 }
 
 ///|
+/// Counts how many consecutive characters match a simple element from pos.
+fn count_simple_matches(
+  element : PatternElement,
+  input_chars : Array[Char],
+  pos : Int,
+  case_insensitive : Bool,
+) -> Int {
+  let input_len = input_chars.length()
+  let mut current = pos
+  while current < input_len {
+    if match_char(element, input_chars[current], case_insensitive) {
+      current = current + 1
+    } else {
+      break
+    }
+  }
+  current - pos
+}
+
+///|
+/// Returns quantifier min/max bounds. max_possible is the number of chars that
+/// actually match the element starting from the current position.
+fn quantifier_bounds(q : Quantifier, max_possible : Int) -> (Int, Int)? {
+  let (lo, hi) = match q {
+    One => (1, 1)
+    ZeroOrMore => (0, max_possible)
+    OneOrMore => (1, max_possible)
+    ZeroOrOne => (0, if max_possible > 0 { 1 } else { 0 })
+    Exactly(n) => (n, n)
+    AtLeast(n) => (n, max_possible)
+    Between(n, m) => (n, if m < max_possible { m } else { max_possible })
+  }
+  if lo > max_possible {
+    None
+  } else {
+    Some((lo, hi))
+  }
+}
+
+///|
+/// Matches a sequence of elements with backtracking support.
+/// For simple elements with variable-length quantifiers, tries different
+/// match lengths (greedy: max→min, lazy: min→max) and recurses on the rest.
+fn match_elements_backtrack(
+  elements : Array[QuantifiedElement],
+  idx : Int,
+  input_chars : Array[Char],
+  pos : Int,
+  case_insensitive : Bool,
+) -> Int? {
+  if idx >= elements.length() {
+    return Some(pos)
+  }
+  let qe = elements[idx]
+  // Zero-width assertions: no backtracking needed
+  match qe.element {
+    WordBoundary
+    | NonWordBoundary
+    | StartAnchor
+    | EndAnchor
+    | StringStart
+    | StringEnd
+    | Lookahead(_) =>
+      match match_quantified(qe, input_chars, pos, case_insensitive) {
+        Some(new_pos) =>
+          return match_elements_backtrack(
+            elements,
+            idx + 1,
+            input_chars,
+            new_pos,
+            case_insensitive,
+          )
+        None => return None
+      }
+    _ => ()
+  }
+  // Groups and alternations: use existing matching, then recurse
+  match qe.element {
+    Group(group_elements) => {
+      let positions = match_group_positions(
+        group_elements,
+        qe.quantifier,
+        qe.lazy_,
+        input_chars,
+        pos,
+        case_insensitive,
+      )
+      for try_pos in positions {
+        match
+          match_elements_backtrack(
+            elements,
+            idx + 1,
+            input_chars,
+            try_pos,
+            case_insensitive,
+          ) {
+          Some(result) => return Some(result)
+          None => continue
+        }
+      }
+      return None
+    }
+    Alternation(alternatives) => {
+      let positions = match_alternation_positions(
+        alternatives,
+        qe.quantifier,
+        qe.lazy_,
+        input_chars,
+        pos,
+        case_insensitive,
+      )
+      for try_pos in positions {
+        match
+          match_elements_backtrack(
+            elements,
+            idx + 1,
+            input_chars,
+            try_pos,
+            case_insensitive,
+          ) {
+          Some(result) => return Some(result)
+          None => continue
+        }
+      }
+      return None
+    }
+    _ => ()
+  }
+  // Simple element: enumerate match counts for backtracking
+  let max_possible = count_simple_matches(
+    qe.element,
+    input_chars,
+    pos,
+    case_insensitive,
+  )
+  let bounds = quantifier_bounds(qe.quantifier, max_possible)
+  match bounds {
+    None => return None
+    Some((lo, hi)) =>
+      if qe.lazy_ {
+        // Lazy: try from min to max
+        for count = lo; count <= hi; count = count + 1 {
+          match
+            match_elements_backtrack(
+              elements,
+              idx + 1,
+              input_chars,
+              pos + count,
+              case_insensitive,
+            ) {
+            Some(result) => return Some(result)
+            None => continue
+          }
+        }
+      } else {
+        // Greedy: try from max to min
+        for count = hi; count >= lo; count = count - 1 {
+          match
+            match_elements_backtrack(
+              elements,
+              idx + 1,
+              input_chars,
+              pos + count,
+              case_insensitive,
+            ) {
+            Some(result) => return Some(result)
+            None => continue
+          }
+        }
+      }
+  }
+  None
+}
+
+///|
 /// Matches a compiled pattern against the input at the given position.
 fn match_compiled_end_pos_with_chars(
   compiled : CompiledPattern,
@@ -1112,22 +1268,18 @@ fn match_compiled_end_pos_with_chars(
   if not(check_first_char_filter(compiled.first_char_filter, first_char)) {
     return None
   }
-  // Full matching
+  // Full matching with backtracking
   for elements in compiled.alternatives {
-    let mut current = pos
-    let mut matched = true
-    for qe in elements {
-      match
-        match_quantified(qe, input_chars, current, compiled.case_insensitive) {
-        Some(new_pos) => current = new_pos
-        None => {
-          matched = false
-          break
-        }
-      }
-    }
-    if matched {
-      return Some(current)
+    match
+      match_elements_backtrack(
+        elements,
+        0,
+        input_chars,
+        pos,
+        compiled.case_insensitive,
+      ) {
+      Some(end_pos) => return Some(end_pos)
+      None => continue
     }
   }
   None

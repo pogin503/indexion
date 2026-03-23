@@ -152,6 +152,10 @@ fn process_eval(ctx : IterEvalContext, node_id : Int, pos : Int) -> Unit {
       ctx.memo[memo_idx] = Succeeded(pos, labels)
       ctx.results.push({ ok: true, end_pos: pos, labels })
     }
+    FFail => {
+      ctx.memo[memo_idx] = Failed
+      ctx.results.push({ ok: false, end_pos: pos, labels: empty_labels() })
+    }
     FToken(expected_id) =>
       if pos < ctx.tokens.length() && ctx.token_ids[pos] == expected_id {
         // Use token reference - defer Map creation
