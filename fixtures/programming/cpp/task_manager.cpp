@@ -3,6 +3,7 @@ class Task {
     int id;
     std::string title;
     bool done;
+    int summary() { return id; }
 };
 
 /** Manages a list of tasks. */

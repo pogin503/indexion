@@ -133,12 +133,23 @@ fn parse_on_blocks(src : String) -> Array[@types.SemOnBlock] {
     if pos >= src.length() {
       break
     }
+    // Skip comment lines (everything from # to end of line)
+    if arr[pos] == '#' {
+      while pos < src.length() && arr[pos] != '\n' {
+        pos += 1
+      }
+      continue
+    }
     // Check for "on" keyword
     if not(starts_with_at(src, pos, "on")) {
       pos += 1
       continue
     }
-    // Check it's not part of a larger identifier
+    // Check it's not part of a larger identifier (check both before and after)
+    if pos > 0 && is_ident_char(arr[pos - 1]) {
+      pos += 1
+      continue
+    }
     let after_on = pos + 2
     if after_on < src.length() && is_ident_char(arr[after_on]) {
       pos += 1

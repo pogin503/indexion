@@ -45,7 +45,6 @@ priv struct IterEvalContext {
   emit_filter : @hashset.HashSet[String]?
   work : Array[WorkItem]
   results : Array[FastEvalResult]
-  brace_pairs : BracePairs
 }
 
 ///|
@@ -60,7 +59,6 @@ fn IterEvalContext::new(
   let num_positions = tokens.length() + 1
   let memo = create_memo(num_nodes, num_positions)
   let token_ids = compute_token_ids(peg, tokens)
-  let brace_pairs = compute_brace_pairs(tokens)
   {
     peg,
     tokens,
@@ -71,7 +69,6 @@ fn IterEvalContext::new(
     emit_filter,
     work: Array::new(capacity=1024),
     results: Array::new(capacity=256),
-    brace_pairs,
   }
 }
 
@@ -82,24 +79,6 @@ fn should_emit_rule_iter(ctx : IterEvalContext, name : String) -> Bool {
     Some(filter) => filter.contains(name)
     None => true
   }
-}
-
-///|
-/// Try to skip balanced brackets without recursion.
-fn try_bracket_skip(ctx : IterEvalContext, start_pos : Int) -> Int {
-  let mut pos = start_pos
-  while pos < ctx.tokens.length() {
-    let kind = ctx.tokens[pos].kind
-    if kind == "LBRACE" || kind == "LPAREN" || kind == "LBRACKET" {
-      match ctx.brace_pairs.get_close(pos) {
-        Some(close_pos) => pos = close_pos + 1
-        None => return start_pos
-      }
-    } else {
-      break
-    }
-  }
-  pos
 }
 
 ///|
@@ -192,14 +171,8 @@ fn process_eval(ctx : IterEvalContext, node_id : Int, pos : Int) -> Unit {
         ctx.work.push(Eval(alts[0], pos))
       }
     FStar(child) => {
-      let skip_end = try_bracket_skip(ctx, pos)
-      if skip_end > pos {
-        ctx.work.push(StarCont(child, pos, skip_end, empty_labels()))
-        ctx.work.push(Eval(child, skip_end))
-      } else {
-        ctx.work.push(StarCont(child, pos, pos, empty_labels()))
-        ctx.work.push(Eval(child, pos))
-      }
+      ctx.work.push(StarCont(child, pos, pos, empty_labels()))
+      ctx.work.push(Eval(child, pos))
     }
     FPlus(child) => {
       ctx.work.push(PlusFirst(child, node_id, pos))
@@ -304,14 +277,8 @@ fn process_star_cont(
   }
   let merged = merge_labels(labels, result.labels, ctx.tokens)
   let new_pos = result.end_pos
-  let skip_end = try_bracket_skip(ctx, new_pos)
-  if skip_end > new_pos {
-    ctx.work.push(StarCont(child_id, start_pos, skip_end, merged))
-    ctx.work.push(Eval(child_id, skip_end))
-  } else {
-    ctx.work.push(StarCont(child_id, start_pos, new_pos, merged))
-    ctx.work.push(Eval(child_id, new_pos))
-  }
+  ctx.work.push(StarCont(child_id, start_pos, new_pos, merged))
+  ctx.work.push(Eval(child_id, new_pos))
   ignore(start_pos)
 }
 
