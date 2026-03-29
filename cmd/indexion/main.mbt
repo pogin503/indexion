@@ -73,6 +73,7 @@ fn build_command() -> @argparse.Command {
       @segment_cli.command(),
       @perf_cli.command(),
       @update_cli.command(),
+      @serve_cli.command(),
     ],
   )
 }
@@ -99,6 +100,7 @@ async fn main {
     "segment" => @segment_cli.run_matches(sub)
     "perf" => @perf_cli.dispatch(sub)
     "update" => @update_cli.run_matches(sub)
+    "serve" => @serve_cli.run_matches(sub)
     _ => ()
   }
 }

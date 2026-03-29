@@ -1,0 +1,68 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/cmd/indexion/plan/unwrap"
+
+import {
+  "moonbitlang/core/argparse",
+}
+
+// Values
+pub fn command() -> @argparse.Command
+
+pub fn render_json(UnwrapPlanJSON) -> String
+
+pub fn render_markdown(UnwrapPlanJSON) -> String
+
+pub fn render_text(UnwrapPlanJSON) -> String
+
+pub fn run_matches(@argparse.Matches) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct UnwrapConfig {
+  target_dir : String
+  includes : Array[String]
+  excludes : Array[String]
+  output : String
+  format : String
+  include_self : Bool
+  include_bare : Bool
+  mode : String
+  specs_dir : String
+}
+pub fn UnwrapConfig::default() -> Self
+pub fn UnwrapConfig::from_matches(@argparse.Matches) -> Self
+
+pub struct UnwrapEntry {
+  file : String
+  line : Int
+  name : String
+  delegate_target : String
+  params : Array[String]
+  delegate_args : Array[String]
+  all_forwarded : Bool
+}
+
+pub struct UnwrapPlanConfig {
+  target_dir : String
+  includes : Array[String]
+  excludes : Array[String]
+}
+
+pub struct UnwrapPlanJSON {
+  config : UnwrapPlanConfig
+  candidates : Array[UnwrapEntry]
+  summary : UnwrapSummary
+}
+pub fn UnwrapPlanJSON::to_json(Self) -> Json
+
+pub struct UnwrapSummary {
+  total_files_scanned : Int
+  total_functions_scanned : Int
+  unwrap_count : Int
+}
+
+// Type aliases
+
+// Traits
+

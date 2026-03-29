@@ -6,7 +6,7 @@
 
 ///|
 /// CLI configuration.
-pub struct CliConfig {
+pub(all) struct CliConfig {
   command : String
   input_path : String
   purpose : String
@@ -214,19 +214,19 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
 
 ///|
 /// Write progress message (TODO: use stderr when available).
-fn log_progress(msg : String) -> Unit {
+pub fn log_progress(msg : String) -> Unit {
   println(msg)
 }
 
 ///|
 /// Write error message (TODO: use stderr when available).
-fn log_error(msg : String) -> Unit {
+pub fn log_error(msg : String) -> Unit {
   println("Error: " + msg)
 }
 
 ///|
 /// Resolve embedding provider from CLI config.
-fn resolve_provider(config : CliConfig) -> @dconfig.EmbeddingProvider {
+pub fn resolve_provider(config : CliConfig) -> @dconfig.EmbeddingProvider {
   match config.provider {
     "openai" =>
       match @sys.get_env_var("OPENAI_API_KEY") {
@@ -254,7 +254,7 @@ fn resolve_provider(config : CliConfig) -> @dconfig.EmbeddingProvider {
 
 ///|
 /// Build DigestConfig from CLI config.
-fn build_digest_config(config : CliConfig) -> @dconfig.DigestConfig {
+pub fn build_digest_config(config : CliConfig) -> @dconfig.DigestConfig {
   let provider = resolve_provider(config)
   let vcdb_strategy = match config.strategy {
     "bruteforce" => @dconfig.BruteForce
@@ -284,7 +284,7 @@ fn provider_name(provider : @dconfig.EmbeddingProvider) -> String {
 
 ///|
 /// Build graph from source directory.
-fn build_graph_from_source(
+pub fn build_graph_from_source(
   source_dir : String,
   specs_dir : String,
 ) -> @graph.CodeGraph? {
@@ -331,7 +331,7 @@ fn build_graph_from_source(
 
 ///|
 /// Load graph from JSON file.
-fn load_graph_from_file(path : String) -> @graph.CodeGraph? {
+pub fn load_graph_from_file(path : String) -> @graph.CodeGraph? {
   let content = @fs.read_file_to_string(path) catch {
     e => {
       log_error("Reading file: " + e.to_string())
@@ -351,7 +351,7 @@ fn load_graph_from_file(path : String) -> @graph.CodeGraph? {
 
 ///|
 /// Load existing index or create new one.
-fn load_or_create_index(
+pub fn load_or_create_index(
   index_dir : String,
   digest_config : @dconfig.DigestConfig,
 ) -> @index.DigestIndex {
@@ -398,7 +398,7 @@ fn load_or_create_index(
 
 ///|
 /// Ensure directory exists, creating parent directories as needed.
-fn ensure_dir_exists(path : String) -> Unit {
+pub fn ensure_dir_exists(path : String) -> Unit {
   if @fs.path_exists(path) {
     return
   }
