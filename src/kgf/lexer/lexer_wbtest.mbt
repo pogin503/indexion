@@ -556,3 +556,98 @@ test "pattern_matcher: unicode escape \\uXXXX" {
   inspect(r1.matched, content="true")
   inspect(r1.text, content="東京都")
 }
+
+///|
+test "capture_group: line doc comment /// extracts content" {
+  let lexer = Lexer::new([
+    @types.TokenDef::new("DocComment", "\\/\\/\\/(.*)"),
+    @types.TokenDef::new("NL", "\\r?\\n"),
+  ])
+  let tokens = lexer.tokenize("/// Hello world\n")
+  assert_eq(tokens[0].get_kind(), "DocComment")
+  assert_eq(tokens[0].get_text(), "/// Hello world")
+  assert_eq(tokens[0].get_value(), " Hello world")
+}
+
+///|
+test "capture_group: block doc comment /** */ extracts content" {
+  // Verify non-capture version works first
+  let lexer_nc = Lexer::new([
+    @types.TokenDef::new("DocComment", "\\/\\*\\*[\\s\\S]*?\\*\\/"),
+  ])
+  let tokens_nc = lexer_nc.tokenize("/** Hello */")
+  assert_true(tokens_nc.length() > 0) // BASELINE: does this match at all?
+  // Now test with capture group
+  let lexer = Lexer::new([
+    @types.TokenDef::new("DocComment", "\\/\\*\\*([\\s\\S]*?)\\*\\/"),
+  ])
+  let tokens = lexer.tokenize("/** Hello */")
+  assert_true(tokens.length() > 0)
+  if tokens.length() > 0 {
+    assert_eq(tokens[0].get_kind(), "DocComment")
+    assert_eq(tokens[0].get_text(), "/** Hello */")
+    assert_eq(tokens[0].get_value(), " Hello ")
+  }
+}
+
+///|
+test "capture_group: multi-line block doc captures inner content" {
+  let lexer = Lexer::new([
+    @types.TokenDef::new("DocComment", "\\/\\*\\*([\\s\\S]*?)\\*\\/"),
+    @types.TokenDef::new("NL", "\\r?\\n"),
+  ])
+  let input = "/**\n * Line one\n * Line two\n */"
+  let tokens = lexer.tokenize(input)
+  assert_true(tokens.length() > 0)
+  if tokens.length() > 0 {
+    assert_eq(tokens[0].get_kind(), "DocComment")
+    let value = tokens[0].get_value()
+    assert_true(value.contains("Line one"))
+    assert_true(value.contains("Line two"))
+  }
+}
+
+///|
+test "capture_group: non-capturing group (?:) does not affect value" {
+  let lexer = Lexer::new([
+    @types.TokenDef::new("Keyword", "(?:let|var|const)"),
+    @types.TokenDef::new("Ident", "[a-zA-Z]+"),
+  ])
+  let tokens = lexer.tokenize("let")
+  assert_eq(tokens[0].get_kind(), "Keyword")
+  assert_eq(tokens[0].get_text(), "let")
+  // No capture group → value falls back to text
+  assert_eq(tokens[0].get_value(), "let")
+}
+
+///|
+test "capture_group: skip_value takes precedence over capture" {
+  let lexer = Lexer::new([
+    @types.TokenDef::new("Marker", "\\/\\/\\/\\|[^\\r\\n]*", skip_value=true),
+    @types.TokenDef::new("NL", "\\r?\\n"),
+  ])
+  let tokens = lexer.tokenize("///| start\n")
+  assert_eq(tokens[0].get_kind(), "Marker")
+  assert_eq(tokens[0].get_value(), "")
+}
+
+///|
+test "capture_group: lua doc comment --- extracts content" {
+  let lexer = Lexer::new([
+    @types.TokenDef::new("DocComment", "---(.*)")
+  ])
+  let tokens = lexer.tokenize("--- This is a Lua doc")
+  assert_eq(tokens[0].get_kind(), "DocComment")
+  assert_eq(tokens[0].get_value(), " This is a Lua doc")
+}
+
+///|
+test "capture_group: capturing group with alternation (a|b)" {
+  let lexer = Lexer::new([
+    @types.TokenDef::new("Doc", "\\/\\/\\/(.*)|---(.*)"),
+    @types.TokenDef::new("NL", "\\r?\\n"),
+  ])
+  let tokens = lexer.tokenize("/// hello\n")
+  assert_eq(tokens[0].get_kind(), "Doc")
+  assert_eq(tokens[0].get_value(), " hello")
+}

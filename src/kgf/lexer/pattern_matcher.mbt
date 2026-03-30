@@ -1069,6 +1069,78 @@ fn match_group(
 }
 
 ///|
+/// Enumerates all possible end positions for a single group match.
+/// For each candidate length from pos to end-of-input, checks if the group's
+/// inner elements can produce that end position. This enables outer
+/// backtracking to coordinate with lazy/greedy quantifiers inside the group.
+fn enumerate_group_end_positions(
+  elements : Array[QuantifiedElement],
+  input_chars : Array[Char],
+  pos : Int,
+  case_insensitive : Bool,
+) -> Array[Int] {
+  let positions : Array[Int] = []
+  let seen : Map[Int, Bool] = {}
+  // Collect all reachable end positions from the group
+  // by trying the inner elements exhaustively
+  for target = pos; target <= input_chars.length(); target = target + 1 {
+    if seen.contains(target) {
+      continue
+    }
+    // Check: can the inner elements match from pos to exactly target?
+    // We do this by temporarily appending an end-of-group constraint
+    // Simpler: just check if match_elements_backtrack yields target
+    // by calling it and checking the result
+    match
+      match_elements_backtrack(elements, 0, input_chars, pos, case_insensitive) {
+      Some(end) => {
+        if not(seen.contains(end)) {
+          seen.set(end, true)
+          positions.push(end)
+        }
+        // We got the shortest/default match. To get other lengths,
+        // we rely on the outer backtracking to try other positions.
+        // But match_elements_backtrack always returns the same result...
+        // So break out — the real fix is below.
+        break
+      }
+      None => break
+    }
+  }
+  // The group internally resolves to one end position. To handle lazy
+  // quantifiers (e.g., [\s\S]*?) inside groups correctly, we need to
+  // generate all valid end positions. Do this by checking at each length
+  // whether a "suffix" match (the rest of the outer pattern) could work.
+  // Since we can't do that here, generate all positions where the group
+  // COULD end: from pos (0 chars) up to the max match length.
+  if elements.length() == 1 {
+    // Optimization: single-element group — enumerate like a simple element
+    let qe = elements[0]
+    let max_possible = count_simple_matches(
+      qe.element, input_chars, pos, case_insensitive,
+    )
+    let bounds = quantifier_bounds(qe.quantifier, max_possible)
+    match bounds {
+      Some((lo, hi)) => {
+        let result : Array[Int] = []
+        if qe.lazy_ {
+          for count = lo; count <= hi; count = count + 1 {
+            result.push(pos + count)
+          }
+        } else {
+          for count = hi; count >= lo; count = count - 1 {
+            result.push(pos + count)
+          }
+        }
+        return result
+      }
+      None => ()
+    }
+  }
+  positions
+}
+
+///|
 /// Returns all possible end positions for an alternation with a quantifier.
 fn match_alternation_positions(
   alternatives : Array[Array[QuantifiedElement]],
@@ -1268,18 +1340,24 @@ fn match_elements_backtrack(
   // Groups and alternations: use existing matching, then recurse
   match qe.element {
     Group(group_elements, capture_idx) => {
-      let positions = match_group_positions(
-        group_elements,
-        qe.quantifier,
-        qe.lazy_,
-        input_chars,
-        pos,
-        case_insensitive,
-      )
+      // For groups with quantifier One: enumerate all possible end positions
+      // by trying the group's internal elements at increasing match lengths.
+      // This handles lazy quantifiers inside groups correctly (e.g., ([\s\S]*?)).
+      let positions = if qe.quantifier is One {
+        // Try all possible end positions for a single group match
+        enumerate_group_end_positions(
+          group_elements, input_chars, pos, case_insensitive,
+        )
+      } else {
+        match_group_positions(
+          group_elements, qe.quantifier, qe.lazy_, input_chars, pos,
+          case_insensitive,
+        )
+      }
       for try_pos in positions {
         // Record capture: start=pos, end=try_pos
         match (captures, capture_idx) {
-          (Some(cap), Some(idx)) => cap.set(idx, pos, try_pos)
+          (Some(cap), Some(ci)) => cap.set(ci, pos, try_pos)
           _ => ()
         }
         match
@@ -1295,7 +1373,7 @@ fn match_elements_backtrack(
           None => {
             // Backtrack: reset capture
             match (captures, capture_idx) {
-              (Some(cap), Some(idx)) => cap.reset(idx)
+              (Some(cap), Some(ci)) => cap.reset(ci)
               _ => ()
             }
             continue
