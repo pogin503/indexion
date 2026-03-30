@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router";
 import { AppLayout } from "./components/layout/app-layout.tsx";
 import { BrowsePage } from "./pages/browse/browse-page.tsx";
 import { SearchPage } from "./pages/search/search-page.tsx";
+import { IndexPage } from "./pages/index/index-page.tsx";
 import { LoadingSpinner } from "./components/shared/loading-spinner.tsx";
 
 const GraphPage = lazy(() =>
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
         ),
       },
       { path: "search", element: <SearchPage /> },
+      { path: "index", element: <IndexPage /> },
     ],
   },
 ]);
