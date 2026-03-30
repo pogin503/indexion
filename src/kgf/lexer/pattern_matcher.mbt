@@ -53,9 +53,61 @@ priv enum PatternElement {
   EndAnchor // $ - end of string/line
   StringStart // \A - absolute start of string
   StringEnd // \z - absolute end of string
-  Group(Array[QuantifiedElement])
+  Group(Array[QuantifiedElement], Int?) // elements, capture_index (None = non-capturing)
   Alternation(Array[Array[QuantifiedElement]])
   Lookahead(Array[QuantifiedElement], Bool) // elements, positive (true=(?=...), false=(?!...))
+}
+
+///|
+/// Mutable capture group state for tracking during matching.
+struct CaptureState {
+  /// (start, end) positions for each capture group, indexed by group number (1-based).
+  groups : Array[(Int, Int)]
+  /// Total number of capture groups in the pattern.
+  count : Int
+}
+
+///|
+fn CaptureState::new(count : Int) -> CaptureState {
+  let groups : Array[(Int, Int)] = Array::make(count + 1, (-1, -1))
+  { groups, count }
+}
+
+///|
+fn CaptureState::set(self : CaptureState, index : Int, start : Int, end : Int) -> Unit {
+  if index >= 0 && index < self.groups.length() {
+    self.groups[index] = (start, end)
+  }
+}
+
+///|
+fn CaptureState::reset(self : CaptureState, index : Int) -> Unit {
+  if index >= 0 && index < self.groups.length() {
+    self.groups[index] = (-1, -1)
+  }
+}
+
+///|
+/// Get captured text for group N from input chars.
+fn CaptureState::get_group_text(
+  self : CaptureState,
+  index : Int,
+  input_chars : Array[Char],
+) -> String? {
+  if index <= 0 || index > self.count {
+    return None
+  }
+  let (start, end) = self.groups[index]
+  if start < 0 || end < 0 {
+    return None
+  }
+  let chars : Array[Char] = []
+  for i = start; i < end; i = i + 1 {
+    if i < input_chars.length() {
+      chars.push(input_chars[i])
+    }
+  }
+  Some(String::from_array(chars))
 }
 
 ///|
@@ -84,8 +136,9 @@ priv struct CompiledPattern {
   alternatives : Array[Array[QuantifiedElement]]
   case_insensitive : Bool
   /// Optional first char filter for quick rejection.
-  /// None means pattern can start with any character.
   first_char_filter : FirstCharFilter
+  /// Number of capture groups in the pattern.
+  capture_count : Int
 }
 
 ///|
@@ -95,6 +148,24 @@ priv enum FirstCharFilter {
   Literal(Char) // Pattern must start with this exact char
   LiteralCI(Char, Char) // Case-insensitive: lower and upper
   CharClass(Array[(Char, Char)], Bool) // (ranges, negated)
+}
+
+///|
+/// Mutable state for pattern parsing — tracks capture group numbering.
+struct ParseContext {
+  mut next_capture : Int
+}
+
+///|
+fn ParseContext::new() -> ParseContext {
+  { next_capture: 1 }
+}
+
+///|
+fn ParseContext::alloc_capture(self : ParseContext) -> Int {
+  let idx = self.next_capture
+  self.next_capture += 1
+  idx
 }
 
 ///|
@@ -389,7 +460,10 @@ fn parse_brace_quantifier(pattern : String, start : Int) -> (Quantifier, Int)? {
 
 ///|
 /// Parses the pattern string into a list of quantified elements.
-fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
+fn parse_pattern_ctx(
+  pattern : String,
+  ctx : ParseContext,
+) -> Array[QuantifiedElement]? {
   let elements : Array[QuantifiedElement] = []
   let mut pos = 0
   while pos < pattern.length() {
@@ -454,25 +528,56 @@ fn parse_pattern(pattern : String) -> Array[QuantifiedElement]? {
         let group_pattern = pattern[group_start:group_end].to_string()
         // Lookahead — zero-width assertion
         if is_pos_lookahead || is_neg_lookahead {
-          match parse_pattern(group_pattern) {
+          match parse_pattern_ctx(group_pattern, ctx) {
             Some(elems) => (Lookahead(elems, is_pos_lookahead), group_end + 1)
             None => return None
           }
-        } else if group_pattern.contains("|") {
-          // Check for alternation in group
-          let alternatives = split_by_alternation(group_pattern)
-          let parsed_alternatives : Array[Array[QuantifiedElement]] = []
-          for alt in alternatives {
-            match parse_pattern(alt) {
-              Some(elems) => parsed_alternatives.push(elems)
+        } else if is_non_capturing {
+          // Non-capturing group: (?:...) — no capture index
+          if group_pattern.contains("|") {
+            let alternatives = split_by_alternation(group_pattern)
+            let parsed_alternatives : Array[Array[QuantifiedElement]] = []
+            for alt in alternatives {
+              match parse_pattern_ctx(alt, ctx) {
+                Some(elems) => parsed_alternatives.push(elems)
+                None => return None
+              }
+            }
+            (Alternation(parsed_alternatives), group_end + 1)
+          } else {
+            match parse_pattern_ctx(group_pattern, ctx) {
+              Some(group_elems) =>
+                (Group(group_elems, None), group_end + 1)
               None => return None
             }
           }
-          (Alternation(parsed_alternatives), group_end + 1)
         } else {
-          match parse_pattern(group_pattern) {
-            Some(group_elems) => (Group(group_elems), group_end + 1)
-            None => return None
+          // Capturing group: (...) — allocate capture index
+          let capture_idx = ctx.alloc_capture()
+          if group_pattern.contains("|") {
+            // Capturing group with alternation: (a|b)
+            // The group itself captures; alternation is internal
+            let alternatives = split_by_alternation(group_pattern)
+            let parsed_alternatives : Array[Array[QuantifiedElement]] = []
+            for alt in alternatives {
+              match parse_pattern_ctx(alt, ctx) {
+                Some(elems) => parsed_alternatives.push(elems)
+                None => return None
+              }
+            }
+            // Wrap alternation inside a capturing group
+            let alt_element : QuantifiedElement = {
+              element: Alternation(parsed_alternatives),
+              quantifier: One,
+              lazy_: false,
+            }
+            (Group([alt_element], Some(capture_idx)), group_end + 1)
+          } else {
+            match parse_pattern_ctx(group_pattern, ctx) {
+              Some(group_elems) =>
+                (Group(group_elems, Some(capture_idx)), group_end + 1)
+              None => return None
+            }
           }
         }
       }
@@ -617,7 +722,7 @@ fn match_char(
         in_class
       }
     }
-    Group(_) | Alternation(_) | Lookahead(_) => false // Should not be called directly
+    Group(_) | Alternation(_) | Lookahead(_, _) => false // Should not be called directly
     WordBoundary | NonWordBoundary => false // Zero-width assertions, handled in match_quantified
     StartAnchor | EndAnchor | StringStart | StringEnd => false // Anchors, handled in match_quantified
   }
@@ -706,7 +811,7 @@ fn match_quantified(
       } else {
         None
       }
-    Group(elements) =>
+    Group(elements, _) =>
       match_group(elements, qe.quantifier, input_chars, pos, case_insensitive)
     Alternation(alternatives) =>
       match_alternation(
@@ -1014,19 +1119,22 @@ fn compile_pattern(
   pattern : String,
   case_insensitive? : Bool = false,
 ) -> CompiledPattern? {
+  let ctx = ParseContext::new()
   let alternatives = split_by_alternation(pattern)
   let compiled_alts : Array[Array[QuantifiedElement]] = []
   for alt in alternatives {
-    match parse_pattern(alt) {
+    match parse_pattern_ctx(alt, ctx) {
       Some(elements) => compiled_alts.push(elements)
       None => return None
     }
   }
-  // Extract first char filter from the first alternative
   let first_char_filter = extract_first_char_filter(
     compiled_alts, case_insensitive,
   )
-  Some({ alternatives: compiled_alts, case_insensitive, first_char_filter })
+  let capture_count = ctx.next_capture - 1
+  Some(
+    { alternatives: compiled_alts, case_insensitive, first_char_filter, capture_count },
+  )
 }
 
 ///|
@@ -1128,6 +1236,7 @@ fn match_elements_backtrack(
   input_chars : Array[Char],
   pos : Int,
   case_insensitive : Bool,
+  captures? : CaptureState? = None,
 ) -> Int? {
   if idx >= elements.length() {
     return Some(pos)
@@ -1150,6 +1259,7 @@ fn match_elements_backtrack(
             input_chars,
             new_pos,
             case_insensitive,
+            captures~,
           )
         None => return None
       }
@@ -1157,7 +1267,7 @@ fn match_elements_backtrack(
   }
   // Groups and alternations: use existing matching, then recurse
   match qe.element {
-    Group(group_elements) => {
+    Group(group_elements, capture_idx) => {
       let positions = match_group_positions(
         group_elements,
         qe.quantifier,
@@ -1167,6 +1277,11 @@ fn match_elements_backtrack(
         case_insensitive,
       )
       for try_pos in positions {
+        // Record capture: start=pos, end=try_pos
+        match (captures, capture_idx) {
+          (Some(cap), Some(idx)) => cap.set(idx, pos, try_pos)
+          _ => ()
+        }
         match
           match_elements_backtrack(
             elements,
@@ -1174,9 +1289,17 @@ fn match_elements_backtrack(
             input_chars,
             try_pos,
             case_insensitive,
+            captures~,
           ) {
           Some(result) => return Some(result)
-          None => continue
+          None => {
+            // Backtrack: reset capture
+            match (captures, capture_idx) {
+              (Some(cap), Some(idx)) => cap.reset(idx)
+              _ => ()
+            }
+            continue
+          }
         }
       }
       return None
@@ -1198,6 +1321,7 @@ fn match_elements_backtrack(
             input_chars,
             try_pos,
             case_insensitive,
+            captures~,
           ) {
           Some(result) => return Some(result)
           None => continue
@@ -1228,6 +1352,7 @@ fn match_elements_backtrack(
               input_chars,
               pos + count,
               case_insensitive,
+              captures~,
             ) {
             Some(result) => return Some(result)
             None => continue
@@ -1243,6 +1368,7 @@ fn match_elements_backtrack(
               input_chars,
               pos + count,
               case_insensitive,
+              captures~,
             ) {
             Some(result) => return Some(result)
             None => continue
@@ -1259,6 +1385,7 @@ fn match_compiled_end_pos_with_chars(
   compiled : CompiledPattern,
   input_chars : Array[Char],
   pos : Int,
+  captures? : CaptureState? = None,
 ) -> Int? {
   // Quick rejection using first char filter
   if pos >= input_chars.length() {
@@ -1277,6 +1404,7 @@ fn match_compiled_end_pos_with_chars(
         input_chars,
         pos,
         compiled.case_insensitive,
+        captures~,
       ) {
       Some(end_pos) => return Some(end_pos)
       None => continue

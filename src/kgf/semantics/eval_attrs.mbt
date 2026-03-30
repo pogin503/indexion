@@ -75,7 +75,7 @@ fn eval_attr_def(
   let kind = params.get("kind").unwrap_or("Unknown")
   let ns = params.get("ns").unwrap_or("value")
   // Get doc text if specified (look for label_name_text for accumulated text)
-  // Note: doc values are already cleaned by lexer strip/skip_value
+  // Note: doc values are already cleaned by lexer capture groups/skip_value
   let doc : String? = match params.get("doc") {
     Some(doc_label) => {
       let text_label = doc_label + "_text"

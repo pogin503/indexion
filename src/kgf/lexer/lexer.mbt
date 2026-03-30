@@ -34,16 +34,19 @@ pub fn Lexer::tokenize(self : Lexer, input : String) -> Array[@types.Tok] {
   while pos < input.length() {
     let match_result = self.try_match(input, input_chars, pos)
     match match_result {
-      Some((token_def, end_pos, text)) => {
+      Some((token_def, end_pos, text, group1)) => {
         if not(token_def.skip) {
           match text {
             Some(token_text) => {
-              let value = extract_value_with_strip(token_text, token_def)
+              // Capture group takes priority for value extraction
+              let value = match group1 {
+                Some(captured) => Some(captured)
+                None => extract_value(token_text, token_def)
+              }
               result.push(
                 @types.Tok::new(token_def.name, token_text, pos, value~),
               )
             }
-            // Non-skip tokens always produce text; keep behavior robust on mismatch.
             None => ()
           }
         }
@@ -59,28 +62,41 @@ pub fn Lexer::tokenize(self : Lexer, input : String) -> Array[@types.Tok] {
 
 ///|
 /// Tries to match a token at the given position.
-/// Returns the matched token definition, end position, and matched text.
+/// Returns the matched token definition, end position, matched text, and first capture group.
 fn Lexer::try_match(
   self : Lexer,
   input : String,
   input_chars : Array[Char],
   pos : Int,
-) -> (@types.TokenDef, Int, String?)? {
+) -> (@types.TokenDef, Int, String?, String?)? {
   for entry in self.tokens {
     let token_def = entry.token_def
-    let end_pos = match entry.compiled_pattern {
-      Some(compiled) =>
-        match_compiled_end_pos_with_chars(compiled, input_chars, pos)
+    let compiled = match entry.compiled_pattern {
+      Some(c) => c
       None => continue
     }
+    // Create capture state if pattern has capture groups
+    let captures = if compiled.capture_count > 0 {
+      Some(CaptureState::new(compiled.capture_count))
+    } else {
+      None
+    }
+    let end_pos = match_compiled_end_pos_with_chars(
+      compiled, input_chars, pos, captures~,
+    )
     match end_pos {
       Some(end_pos_value) =>
         if end_pos_value > pos {
           if token_def.skip {
-            return Some((token_def, end_pos_value, None))
+            return Some((token_def, end_pos_value, None, None))
           } else {
             let text = input[pos:end_pos_value].to_string()
-            return Some((token_def, end_pos_value, Some(text)))
+            // Extract first capture group text
+            let group1 = match captures {
+              Some(cap) => cap.get_group_text(1, input_chars)
+              None => None
+            }
+            return Some((token_def, end_pos_value, Some(text), group1))
           }
         }
       None => ()
@@ -100,8 +116,9 @@ fn has_case_insensitive_flag(flags : String?) -> Bool {
 
 ///|
 /// Extracts the value from a token text using token definition settings.
-/// Handles: skip_value, strip prefix, and quoted strings.
-fn extract_value_with_strip(
+/// Handles: skip_value and quoted strings.
+/// Capture groups are handled separately in tokenize().
+fn extract_value(
   text : String,
   token_def : @types.TokenDef,
 ) -> String? {
@@ -109,30 +126,14 @@ fn extract_value_with_strip(
   if token_def.is_skip_value() {
     return Some("")
   }
-  // strip: remove N characters from start
-  let strip = token_def.get_strip()
-  if strip > 0 {
-    if strip >= text.length() {
-      return Some("")
-    }
-    let stripped = text[strip:].to_string()
-    // Also trim leading space after strip (common for doc comments)
-    if stripped.length() > 0 {
-      let first = stripped[0].to_int().unsafe_to_char()
-      if first == ' ' {
-        return Some(stripped[1:].to_string())
-      }
-    }
-    return Some(stripped)
-  }
-  // Default: handle quoted strings
-  extract_value(text)
+  // Handle quoted strings
+  extract_quoted_value(text)
 }
 
 ///|
 /// Extracts the value from a token text.
 /// For quoted strings, strips the surrounding quotes.
-fn extract_value(text : String) -> String? {
+fn extract_quoted_value(text : String) -> String? {
   if text.length() >= 2 {
     let first = text[0].to_int().unsafe_to_char()
     let last = text[text.length() - 1].to_int().unsafe_to_char()

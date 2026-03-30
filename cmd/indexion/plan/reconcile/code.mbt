@@ -58,35 +58,8 @@ fn build_code_units_fast(
       path,
       Some(registry),
     )
-    // Scan for doc comments and associate with declarations
-    let lines = @common.split_lines(content)
-    let line_docs : Map[Int, String] = {}
-    let mut doc_buf = StringBuilder::new()
-    let mut in_doc = false
-    for i, line in lines {
-      let trimmed = @common.trim_ascii_spaces(line)
-      if trimmed.has_prefix("///|") {
-        in_doc = true
-        doc_buf = StringBuilder::new()
-      } else if in_doc && trimmed.has_prefix("///") {
-        let doc_text = if trimmed.length() > 4 {
-          @common.substring(trimmed, 4, trimmed.length())
-        } else {
-          ""
-        }
-        if doc_buf.to_string().length() > 0 {
-          doc_buf.write_string("\n")
-        }
-        doc_buf.write_string(doc_text)
-      } else if in_doc {
-        // End of doc block — associate with this line
-        let doc = doc_buf.to_string()
-        if doc.length() > 0 {
-          line_docs.set(i + 1, doc)
-        }
-        in_doc = false
-      }
-    }
+    // Extract doc comments via KGF tokens (language-agnostic)
+    let line_docs = @kgf_features.extract_doc_map(tokens)
     // Module ID from path (dirname-based)
     let module_id = path
     // Build code units from pub declarations

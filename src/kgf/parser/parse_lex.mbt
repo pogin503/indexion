@@ -102,7 +102,7 @@ fn parse_skip_rule(line : String) -> @types.TokenDef? {
 }
 
 ///|
-/// Parses a TOKEN rule: TOKEN NAME /pattern/[flags] [strip=N] [skip_value]
+/// Parses a TOKEN rule: TOKEN NAME /pattern/[flags] [skip_value]
 fn parse_token_rule(line : String) -> @types.TokenDef? {
   // Skip "TOKEN " prefix
   let after_token = skip_whitespace(line, 6)
@@ -119,30 +119,26 @@ fn parse_token_rule(line : String) -> @types.TokenDef? {
   let pattern_end = find_closing_slash(line, pattern_start)
   guard pattern_end > pattern_start else { return None }
   let pattern = substr(line, pattern_start, pattern_end)
-  // Parse remainder: flags, strip=N, skip_value
+  // Parse remainder: flags, skip_value
   let remainder = trim_str(substr_from(line, pattern_end + 1))
-  let (flags, strip, skip_value) = parse_token_attrs(remainder)
-  Some(@types.TokenDef::new(name, pattern, flags~, strip~, skip_value~))
+  let (flags, skip_value) = parse_token_attrs(remainder)
+  Some(@types.TokenDef::new(name, pattern, flags~, skip_value~))
 }
 
 ///|
-/// Parses token attributes after the pattern: flags, strip=N, skip_value
-fn parse_token_attrs(text : String) -> (String?, Int, Bool) {
+/// Parses token attributes after the pattern: flags, skip_value
+fn parse_token_attrs(text : String) -> (String?, Bool) {
   let mut flags : String? = None
-  let mut strip = 0
   let mut skip_value = false
   let parts = split_by_space(text)
   for part in parts {
     if part == "skip_value" {
       skip_value = true
-    } else if starts_with(part, "strip=") {
-      let num_str = substr_from(part, 6)
-      strip = parse_int(num_str)
     } else if part.length() > 0 && is_valid_flags(part) {
       flags = Some(part)
     }
   }
-  (flags, strip, skip_value)
+  (flags, skip_value)
 }
 
 ///|

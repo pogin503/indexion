@@ -324,3 +324,97 @@ pub fn count_pub_declarations(
 ) -> Int {
   extract_pub_declarations(content, path, registry).length()
 }
+
+///|
+/// Check if a token kind is a doc comment.
+/// Matches any token whose kind starts with "Doc" — covers DocComment, DocLine,
+/// DocSection, DocBlockComment, DocInnerComment, DocString, DocAttr, etc.
+fn is_doc_token_kind(kind : String) -> Bool {
+  kind.has_prefix("Doc")
+}
+
+///|
+/// Extract doc comments from tokens and map them to the line they precede.
+/// Returns Map[line_number, doc_text] where line_number is the first
+/// non-doc, non-whitespace line after the doc block.
+/// Uses KGF token kinds (DocComment, DocLine, DocSection) — language-agnostic.
+pub fn extract_doc_map(
+  tokens : Array[@kgf_types.Tok],
+) -> Map[Int, String] {
+  let result : Map[Int, String] = {}
+  let token_lines : Array[Int] = Array::make(tokens.length(), 1)
+  let mut line = 1
+  for i, tok in tokens {
+    token_lines[i] = line
+    if tok.get_kind() == "NL" {
+      line += 1
+    }
+  }
+  // Scan tokens: collect consecutive doc tokens, then associate with next non-skip line
+  let mut i = 0
+  while i < tokens.length() {
+    let kind = tokens[i].get_kind()
+    if is_doc_token_kind(kind) {
+      // Start of a doc block — collect all consecutive doc tokens
+      let doc_buf = StringBuilder::new()
+      let mut first = true
+      while i < tokens.length() {
+        let k = tokens[i].get_kind()
+        if is_doc_token_kind(k) {
+          let value = tokens[i].get_value()
+          // skip_value tokens (e.g. ///|) produce empty string — skip them
+          if value.length() > 0 {
+            if not(first) {
+              doc_buf.write_string("\n")
+            }
+            doc_buf.write_string(value)
+            first = false
+          }
+          i += 1
+        } else if k == "NL" || k == "SKIP" || k == "WS" {
+          i += 1
+        } else {
+          break
+        }
+      }
+      // Associate doc block with current token's line
+      let doc = doc_buf.to_string()
+      if doc.length() > 0 && i < tokens.length() {
+        let target_line = if i < token_lines.length() {
+          token_lines[i]
+        } else {
+          line
+        }
+        result.set(target_line, doc)
+      }
+    } else {
+      i += 1
+    }
+  }
+  result
+}
+
+///|
+/// Extract doc comments from source file using KGF tokenization.
+/// Returns Map[line_number, doc_text] keyed by declaration line.
+pub fn extract_doc_map_from_source(
+  content : String,
+  path : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Map[Int, String] {
+  let reg = match registry {
+    Some(r) => r
+    None => return {}
+  }
+  let lang = match reg.detect_from_path(path) {
+    Some(l) => l
+    None => return {}
+  }
+  let spec = match reg.get_spec(lang) {
+    Some(s) => s
+    None => return {}
+  }
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(content)
+  extract_doc_map(tokens)
+}

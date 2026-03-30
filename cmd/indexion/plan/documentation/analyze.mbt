@@ -139,6 +139,31 @@ pub fn analyze_documentation(
 }
 
 ///|
+/// Check if a filename matches any of the given extensions.
+fn has_registered_extension(
+  filename : String,
+  extensions : Array[String],
+) -> Bool {
+  for ext in extensions {
+    if filename.has_suffix(ext) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// Check if a filename matches any of the given package marker names.
+fn is_package_marker(filename : String, markers : Array[String]) -> Bool {
+  for marker in markers {
+    if filename == marker {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn collect_packages(
   dir : String,
   packages : Array[PackageAnalysis],
@@ -150,33 +175,40 @@ fn collect_packages(
     if not(@fs.is_dir(dir)) {
       return
     }
+    // Get extensions and package markers from KGF registry
+    let extensions = match registry {
+      Some(reg) => reg.get_extensions()
+      None => []
+    }
+    let pkg_markers = match registry {
+      Some(reg) => reg.get_package_markers()
+      None => []
+    }
     // Load nested .gitignore/.indexionignore if present
     let local_filter = filter
       .with_gitignore_from_dir(dir, @vcs_git.GITIGNORE_FILENAME)
       .with_indexionignore_from_dir(dir, @config.INDEXIONIGNORE_FILENAME)
     let entries = @fs.read_dir(dir)
-    let mbt_files : Array[String] = []
-    let mut has_moon_pkg = false
+    let source_files : Array[String] = []
+    let mut has_package_marker = false
     let mut has_readme = false
     for entry in entries {
       let path = dir + "/" + entry
-      if entry == "moon.pkg" || entry == "moon.pkg.json" {
-        has_moon_pkg = true
-      } else if entry == "README.md" || entry == "README.mbt.md" {
+      if is_package_marker(entry, pkg_markers) {
+        has_package_marker = true
+      } else if entry.has_prefix("README") {
         has_readme = true
-      } else if entry.has_suffix(".mbt") {
-        // Use filter to check if file should be included
+      } else if has_registered_extension(entry, extensions) {
         let file_rel = if rel_path.length() > 0 {
           rel_path + "/" + entry
         } else {
           entry
         }
         match local_filter.should_include(file_rel, false) {
-          @filter.FilterResult::Include => mbt_files.push(entry)
+          @filter.FilterResult::Include => source_files.push(entry)
           @filter.FilterResult::Exclude(_) => ()
         }
       } else if @fs.is_dir(path) {
-        // Use filter to check if directory should be skipped
         if not(local_filter.should_skip_dir(entry)) {
           let sub_rel = if rel_path.length() > 0 {
             rel_path + "/" + entry
@@ -187,11 +219,11 @@ fn collect_packages(
         }
       }
     }
-    // Analyze this package if it has mbt files
-    if mbt_files.length() > 0 && has_moon_pkg {
+    // Analyze this package if it has source files and a package marker
+    if source_files.length() > 0 && has_package_marker {
       let pkg_path = if rel_path.length() > 0 { rel_path } else { "." }
       let pub_items : Array[PubItem] = []
-      for file in mbt_files {
+      for file in source_files {
         let file_path = dir + "/" + file
         let file_rel = if rel_path.length() > 0 {
           rel_path + "/" + file
@@ -206,7 +238,7 @@ fn collect_packages(
         .fold(init=0, fn(acc, _) { acc + 1 })
       packages.push({
         path: pkg_path,
-        files: mbt_files,
+        files: source_files,
         pub_items,
         total_pub: pub_items.length(),
         documented,
@@ -220,7 +252,7 @@ fn collect_packages(
 
 ///|
 /// Analyze source file for public declarations using KGF tokenization.
-/// Associates doc comments (///| blocks) with declarations by line proximity.
+/// Associates doc comments with declarations via KGF doc token extraction.
 fn analyze_source_file(
   path : String,
   rel_path : String,
@@ -236,42 +268,17 @@ fn analyze_source_file(
     if declarations.length() == 0 {
       return
     }
-    // Build line -> declaration lookup
-    let decl_map : Map[Int, @kgf_features.PubDeclaration] = {}
+    // Extract doc comments via KGF tokens (language-agnostic)
+    let doc_map = @kgf_features.extract_doc_map_from_source(
+      content, path, registry,
+    )
+    // Associate declarations with their doc comments
     for decl in declarations {
-      decl_map.set(decl.line, decl)
-    }
-    // Scan lines for doc comments and associate with declarations
-    let lines = @common.split_lines(content)
-    let mut doc_buffer : Array[String] = []
-    let mut in_doc_block = false
-    for i, line in lines {
-      let trimmed = @common.trim_ascii_spaces(line)
-      let line_num = i + 1
-      if trimmed.has_prefix("///|") {
-        in_doc_block = true
-        doc_buffer = []
-      } else if in_doc_block && trimmed.has_prefix("///") {
-        let doc_line = if trimmed.length() > 3 {
-          @common.substring(trimmed, 3, trimmed.length())
-        } else {
-          ""
-        }
-        doc_buffer.push(@common.trim_ascii_spaces(doc_line))
-      } else if in_doc_block {
-        in_doc_block = false
-        match decl_map.get(line_num) {
-          Some(decl) => items.push(make_pub_item(decl, rel_path, doc_buffer))
-          None => ()
-        }
-        doc_buffer = []
-      } else {
-        // Check for pub declaration without doc
-        match decl_map.get(line_num) {
-          Some(decl) => items.push(make_pub_item(decl, rel_path, []))
-          None => ()
-        }
+      let doc_lines = match doc_map.get(decl.line) {
+        Some(doc) => @common.split_lines(doc)
+        None => []
       }
+      items.push(make_pub_item(decl, rel_path, doc_lines))
     }
   } catch {
     _ => ()
