@@ -29,7 +29,7 @@ pub fn ModulePathStyle::as_string(self : ModulePathStyle) -> String {
 
 ///|
 /// ResolveStepType represents the type of resolution step.
-pub enum ResolveStepType {
+pub(all) enum ResolveStepType {
   /// Check if the target path exists as-is (exact match)
   Exact
   /// Read a field from a manifest file (package.json, Cargo.toml)
@@ -42,6 +42,8 @@ pub enum ResolveStepType {
   Ext
   /// Try sibling file with same name (foo/ -> foo.rs)
   Sibling
+  /// Walk ancestor directories searching for a package directory (node_modules/, vendor/)
+  Ancestors
   /// Apply fallback prefix for unresolved modules (npm:, pip:)
   Fallback
 } derive(Eq, Show)
@@ -56,6 +58,7 @@ pub fn ResolveStepType::from_string(s : String) -> ResolveStepType? {
     "index" => Some(Index)
     "ext" => Some(Ext)
     "sibling" => Some(Sibling)
+    "ancestors" => Some(Ancestors)
     "fallback" => Some(Fallback)
     _ => None
   }
@@ -71,6 +74,7 @@ pub fn ResolveStepType::as_string(self : ResolveStepType) -> String {
     Index => "index"
     Ext => "ext"
     Sibling => "sibling"
+    Ancestors => "ancestors"
     Fallback => "fallback"
   }
 }
@@ -143,6 +147,12 @@ pub fn ResolveStep::ext(files : Array[String]) -> ResolveStep {
 /// Creates a Sibling resolve step.
 pub fn ResolveStep::sibling(files : Array[String]) -> ResolveStep {
   ResolveStep::new(Sibling, files~)
+}
+
+///|
+/// Creates an Ancestors resolve step (walks up from file to root).
+pub fn ResolveStep::ancestors(dirs : Array[String]) -> ResolveStep {
+  ResolveStep::new(Ancestors, files=dirs)
 }
 
 ///|

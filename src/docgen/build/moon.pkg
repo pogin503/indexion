@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/x/fs" @fs,
   "moonbitlang/core/hashset" @hashset,
   "trkbt10/indexion/src/core/graph" @graph,
   "trkbt10/indexion/src/docgen/analyze" @analyze,

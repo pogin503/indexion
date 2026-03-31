@@ -324,6 +324,7 @@ fn resolve_import_path(ctx : SemEvalCtx, path : String) -> String {
       path,
       ctx.root,
       ctx.file_exists,
+      ctx.read_file,
     )
     result.to_string()
   } else {

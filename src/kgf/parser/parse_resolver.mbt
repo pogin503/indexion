@@ -317,6 +317,8 @@ fn parse_single_line_resolve_step(line : String) -> @types.ResolveStep? {
       Some(@types.ResolveStep::ext(parse_list(value)))
     Some(@types.ResolveStepType::Sibling) =>
       Some(@types.ResolveStep::sibling(parse_list(value)))
+    Some(@types.ResolveStepType::Ancestors) =>
+      Some(@types.ResolveStep::ancestors(parse_list(value)))
     Some(@types.ResolveStepType::Fallback) =>
       Some(@types.ResolveStep::fallback(value))
     None => None

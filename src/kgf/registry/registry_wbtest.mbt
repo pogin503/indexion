@@ -121,9 +121,10 @@ test "registry: comprehensive validation" {
   match registry.get_spec("typescript") {
     Some(spec) => {
       let chain = spec.get_resolver().get_resolve_chain()
-      assert_true(chain.length() >= 3)
-      assert_eq(chain[0].get_step_type().as_string(), "manifest")
-      assert_eq(chain[0].get_file(), "package.json")
+      assert_true(chain.length() >= 4)
+      assert_eq(chain[0].get_step_type().as_string(), "exact")
+      assert_eq(chain[1].get_step_type().as_string(), "manifest")
+      assert_eq(chain[1].get_file(), "package.json")
     }
     None => assert_true(false)
   }

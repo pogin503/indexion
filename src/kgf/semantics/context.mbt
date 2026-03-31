@@ -86,6 +86,7 @@ pub struct SemEvalCtx {
   call_stack : Array[String]
   events : Array[(String, Map[String, Json])]
   file_exists : (String) -> Bool
+  read_file : (String) -> String?
   /// Cache for module resolution with circular detection
   resolution_cache : @types.ResolutionCache
 }
@@ -99,6 +100,7 @@ pub fn SemEvalCtx::new(
   root : String,
   language : String,
   file_exists : (String) -> Bool,
+  read_file? : (String) -> String? = fn(_) { None },
 ) -> SemEvalCtx {
   {
     spec,
@@ -112,6 +114,7 @@ pub fn SemEvalCtx::new(
     call_stack: [],
     events: [],
     file_exists,
+    read_file,
     resolution_cache: @types.ResolutionCache::new(),
   }
 }
@@ -126,6 +129,7 @@ pub fn SemEvalCtx::new_with_cache(
   language : String,
   file_exists : (String) -> Bool,
   resolution_cache : @types.ResolutionCache,
+  read_file? : (String) -> String? = fn(_) { None },
 ) -> SemEvalCtx {
   {
     spec,
@@ -139,6 +143,7 @@ pub fn SemEvalCtx::new_with_cache(
     call_stack: [],
     events: [],
     file_exists,
+    read_file,
     resolution_cache,
   }
 }

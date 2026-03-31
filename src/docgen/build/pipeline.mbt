@@ -89,8 +89,16 @@ pub fn analyze_files_with_progress(
   for entry in files {
     known_paths.set(entry.0, true)
   }
-  // Create a file_exists function that checks against known paths
-  let file_exists = fn(path : String) -> Bool { known_paths.contains(path) }
+  // Check known paths first, then fall back to actual filesystem
+  let file_exists = fn(path : String) -> Bool {
+    known_paths.contains(path) || (@fs.is_file(path) catch { _ => false })
+  }
+  // Read file for manifest resolution (package.json etc.)
+  let read_file = fn(path : String) -> String? {
+    Some(@fs.read_file_to_string(path)) catch {
+      _ => None
+    }
+  }
   // Use empty root - paths are already relative to working directory
   let root = ""
   let active_rules_cache : Map[String, @hashset.HashSet[String]] = Map::new()
@@ -124,7 +132,8 @@ pub fn analyze_files_with_progress(
         match get_or_build_peg(spec_name, spec, peg_cache) {
           Some(peg) => {
             let graph = analyze_with_spec(
-              path, content, spec, active_rules, root, file_exists, lexer, peg,
+              path, content, spec, active_rules, root, file_exists, read_file, lexer,
+              peg,
             )
             graphs.push(graph)
           }
@@ -192,6 +201,7 @@ fn analyze_with_spec(
   active_rules : @hashset.HashSet[String],
   root : String,
   file_exists : (String) -> Bool,
+  read_file : (String) -> String?,
   lexer : @kgf_lexer.Lexer,
   peg : @kgf_peg.PEG,
 ) -> @graph.CodeGraph {
@@ -216,6 +226,7 @@ fn analyze_with_spec(
         root,
         spec.get_language(),
         file_exists,
+        read_file~,
       )
       // Process all rule match events for semantic evaluation
       for event in eval_result.get_events() {

@@ -104,6 +104,7 @@ fn eval_call(
         mod,
         ctx.root,
         ctx.file_exists,
+        ctx.read_file,
       )
       result.to_string().to_json()
     }

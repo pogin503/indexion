@@ -61,7 +61,7 @@ pub fn resolve_module(
   // Step 4: Use resolve_chain if defined
   if spec.has_resolve_chain() {
     let result = resolve_with_chain(
-      spec, base_path, mod_clean, project_root, file_resolver,
+      spec, base_path, mod_clean, from_file, project_root, file_resolver,
     )
     match result {
       Some(path) => return path
@@ -115,6 +115,7 @@ fn resolve_with_chain(
   spec : @types.ResolverSpec,
   base_path : String,
   module_str : String,
+  from_file : String,
   project_root : String,
   file_resolver : &FileResolver,
 ) -> String? {
@@ -126,6 +127,23 @@ fn resolve_with_chain(
   }
   let target_path = normalize_path(join_path([base_abs, mod_path]))
   for step in spec.get_resolve_chain() {
+    if step.get_step_type() == @types.ResolveStepType::Ancestors {
+      // Walk ancestor directories from base_abs up to project_root
+      let from_dir = dirname(
+        if is_absolute(from_file) {
+          from_file
+        } else {
+          join_path([project_root, from_file])
+        },
+      )
+      let result = resolve_ancestors(
+        spec, step, mod_path, from_dir, project_root, file_resolver,
+      )
+      match result {
+        Some(path) => return Some(path)
+        None => continue
+      }
+    }
     let result = execute_resolve_step(
       step, target_path, module_str, project_root, file_resolver,
     )
@@ -135,6 +153,62 @@ fn resolve_with_chain(
     }
   }
   None
+}
+
+///|
+/// Resolve by walking ancestor directories from base up to project root.
+/// For each ancestor, joins ancestor/<dir>/<module> and runs the remaining
+/// chain steps (exact, manifest, index, ext) against it.
+fn resolve_ancestors(
+  spec : @types.ResolverSpec,
+  step : @types.ResolveStep,
+  mod_path : String,
+  base_abs : String,
+  project_root : String,
+  file_resolver : &FileResolver,
+) -> String? {
+  let dirs = step.get_files() // e.g. ["node_modules/"] or ["vendor/"]
+  let remaining_steps = collect_non_ancestors_non_fallback(spec)
+  let mut dir = base_abs
+  while true {
+    for pkg_dir in dirs {
+      let candidate = normalize_path(join_path([dir, pkg_dir, mod_path]))
+      for s in remaining_steps {
+        let result = execute_resolve_step(
+          s, candidate, mod_path, project_root, file_resolver,
+        )
+        match result {
+          Some(path) => return Some(path)
+          None => continue
+        }
+      }
+    }
+    if dir == project_root || dir == "." || dir == "/" || dir == "" {
+      break
+    }
+    let parent = dirname(dir)
+    if parent == dir {
+      break
+    }
+    dir = parent
+  }
+  None
+}
+
+///|
+/// Collect resolve chain steps that are not Ancestors or Fallback.
+fn collect_non_ancestors_non_fallback(
+  spec : @types.ResolverSpec,
+) -> Array[@types.ResolveStep] {
+  let result : Array[@types.ResolveStep] = []
+  for step in spec.get_resolve_chain() {
+    let t = step.get_step_type()
+    if t != @types.ResolveStepType::Ancestors &&
+      t != @types.ResolveStepType::Fallback {
+      result.push(step)
+    }
+  }
+  result
 }
 
 ///|
@@ -218,6 +292,9 @@ fn execute_resolve_step(
       }
       None
     }
+    @types.ResolveStepType::Ancestors =>
+      // Handled at resolve_with_chain level, not here
+      None
     @types.ResolveStepType::Fallback => {
       // Fallback step returns the prefixed module path
       let prefix = step.get_prefix()
@@ -267,14 +344,79 @@ fn query_manifest(content : String, query : String) -> String? {
 /// Simple JSON query for common manifest fields.
 /// Supports: "main", "module", "exports['.'].import", etc.
 fn query_json_simple(content : String, path : String) -> String? {
-  // Very simple JSON parsing for common cases
-  // This is a simplified implementation - a full JSON parser would be better
-  if path == "main" || path == "module" || path == "types" {
+  // Simple top-level keys: "main", "module", "types"
+  if !path.contains("[") && !path.contains(".") {
     return find_json_string_value(content, path)
   }
-  // For more complex paths, we need proper JSON parsing
-  // For now, just try the simple case
-  None
+  // Nested paths like exports["."].types, exports["."].import, exports["."]
+  // Parse using @json for correctness
+  let json : Json = @json.parse(content) catch { _ => return None }
+  resolve_json_path(json, path)
+}
+
+///|
+/// Resolve a dot/bracket path against a parsed JSON value.
+/// Supports: "main", "exports[\".\"].import", "exports[\".\"]"
+fn resolve_json_path(json : Json, path : String) -> String? {
+  let segments = split_json_path(path)
+  let mut current = json
+  for seg in segments {
+    match current {
+      Object(obj) =>
+        match obj.get(seg) {
+          Some(next) => current = next
+          None => return None
+        }
+      _ => return None
+    }
+  }
+  // Terminal value must be a string
+  match current {
+    String(s) => Some(s)
+    _ => None
+  }
+}
+
+///|
+/// Split a JSON path like `exports["."].import` into segments ["exports", ".", "import"].
+fn split_json_path(path : String) -> Array[String] {
+  let segments : Array[String] = []
+  let buf = StringBuilder::new()
+  let mut in_bracket = false
+  for c in path {
+    if c == '[' {
+      let s = buf.to_string()
+      if s.length() > 0 {
+        segments.push(s)
+      }
+      buf.reset()
+      in_bracket = true
+    } else if c == ']' {
+      let s = buf.to_string()
+      // Strip quotes: "." → .
+      if s.length() >= 2 && s[0] == '"' {
+        let inner = s[1:s.length() - 1].to_string()
+        segments.push(inner)
+      } else {
+        segments.push(s)
+      }
+      buf.reset()
+      in_bracket = false
+    } else if c == '.' && !in_bracket {
+      let s = buf.to_string()
+      if s.length() > 0 {
+        segments.push(s)
+      }
+      buf.reset()
+    } else {
+      buf.write_char(c)
+    }
+  }
+  let s = buf.to_string()
+  if s.length() > 0 {
+    segments.push(s)
+  }
+  segments
 }
 
 ///|
@@ -609,6 +751,7 @@ pub fn resolve_module_cached(
   module_path : String,
   project_root : String,
   file_exists_fn : (String) -> Bool,
+  read_file_fn : (String) -> String?,
 ) -> ResolutionResult {
   let key = @types.ResolutionCache::make_key(from_file, module_path)
   // Check cache first
@@ -631,9 +774,9 @@ pub fn resolve_module_cached(
   let cached_file_exists = fn(path : String) -> Bool {
     cache.check_file_exists(path, file_exists_fn)
   }
-  // Perform resolution
-  let resolved = resolve_module_with_fn(
-    spec, language, from_file, module_path, project_root, cached_file_exists,
+  // Perform resolution (with read_file for manifest/ancestors support)
+  let resolved = resolve_module_with_fns(
+    spec, language, from_file, module_path, project_root, cached_file_exists, read_file_fn,
   )
   // Pop from resolution stack
   cache.pop_resolving()

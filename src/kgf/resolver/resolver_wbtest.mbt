@@ -1986,8 +1986,10 @@ test "resolution_cache: basic memoization" {
     path == "/project/src/utils.ts"
   }
   // First resolution - should trigger file check
+  let read_file_fn : (String) -> String? = fn(_) { None }
   let result1 = resolve_module_cached(
     cache, spec, "typescript", "/project/src/index.ts", "./utils", "/project", file_exists_fn,
+    read_file_fn,
   )
   match result1 {
     Resolved(path) => assert_eq(path, "src/utils.ts")
@@ -1997,6 +1999,7 @@ test "resolution_cache: basic memoization" {
   // Second resolution of the same module - should use cache
   let result2 = resolve_module_cached(
     cache, spec, "typescript", "/project/src/index.ts", "./utils", "/project", file_exists_fn,
+    read_file_fn,
   )
   match result2 {
     Resolved(path) => assert_eq(path, "src/utils.ts")

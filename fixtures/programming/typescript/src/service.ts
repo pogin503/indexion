@@ -1,7 +1,7 @@
 /**
  * User service — handles CRUD operations for users.
  */
-import { User, UserId, QueryOptions } from './types';
+import type { User, UserId, QueryOptions } from './types';
 import { validateEmail, DEFAULT_PAGE_SIZE } from './utils';
 
 /** In-memory user store. */
