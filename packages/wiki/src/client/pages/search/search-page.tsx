@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
-import { useApi, useApiMutation } from "../../lib/hooks.ts";
-import type { CodeGraph, DigestMatch } from "@indexion/api-client";
+import { useApiCall, useApiMutationCall } from "../../lib/hooks.ts";
+import { client } from "../../lib/client.ts";
+import { fetchGraph, queryDigest, type CodeGraph, type DigestMatch } from "@indexion/api-client";
 import { LoadingSpinner } from "../../components/shared/loading-spinner.tsx";
 import { ErrorPanel } from "../../components/shared/error-panel.tsx";
 import { ScrollArea } from "../../components/ui/scroll-area.tsx";
@@ -14,8 +15,8 @@ export const SearchPage = (): React.JSX.Element => {
   const [query, setQuery] = useState(initialQuery);
   const [mode, setMode] = useState<"symbol" | "semantic">("symbol");
 
-  const graphState = useApi<CodeGraph>("/graph?format=codegraph");
-  const { state: digestState, mutate: digestMutate } = useApiMutation<{ purpose: string; topK?: number }, ReadonlyArray<DigestMatch>>();
+  const graphState = useApiCall((signal) => fetchGraph(client, signal));
+  const { state: digestState, mutate: digestMutate } = useApiMutationCall<ReadonlyArray<DigestMatch>>();
 
   const symbolResults = (() => {
     if (graphState.status !== "success" || !initialQuery) return [];
@@ -28,7 +29,7 @@ export const SearchPage = (): React.JSX.Element => {
 
   useEffect(() => {
     if (initialQuery && mode === "semantic") {
-      digestMutate("/digest/query", { purpose: initialQuery, topK: 20 });
+      digestMutate(() => queryDigest(client, { purpose: initialQuery, topK: 20 }));
     }
   }, [initialQuery, mode]);
 
@@ -36,7 +37,7 @@ export const SearchPage = (): React.JSX.Element => {
     if (query.trim()) {
       setSearchParams({ q: query.trim() });
       if (mode === "semantic") {
-        digestMutate("/digest/query", { purpose: query.trim(), topK: 20 });
+        digestMutate(() => queryDigest(client, { purpose: query.trim(), topK: 20 }));
       }
     }
   };

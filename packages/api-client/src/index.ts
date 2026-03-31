@@ -22,4 +22,32 @@ export type {
   KgfSpecInfo,
   KgfToken,
   KgfEdge,
+  ServerConfig,
+  ComparisonStrategy,
+  DocGraphFormat,
 } from "./types.ts";
+
+export type { ExploreRequest, DocGraphRequest, PlanRequest } from "./api.ts";
+export {
+  fetchGraph,
+  queryDigest,
+  fetchDigestIndex,
+  fetchDigestStats,
+  rebuildDigest,
+  fetchWikiNav,
+  fetchWikiPage,
+  searchWiki,
+  runExplore,
+  fetchKgfList,
+  tokenizeFile,
+  extractEdges,
+  generateDocGraph,
+  runPlanRefactor,
+  runPlanDocumentation,
+  runPlanReconcile,
+  runPlanSolid,
+  runPlanUnwrap,
+  runPlanReadme,
+  checkHealth,
+  fetchConfig,
+} from "./api.ts";

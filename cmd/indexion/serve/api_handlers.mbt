@@ -427,3 +427,34 @@ async fn handle_plan_readme(
     None => send_json_error(conn, 404, "No results", cors)
   }
 }
+
+///|
+/// Build readonly config JSON from ServeConfig.
+fn build_config_json(config : ServeConfig) -> String {
+  let obj : Map[String, Json] = {}
+  obj.set("workspaceDir", config.workspace_dir.to_json())
+  obj.set("specsDir", config.specs_dir.to_json())
+  obj.set("indexDir", config.index_dir.to_json())
+  obj.set(
+    "configDir",
+    match @config.get_global_config_dir() {
+      Some(dir) => dir.to_json()
+      None => Json::null()
+    },
+  )
+  obj.set(
+    "dataDir",
+    match @config.get_global_data_dir() {
+      Some(dir) => dir.to_json()
+      None => Json::null()
+    },
+  )
+  obj.set(
+    "cacheDir",
+    match @config.get_global_cache_dir() {
+      Some(dir) => dir.to_json()
+      None => Json::null()
+    },
+  )
+  Json::object(obj).stringify()
+}

@@ -1,12 +1,14 @@
 import { NavLink } from "react-router";
 import { RefreshCw } from "lucide-react";
-import { useApiMutation } from "../../lib/hooks.ts";
+import { useApiMutationCall } from "../../lib/hooks.ts";
+import { client } from "../../lib/client.ts";
+import { rebuildDigest } from "@indexion/api-client";
 import { Button } from "../ui/button.tsx";
 import { Separator } from "../ui/separator.tsx";
 import { cn } from "../../lib/utils.ts";
 
 export const Header = (): React.JSX.Element => {
-  const { state, mutate } = useApiMutation<Record<string, never>, { rebuilt: boolean; functions: number }>();
+  const { state, mutate } = useApiMutationCall<{ readonly rebuilt: boolean; readonly functions: number }>();
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-4 border-b px-4">
@@ -42,7 +44,7 @@ export const Header = (): React.JSX.Element => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => mutate("/digest/rebuild", {})}
+          onClick={() => mutate(() => rebuildDigest(client))}
           disabled={state.status === "loading"}
         >
           <RefreshCw className={cn("size-3.5", state.status === "loading" && "animate-spin")} />

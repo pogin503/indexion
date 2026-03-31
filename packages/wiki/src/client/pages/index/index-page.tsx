@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { useApi } from "../../lib/hooks.ts";
-import type { IndexedFunction } from "@indexion/api-client";
+import { useApiCall } from "../../lib/hooks.ts";
+import { client } from "../../lib/client.ts";
+import { fetchDigestIndex, fetchDigestStats, type IndexedFunction } from "@indexion/api-client";
 import { LoadingSpinner } from "../../components/shared/loading-spinner.tsx";
 import { ErrorPanel } from "../../components/shared/error-panel.tsx";
 import { Input } from "../../components/ui/input.tsx";
@@ -30,8 +31,8 @@ const kindColor = (kind: string): string => {
 };
 
 export const IndexPage = (): React.JSX.Element => {
-  const indexState = useApi<ReadonlyArray<IndexedFunction>>("/digest/index");
-  const statsState = useApi<DigestStats>("/digest/stats");
+  const indexState = useApiCall((signal) => fetchDigestIndex(client, signal));
+  const statsState = useApiCall((signal) => fetchDigestStats<DigestStats>(client, signal));
   const [filter, setFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("module");
   const [sortDir, setSortDir] = useState<SortDir>("asc");

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { useApi } from "../../lib/hooks.ts";
-import type { CodeGraph, IndexedFunction } from "@indexion/api-client";
+import { useApiCall } from "../../lib/hooks.ts";
+import { client } from "../../lib/client.ts";
+import { fetchGraph, fetchDigestIndex, type CodeGraph, type IndexedFunction } from "@indexion/api-client";
 import { LoadingSpinner } from "../../components/shared/loading-spinner.tsx";
 import { ErrorPanel } from "../../components/shared/error-panel.tsx";
 import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card.tsx";
@@ -9,8 +10,8 @@ import { buildTree } from "./graph-data.ts";
 import { buildScene } from "./graph-scene.ts";
 
 export const GraphPage = (): React.JSX.Element => {
-  const graphState = useApi<CodeGraph>("/graph?format=codegraph");
-  const indexState = useApi<ReadonlyArray<IndexedFunction>>("/digest/index");
+  const graphState = useApiCall((signal) => fetchGraph(client, signal));
+  const indexState = useApiCall((signal) => fetchDigestIndex(client, signal));
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<FolderNode | null>(null);
 

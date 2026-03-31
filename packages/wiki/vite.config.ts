@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@indexion/api-client": resolve(__dirname, "../api-client/src/index.ts"),
+      "@indexion/api-client/react": resolve(__dirname, "../api-client/src/react.ts"),
     },
   },
   build: {

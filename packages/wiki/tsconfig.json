@@ -15,7 +15,8 @@
     "jsx": "react-jsx",
     "types": ["vite/client"],
     "paths": {
-      "@indexion/api-client": ["../api-client/src/index.ts"]
+      "@indexion/api-client": ["../api-client/src/index.ts"],
+      "@indexion/api-client/react": ["../api-client/src/react.ts"]
     }
   },
   "include": ["src/client/**/*"],

@@ -9,8 +9,16 @@
       "name": "@indexion/api-client",
       "version": "0.0.1",
       "devDependencies": {
+        "@types/react": "^19.2.14",
+        "react": "^19.0.0",
         "typescript": "^5.9.3",
       },
+      "peerDependencies": {
+        "react": ">=18.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "packages/vscode-plugin": {
       "name": "@indexion/vscode-plugin",

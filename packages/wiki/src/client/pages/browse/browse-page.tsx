@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
-import { useApi } from "../../lib/hooks.ts";
-import type { CodeGraph, IndexedFunction } from "@indexion/api-client";
+import { useApiCall } from "../../lib/hooks.ts";
+import { client } from "../../lib/client.ts";
+import { fetchGraph, fetchDigestIndex, type CodeGraph, type IndexedFunction } from "@indexion/api-client";
 import { LoadingSpinner } from "../../components/shared/loading-spinner.tsx";
 import { ErrorPanel } from "../../components/shared/error-panel.tsx";
 import { Input } from "../../components/ui/input.tsx";
@@ -11,8 +12,8 @@ import { FolderItem } from "./components/folder-item.tsx";
 import { FunctionDetail } from "./components/function-detail.tsx";
 
 export const BrowsePage = (): React.JSX.Element => {
-  const graphState = useApi<CodeGraph>("/graph?format=codegraph");
-  const indexState = useApi<ReadonlyArray<IndexedFunction>>("/digest/index");
+  const graphState = useApiCall((signal) => fetchGraph(client, signal));
+  const indexState = useApiCall((signal) => fetchDigestIndex(client, signal));
   const [selectedSym, setSelectedSym] = useState<SymEntry | null>(null);
   const [filter, setFilter] = useState("");
 

@@ -262,6 +262,12 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         send_json_ok(conn, "{\"status\":\"ready\"}", cors_enabled)
         return
       }
+      // Config (readonly)
+      if req.meth == @mhttp.Get && is_path(req.path, "/api/config") {
+        conn.skip_request_body()
+        send_json_ok(conn, build_config_json(config), cors_enabled)
+        return
+      }
       // Rebuild endpoint
       if req.meth == @mhttp.Post && path == "/api/digest/rebuild" {
         conn.skip_request_body()

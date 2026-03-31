@@ -122,3 +122,20 @@ export type KgfEdge = {
   readonly to: string;
   readonly kind: string;
 };
+
+// --- Config ---
+
+export type ServerConfig = {
+  readonly workspaceDir: string;
+  readonly specsDir: string;
+  readonly indexDir: string;
+  readonly configDir: string | null;
+  readonly dataDir: string | null;
+  readonly cacheDir: string | null;
+};
+
+// --- Enums (string literal unions for API parameters) ---
+
+export type ComparisonStrategy = "tfidf" | "ncd" | "hybrid" | "apted" | "tsed";
+
+export type DocGraphFormat = "mermaid" | "json" | "dot" | "d2" | "text" | "codegraph";
