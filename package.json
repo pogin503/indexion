@@ -1,0 +1,13 @@
+{
+  "name": "indexion",
+  "private": true,
+  "packageManager": "bun@1.3.11",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "lint": "bun run --filter '*' lint"
+  }
+}

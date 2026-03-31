@@ -4,3 +4,5 @@ _build/
 .moonagent/
 .docgen/
 .indexion/
+node_modules/
+dist/
