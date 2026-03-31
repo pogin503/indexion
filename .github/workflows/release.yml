@@ -1,7 +1,9 @@
 name: Release
 
 on:
+  pull_request:
   push:
+    branches: [main]
     tags:
       - 'v*'
 
@@ -9,7 +11,62 @@ permissions:
   contents: write
 
 jobs:
+  moonbit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install MoonBit CLI
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Moon update
+        run: moon update
+
+      - name: Check
+        run: moon check --target native
+
+      - name: Test
+        run: moon test --target native
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Typecheck
+        run: bun run --filter '*' typecheck
+
+      - name: Lint
+        run: bun run --filter '*' lint
+
+      - name: Test
+        run: bun run --filter '*' test
+
+      - name: Build wiki
+        run: bun run --filter @indexion/wiki build
+
+      - name: Upload wiki artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiki-dist
+          path: packages/wiki/dist/client
+
   build:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [moonbit, frontend]
     strategy:
       matrix:
         include:
@@ -57,13 +114,11 @@ jobs:
       - name: Build
         run: moon build --target native --release
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Build wiki frontend
-        run: |
-          bun install
-          bun run --filter @indexion/wiki build
+      - name: Download wiki artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wiki-dist
+          path: wiki-dist
 
       - name: Prepare package (Unix)
         if: runner.os != 'Windows'
@@ -86,8 +141,8 @@ jobs:
           cp -r kgfs "$pkg_dir/"
 
           # Copy wiki frontend
-          if [ -d "packages/wiki/dist/client" ]; then
-            cp -r packages/wiki/dist/client "$pkg_dir/wiki"
+          if [ -d "wiki-dist" ]; then
+            cp -r wiki-dist "$pkg_dir/wiki"
           fi
 
           # Create archive
@@ -114,8 +169,8 @@ jobs:
           Copy-Item -Recurse kgfs "$pkgDir/"
 
           # Copy wiki frontend
-          if (Test-Path "packages/wiki/dist/client") {
-            Copy-Item -Recurse "packages/wiki/dist/client" "$pkgDir/wiki"
+          if (Test-Path "wiki-dist") {
+            Copy-Item -Recurse "wiki-dist" "$pkgDir/wiki"
           }
 
           # Create archive
@@ -128,6 +183,7 @@ jobs:
           path: ${{ matrix.asset }}.${{ matrix.archive }}
 
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     steps:
