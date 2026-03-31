@@ -179,6 +179,8 @@ struct ServerState {
   mut index_json : String
   mut stats_json : String
   mut provider : @dconfig.EmbeddingProvider
+  mut wiki : @wiki.WikiData
+  mut wiki_search : @wiki.WikiSearchIndex?
 }
 
 ///|
@@ -293,6 +295,27 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         send_json_ok(conn, state.stats_json, cors_enabled)
         return
       }
+      // Wiki endpoints
+      if req.meth == @mhttp.Get && is_path(req.path, "/api/wiki/nav") {
+        conn.skip_request_body()
+        send_json_ok(conn, state.wiki.nav.to_json().stringify(), cors_enabled)
+        return
+      }
+      if req.meth == @mhttp.Post && path == "/api/wiki/search" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_wiki_search(conn, body_text, state.wiki_search, cors_enabled)
+        return
+      }
+      if req.meth == @mhttp.Get && path.has_prefix("/api/wiki/pages/") {
+        conn.skip_request_body()
+        let page_id = path[16:].to_string() catch { _ => "" }
+        match state.wiki.pages.get(page_id) {
+          Some(page) => send_json_ok(conn, page.to_json().stringify(), cors_enabled)
+          None => send_json_error(conn, 404, "Page not found", cors_enabled)
+        }
+        return
+      }
       // Static file serving
       if config.static_dir != "" && req.meth == @mhttp.Get &&
         not(path.has_prefix("/api/")) {
@@ -364,6 +387,7 @@ async fn do_load(
   @digest_cli.log_progress(
     "Ready: " + index.units.length().to_string() + " functions indexed.",
   )
+  let (wiki, wiki_search) = load_wiki_pages(config, provider)
   Some(
     ServerState::{
       graph_json,
@@ -371,6 +395,8 @@ async fn do_load(
       index_json,
       stats_json,
       provider,
+      wiki,
+      wiki_search,
     },
   )
 }
@@ -457,6 +483,7 @@ async fn do_build(
   @digest_cli.log_progress(
     "Ready: " + index.units.length().to_string() + " functions indexed.",
   )
+  let (wiki, wiki_search) = load_wiki_pages(config, provider)
   Some(
     ServerState::{
       graph_json,
@@ -464,6 +491,8 @@ async fn do_build(
       index_json,
       stats_json,
       provider,
+      wiki,
+      wiki_search,
     },
   )
 }
@@ -484,6 +513,8 @@ async fn handle_rebuild(
       state.index_json = new_state.index_json
       state.stats_json = new_state.stats_json
       state.provider = new_state.provider
+      state.wiki = new_state.wiki
+      state.wiki_search = new_state.wiki_search
       let msg = "{\"rebuilt\":true,\"functions\":" +
         state.index.units.length().to_string() +
         "}"

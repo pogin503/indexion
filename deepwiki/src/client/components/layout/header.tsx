@@ -20,6 +20,7 @@ export const Header = (): React.JSX.Element => {
           ["/graph", "Graph", false],
           ["/search", "Search", false],
           ["/index", "Index", false],
+          ["/wiki/overview", "Wiki", false],
         ] as const).map(([to, label, end]) => (
           <NavLink key={to} to={to} end={end}>
             {({ isActive }) => (

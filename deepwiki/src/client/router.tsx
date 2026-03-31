@@ -10,6 +10,10 @@ const GraphPage = lazy(() =>
   import("./pages/graph/graph-page.tsx").then((m) => ({ default: m.GraphPage })),
 );
 
+const WikiPage = lazy(() =>
+  import("./pages/wiki/wiki-page.tsx").then((m) => ({ default: m.WikiPage })),
+);
+
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
@@ -25,6 +29,14 @@ export const router = createBrowserRouter([
       },
       { path: "search", element: <SearchPage /> },
       { path: "index", element: <IndexPage /> },
+      {
+        path: "wiki/*",
+        element: (
+          <Suspense fallback={<LoadingSpinner message="Loading wiki..." />}>
+            <WikiPage />
+          </Suspense>
+        ),
+      },
     ],
   },
 ]);

@@ -599,3 +599,79 @@ pub fn write_output(
   }
   println(label + " written to: " + output)
 }
+
+///|
+/// Slugify text for URL-safe identifiers.
+/// Lowercases, replaces spaces/slashes/underscores/dots with hyphens.
+pub fn slugify(text : String) -> String {
+  let buf = StringBuilder::new()
+  for c in text {
+    if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' {
+      buf.write_char(c)
+    } else if c >= 'A' && c <= 'Z' {
+      buf.write_char(Char::from_int(c.to_int() + 32))
+    } else if c == ' ' || c == '/' || c == '_' || c == '.' {
+      buf.write_char('-')
+    }
+  }
+  buf.to_string()
+}
+
+///|
+/// Make a URL anchor from heading text.
+/// Like slugify but only accepts spaces as separators.
+pub fn make_anchor(text : String) -> String {
+  let buf = StringBuilder::new()
+  for c in text {
+    if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' {
+      buf.write_char(c)
+    } else if c >= 'A' && c <= 'Z' {
+      buf.write_char(Char::from_int(c.to_int() + 32))
+    } else if c == ' ' {
+      buf.write_char('-')
+    }
+  }
+  buf.to_string()
+}
+
+///|
+/// Capitalize the first character of a string.
+pub fn capitalize(text : String) -> String {
+  if text.length() == 0 {
+    return text
+  }
+  let chars = text.to_array()
+  if chars[0] >= 'a' && chars[0] <= 'z' {
+    let buf = StringBuilder::new()
+    buf.write_char(Char::from_int(chars[0].to_int() - 32))
+    for i = 1; i < chars.length(); i = i + 1 {
+      buf.write_char(chars[i])
+    }
+    buf.to_string()
+  } else {
+    text
+  }
+}
+
+///|
+/// Extract the first sentence (up to first '.' or newline).
+pub fn first_sentence(text : String) -> String {
+  let mut idx = 0
+  for c in text {
+    if c == '.' || c == '\n' {
+      return substring(text, 0, idx)
+    }
+    idx = idx + 1
+  }
+  if text.length() > 100 {
+    truncate(text, 100)
+  } else {
+    text
+  }
+}
+
+///|
+/// Count the number of lines in text.
+pub fn count_lines(text : String) -> Int {
+  split_lines(text).length()
+}
