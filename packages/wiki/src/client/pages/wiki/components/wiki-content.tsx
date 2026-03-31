@@ -2,13 +2,14 @@
  * @file Central content area: Markdown rendering with source badges.
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeHighlight from "rehype-highlight";
 import { Link } from "react-router";
 import { ScrollArea } from "../../../components/ui/scroll-area.tsx";
+import { MermaidDiagram } from "../../../components/shared/mermaid-diagram.tsx";
 import { SourceBadge } from "./source-badge.tsx";
 import type { WikiPage } from "@indexion/api-client";
 
@@ -17,28 +18,17 @@ type Props = {
 };
 
 export const WikiContent = ({ page }: Props): React.JSX.Element => {
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!contentRef.current) return;
-    const codeBlocks = contentRef.current.querySelectorAll("pre code.language-mermaid");
-    for (const block of codeBlocks) {
-      const pre = block.parentElement;
-      if (!pre || pre.dataset.rendered === "true") continue;
-      pre.dataset.rendered = "true";
-      const code = block.textContent ?? "";
-      const container = document.createElement("div");
-      container.className = "my-4";
-      pre.replaceWith(container);
-      import("mermaid").then(({ default: mermaid }) => {
-        mermaid.initialize({ startOnLoad: false, theme: "dark" });
-        const id = `mermaid-${Math.random().toString(36).slice(2)}`;
-        mermaid.render(id, code).then(({ svg }) => {
-          container.innerHTML = svg;
-        });
-      });
-    }
-  }, [page.content]);
+  const renderCode = useCallback(
+    (props: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode; className?: string }) => {
+      const match = /language-mermaid/.exec(props.className ?? "");
+      if (match) {
+        const code = String(props.children).replace(/\n$/, "");
+        return <MermaidDiagram code={code} className="my-4" />;
+      }
+      return <code {...props} />;
+    },
+    [],
+  );
 
   const renderLink = useCallback(
     (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
@@ -54,7 +44,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
 
   return (
     <ScrollArea className="h-full">
-      <article ref={contentRef} className="mx-auto max-w-3xl px-8 py-6">
+      <article className="mx-auto max-w-3xl px-8 py-6">
         {page.sources.length > 0 && (
           <details className="mb-4">
             <summary className="cursor-pointer text-xs text-muted-foreground">
@@ -72,7 +62,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeSlug, rehypeHighlight]}
-            components={{ a: renderLink }}
+            components={{ a: renderLink, code: renderCode }}
           >
             {page.content}
           </ReactMarkdown>

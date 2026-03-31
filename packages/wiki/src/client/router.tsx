@@ -1,9 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "./components/layout/app-layout.tsx";
-import { BrowsePage } from "./pages/browse/browse-page.tsx";
-import { SearchPage } from "./pages/search/search-page.tsx";
-import { IndexPage } from "./pages/index/index-page.tsx";
+import { ExplorerPage } from "./pages/explorer/explorer-page.tsx";
 import { LoadingSpinner } from "./components/shared/loading-spinner.tsx";
 
 const GraphPage = lazy(() =>
@@ -14,11 +12,15 @@ const WikiPage = lazy(() =>
   import("./pages/wiki/wiki-page.tsx").then((m) => ({ default: m.WikiPage })),
 );
 
+const SettingsPage = lazy(() =>
+  import("./pages/settings/settings-page.tsx").then((m) => ({ default: m.SettingsPage })),
+);
+
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { index: true, element: <BrowsePage /> },
+      { index: true, element: <ExplorerPage /> },
       {
         path: "graph",
         element: (
@@ -27,13 +29,19 @@ export const router = createBrowserRouter([
           </Suspense>
         ),
       },
-      { path: "search", element: <SearchPage /> },
-      { path: "index", element: <IndexPage /> },
       {
         path: "wiki/*",
         element: (
           <Suspense fallback={<LoadingSpinner message="Loading wiki..." />}>
             <WikiPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings",
+        element: (
+          <Suspense fallback={<LoadingSpinner />}>
+            <SettingsPage />
           </Suspense>
         ),
       },

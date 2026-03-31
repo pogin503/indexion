@@ -1,5 +1,9 @@
 # indexion
 
+<p align="center">
+  <img src="docs/logo.svg" alt="indexion" height="64">
+</p>
+
 > "The map is not the territory" - Alfred Korzybski
 
 **indexion** is a source code exploration and documentation tool that helps you build dynamic maps of your codebase.
@@ -307,6 +311,12 @@ indexion searches for KGF specs in this order:
 4. `kgfs/` in the target project directory
 5. `kgfs/` in the current working directory
 6. OS-standard data directory `.../kgfs/` when non-empty
+
+### Claude Code Skills
+
+```bash
+claude plugin marketplace add trkbt10/indexion-skills
+```
 
 ### Requirements
 

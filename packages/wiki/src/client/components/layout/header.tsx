@@ -1,29 +1,29 @@
 import { useState } from "react";
 import { NavLink } from "react-router";
-import { RefreshCw, Menu, X } from "lucide-react";
-import { useApiMutationCall } from "../../lib/hooks.ts";
-import { client } from "../../lib/client.ts";
-import { rebuildDigest } from "@indexion/api-client";
+import { Search, Settings, Menu, X } from "lucide-react";
 import { Button } from "../ui/button.tsx";
 import { Separator } from "../ui/separator.tsx";
-import { cn } from "../../lib/utils.ts";
+import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip.tsx";
+import { Logo } from "../shared/logo.tsx";
 
 const NAV_ITEMS = [
-  ["/", "Browse", true],
-  ["/graph", "Graph", false],
-  ["/search", "Search", false],
-  ["/index", "Index", false],
+  ["/", "Explorer", true],
   ["/wiki/overview", "Wiki", false],
 ] as const;
 
-export const Header = (): React.JSX.Element => {
-  const { state, mutate } = useApiMutationCall<{ readonly rebuilt: boolean; readonly functions: number }>();
+type Props = {
+  readonly onSearchClick: () => void;
+};
+
+export const Header = ({ onSearchClick }: Props): React.JSX.Element => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="shrink-0 border-b">
       <div className="flex h-12 items-center gap-4 px-4">
-        <span className="font-mono text-sm font-bold tracking-tight">ix</span>
+        <NavLink to="/" className="flex items-center">
+          <Logo className="h-6" />
+        </NavLink>
 
         <Separator orientation="vertical" className="hidden h-5 md:block" />
 
@@ -41,21 +41,30 @@ export const Header = (): React.JSX.Element => {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          {state.status === "success" && (
-            <span className="hidden text-xs text-muted-foreground sm:inline">{state.data.functions} functions indexed</span>
-          )}
-          {state.status === "error" && (
-            <span className="text-xs text-destructive">Rebuild failed</span>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => mutate(() => rebuildDigest(client))}
-            disabled={state.status === "loading"}
-          >
-            <RefreshCw className={cn("size-3.5", state.status === "loading" && "animate-spin")} />
-            <span className="hidden sm:inline">Rebuild</span>
-          </Button>
+          {/* Search */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="sm" onClick={onSearchClick}>
+                <Search className="size-4" />
+                <span className="hidden text-xs text-muted-foreground sm:inline ml-1">⌘K</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Search (⌘K)</TooltipContent>
+          </Tooltip>
+
+          {/* Settings */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <NavLink to="/settings">
+                {({ isActive }) => (
+                  <Button variant={isActive ? "secondary" : "ghost"} size="sm">
+                    <Settings className="size-4" />
+                  </Button>
+                )}
+              </NavLink>
+            </TooltipTrigger>
+            <TooltipContent>Settings</TooltipContent>
+          </Tooltip>
 
           {/* Mobile hamburger */}
           <Button
@@ -81,6 +90,16 @@ export const Header = (): React.JSX.Element => {
               )}
             </NavLink>
           ))}
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { setMenuOpen(false); onSearchClick(); }}>
+            Search
+          </Button>
+          <NavLink to="/settings" onClick={() => setMenuOpen(false)}>
+            {({ isActive }) => (
+              <Button variant={isActive ? "secondary" : "ghost"} size="sm" className="w-full justify-start">
+                Settings
+              </Button>
+            )}
+          </NavLink>
         </nav>
       )}
     </header>

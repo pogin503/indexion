@@ -3,8 +3,8 @@ import { ChevronRight, FileCode2 } from "lucide-react";
 import { Badge } from "../../../components/ui/badge.tsx";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../../../components/ui/collapsible.tsx";
 import { cn } from "../../../lib/utils.ts";
-import type { FileEntry, SymEntry } from "../browse-types.ts";
-import { kindBadgeClass } from "../browse-kind.ts";
+import type { FileEntry, SymEntry } from "../explorer-types.ts";
+import { kindBadgeClass } from "../../../lib/kind-colors.ts";
 
 type Props = {
   readonly file: FileEntry;

@@ -1,5 +1,5 @@
 import type { CodeGraph, IndexedFunction } from "@indexion/api-client";
-import type { FolderEntry, SymEntry } from "./browse-types.ts";
+import type { FolderEntry, SymEntry } from "./explorer-types.ts";
 
 const packageOf = (m: string): string => {
   const i = m.lastIndexOf("/");
@@ -7,9 +7,9 @@ const packageOf = (m: string): string => {
 };
 
 export const buildFolderTree = (graph: CodeGraph, _fns: ReadonlyArray<IndexedFunction>): FolderEntry[] => {
-  const localMods = Object.keys(graph.modules).filter(
-    (m) => !m.startsWith("npm:") && !m.startsWith("pkg:") && !m.startsWith("url:"),
-  );
+  const localMods = Object.entries(graph.modules)
+    .filter(([, mod]) => mod.file != null)
+    .map(([m]) => m);
 
   const fileSym = new Map<string, SymEntry[]>();
   for (const [sid, s] of Object.entries(graph.symbols)) {
@@ -72,7 +72,7 @@ export const filterTree = (tree: FolderEntry[], filter: string): FolderEntry[] =
     );
     if (matchedChildren.length === 0 && matchedFiles.length === 0 && !f.name.toLowerCase().includes(lower))
       return null;
-    return { ...f, children: matchedChildren, files: matchedFiles.length > 0 ? matchedFiles : f.files };
+    return { ...f, children: matchedChildren, files: matchedFiles };
   };
   return tree.map(filterFolder).filter(Boolean) as FolderEntry[];
 };

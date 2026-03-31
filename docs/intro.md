@@ -1,5 +1,9 @@
 # indexion
 
+<p align="center">
+  <img src="docs/logo.svg" alt="indexion" height="64">
+</p>
+
 > "The map is not the territory" - Alfred Korzybski
 
 **indexion** is a source code exploration and documentation tool that helps you build dynamic maps of your codebase.

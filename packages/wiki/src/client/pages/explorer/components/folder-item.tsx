@@ -3,7 +3,7 @@ import { ChevronRight, FolderOpen } from "lucide-react";
 import { Badge } from "../../../components/ui/badge.tsx";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../../../components/ui/collapsible.tsx";
 import { cn } from "../../../lib/utils.ts";
-import type { FolderEntry, SymEntry } from "../browse-types.ts";
+import type { FolderEntry, SymEntry } from "../explorer-types.ts";
 import { FileItem } from "./file-item.tsx";
 
 type Props = {

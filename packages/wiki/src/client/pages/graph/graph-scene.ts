@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { FolderNode, Box3D, GraphTree } from "./graph-types.ts";
 import { computeLayout, FLOOR_H, LABEL_ZONE } from "./graph-layout.ts";
+import { kindHex } from "../../lib/kind-colors.ts";
 
 // ── Constants ──
 
@@ -40,20 +41,6 @@ const greedyColor = (nodeIds: string[], adjacency: Map<string, Set<string>>): Ma
     colors.set(id, c);
   }
   return colors;
-};
-
-// ── Kind color for canvas textures ──
-
-const kindColor = (k: string): string => {
-  switch (k) {
-    case "Function": return "#58a6ff";
-    case "Struct": case "Class": return "#3fb950";
-    case "Enum": return "#d29922";
-    case "Trait": case "Interface": return "#bc8cff";
-    case "Variable": return "#79c0ff";
-    case "Field": return "#6e7681";
-    default: return "#8b949e";
-  }
 };
 
 // ── Smooth camera animation via spherical coordinates ──
@@ -291,7 +278,7 @@ export const buildScene = (
           pageCtx.fillStyle = "#30363d";
           pageCtx.font = "9px monospace";
           pageCtx.fillText(String(si + 1).padStart(3), 4, lineY);
-          pageCtx.fillStyle = kindColor(sym.kind);
+          pageCtx.fillStyle = kindHex(sym.kind);
           pageCtx.font = "10px monospace";
           const kw = sym.kind.toLowerCase().slice(0, 3);
           pageCtx.fillText(kw, 32, lineY);
