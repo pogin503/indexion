@@ -17,6 +17,27 @@ type Props = {
 };
 
 export const WikiContent = ({ page }: Props): React.JSX.Element => {
+  const renderPre = useCallback(
+    (props: React.HTMLAttributes<HTMLPreElement> & { children?: React.ReactNode }) => {
+      const child = Array.isArray(props.children) ? props.children[0] : props.children;
+      const isMermaid =
+        child != null &&
+        typeof child === "object" &&
+        "props" in child &&
+        /language-mermaid/.test(child.props?.className ?? "");
+      if (isMermaid) {
+        // Mermaid handles its own container — render children directly without <pre> wrapper
+        return <>{props.children}</>;
+      }
+      return (
+        <pre {...props} className="overflow-x-auto rounded-lg bg-muted p-4">
+          {props.children}
+        </pre>
+      );
+    },
+    [],
+  );
+
   const renderCode = useCallback(
     (
       props: React.HTMLAttributes<HTMLElement> & {
@@ -61,11 +82,11 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
           </details>
         )}
 
-        <div className="prose prose-invert max-w-none prose-headings:scroll-mt-16 prose-pre:bg-muted prose-code:text-sm">
+        <div className="prose prose-invert max-w-none prose-headings:scroll-mt-16 prose-pre:p-0 prose-pre:bg-transparent">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeSlug]}
-            components={{ a: renderLink, code: renderCode }}
+            components={{ pre: renderPre, a: renderLink, code: renderCode }}
           >
             {page.content}
           </ReactMarkdown>
