@@ -5,10 +5,10 @@ fn build_code_graph(
 ) -> (@registry.KGFRegistry, Array[String], @graph.CodeGraph) {
   let registry = @kgf_features.load_registry_or_empty(specs_dir~, target_dir~)
   let kgf_ignore = registry.collect_ignore_patterns()
-  let discover_opts = @pipeline.DiscoverOptions::new(
-    kgf_ignore~,
-    root_dir=target_dir,
-  )
+  // root_dir is intentionally empty: fixture directories live inside
+  // the project tree, so hoisting the project's .indexionignore
+  // (which excludes fixtures/) would filter out the test target itself.
+  let discover_opts = @pipeline.DiscoverOptions::new(kgf_ignore~)
   let discovered_paths = @pipeline.discover_files(
     discovery_roots(target_dir),
     discover_opts,
@@ -45,28 +45,9 @@ async test "reconcile: fixture typescript project validates cross-package drift 
     registry.spec_count() > 0,
     msg="registry is empty — kgfs dir '" + kgfs_dir + "' may not exist",
   )
-  let is_fixture_dir = @fs.is_dir(fixture_root) catch { _ => false }
-  let fixture_entries = @fs.read_dir(fixture_root) catch { _ => [] }
-  let src_path = fixture_root + "/src"
-  let is_src_dir = @fs.is_dir(src_path) catch { _ => false }
-  let src_entries = @fs.read_dir(src_path) catch { _ => [] }
-  let filter = @pipeline.build_filter_from_root(fixture_root)
-  let src_include = filter.should_include(src_path, true)
   assert_true(
     discovered_paths.length() > 0,
-    msg="no files discovered in '" +
-      fixture_root +
-      "' (is_dir=" +
-      is_fixture_dir.to_string() +
-      " entries=" +
-      fixture_entries.to_string() +
-      " src_is_dir=" +
-      is_src_dir.to_string() +
-      " src_entries=" +
-      src_entries.to_string() +
-      " src_include=" +
-      src_include.to_string() +
-      ")",
+    msg="no files discovered in '" + fixture_root + "'",
   )
   let units = extract_code_units(graph, registry)
   assert_true(
