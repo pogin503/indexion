@@ -13,7 +13,11 @@ pub struct RemoteEmbeddingConfig {
 ///|
 /// Create default remote config for OpenAI text-embedding-3-small.
 pub fn RemoteEmbeddingConfig::default() -> RemoteEmbeddingConfig {
-  { embeddings_file: ".indexion/digest/embeddings.jsonl", dim: 1536 }
+  {
+    embeddings_file: @config.resolve_project_indexion_dir(".", "digest") +
+      "/embeddings.jsonl",
+    dim: 1536,
+  }
 }
 
 ///|

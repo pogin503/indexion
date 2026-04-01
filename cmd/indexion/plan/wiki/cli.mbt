@@ -74,7 +74,15 @@ pub fn command() -> @argparse.Command {
 
 ///|
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
-  let config = WikiPlanConfig::from_matches(matches)
+  let parsed = WikiPlanConfig::from_matches(matches)
+  let config = {
+    ..parsed,
+    wiki_dir: if parsed.wiki_dir == ".indexion/wiki" {
+      @config.resolve_project_indexion_dir(parsed.target_dir, "wiki")
+    } else {
+      parsed.wiki_dir
+    },
+  }
   println("Analyzing project structure...")
   let graph = match
     @digest_cli.build_graph_from_source(config.target_dir, config.specs_dir) {

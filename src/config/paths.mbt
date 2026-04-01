@@ -71,7 +71,8 @@ pub fn relative_to(root : String, path : String) -> String {
 }
 
 ///|
-/// Find `.indexion.toml` or `.indexion.json` for a target directory.
+/// Find `.indexion.toml` or `.indexion.json` by walking up from target directory.
+/// Uses find_project_root to locate the nearest ancestor containing a config file.
 pub fn find_indexion_config_path(
   target_dir : String,
   explicit_path? : String = "",
@@ -79,16 +80,20 @@ pub fn find_indexion_config_path(
   if explicit_path.length() > 0 {
     return resolve_path(target_dir, explicit_path)
   }
-  let root = normalize_path(target_dir)
-  let toml_path = join_path(root, ".indexion.toml")
-  if is_valid_file(toml_path) {
-    return toml_path
+  match find_project_root(target_dir, [".indexion.toml", ".indexion.json"]) {
+    Some(root) => {
+      let toml_path = join_path(root, ".indexion.toml")
+      if is_valid_file(toml_path) {
+        return toml_path
+      }
+      let json_path = join_path(root, ".indexion.json")
+      if is_valid_file(json_path) {
+        return json_path
+      }
+      ""
+    }
+    None => ""
   }
-  let json_path = join_path(root, ".indexion.json")
-  if is_valid_file(json_path) {
-    return json_path
-  }
-  ""
 }
 
 ///|
@@ -118,9 +123,31 @@ pub fn default_tool_dir(target_dir : String, tool_subdir : String) -> String {
 }
 
 ///|
+let project_root_markers : Array[String] = [".git", ".indexion", ".indexion.toml", ".indexion.json"]
+
+///|
+/// Resolve the .indexion tool directory under the project root.
+/// Walks up from target_dir using find_project_root to locate the project root,
+/// then returns project_root/.indexion/{tool_subdir}.
+/// Aborts if no project root is found.
+pub fn resolve_project_indexion_dir(
+  target_dir : String,
+  tool_subdir : String,
+) -> String {
+  let root = match find_project_root(target_dir, project_root_markers) {
+    Some(r) => r
+    None =>
+      abort(
+        "Project root not found from \{target_dir}. Run inside a directory containing .git or .indexion.",
+      )
+  }
+  join_path(root, ".indexion/" + tool_subdir)
+}
+
+///|
 /// Default cache/index directory for `indexion plan reconcile`.
 pub fn default_reconcile_index_dir(target_dir : String) -> String {
-  default_tool_dir(target_dir, ".indexion/cache/reconcile")
+  resolve_project_indexion_dir(target_dir, "cache/reconcile")
 }
 
 ///|

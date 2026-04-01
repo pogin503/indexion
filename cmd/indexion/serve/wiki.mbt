@@ -9,7 +9,7 @@ async fn load_wiki_pages(
   config : ServeConfig,
   provider : @dconfig.EmbeddingProvider,
 ) -> (@wiki.WikiData, @wiki.WikiSearchIndex?) {
-  let wiki_dir = config.workspace_dir + "/.indexion/wiki"
+  let wiki_dir = @config.resolve_project_indexion_dir(config.workspace_dir, "wiki")
   match @wiki.load_wiki(wiki_dir) {
     Some(data) => {
       @digest_cli.log_progress(

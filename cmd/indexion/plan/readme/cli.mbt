@@ -131,7 +131,11 @@ pub fn run_to_string(config : ReadmePlanConfig) -> String? {
   }
   let packages = discover_packages(target_dir, lang_spec, Some(registry))
   let existing_docs = discover_existing_docs(target_dir, lang_spec)
-  let plans_dir = target_dir + "/" + config.plans_dir
+  let plans_dir = if @config.is_absolute_path(config.plans_dir) {
+    config.plans_dir
+  } else {
+    target_dir + "/" + config.plans_dir
+  }
   create_dir_recursive(plans_dir)
   let plans_created : Array[String] = []
   for include_path in include_paths {
@@ -161,7 +165,15 @@ pub fn run_to_string(config : ReadmePlanConfig) -> String? {
 ///|
 /// Run the plan readme command from argparse matches.
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
-  let config = ReadmePlanConfig::from_matches(matches)
+  let parsed = ReadmePlanConfig::from_matches(matches)
+  let config = {
+    ..parsed,
+    plans_dir: if parsed.plans_dir == ".indexion/plans" {
+      @config.resolve_project_indexion_dir(parsed.target_dir, "plans")
+    } else {
+      parsed.plans_dir
+    },
+  }
   if config.template.length() == 0 {
     println("Error: --template=FILE is required.")
     return

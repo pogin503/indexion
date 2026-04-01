@@ -263,9 +263,17 @@ pub fn load_digest_file_config() -> @config.DigestFileConfig {
 ///|
 /// Entry point for the digest subcommand using argparse Matches.
 pub async fn run_matches(matches : @argparse.Matches) -> Unit {
-  let config = CliConfig::from_matches(matches).apply_file_config(
+  let merged = CliConfig::from_matches(matches).apply_file_config(
     load_digest_file_config(),
   )
+  let config = {
+    ..merged,
+    index_dir: if merged.index_dir == @dconfig.DEFAULT_INDEX_DIR {
+      @config.resolve_project_indexion_dir(".", "digest")
+    } else {
+      merged.index_dir
+    },
+  }
   match config.command {
     "build" => run_build_async(config)
     "query" => run_query_async(config)

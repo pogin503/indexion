@@ -256,9 +256,17 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     }
     _ => ()
   }
-  let config = ServeConfig::from_matches(matches).apply_file_config(
+  let merged = ServeConfig::from_matches(matches).apply_file_config(
     @digest_cli.load_digest_file_config(),
   )
+  let config = {
+    ..merged,
+    index_dir: if merged.index_dir == @dconfig.DEFAULT_INDEX_DIR {
+      @config.resolve_project_indexion_dir(merged.workspace_dir, "digest")
+    } else {
+      merged.index_dir
+    },
+  }
   let digest_cli_config = make_digest_cli_config(config)
   let digest_config = @digest_cli.build_digest_config(digest_cli_config)
   // Load existing index, or build if none exists

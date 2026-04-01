@@ -420,7 +420,14 @@ async fn handle_plan_readme(
     format: json_string(json, "format", "md"),
     specs_dir: config.specs_dir,
     template,
-    plans_dir: json_string(json, "plansDir", ".indexion/plans"),
+    plans_dir: {
+      let v = json_string(json, "plansDir", "")
+      if v.length() > 0 {
+        v
+      } else {
+        @config.resolve_project_indexion_dir(target_dir, "plans")
+      }
+    },
   }
   match @plan_readme.run_to_string(readme_config) {
     Some(result) => send_json_ok(conn, Json::string(result).stringify(), cors)
