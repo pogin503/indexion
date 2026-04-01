@@ -49,7 +49,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
 
   return (
     <ScrollArea className="h-full">
-      <article className="mx-auto max-w-3xl px-8 py-6">
+      <article className="mx-auto max-w-3xl px-4 py-4 md:px-8 md:py-6 overflow-x-hidden">
         {page.sources.length > 0 && (
           <details className="mb-4">
             <summary className="cursor-pointer text-xs text-muted-foreground">
