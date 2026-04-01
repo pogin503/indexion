@@ -80,9 +80,12 @@ const staticRoutes = [
   },
 ];
 
-export const router = createBrowserRouter([
-  {
-    element: <AppLayout />,
-    children: isStaticMode ? staticRoutes : fullRoutes,
-  },
-]);
+export const router = createBrowserRouter(
+  [
+    {
+      element: <AppLayout />,
+      children: isStaticMode ? staticRoutes : fullRoutes,
+    },
+  ],
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" },
+);
