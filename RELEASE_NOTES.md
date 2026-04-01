@@ -1,3 +1,64 @@
+# v0.4.0
+
+## Highlights
+
+- **KGF Syntax Highlighting** — Wiki code blocks are now highlighted using KGF tokenizer compiled to JS via MoonBit
+- **Mermaid Diagram Overhaul** — Diagrams fit container width with vertical centering, zoom/pan, and full-screen support
+- **Wiki Navigation UX** — Sidebar auto-expands 2 levels deep with consistent leaf-item alignment
+- **Project Root Resolution** — `.indexion/` output is now always placed under the project root
+
+## New Features
+
+### KGF Tokenizer Library
+
+MoonBit-compiled KGF tokenizer (`cmd/kgf-tokenizer`) exported as ESM for browser use. The wiki's `KgfCodeBlock` component uses it to tokenize and color code blocks based on language KGF specs fetched from the server.
+
+### Mermaid Diagram Rendering
+
+Complete rewrite of `MermaidDiagram` component:
+
+- SVG viewBox parsed for intrinsic dimensions; `setTransform` scales to container width
+- Vertical centering via computed Y offset
+- `invisible` → `visible` toggle prevents layout flash during initial fit
+- `ResizeObserver` with width-only tracking avoids resize loops
+- Extracted into `useMermaidSvg`, `useFitToWidth` hooks and `FullScreenViewer` sub-component
+- Distinct toolbar icons: `Maximize2` (fit width) vs `Fullscreen` (full screen)
+
+## Improvements
+
+### Wiki
+
+- `renderPre` override strips Tailwind prose `<pre>` padding/background to prevent container-in-container styling
+- Mermaid blocks unwrapped from `<pre>` — diagram component manages its own container
+- Mobile bottom tab navigation replaces hamburger menu
+- Sidebar navigation items aligned with spacer for leaf nodes
+
+### CLI
+
+- `.indexion/` output directory resolved to nearest project root (`.git` / `.indexion` marker) instead of target directory
+- `digest`: existing index preserved when provider config differs (prevents accidental rebuild)
+
+### CI
+
+- `moon build --target js` added to pages and release workflows for KGF tokenizer
+- Test fixtures create `.git` marker for project root detection in temp dirs
+
+## Bug Fixes
+
+- Fix mermaid diagram sizing: container-in-container from prose `<pre>` styling
+- Fix mermaid fit stability: double-rAF ensures `setTransform` runs after React commit
+- Fix `.indexion` output scattered across subdirectories
+- Fix digest index destroyed on provider mismatch
+- Fix test abort in CI due to missing `.git` marker in temp reconcile dirs
+- Fix lint errors (prettier formatting, empty JSDoc blocks)
+
+## Internal
+
+- Version: 0.3.0 → 0.4.0
+- 0 warnings, 0 errors, 1173 tests
+
+---
+
 # v0.3.0
 
 ## Highlights
