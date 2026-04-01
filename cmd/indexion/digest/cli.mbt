@@ -322,14 +322,15 @@ pub fn resolve_provider(config : CliConfig) -> @dconfig.EmbeddingProvider {
         Some(key) => @dconfig.OpenAI(build_api_config(config, key))
         None => {
           log_error(
-            env_name + " environment variable required for --provider=openai",
+            env_name +
+            " environment variable not set. Semantic search requires an API key when provider=openai.",
           )
           @dconfig.TfIdf(config.dim)
         }
       }
     "tfidf" => @dconfig.TfIdf(config.dim)
     "auto" | "" =>
-      // Auto-detect: use embedding API if key present
+      // Auto-detect: use embedding API if key present, otherwise tfidf
       match @sys.get_env_var(env_name) {
         Some(key) => @dconfig.OpenAI(build_api_config(config, key))
         None => @dconfig.TfIdf(config.dim)
@@ -338,6 +339,16 @@ pub fn resolve_provider(config : CliConfig) -> @dconfig.EmbeddingProvider {
       log_error("Unknown provider: " + config.provider + ", using tfidf")
       @dconfig.TfIdf(config.dim)
     }
+  }
+}
+
+///|
+/// Check if the resolved provider matches the requested provider.
+/// Returns false when openai was requested but API key is missing.
+pub fn is_provider_available(config : CliConfig) -> Bool {
+  match config.provider {
+    "openai" => @sys.get_env_var(config.api_key_env) is Some(_)
+    _ => true
   }
 }
 
@@ -466,14 +477,16 @@ pub fn load_or_create_index(
       @dconfig.Precomputed(_) => "precomputed"
     }
     if manifest.embedding_provider != current_provider {
+      // If the current provider is a fallback (e.g. API key missing),
+      // keep the existing index rather than destroying it with an
+      // incompatible rebuild. The existing embeddings are still usable.
       log_progress(
-        "Provider changed (" +
+        "Existing index uses " +
         manifest.embedding_provider +
-        " -> " +
+        " embeddings (current: " +
         current_provider +
-        "), rebuilding index...",
+        "). Keeping existing index.",
       )
-      return @index.DigestIndex::with_config(digest_config)
     }
     // Load vectors database
     let db_bytes = @fs.read_file_to_bytes(vectors_path) catch {
