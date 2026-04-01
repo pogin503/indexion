@@ -11,4 +11,5 @@ import { createHttpClient } from "@indexion/api-client";
 /** True when built with VITE_STATIC_MODE=true for static deployment. */
 export const isStaticMode = import.meta.env.VITE_STATIC_MODE === "true";
 
-export const client = createHttpClient("/api");
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+export const client = createHttpClient(`${base}/api`);
