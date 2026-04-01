@@ -62,9 +62,5 @@ export const MermaidDiagram = ({
     );
   }
 
-  return (
-    <div className={`overflow-x-auto touch-pan-x ${className ?? ""}`}>
-      <div ref={containerRef} className="min-w-0" />
-    </div>
-  );
+  return <div ref={containerRef} className={className} />;
 };
