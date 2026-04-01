@@ -960,6 +960,9 @@ fn build_get_routes(
   routes["/api/digest/stats"] = state.stats_json
   routes["/api/wiki/nav"] = state.wiki.nav.to_json().stringify()
   routes["/api/kgf/list"] = @kgf_cli.list_specs_json()
+  @kgf_cli.all_specs_content().each(fn(name, content) {
+    routes["/api/kgf/specs/" + name] = content.to_json().stringify()
+  })
   state.wiki.pages.each(fn(id, page) {
     routes["/api/wiki/pages/" + id] = page.to_json().stringify()
   })

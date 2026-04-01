@@ -21,12 +21,8 @@ export const AppLayout = (): React.JSX.Element => {
 
   return (
     <TooltipProvider>
-      <div className="grid h-full grid-rows-[auto_1fr]">
-        <Header onSearchClick={() => setPaletteOpen(true)} />
-        <main className="overflow-hidden">
-          <ConnectionGuard />
-        </main>
-      </div>
+      <Header onSearchClick={() => setPaletteOpen(true)} />
+      <ConnectionGuard />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </TooltipProvider>
   );

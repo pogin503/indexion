@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -10,6 +11,12 @@ export default defineConfig({
   root: "src/client",
   resolve: {
     conditions: ["bun", "module"],
+    alias: {
+      "@kgf-tokenizer": path.resolve(
+        __dirname,
+        "../../_build/js/debug/build/cmd/kgf-tokenizer/kgf-tokenizer.js",
+      ),
+    },
   },
   build: {
     outDir: "../../dist/client",

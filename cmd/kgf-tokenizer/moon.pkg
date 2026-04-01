@@ -1,0 +1,20 @@
+import {
+  "moonbitlang/core/json" @json,
+  "trkbt10/indexion/src/kgf/lexer" @lexer,
+  "trkbt10/indexion/src/kgf/parser" @parser,
+  "trkbt10/indexion/src/kgf/types" @types,
+}
+
+options(
+  "is-main": true,
+  targets: {
+    "main.mbt": [ "js" ],
+    "main_stub.mbt": [ "native", "wasm", "wasm-gc" ],
+  },
+  link: {
+    "js": {
+      "exports": [ "tokenize" ],
+      "format": "esm",
+    },
+  },
+)

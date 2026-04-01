@@ -6,10 +6,9 @@ import { useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
-import rehypeHighlight from "rehype-highlight";
 import { Link } from "react-router";
-import { ScrollArea } from "../../../components/ui/scroll-area.tsx";
 import { MermaidDiagram } from "../../../components/shared/mermaid-diagram.tsx";
+import { KgfCodeBlock } from "../../../components/shared/kgf-code-block.tsx";
 import { SourceBadge } from "./source-badge.tsx";
 import type { WikiPage } from "@indexion/api-client";
 
@@ -30,7 +29,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
         const code = String(props.children).replace(/\n$/, "");
         return <MermaidDiagram code={code} className="my-4" />;
       }
-      return <code {...props} />;
+      return <KgfCodeBlock {...props} />;
     },
     [],
   );
@@ -48,8 +47,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
   );
 
   return (
-    <ScrollArea className="h-full">
-      <article className="mx-auto max-w-3xl px-8 py-6">
+    <article className="mx-auto w-full max-w-3xl px-4 py-4 md:px-8 md:py-6">
         {page.sources.length > 0 && (
           <details className="mb-4">
             <summary className="cursor-pointer text-xs text-muted-foreground">
@@ -66,13 +64,12 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
         <div className="prose prose-invert max-w-none prose-headings:scroll-mt-16 prose-pre:bg-muted prose-code:text-sm">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeSlug, rehypeHighlight]}
+            rehypePlugins={[rehypeSlug]}
             components={{ a: renderLink, code: renderCode }}
           >
             {page.content}
           </ReactMarkdown>
         </div>
       </article>
-    </ScrollArea>
   );
 };

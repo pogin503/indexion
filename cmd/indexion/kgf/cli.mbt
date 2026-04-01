@@ -518,6 +518,19 @@ pub fn list_specs_json() -> String {
 }
 
 ///|
+/// Return a map of spec name -> spec content for all installed specs.
+/// Used by serve to expose /api/kgf/specs/{name} routes.
+pub fn all_specs_content() -> Map[String, String] {
+  let result : Map[String, String] = {}
+  let specs = @kgf_manage.list_installed_specs()
+  for spec in specs {
+    let content = @fs.read_file_to_string(spec.path) catch { _ => continue }
+    result[spec.name] = content
+  }
+  result
+}
+
+///|
 /// Resolve spec name from file path (shared resolution logic).
 fn resolve_spec_name(
   file_path : String,
