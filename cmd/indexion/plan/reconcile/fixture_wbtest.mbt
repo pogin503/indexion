@@ -21,44 +21,9 @@ fn build_code_graph(
 }
 
 ///|
-fn get_fixtures_dir() -> String {
-  let paths = [
-    "fixtures", "../fixtures", "../../fixtures", "../../../fixtures", "../../../../fixtures",
-    "../../../../../fixtures",
-  ]
-  for path in paths {
-    try {
-      if @fs.is_dir(path) {
-        return path
-      }
-    } catch {
-      _ => continue
-    }
-  }
-  "fixtures"
-}
-
-///|
-fn get_kgfs_dir() -> String {
-  let paths = [
-    "kgfs", "../kgfs", "../../kgfs", "../../../kgfs", "../../../../kgfs",
-    "../../../../../kgfs",
-  ]
-  for path in paths {
-    try {
-      if @fs.is_dir(path) {
-        return path
-      }
-    } catch {
-      _ => continue
-    }
-  }
-  "kgfs"
-}
-
-///|
 async test "reconcile: fixture typescript project validates cross-package drift detection" {
-  let fixture_root = get_fixtures_dir() + "/project/typescript-reconcile"
+  let fixture_root = @kgf_fixtures.get_fixtures_dir() +
+    "/project/typescript-reconcile"
   let config = {
     ..ReconcileConfig::default(),
     target_dir: fixture_root,
@@ -72,7 +37,8 @@ async test "reconcile: fixture typescript project validates cross-package drift 
     logical_review_mode: "off",
   }
   let (registry, discovered_paths, graph) = build_code_graph(
-    fixture_root, get_kgfs_dir(),
+    fixture_root,
+    @kgf_fixtures.get_kgfs_dir(),
   )
   let units = extract_code_units(graph, registry)
   assert_true(units.iter().any(fn(unit) { unit.name == "buildGraph" }))

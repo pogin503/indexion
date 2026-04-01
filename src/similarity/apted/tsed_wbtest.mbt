@@ -229,7 +229,7 @@ test "should_compare_trees: very different sizes rejected" {
   }
   let t2 = TreeNode::node("X", children)
   // size1=1, size2=11, upper_bound = 1/11 ≈ 0.091
-  assert_true(not(should_compare_trees(t1, t2, 0.5)))
+  assert_true(!should_compare_trees(t1, t2, 0.5))
 }
 
 ///|

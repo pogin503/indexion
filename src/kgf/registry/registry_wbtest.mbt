@@ -3,42 +3,6 @@
 /// Tests are consolidated to minimize registry loading overhead.
 
 ///|
-/// Helper to get the kgfs directory path.
-fn get_kgfs_dir() -> String {
-  let paths = [
-    "kgfs", "../kgfs", "../../kgfs", "../../../kgfs", "../../../../kgfs",
-  ]
-  for path in paths {
-    try {
-      if @fs.is_dir(path) {
-        return path
-      }
-    } catch {
-      _ => continue
-    }
-  }
-  "kgfs"
-}
-
-///|
-/// Helper to get the fixtures directory path.
-fn get_fixtures_dir() -> String {
-  let paths = [
-    "fixtures", "../fixtures", "../../fixtures", "../../../fixtures", "../../../../fixtures",
-  ]
-  for path in paths {
-    try {
-      if @fs.is_dir(path) {
-        return path
-      }
-    } catch {
-      _ => continue
-    }
-  }
-  "fixtures"
-}
-
-///|
 /// Helper to check if tokens contain a specific kind.
 fn has_token_kind(tokens : Array[@types.Tok], kind : String) -> Bool {
   for token in tokens {
@@ -52,7 +16,7 @@ fn has_token_kind(tokens : Array[@types.Tok], kind : String) -> Bool {
 ///|
 /// Main registry test - loads registry once and runs all validations.
 test "registry: comprehensive validation" {
-  let dir = get_kgfs_dir()
+  let dir = @kgf_fixtures.get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
 
   // Test 1: Should have loaded multiple specs
@@ -178,9 +142,9 @@ test "registry: comprehensive validation" {
 ///|
 /// Tokenization and parsing tests - loads registry once for all language tests.
 test "registry: tokenize and parse examples" {
-  let dir = get_kgfs_dir()
+  let dir = @kgf_fixtures.get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let fixtures_dir = get_fixtures_dir()
+  let fixtures_dir = @kgf_fixtures.get_fixtures_dir()
 
   // TypeScript tokenization
   let ts_spec = registry.get_spec("typescript").unwrap()
@@ -278,9 +242,9 @@ test "registry: tokenize and parse examples" {
 ///|
 /// Markup and DSL parsing tests.
 test "registry: parse markup and dsl" {
-  let dir = get_kgfs_dir()
+  let dir = @kgf_fixtures.get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let fixtures_dir = get_fixtures_dir()
+  let fixtures_dir = @kgf_fixtures.get_fixtures_dir()
 
   // HTML
   let html_spec = registry.get_spec("html").unwrap()
@@ -334,9 +298,9 @@ test "registry: parse markup and dsl" {
 ///|
 /// Natural language tokenization tests.
 test "registry: tokenize natural languages" {
-  let dir = get_kgfs_dir()
+  let dir = @kgf_fixtures.get_kgfs_dir()
   let registry = KGFRegistry::load_from_dir(dir)
-  let fixtures_dir = get_fixtures_dir()
+  let fixtures_dir = @kgf_fixtures.get_fixtures_dir()
 
   let natural_tests = [
     ("japanese", "/natural/japanese/simple.txt"),
@@ -360,9 +324,9 @@ test "registry: tokenize natural languages" {
 ///|
 /// KGF version validation.
 test "registry: all kgfs are version 0.6" {
-  let dir = get_kgfs_dir()
+  let dir = @kgf_fixtures.get_kgfs_dir()
   let is_dir = @fs.is_dir(dir) catch { _ => false }
-  if not(is_dir) {
+  if !is_dir {
     return
   }
   let entries = @fs.read_dir(dir)

@@ -138,7 +138,7 @@ test "bench: early pruning effectiveness" {
   // size1=1, size2=21, upper_bound = 1/21 ≈ 0.048
   let should_skip_high = should_compare_trees(small, large, 0.5)
   let should_skip_low = should_compare_trees(small, large, 0.04)
-  assert_true(not(should_skip_high)) // Should skip at threshold 0.5
+  assert_true(!should_skip_high) // Should skip at threshold 0.5
   assert_true(should_skip_low) // Should not skip at threshold 0.04
 }
 

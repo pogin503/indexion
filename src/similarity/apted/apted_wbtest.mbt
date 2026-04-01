@@ -19,7 +19,7 @@ test "TreeNode::node creates node with children" {
   let node = TreeNode::node("A", [child1, child2])
   assert_eq(node.get_label(), "A")
   assert_eq(node.get_children().length(), 2)
-  assert_true(not(node.is_leaf()))
+  assert_true(!node.is_leaf())
 }
 
 ///|

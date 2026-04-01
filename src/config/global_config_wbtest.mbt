@@ -9,7 +9,7 @@ test "global_config: parse_global_toml_config parses global section" {
   // Should expand ~ to home dir if HOME is set
   match @platform.get_home_dir() {
     Some(home) => {
-      assert_true(not(kgfs_dir.has_prefix("~")))
+      assert_true(!kgfs_dir.has_prefix("~"))
       assert_true(kgfs_dir.has_prefix(home))
     }
     None =>

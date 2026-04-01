@@ -50,8 +50,8 @@ async test "vcs/git: native helpers do not interpret root shell payloads" {
   let marker = temp_git_dir("vcs-git-shell-root-marker-")
   remove_file_if_exists(marker)
   let injected_root = root + "; touch " + marker
-  assert_true(not(is_repo(injected_root)))
-  assert_true(not(@fs.path_exists(marker)))
+  assert_true(!is_repo(injected_root))
+  assert_true(!@fs.path_exists(marker))
   remove_file_if_exists(marker)
 }
 

@@ -58,7 +58,7 @@ fn extract_code_units(
         }
       None => symbol.module_id
     }
-    if not(should_include_symbol(symbol.kind, module_path, registry)) {
+    if !should_include_symbol(symbol.kind, module_path, registry) {
       continue
     }
     let code_hash = make_hash([
@@ -620,11 +620,9 @@ test "reconcile: extract_code_units uses KGF document_symbol_kinds when availabl
     .any(fn(unit) { unit.symbol_id == "src/demo.mbt::value:build_graph" }),
   )
   assert_true(
-    not(
-      units
-      .iter()
-      .any(fn(unit) { unit.symbol_id == "src/demo.mbt::value:default_format" }),
-    ),
+    !units
+    .iter()
+    .any(fn(unit) { unit.symbol_id == "src/demo.mbt::value:default_format" }),
   )
 }
 
@@ -655,7 +653,7 @@ test "reconcile: extract_code_units falls back for unknown specs" {
 test "reconcile: discovery_roots expands current directory instead of '.'" {
   let roots = discovery_roots(".")
   assert_true(roots.length() > 0)
-  assert_true(not(contains_string(roots, ".")))
+  assert_true(!contains_string(roots, "."))
 }
 
 ///|
@@ -680,7 +678,7 @@ test "reconcile: cleanup_stale_index removes dead index.json" {
     _ => ()
   }
   cleanup_stale_index(dir)
-  assert_true(not(@fs.path_exists(dir + "/index.json")))
+  assert_true(!@fs.path_exists(dir + "/index.json"))
   remove_dir_if_exists(dir)
 }
 
@@ -931,7 +929,7 @@ test "reconcile: sync_candidates_with_index reuses pending logical review tasks"
   )
   assert_eq(first.logical_reviews.length(), 1)
   assert_eq(first.logical_reviews[0].status, "pending")
-  assert_true(not(first.logical_reviews[0].reused))
+  assert_true(!first.logical_reviews[0].reused)
   assert_eq(first.reused_logical_reviews, 0)
 
   let second = sync_candidates_with_index(
@@ -994,5 +992,5 @@ test "reconcile: apply_review_decisions closes pending logical review" {
   assert_eq(second.candidates[0].logical_review_key, Some(review_key))
   assert_eq(second.candidates[0].logical_review_status, "accepted")
   assert_true(second.candidates[0].logical_review_reused)
-  assert_true(not(second.candidates[0].needs_logical_review))
+  assert_true(!second.candidates[0].needs_logical_review)
 }

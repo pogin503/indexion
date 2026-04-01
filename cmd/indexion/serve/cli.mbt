@@ -165,11 +165,9 @@ pub fn command() -> @argparse.Command {
         options={
           let opts = serve_options()
           opts.push(
-            @argparse.OptionArg(
-              "output",
-              about="Output directory",
-              default_values=["dist/pages"],
-            ),
+            @argparse.OptionArg("output", about="Output directory", default_values=[
+              "dist/pages",
+            ]),
           )
           opts
         },
@@ -311,8 +309,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       if req.meth == @mhttp.Post && path == "/api/digest/rebuild" {
         conn.skip_request_body()
         handle_rebuild(
-          conn, state, config, digest_cli_config, digest_config, cors_enabled,
-          get_routes,
+          conn, state, config, digest_cli_config, digest_config, cors_enabled, get_routes,
         )
         return
       }
@@ -963,10 +960,8 @@ fn build_get_routes(
   routes["/api/digest/stats"] = state.stats_json
   routes["/api/wiki/nav"] = state.wiki.nav.to_json().stringify()
   routes["/api/kgf/list"] = @kgf_cli.list_specs_json()
-  state.wiki.pages.each(
-    fn(id, page) {
-      routes["/api/wiki/pages/" + id] = page.to_json().stringify()
-    },
-  )
+  state.wiki.pages.each(fn(id, page) {
+    routes["/api/wiki/pages/" + id] = page.to_json().stringify()
+  })
   routes
 }

@@ -32,17 +32,13 @@ fn copy_file(src : String, dst : String) -> Bool {
   @digest_cli.ensure_dir_exists(parent)
   let content = @fs.read_file_to_bytes(src) catch {
     e => {
-      @digest_cli.log_error(
-        "Failed to read " + src + ": " + e.to_string(),
-      )
+      @digest_cli.log_error("Failed to read " + src + ": " + e.to_string())
       return false
     }
   }
   @fs.write_bytes_to_file(dst, content) catch {
     e => {
-      @digest_cli.log_error(
-        "Failed to write " + dst + ": " + e.to_string(),
-      )
+      @digest_cli.log_error("Failed to write " + dst + ": " + e.to_string())
       return false
     }
   }
@@ -61,10 +57,8 @@ fn copy_dir_recursive(src_dir : String, dst_dir : String) -> Int {
     let is_dir = @fs.is_dir(src_path) catch { _ => false }
     if is_dir {
       count = count + copy_dir_recursive(src_path, dst_path)
-    } else {
-      if copy_file(src_path, dst_path) {
-        count = count + 1
-      }
+    } else if copy_file(src_path, dst_path) {
+      count = count + 1
     }
   }
   count
@@ -86,10 +80,7 @@ fn resolve_static_dir(matches : @argparse.Matches) -> String? {
   }
   // Installed wiki directory (same as serve uses)
   match @config.get_wiki_install_dir() {
-    Some(dir) =>
-      if @fs.path_exists(dir + "/index.html") {
-        return Some(dir)
-      }
+    Some(dir) => if @fs.path_exists(dir + "/index.html") { return Some(dir) }
     None => ()
   }
   None
@@ -105,9 +96,7 @@ pub async fn run_export(matches : @argparse.Matches) -> Unit {
     Some(vals) => if vals.length() > 0 { vals[0] } else { "dist/pages" }
     None => "dist/pages"
   }
-  @digest_cli.log_progress(
-    "Exporting static site to " + output_dir + "...",
-  )
+  @digest_cli.log_progress("Exporting static site to " + output_dir + "...")
   // 1. Resolve and copy SPA assets
   let static_dir = match resolve_static_dir(matches) {
     Some(dir) => dir
@@ -120,9 +109,7 @@ pub async fn run_export(matches : @argparse.Matches) -> Unit {
   }
   @digest_cli.log_progress("Copying SPA assets from " + static_dir + "...")
   let asset_count = copy_dir_recursive(static_dir, output_dir)
-  @digest_cli.log_progress(
-    "Copied " + asset_count.to_string() + " SPA files.",
-  )
+  @digest_cli.log_progress("Copied " + asset_count.to_string() + " SPA files.")
   // 2. Build or load digest data (graph + index) — reuses serve logic
   let digest_cli_config = make_digest_cli_config(serve_config)
   let digest_config = @digest_cli.build_digest_config(digest_cli_config)
@@ -142,18 +129,15 @@ pub async fn run_export(matches : @argparse.Matches) -> Unit {
   //    the HTTP server routing. The SPA uses the same paths via HttpClient.
   let routes = build_get_routes(state, serve_config)
   let mut json_count = 0
-  routes.each(
-    fn(path, data) {
-      // path includes /api prefix (e.g. "/api/health")
-      if write_file(output_dir + path, wrap_ok(data)) {
-        json_count = json_count + 1
-      }
-    },
-  )
+  routes.each(fn(path, data) {
+    // path includes /api prefix (e.g. "/api/health")
+    if write_file(output_dir + path, wrap_ok(data)) {
+      json_count = json_count + 1
+    }
+  })
   // 4. SPA routing fallback + GitHub Pages markers
   if @fs.path_exists(output_dir + "/index.html") {
     let _ = copy_file(output_dir + "/index.html", output_dir + "/404.html")
-
   }
   let _ = write_file(output_dir + "/.nojekyll", "")
 
