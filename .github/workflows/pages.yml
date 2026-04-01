@@ -41,8 +41,7 @@ jobs:
         run: bun install
 
       - name: Build wiki SPA (static mode)
-        working-directory: packages/wiki
-        run: VITE_STATIC_MODE=true ../../node_modules/.bin/vite build
+        run: bun run --filter @indexion/wiki build:static
 
       - name: Export static wiki site
         run: |

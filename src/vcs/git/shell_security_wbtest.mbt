@@ -71,8 +71,8 @@ async test "vcs/git: native helpers do not interpret path shell payloads" {
   ]
   for payload in payloads {
     assert_eq(last_commit_seconds(root, payload), None)
-    assert_true(not(status_dirty(root, payload)))
-    assert_true(not(@fs.path_exists(marker)))
+    assert_true(!status_dirty(root, payload))
+    assert_true(!@fs.path_exists(marker))
   }
   remove_file_if_exists(marker)
 }
