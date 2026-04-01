@@ -108,7 +108,10 @@ fn temp_reconcile_dir(prefix : String) -> String {
     Some(dir) => dir + "/indexion-test"
     None => "/tmp/indexion-test"
   }
-  base + "/" + prefix + @env.now().to_string()
+  let dir = base + "/" + prefix + @env.now().to_string()
+  // Create .git marker so resolve_project_indexion_dir finds project root
+  @config_paths.ensure_dir_recursive(dir + "/.git")
+  dir
 }
 
 ///|
@@ -137,9 +140,6 @@ fn remove_dir_if_exists(path : String) -> Unit {
 ///|
 test "reconcile: resolve_config keeps default index dir under project root" {
   let dir = temp_reconcile_dir("reconcile-config-default-")
-  @config_paths.ensure_dir_recursive(dir)
-  // Create .git marker so find_project_root locates this dir as root
-  @config_paths.ensure_dir_recursive(dir + "/.git")
   let matches = try! command().parse(argv=[dir][:], env={})
   let config = resolve_config_from_matches(matches)
   assert_eq(config.target_dir, dir)
