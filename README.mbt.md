@@ -1,8 +1,8 @@
-# indexion
-
 <p align="center">
   <img src="docs/logo.svg" alt="indexion" height="64">
 </p>
+
+# indexion
 
 > "The map is not the territory" - Alfred Korzybski
 
