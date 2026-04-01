@@ -362,7 +362,7 @@ pub fn extract_doc_map(tokens : Array[@kgf_types.Tok]) -> Map[Int, String] {
           let value = tokens[i].get_value()
           // skip_value tokens (e.g. ///|) produce empty string — skip them
           if value.length() > 0 {
-            if not(first) {
+            if !(first) {
               doc_buf.write_string("\n")
             }
             doc_buf.write_string(value)

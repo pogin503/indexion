@@ -383,7 +383,7 @@ pub fn collect_files(
             break
           }
         }
-        if not(matched) {
+        if !(matched) {
           continue
         }
       }

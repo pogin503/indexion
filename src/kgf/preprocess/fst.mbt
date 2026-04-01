@@ -266,7 +266,7 @@ fn classify_utf8(bytes : Array[Int]) -> Utf8Agg {
         (b0 != 0xe0 || b1 >= 0xa0) &&
         (b0 != 0xed || b1 <= 0x9f)
       let b2_ok = (b2 & 0xc0) == 0x80
-      if not(b1_ok) || not(b2_ok) {
+      if !(b1_ok) || !(b2_ok) {
         return X
       }
       saw_multibyte = true
@@ -286,7 +286,7 @@ fn classify_utf8(bytes : Array[Int]) -> Utf8Agg {
         (b0 != 0xf4 || b1 <= 0x8f)
       let b2_ok = (b2 & 0xc0) == 0x80
       let b3_ok = (b3 & 0xc0) == 0x80
-      if not(b1_ok) || not(b2_ok) || not(b3_ok) {
+      if !(b1_ok) || !(b2_ok) || !(b3_ok) {
         return X
       }
       saw_multibyte = true

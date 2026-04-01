@@ -124,7 +124,7 @@ fn build_nav(pages : Array[ManifestPage]) -> WikiNav {
   }
   let root_items : Array[WikiNavItem] = []
   for mp in pages {
-    if not(is_child.contains(mp.id)) {
+    if !(is_child.contains(mp.id)) {
       root_items.push(build_nav_item(mp.id, page_map))
     }
   }

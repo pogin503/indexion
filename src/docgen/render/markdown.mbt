@@ -109,7 +109,7 @@ pub fn render_api_reference(
   for entry in by_kind {
     let kind = entry.0
     let symbols = entry.1
-    if not(kinds.contains(kind)) && symbols.length() > 0 {
+    if !(kinds.contains(kind)) && symbols.length() > 0 {
       lines.push("## " + pluralize(kind))
       lines.push("")
       for sym in symbols {

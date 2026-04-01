@@ -138,7 +138,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
 
 ///|
 fn write_file_if_ok(path : String, content : String, force : Bool) -> Bool {
-  if not(force) {
+  if !(force) {
     try {
       let _ = @fs.read_file_to_string(path)
       // File exists, skip

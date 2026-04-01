@@ -86,7 +86,7 @@ fn eval_node_rec(
         _ => false
       }
       let result = eval_rec(ctx, rule_node_id, pos)
-      if result.ok && not(target_is_rule_ref) && should_emit_rule_rec(ctx, name) {
+      if result.ok && !(target_is_rule_ref) && should_emit_rule_rec(ctx, name) {
         // Materialize for callback
         let labels_map = materialize(result.labels, ctx.tokens)
         (ctx.on_rule_match)(name, labels_map, pos, result.end_pos)
@@ -126,7 +126,7 @@ fn eval_node_rec(
       let mut labels = empty_labels()
       for elem_id in elems {
         let result = eval_rec(ctx, elem_id, current_pos)
-        if not(result.ok) {
+        if !(result.ok) {
           return { ok: false, end_pos: pos, labels: empty_labels() }
         }
         labels = merge_labels(labels, result.labels, ctx.tokens)
@@ -148,7 +148,7 @@ fn eval_node_rec(
       let mut labels = empty_labels()
       while true {
         let result = eval_rec(ctx, child, current_pos)
-        if not(result.ok) || result.end_pos == current_pos {
+        if !(result.ok) || result.end_pos == current_pos {
           break
         }
         labels = merge_labels(labels, result.labels, ctx.tokens)
@@ -158,14 +158,14 @@ fn eval_node_rec(
     }
     FPlus(child) => {
       let first = eval_rec(ctx, child, pos)
-      if not(first.ok) {
+      if !(first.ok) {
         return { ok: false, end_pos: pos, labels: empty_labels() }
       }
       let mut labels = first.labels
       let mut current_pos = first.end_pos
       while true {
         let result = eval_rec(ctx, child, current_pos)
-        if not(result.ok) || result.end_pos == current_pos {
+        if !(result.ok) || result.end_pos == current_pos {
           break
         }
         labels = merge_labels(labels, result.labels, ctx.tokens)

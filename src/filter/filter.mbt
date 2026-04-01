@@ -65,7 +65,7 @@ pub fn FilterConfig::should_include(
     let mut matched = false
     for pattern in config.user_includes {
       // Check if this is a filename pattern (no slash) or path pattern
-      let is_filename_pattern = not(contains_slash(pattern))
+      let is_filename_pattern = !(contains_slash(pattern))
       if is_dir {
         // For directories, check if traversal should continue
         if is_filename_pattern {
@@ -85,7 +85,7 @@ pub fn FilterConfig::should_include(
         break
       }
     }
-    if not(matched) {
+    if !(matched) {
       return Exclude("user --include: no match")
     }
     // Matched include pattern - continue to check other rules

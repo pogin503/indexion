@@ -178,7 +178,7 @@ fn eval_func(
     }
     "obj" => eval_func_obj(evaluated_args)
     "coalesce" =>
-      if evaluated_args.length() > 0 && not(evaluated_args[0] is Null) {
+      if evaluated_args.length() > 0 && !(evaluated_args[0] is Null) {
         evaluated_args[0]
       } else if evaluated_args.length() > 1 {
         evaluated_args[1]
@@ -308,7 +308,7 @@ fn eval_func_hex_to_int(args : Array[Json]) -> Json {
   match args[0] {
     String(s) => {
       let trimmed = trim_string(s)
-      if not(is_valid_hex(trimmed)) {
+      if !(is_valid_hex(trimmed)) {
         return Json::null()
       }
       match parse_hex(trimmed) {
@@ -355,7 +355,7 @@ fn is_valid_hex(s : String) -> Bool {
     return false
   }
   for c in s {
-    if not(is_hex_char(c)) {
+    if !(is_hex_char(c)) {
       return false
     }
   }

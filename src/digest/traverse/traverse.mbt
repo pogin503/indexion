@@ -105,7 +105,7 @@ fn compute_depth_recursive(
   let mut max_callee_depth = -1
   for callee in callees {
     // Only consider callees within our valid set
-    if not(valid_ids.contains(callee)) {
+    if !(valid_ids.contains(callee)) {
       continue
     }
     // Check for cycle
@@ -183,7 +183,7 @@ fn compute_caller_depth_recursive(
   let callers = graph.get_callers(symbol_id)
   let mut max_caller_depth = -1
   for caller in callers {
-    if not(valid_ids.contains(caller)) {
+    if !(valid_ids.contains(caller)) {
       continue
     }
     if visiting.contains(caller) {

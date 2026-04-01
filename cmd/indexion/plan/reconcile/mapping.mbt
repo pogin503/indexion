@@ -77,7 +77,7 @@ fn is_all_digits(text : String) -> Bool {
     return false
   }
   for ch in chars {
-    if not(is_ascii_digit(ch)) {
+    if !(is_ascii_digit(ch)) {
       return false
     }
   }
@@ -112,7 +112,7 @@ fn is_specific_token(token : String) -> Bool {
 ///|
 fn add_specific_token(tokens : Map[String, Bool], token : String) -> Unit {
   let normalized = lower_string(@common.trim_ascii_spaces(token))
-  if not(is_specific_token(normalized)) {
+  if !(is_specific_token(normalized)) {
     return
   }
   tokens.set(normalized, true)
@@ -264,8 +264,8 @@ fn configured_doc_roots(doc_paths : Array[String]) -> Map[String, Bool] {
         if segment.length() == 0 || segment == "." || segment == "**" {
           continue
         }
-        if not(saw_wildcard) &&
-          not(segment.contains("*")) &&
+        if !(saw_wildcard) &&
+          !(segment.contains("*")) &&
           @config_paths.extension(segment).length() == 0 {
           roots.set(segment, true)
         }
@@ -351,7 +351,7 @@ fn build_module_signals(
             Some(lang) =>
               match registry.get_spec(lang) {
                 Some(spec) =>
-                  if not(
+                  if !(
                       add_feature_terms(
                         seeded.tokens,
                         content,
@@ -390,7 +390,7 @@ fn build_fragment_terms(
     let source_text = fragment.title + "\n" + fragment.content
     match registry.get_spec(fragment.spec) {
       Some(spec) =>
-        if not(
+        if !(
             add_feature_terms(
               current, source_text, spec, "coverage_token_kinds",
             ),
@@ -852,7 +852,7 @@ async fn match_units_batch(
     })
     let has_inline_doc = unit.inline_doc is Some(_)
     if matches.length() == 0 {
-      if not(has_inline_doc) {
+      if !(has_inline_doc) {
         if module_coverage.contains(unit.module_path) {
           module_covered_symbols += 1
         } else {

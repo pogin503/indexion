@@ -87,8 +87,8 @@ fn collect_files_impl(
   skip_root_filter? : Bool = false,
 ) -> Unit {
   let clean_path = trim_trailing_slash(path)
-  if not(skip_root_filter) &&
-    not(filter.should_include(clean_path, true).is_included()) {
+  if !(skip_root_filter) &&
+    !(filter.should_include(clean_path, true).is_included()) {
     return
   }
   try {

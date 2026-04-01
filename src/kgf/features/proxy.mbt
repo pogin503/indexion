@@ -109,12 +109,12 @@ pub fn detect_proxy_functions(
     match analyze_proxy(tokens, func, token_lines) {
       Some(proxy) => {
         // Filter self-delegation (e.g. self.field.method)
-        if not(include_self_delegation) &&
+        if !(include_self_delegation) &&
           proxy.delegate_target.has_prefix("self.") {
           continue
         }
         // Filter bare constructors (no qualifier — just a name like "Emit", "Str")
-        if not(include_bare_constructors) &&
+        if !(include_bare_constructors) &&
           is_bare_target(proxy.delegate_target) {
           continue
         }
@@ -528,7 +528,7 @@ pub fn find_call_sites(
             tokens[prev].get_kind() == "DCOLON" ||
             tokens[prev].get_kind() == "DOT"
           )
-        if not(is_def) {
+        if !(is_def) {
           let start_offset = tok.get_pos()
           let end_offset = tok.get_pos() + text.length()
           edits.push({
@@ -576,7 +576,7 @@ pub fn find_call_sites(
               prev -= 1
             }
             let is_def = prev >= 0 && tokens[prev].get_kind() == "KW_fn"
-            if not(is_def) {
+            if !(is_def) {
               let start_offset = tok.get_pos()
               let end_offset = tokens[k].get_pos() +
                 tokens[k].get_text().length()

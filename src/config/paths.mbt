@@ -212,7 +212,7 @@ pub fn find_nearest_marker_dir(
   }
   let normalized_root = normalize_path(root_dir)
   let mut current = normalize_path(path)
-  if not(is_valid_dir(current)) {
+  if !(is_valid_dir(current)) {
     current = dirname(current)
   }
   while true {
@@ -249,15 +249,15 @@ fn wildcard_match(pattern : String, text : String) -> Bool {
   if pattern == "*" {
     return true
   }
-  if not(pattern.contains("*")) {
+  if !(pattern.contains("*")) {
     return pattern == text
   }
   let parts = split_wildcard_parts(pattern)
   if parts.length() == 0 {
     return true
   }
-  let anchored_start = not(pattern.has_prefix("*"))
-  let anchored_end = not(pattern.has_suffix("*"))
+  let anchored_start = !(pattern.has_prefix("*"))
+  let anchored_end = !(pattern.has_suffix("*"))
   let mut search_start = 0
   let mut last_match_end = 0
   for i = 0; i < parts.length(); i = i + 1 {
@@ -376,7 +376,7 @@ pub fn find_kgfs_dir(
   let data_candidate = match get_global_data_dir() {
     Some(data_dir) => {
       let kgfs_path = join_path(data_dir, "kgfs")
-      if is_valid_dir(kgfs_path) && not(is_empty_dir(kgfs_path)) {
+      if is_valid_dir(kgfs_path) && !(is_empty_dir(kgfs_path)) {
         Some(kgfs_path)
       } else {
         None

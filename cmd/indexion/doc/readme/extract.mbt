@@ -79,7 +79,7 @@ fn extract_module_docs(graph : @graph.CodeGraph, pkg_path : String) -> String {
     if note.note_type == "module_doc" {
       if note.module_id.has_prefix(pkg_path) ||
         pkg_path.has_prefix(note.module_id) {
-        if note.content.length() > 0 && not(seen.contains(note.content)) {
+        if note.content.length() > 0 && !(seen.contains(note.content)) {
           seen.set(note.content, true)
           buf.write_string(note.content)
           buf.write_string("\n\n")
@@ -93,8 +93,8 @@ fn extract_module_docs(graph : @graph.CodeGraph, pkg_path : String) -> String {
   let mut total_symbols = 0
   for entry in graph.get_symbols() {
     let sym = entry.1
-    if not(sym.module_id.has_prefix(pkg_path)) &&
-      not(pkg_path.has_prefix(sym.module_id)) {
+    if !(sym.module_id.has_prefix(pkg_path)) &&
+      !(pkg_path.has_prefix(sym.module_id)) {
       continue
     }
     let dedup_key = sym.kind + ":" + sym.name
@@ -129,12 +129,12 @@ fn extract_module_docs(graph : @graph.CodeGraph, pkg_path : String) -> String {
     buf.write_string("\n")
   }
   // Fallback: edge attrs (legacy)
-  if not(has_overview) && total_symbols == 0 {
+  if !(has_overview) && total_symbols == 0 {
     for edge in graph.get_edges() {
       if edge.from.has_prefix(pkg_path) || pkg_path.has_prefix(edge.from) {
         match edge.attrs.get("doc") {
           Some(doc) =>
-            if doc.length() > 0 && not(seen.contains(doc)) {
+            if doc.length() > 0 && !(seen.contains(doc)) {
               seen.set(doc, true)
               buf.write_string(doc)
               buf.write_string("\n\n")

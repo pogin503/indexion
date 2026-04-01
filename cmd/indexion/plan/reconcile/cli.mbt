@@ -8,7 +8,7 @@ async fn collect_document_fragments(
   let file_states : Array[FileState] = []
   let used_specs : Array[String] = []
   for path in discovered_paths {
-    if not(is_document_path(path, config, registry)) {
+    if !(is_document_path(path, config, registry)) {
       continue
     }
     let spec = match select_document_spec(path, config, registry) {
@@ -20,7 +20,7 @@ async fn collect_document_fragments(
     for fragment in doc_fragments {
       fragments.push(fragment)
     }
-    if not(contains_string(used_specs, spec)) {
+    if !(contains_string(used_specs, spec)) {
       used_specs.push(spec)
     }
     let ts = timestamp_for_path(config.target_dir, path, config)

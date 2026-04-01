@@ -60,7 +60,7 @@ fn save_cached_report(index_dir : String, report : ReconcileReport) -> Unit {
 ///|
 fn cleanup_stale_index(index_dir : String) -> Unit {
   let path = stale_index_path(index_dir)
-  if not(@fs.path_exists(path)) {
+  if !(@fs.path_exists(path)) {
     return
   }
   @fs.remove_file(path) catch {

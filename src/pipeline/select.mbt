@@ -19,7 +19,7 @@ pub fn build_kgf_index(specs_dir : String) -> KGFIndex {
   let source_to_files : Map[String, Array[String]] = {}
   let all_files : Array[String] = []
   try {
-    if not(@fs.is_dir(specs_dir)) {
+    if !(@fs.is_dir(specs_dir)) {
       return { source_to_files, all_files }
     }
     let entries = @fs.read_dir(specs_dir)
@@ -72,7 +72,7 @@ fn get_matching_kgf_paths(
     let paths = entry.1
     if signals.contains(source) {
       for path in paths {
-        if not(seen.contains(path)) {
+        if !(seen.contains(path)) {
           seen.set(path, true)
           result.push(path)
         }
@@ -138,7 +138,7 @@ pub fn load_registry_for_paths(
   let registry = @registry.KGFRegistry::new()
   let signals = build_path_signals(file_paths)
   try {
-    if not(@fs.is_dir(specs_dir)) {
+    if !(@fs.is_dir(specs_dir)) {
       return registry
     }
     let entries = @fs.read_dir(specs_dir)

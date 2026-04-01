@@ -173,7 +173,7 @@ pub fn find_sentence_boundaries(
       is_sentence_terminator(c)
     }
 
-    if is_term && not(is_protected) {
+    if is_term && !(is_protected) {
       // Consume all trailing punctuation
       let mut end_pos = i + 1
       while end_pos < chars.length() && is_trailing_punctuation(chars[end_pos]) {
@@ -236,7 +236,7 @@ pub fn find_next_boundary(
       is_sentence_terminator(c)
     }
 
-    if is_term && not(is_protected) {
+    if is_term && !(is_protected) {
       // Consume all trailing punctuation
       let mut end_pos = i + 1
       while end_pos < chars.length() && is_trailing_punctuation(chars[end_pos]) {

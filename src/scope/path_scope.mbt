@@ -15,7 +15,7 @@ pub fn PathSubject::new(
     if path.length() == 0 {
       return
     }
-    if not(candidate_paths.iter().any(fn(existing) { existing == path })) {
+    if !(candidate_paths.iter().any(fn(existing) { existing == path })) {
       candidate_paths.push(path)
     }
   }
@@ -78,10 +78,10 @@ pub fn PathScope::matches(self : PathScope, subject : PathSubject) -> Bool {
     .iter()
     .any(fn(pattern) { subject_matches_pattern(subject, pattern) })
   }
-  if not(included) {
+  if !(included) {
     return false
   }
-  not(
+  !(
     self.excludes
     .iter()
     .any(fn(pattern) { subject_matches_pattern(subject, pattern) }),

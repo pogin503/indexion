@@ -386,7 +386,7 @@ fn parse_primary(state : ParseState) -> Node? raise {
   // Try parenthesized group
   if state.eat_lp() {
     let inner = parse_choice(state)
-    if not(state.eat_rp()) {
+    if !(state.eat_rp()) {
       raise @builtin.Failure("missing )")
     }
     return Some(inner)
@@ -395,7 +395,7 @@ fn parse_primary(state : ParseState) -> Node? raise {
   if state.eat_lb() {
     state.warn_deprecated("deprecated: use 'e?' instead of '[e]' for optional")
     let inner = parse_choice(state)
-    if not(state.eat_rb()) {
+    if !(state.eat_rb()) {
       raise @builtin.Failure("missing ]")
     }
     return Some(Node::Optional(inner))
@@ -440,7 +440,7 @@ fn parse_postfix(state : ParseState) -> Node? raise {
 /// Parses a sequence of expressions.
 fn parse_seq(state : ParseState) -> Node raise {
   let items : Array[Node] = []
-  while state.has_more() && not(state.is_stop_token()) {
+  while state.has_more() && !(state.is_stop_token()) {
     let item = parse_postfix(state)
     match item {
       Some(node) => items.push(node)

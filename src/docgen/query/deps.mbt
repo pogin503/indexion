@@ -69,7 +69,7 @@ pub fn get_transitive_deps(
       result.push(current)
     }
     for dep in get_direct_deps(graph, current) {
-      if not(visited.contains(dep.to)) {
+      if !(visited.contains(dep.to)) {
         queue.push(dep.to)
       }
     }

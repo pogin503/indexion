@@ -211,7 +211,7 @@ pub fn build_graph_from_deps(
   let mut id_counter = 0
   for dep in deps {
     for name in [dep.from, dep.to] {
-      if not(seen_nodes.contains(name)) {
+      if !(seen_nodes.contains(name)) {
         seen_nodes.set(name, true)
         let node_id = "N" + id_counter.to_string()
         node_labels.set(name, node_id)
@@ -256,7 +256,7 @@ pub fn build_graph_from_deps(
   // Add circular dependency nodes
   for circ in circulars {
     for name in [circ.from, circ.to] {
-      if not(seen_nodes.contains(name)) {
+      if !(seen_nodes.contains(name)) {
         seen_nodes.set(name, true)
         let node_id = "N" + id_counter.to_string()
         node_labels.set(name, node_id)
@@ -287,7 +287,7 @@ pub fn build_graph_from_deps(
     let from_id = node_labels.get(dep.from).unwrap()
     let to_id = node_labels.get(dep.to).unwrap()
     let edge_key = from_id + "->" + to_id
-    if not(seen_edges.contains(edge_key)) && from_id != to_id {
+    if !(seen_edges.contains(edge_key)) && from_id != to_id {
       seen_edges.set(edge_key, true)
       result.edges.push({
         from: from_id,
@@ -302,7 +302,7 @@ pub fn build_graph_from_deps(
     let from_id = node_labels.get(circ.from).unwrap()
     let to_id = node_labels.get(circ.to).unwrap()
     let edge_key = from_id + "->circ->" + to_id
-    if not(seen_edges.contains(edge_key)) && from_id != to_id {
+    if !(seen_edges.contains(edge_key)) && from_id != to_id {
       seen_edges.set(edge_key, true)
       result.edges.push({
         from: from_id,

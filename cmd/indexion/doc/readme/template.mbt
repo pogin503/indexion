@@ -31,7 +31,7 @@ pub fn render_template(template : String, ctx : TemplateContext) -> String {
       let start = i + 2
       let mut end = start
       while end + 1 < chars.length() &&
-            not(chars[end] == '}' && chars[end + 1] == '}') {
+            !(chars[end] == '}' && chars[end + 1] == '}') {
         end = end + 1
       }
       if end + 1 < chars.length() {

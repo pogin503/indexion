@@ -321,12 +321,12 @@ fn parse_inline_array(s : String) -> Array[String] {
   let mut quote_char : Char = '"'
   while start < end {
     let c = chars[start]
-    if not(in_quote) && (c == '"' || c == '\'') {
+    if !(in_quote) && (c == '"' || c == '\'') {
       in_quote = true
       quote_char = c
     } else if in_quote && c == quote_char {
       in_quote = false
-    } else if not(in_quote) && c == ',' {
+    } else if !(in_quote) && c == ',' {
       let item = trim_string(String::from_array(current))
       if item.length() > 0 {
         result.push(item)

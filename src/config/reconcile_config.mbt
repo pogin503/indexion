@@ -450,7 +450,7 @@ fn parse_json_object(value : Json) -> Map[String, Json]? {
 ///|
 fn parse_string_array_literal(value : String) -> Array[String] {
   let trimmed = trim_string(value)
-  if not(trimmed.has_prefix("[")) || not(trimmed.has_suffix("]")) {
+  if !(trimmed.has_prefix("[")) || !(trimmed.has_suffix("]")) {
     return []
   }
   let inner = substring(trimmed, 1, trimmed.length() - 1)

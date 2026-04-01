@@ -152,7 +152,7 @@ pub fn DigestManifest::get_stale_functions(
 ) -> Array[String] {
   let stale : Array[String] = []
   for unit in current_units {
-    if not(
+    if !(
         self.is_function_valid(unit.id(), unit.source_hash, unit.context_hash),
       ) {
       stale.push(unit.id())
@@ -173,7 +173,7 @@ pub fn DigestManifest::get_deleted_functions(
   }
   let deleted : Array[String] = []
   for entry in self.functions {
-    if not(current_set.contains(entry.0)) {
+    if !(current_set.contains(entry.0)) {
       deleted.push(entry.0)
     }
   }

@@ -35,7 +35,7 @@ pub fn Lexer::tokenize(self : Lexer, input : String) -> Array[@types.Tok] {
     let match_result = self.try_match(input, input_chars, pos)
     match match_result {
       Some((token_def, end_pos, text, group1)) => {
-        if not(token_def.skip) {
+        if !(token_def.skip) {
           match text {
             Some(token_text) => {
               // Capture group takes priority for value extraction

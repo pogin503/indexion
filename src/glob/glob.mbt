@@ -118,7 +118,7 @@ fn match_char_class(
     i = i + 1
   }
   if negated {
-    (not(matched), i)
+    (!(matched), i)
   } else {
     (matched, i)
   }
@@ -141,7 +141,7 @@ pub fn has_glob_pattern(path : String) -> Bool {
 /// Expand a glob pattern against the filesystem and return matching paths.
 pub fn expand_glob(pattern : String) -> Array[String] {
   let results : Array[String] = []
-  if not(has_glob_pattern(pattern)) {
+  if !(has_glob_pattern(pattern)) {
     results.push(pattern)
     return results
   }
@@ -183,12 +183,12 @@ fn expand_glob_impl(
   results : Array[String],
 ) -> Unit {
   try {
-    if not(@fs.is_dir(dir)) {
+    if !(@fs.is_dir(dir)) {
       return
     }
     let entries = @fs.read_dir(dir)
     for entry in entries {
-      if entry.has_prefix(".") && not(remaining.has_prefix(".")) {
+      if entry.has_prefix(".") && !(remaining.has_prefix(".")) {
         continue
       }
       let full_path = if dir == "." { entry } else { dir + "/" + entry }

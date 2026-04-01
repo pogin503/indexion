@@ -294,7 +294,7 @@ fn detect_update_needs(wiki : @docgen_wiki.WikiData) -> @plan_types.PlanSection 
     let page = entry.1
     let mut missing = 0
     for src in page.sources {
-      if not(@fs.path_exists(src.file)) {
+      if !(@fs.path_exists(src.file)) {
         missing = missing + 1
       }
     }

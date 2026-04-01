@@ -471,7 +471,7 @@ pub fn resolve_config_from_matches(
   }
   let merged0 = merge_file_config({ ..parsed, config: base }, file_config)
   let merged = if (parsed.explicit_doc_paths || parsed.explicit_doc_specs) &&
-    not(parsed.explicit_doc_scope) {
+    !(parsed.explicit_doc_scope) {
     update_documents_scope_name(merged0, "custom")
   } else {
     merged0

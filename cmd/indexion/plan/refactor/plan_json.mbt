@@ -621,7 +621,7 @@ pub fn build_refactor_plan(
                     break
                   }
                 }
-                if not(exists) {
+                if !(exists) {
                   func_names.push(name)
                 }
               }

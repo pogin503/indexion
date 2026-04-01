@@ -503,13 +503,13 @@ pub fn ensure_dir_exists(path : String) -> Unit {
   }
   if last_slash > 0 {
     let parent = path[0:last_slash].to_string()
-    if not(@fs.path_exists(parent)) {
+    if !(@fs.path_exists(parent)) {
       @fs.create_dir(parent) catch {
         _ => ()
       }
     }
   }
-  if not(@fs.path_exists(path)) {
+  if !(@fs.path_exists(path)) {
     @fs.create_dir(path) catch {
       _ => ()
     }
@@ -604,7 +604,7 @@ async fn run_query_async(config : CliConfig) -> Unit {
   let manifest_path = config.index_dir + "/manifest.json"
   let graph_path = config.index_dir + "/graph.json"
   let manifest_exists = @fs.is_file(manifest_path) catch { _ => false }
-  if not(manifest_exists) {
+  if !(manifest_exists) {
     log_error("No index found at " + config.index_dir)
     println("Run 'indexion digest build <path>' first.")
     return
@@ -710,7 +710,7 @@ async fn run_query_async(config : CliConfig) -> Unit {
 fn run_stats(config : CliConfig) -> Unit {
   let manifest_path = config.index_dir + "/manifest.json"
   let manifest_exists = @fs.is_file(manifest_path) catch { _ => false }
-  if not(manifest_exists) {
+  if !(manifest_exists) {
     log_error("No index found at " + config.index_dir)
     println("Run 'indexion digest build <path>' first.")
     return

@@ -175,7 +175,7 @@ fn skip_whitespace(text : String, start : Int) -> Int {
 /// Reads an identifier from the text.
 fn read_identifier(text : String, start : Int) -> (String, Int) {
   let arr = text.to_array()
-  if start >= arr.length() || not(is_ident_start(arr[start])) {
+  if start >= arr.length() || !(is_ident_start(arr[start])) {
     return ("", start)
   }
   let mut end = start + 1
@@ -189,7 +189,7 @@ fn read_identifier(text : String, start : Int) -> (String, Int) {
 /// Checks if a string contains only valid regex flags.
 fn is_valid_flags(s : String) -> Bool {
   for c in s {
-    if not(c == 'g' || c == 'i' || c == 'm' || c == 's' || c == 'u' || c == 'y') {
+    if !(c == 'g' || c == 'i' || c == 'm' || c == 's' || c == 'u' || c == 'y') {
       return false
     }
   }

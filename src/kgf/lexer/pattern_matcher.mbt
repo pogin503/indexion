@@ -273,7 +273,7 @@ fn parse_char_class(
           }
           Some('S') => {
             // \S - non-whitespace: '!' (33) through U+FFFF covers all non-whitespace
-            // Consistent with Escape('S') which uses not(is_whitespace(c))
+            // Consistent with Escape('S') which uses !(is_whitespace(c))
             ranges.push(('!', '\u{FFFF}'))
             pos = pos + 1
           }
@@ -403,7 +403,7 @@ fn parse_brace_quantifier(pattern : String, start : Int) -> (Quantifier, Int)? {
       None => return None
     }
   }
-  if not(has_n) {
+  if !(has_n) {
     return None
   }
   match get_char_at(pattern, pos) {
@@ -698,11 +698,11 @@ fn match_char(
     Escape(escape_char) =>
       match escape_char {
         's' => is_whitespace(c)
-        'S' => not(is_whitespace(c))
+        'S' => !(is_whitespace(c))
         'd' => is_digit(c)
-        'D' => not(is_digit(c))
+        'D' => !(is_digit(c))
         'w' => is_word_char(c)
-        'W' => not(is_word_char(c))
+        'W' => !(is_word_char(c))
         'n' => c == '\n'
         'r' => c == '\r'
         't' => c == '\t'
@@ -721,7 +721,7 @@ fn match_char(
         }
       }
       if negated {
-        not(in_class)
+        !(in_class)
       } else {
         in_class
       }
@@ -776,7 +776,7 @@ fn match_quantified(
         None
       }
     NonWordBoundary =>
-      if not(is_at_word_boundary_with_chars(input_chars, pos)) {
+      if !(is_at_word_boundary_with_chars(input_chars, pos)) {
         Some(pos)
       } else {
         None
@@ -1027,7 +1027,7 @@ fn collect_repeat_positions(
       valid.push(all_positions[i])
     }
   }
-  if not(lazy_) {
+  if !(lazy_) {
     // Greedy: reverse to try max first
     valid.rev_in_place()
   }
@@ -1098,7 +1098,7 @@ fn enumerate_group_end_positions(
     match
       match_elements_backtrack(elements, 0, input_chars, pos, case_insensitive) {
       Some(end) => {
-        if not(seen.contains(end)) {
+        if !(seen.contains(end)) {
           seen.set(end, true)
           positions.push(end)
         }
@@ -1484,7 +1484,7 @@ fn match_compiled_end_pos_with_chars(
     return None
   }
   let first_char = input_chars[pos]
-  if not(check_first_char_filter(compiled.first_char_filter, first_char)) {
+  if !(check_first_char_filter(compiled.first_char_filter, first_char)) {
     return None
   }
   // Full matching with backtracking
@@ -1522,7 +1522,7 @@ fn check_first_char_filter(filter : FirstCharFilter, c : Char) -> Bool {
         }
       }
       if negated {
-        not(in_class)
+        !(in_class)
       } else {
         in_class
       }

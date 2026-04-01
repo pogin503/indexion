@@ -122,7 +122,7 @@ pub fn analyze_documentation(
   // Find critical missing (pub fn/type without docs)
   let critical : Array[PubItem] = []
   for item in all_items {
-    if not(item.has_doc) &&
+    if !(item.has_doc) &&
       (item.kind == "fn" || item.kind == "type" || item.kind == "struct") {
       critical.push(item)
     }
@@ -172,7 +172,7 @@ fn collect_packages(
   registry : @kgf_registry.KGFRegistry?,
 ) -> Unit {
   try {
-    if not(@fs.is_dir(dir)) {
+    if !(@fs.is_dir(dir)) {
       return
     }
     // Get extensions and package markers from KGF registry
@@ -209,7 +209,7 @@ fn collect_packages(
           @filter.FilterResult::Exclude(_) => ()
         }
       } else if @fs.is_dir(path) {
-        if not(local_filter.should_skip_dir(entry)) {
+        if !(local_filter.should_skip_dir(entry)) {
           let sub_rel = if rel_path.length() > 0 {
             rel_path + "/" + entry
           } else {

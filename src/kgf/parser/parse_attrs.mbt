@@ -120,7 +120,7 @@ fn parse_action_list(text : String) -> Array[@types.AttrAction] {
   for part in parts {
     let trimmed = trim_str(part)
     // Skip empty parts and inline comments
-    if trimmed.length() > 0 && not(starts_with(trimmed, "#")) {
+    if trimmed.length() > 0 && !(starts_with(trimmed, "#")) {
       result.push(parse_single_action(trimmed))
     }
   }
@@ -163,7 +163,7 @@ fn parse_single_action(text : String) -> @types.AttrAction {
       Some((k, v)) => params.set(k, v)
       None =>
         // First non-key=value token is the implicit id/name parameter
-        if not(has_implicit_id) {
+        if !(has_implicit_id) {
           // For "def" action, implicit param is "id"
           // For "ref" action, implicit param is "name"
           // For "call" action, implicit param is "callee"
