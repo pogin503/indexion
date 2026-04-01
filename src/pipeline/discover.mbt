@@ -86,7 +86,7 @@ fn collect_files_impl(
   file_paths : Array[String],
   skip_root_filter? : Bool = false,
 ) -> Unit {
-  let clean_path = trim_trailing_slash(path)
+  let clean_path = @config.normalize_path(trim_trailing_slash(path))
   if !(skip_root_filter) &&
     !(filter.should_include(clean_path, true).is_included()) {
     return

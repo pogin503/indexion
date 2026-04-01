@@ -1,8 +1,9 @@
 import {
-  "moonbitlang/x/fs" @fs,
+  "trkbt10/indexion/src/config" @config_paths,
 }
 
 import {
+  "moonbitlang/x/fs" @fs,
   "trkbt10/indexion/src/core/graph" @graph,
   "trkbt10/indexion/src/kgf/lexer" @lexer,
   "trkbt10/indexion/src/kgf/peg" @peg,

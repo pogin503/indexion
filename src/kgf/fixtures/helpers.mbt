@@ -1,48 +1,28 @@
 ///|
 /// Common helpers for fixture tests.
+/// Uses @config_paths SoT for path operations and ancestor traversal.
 
 ///|
-/// Walk up from "." looking for a directory named `name`.
-/// Stops at filesystem root or on permission error.
+/// Find a named directory by walking up from "." using find_project_root.
+/// Returns the full relative path to the directory, or None if not found.
 fn find_ancestor_dir(name : String) -> String? {
-  let mut prefix = ""
-  // Limit to prevent infinite loop, but the real stop is dirname convergence
-  for i = 0; i < 64; i = i + 1 {
-    let candidate = if prefix.length() == 0 { name } else { prefix + name }
-    let exists = try {
-      @fs.is_dir(candidate)
-    } catch {
-      // Permission error or other OS error — stop walking
-      _ => return None
+  match @config_paths.find_project_root(".", [name]) {
+    Some(root) => {
+      let joined = @config_paths.join_path(root, name)
+      Some(@config_paths.normalize_path(joined))
     }
-    if exists {
-      return Some(candidate)
-    }
-    // Check if we've reached the root (prefix didn't grow)
-    let parent = prefix + ".."
-    let can_access = try {
-      @fs.is_dir(parent)
-    } catch {
-      _ => return None
-    }
-    if !can_access {
-      return None
-    }
-    prefix = parent + "/"
+    None => None
   }
-  None
 }
 
 ///|
 /// Find the fixtures directory by walking up from cwd.
-/// Returns None if not reachable.
 pub fn find_fixtures_dir() -> String? {
   find_ancestor_dir("fixtures")
 }
 
 ///|
 /// Find the kgfs directory by walking up from cwd.
-/// Returns None if not reachable.
 pub fn find_kgfs_dir() -> String? {
   find_ancestor_dir("kgfs")
 }
