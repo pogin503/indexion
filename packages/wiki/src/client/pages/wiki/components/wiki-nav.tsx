@@ -56,9 +56,7 @@ const NavItem = ({
   const hasChildren = item.children.length > 0;
   const isActive = activeId === item.id;
   const isAncestor = activeId.startsWith(item.id + "/");
-  const [open, setOpen] = useState(
-    depth < 2 || isActive || isAncestor,
-  );
+  const [open, setOpen] = useState(depth < 2 || isActive || isAncestor);
 
   return (
     <div>

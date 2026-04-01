@@ -60,7 +60,10 @@ export function useKgfHighlight(
 
   useEffect(() => {
     if (!lang) {
-      setResult({ status: "unsupported", segments: [{ text: code, color: null }] });
+      setResult({
+        status: "unsupported",
+        segments: [{ text: code, color: null }],
+      });
       return;
     }
     let cancelled = false;
@@ -71,7 +74,10 @@ export function useKgfHighlight(
         return;
       }
       if (!spec) {
-        setResult({ status: "unsupported", segments: [{ text: code, color: null }] });
+        setResult({
+          status: "unsupported",
+          segments: [{ text: code, color: null }],
+        });
         return;
       }
       const raw = tokenize(spec, code);

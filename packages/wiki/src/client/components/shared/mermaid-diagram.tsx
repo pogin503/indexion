@@ -36,7 +36,9 @@ const DEFAULT_SIZE = { w: 800, h: 600 };
 function parseMermaidSvg(raw: string): SvgData {
   const doc = new DOMParser().parseFromString(raw, "image/svg+xml");
   const el = doc.querySelector("svg");
-  if (!el) return { html: raw, ...DEFAULT_SIZE };
+  if (!el) {
+    return { html: raw, ...DEFAULT_SIZE };
+  }
 
   let { w, h } = extractViewBoxSize(el);
   if (w <= 0 || h <= 0) {
@@ -54,7 +56,9 @@ function parseMermaidSvg(raw: string): SvgData {
 
 function extractViewBoxSize(el: SVGSVGElement): { w: number; h: number } {
   const vb = el.getAttribute("viewBox");
-  if (!vb) return { w: 0, h: 0 };
+  if (!vb) {
+    return { w: 0, h: 0 };
+  }
   const parts = vb.split(/[\s,]+/).map(Number);
   if (parts.length === 4 && parts[2]! > 0 && parts[3]! > 0) {
     return { w: parts[2]!, h: parts[3]! };
@@ -70,20 +74,34 @@ function useMermaidSvg(code: string) {
   const [svg, setSvg] = useState<SvgData | null>(null);
 
   useEffect(() => {
-    if (!code.trim()) return;
+    if (!code.trim()) {
+      return;
+    }
     let cancelled = false;
     setError(null);
 
     import("mermaid").then(({ default: mermaid }) => {
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
       mermaid.initialize({ startOnLoad: false, theme: "dark" });
       mermaid
         .render(`mermaid-${Math.random().toString(36).slice(2)}`, code)
-        .then(({ svg: raw }) => { if (!cancelled) setSvg(parseMermaidSvg(raw)); })
-        .catch((err) => { if (!cancelled) setError(String(err)); });
+        .then(({ svg: raw }) => {
+          if (!cancelled) {
+            setSvg(parseMermaidSvg(raw));
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setError(String(err));
+          }
+        });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [code]);
 
   return { svg, error };
@@ -106,9 +124,13 @@ function useFitToWidth(svg: SvgData | null) {
 
   const fitToWidth = useCallback(() => {
     const el = outerRef.current;
-    if (!el || !svg) return;
+    if (!el || !svg) {
+      return;
+    }
     const cw = el.clientWidth;
-    if (cw <= 0) return;
+    if (cw <= 0) {
+      return;
+    }
 
     const scale = cw / svg.w;
     const maxH = window.innerHeight * MAX_VH;
@@ -120,7 +142,9 @@ function useFitToWidth(svg: SvgData | null) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const ref = transformRef.current;
-        if (!ref) return;
+        if (!ref) {
+          return;
+        }
         // Center vertically: offset Y so scaled SVG is centered in container
         const scaledH = svg.h * scale;
         const y = scaledH < containerH ? (containerH - scaledH) / 2 : 0;
@@ -133,7 +157,9 @@ function useFitToWidth(svg: SvgData | null) {
   // Observe container width changes (width-only to avoid height→resize loop)
   useEffect(() => {
     const el = outerRef.current;
-    if (!el || !svg) return;
+    if (!el || !svg) {
+      return;
+    }
     setReady(false);
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -160,7 +186,8 @@ export const MermaidDiagram = ({
 }: Props): React.JSX.Element => {
   const { svg, error } = useMermaidSvg(code);
   const [expanded, setExpanded] = useState(false);
-  const { outerRef, transformRef, displayHeight, fitToWidth, ready } = useFitToWidth(svg);
+  const { outerRef, transformRef, displayHeight, fitToWidth, ready } =
+    useFitToWidth(svg);
 
   if (error) {
     return (
@@ -172,7 +199,9 @@ export const MermaidDiagram = ({
 
   if (!svg) {
     return (
-      <div className={`flex h-32 items-center justify-center rounded border border-border/50 text-sm text-muted-foreground ${className ?? ""}`}>
+      <div
+        className={`flex h-32 items-center justify-center rounded border border-border/50 text-sm text-muted-foreground ${className ?? ""}`}
+      >
         Loading diagram…
       </div>
     );
@@ -197,14 +226,27 @@ export const MermaidDiagram = ({
         >
           {({ zoomIn, zoomOut }) => (
             <>
-              <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+              <TransformComponent
+                wrapperStyle={{ width: "100%", height: "100%" }}
+              >
                 <div dangerouslySetInnerHTML={{ __html: svg.html }} />
               </TransformComponent>
               <Toolbar position="right-1.5 top-1.5" size="size-3">
-                <ToolButton onClick={() => zoomIn()} label="Zoom in"><ZoomIn /></ToolButton>
-                <ToolButton onClick={() => zoomOut()} label="Zoom out"><ZoomOut /></ToolButton>
-                <ToolButton onClick={fitToWidth} label="Fit width"><Maximize2 /></ToolButton>
-                <ToolButton onClick={() => setExpanded(true)} label="Full screen"><Fullscreen /></ToolButton>
+                <ToolButton onClick={() => zoomIn()} label="Zoom in">
+                  <ZoomIn />
+                </ToolButton>
+                <ToolButton onClick={() => zoomOut()} label="Zoom out">
+                  <ZoomOut />
+                </ToolButton>
+                <ToolButton onClick={fitToWidth} label="Fit width">
+                  <Maximize2 />
+                </ToolButton>
+                <ToolButton
+                  onClick={() => setExpanded(true)}
+                  label="Full screen"
+                >
+                  <Fullscreen />
+                </ToolButton>
               </Toolbar>
             </>
           )}
@@ -245,16 +287,28 @@ const FullScreenViewer = ({
           <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
             <div
               ref={(el) => {
-                if (el) requestAnimationFrame(() => zoomToElement(el, undefined, 100));
+                if (el) {
+                  requestAnimationFrame(() =>
+                    zoomToElement(el, undefined, 100),
+                  );
+                }
               }}
               dangerouslySetInnerHTML={{ __html: svgHtml }}
             />
           </TransformComponent>
           <Toolbar position="right-3 top-3" size="size-3.5">
-            <ToolButton onClick={() => zoomIn()} label="Zoom in"><ZoomIn /></ToolButton>
-            <ToolButton onClick={() => zoomOut()} label="Zoom out"><ZoomOut /></ToolButton>
-            <ToolButton onClick={() => resetTransform()} label="Reset"><Maximize2 /></ToolButton>
-            <ToolButton onClick={onClose} label="Close"><X /></ToolButton>
+            <ToolButton onClick={() => zoomIn()} label="Zoom in">
+              <ZoomIn />
+            </ToolButton>
+            <ToolButton onClick={() => zoomOut()} label="Zoom out">
+              <ZoomOut />
+            </ToolButton>
+            <ToolButton onClick={() => resetTransform()} label="Reset">
+              <Maximize2 />
+            </ToolButton>
+            <ToolButton onClick={onClose} label="Close">
+              <X />
+            </ToolButton>
           </Toolbar>
         </>
       )}
@@ -290,7 +344,10 @@ const ToolButton = ({
   <button
     type="button"
     onPointerDown={(e) => e.stopPropagation()}
-    onClick={(e) => { e.stopPropagation(); onClick(); }}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
     aria-label={label}
     className="pointer-events-auto rounded bg-background/80 p-1 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-accent hover:text-foreground"
   >
