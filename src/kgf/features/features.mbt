@@ -305,6 +305,30 @@ fn is_visibility_modifier_arg(text : String) -> Bool {
 }
 
 ///|
+/// Tokenize source content using KGF registry.
+/// Returns None if registry, language detection, or spec lookup fails.
+fn tokenize_source(
+  content : String,
+  path : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[@kgf_types.Tok]? {
+  let reg = match registry {
+    Some(r) => r
+    None => return None
+  }
+  let lang = match reg.detect_from_path(path) {
+    Some(l) => l
+    None => return None
+  }
+  let spec = match reg.get_spec(lang) {
+    Some(s) => s
+    None => return None
+  }
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  Some(lexer.tokenize(content))
+}
+
+///|
 /// Extract public declarations from source code using KGF tokenization.
 /// Language-agnostic: uses KGF token kinds to detect visibility + declaration patterns.
 /// Returns empty array if registry or spec is unavailable.
@@ -313,21 +337,10 @@ pub fn extract_pub_declarations(
   path : String,
   registry : @kgf_registry.KGFRegistry?,
 ) -> Array[PubDeclaration] {
-  let reg = match registry {
-    Some(r) => r
-    None => return []
+  match tokenize_source(content, path, registry) {
+    Some(tokens) => extract_pub_declarations_from_tokens(tokens)
+    None => []
   }
-  let lang = match reg.detect_from_path(path) {
-    Some(l) => l
-    None => return []
-  }
-  let spec = match reg.get_spec(lang) {
-    Some(s) => s
-    None => return []
-  }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
-  extract_pub_declarations_from_tokens(tokens)
 }
 
 ///|
@@ -416,21 +429,10 @@ pub fn extract_doc_map_from_source(
   path : String,
   registry : @kgf_registry.KGFRegistry?,
 ) -> Map[Int, String] {
-  let reg = match registry {
-    Some(r) => r
-    None => return {}
+  match tokenize_source(content, path, registry) {
+    Some(tokens) => extract_doc_map(tokens)
+    None => {}
   }
-  let lang = match reg.detect_from_path(path) {
-    Some(l) => l
-    None => return {}
-  }
-  let spec = match reg.get_spec(lang) {
-    Some(s) => s
-    None => return {}
-  }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
-  extract_doc_map(tokens)
 }
 
 ///|
@@ -441,21 +443,8 @@ pub fn extract_pub_declarations_and_doc_map(
   path : String,
   registry : @kgf_registry.KGFRegistry?,
 ) -> (Array[PubDeclaration], Map[Int, String]) {
-  let reg = match registry {
-    Some(r) => r
-    None => return ([], {})
+  match tokenize_source(content, path, registry) {
+    Some(tokens) => (extract_pub_declarations_from_tokens(tokens), extract_doc_map(tokens))
+    None => ([], {})
   }
-  let lang = match reg.detect_from_path(path) {
-    Some(l) => l
-    None => return ([], {})
-  }
-  let spec = match reg.get_spec(lang) {
-    Some(s) => s
-    None => return ([], {})
-  }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
-  let declarations = extract_pub_declarations_from_tokens(tokens)
-  let doc_map = extract_doc_map(tokens)
-  (declarations, doc_map)
 }
