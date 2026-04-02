@@ -343,32 +343,32 @@ test "SegmentationStrategy::segment with custom config via trait" {
 
 ///|
 test "is_whitespace_only with spaces" {
-  assert_true(is_whitespace_only("   "))
+  assert_true(@utils.is_whitespace_only("   "))
 }
 
 ///|
 test "is_whitespace_only with tabs and newlines" {
-  assert_true(is_whitespace_only("\t\n\r"))
+  assert_true(@utils.is_whitespace_only("\t\n\r"))
 }
 
 ///|
 test "is_whitespace_only with mixed whitespace" {
-  assert_true(is_whitespace_only(" \t \n \r "))
+  assert_true(@utils.is_whitespace_only(" \t \n \r "))
 }
 
 ///|
 test "is_whitespace_only with content returns false" {
-  assert_false(is_whitespace_only("  a  "))
+  assert_false(@utils.is_whitespace_only("  a  "))
 }
 
 ///|
 test "is_whitespace_only empty string" {
-  assert_true(is_whitespace_only(""))
+  assert_true(@utils.is_whitespace_only(""))
 }
 
 ///|
 test "is_whitespace_only Japanese full-width space" {
-  assert_true(is_whitespace_only("\u{3000}"))
+  assert_true(@utils.is_whitespace_only("\u{3000}"))
 }
 
 // =============================================================================
@@ -378,34 +378,34 @@ test "is_whitespace_only Japanese full-width space" {
 ///|
 test "extract_substring basic" {
   let text = "Hello World"
-  let result = extract_substring(text, 0, 5)
+  let result = @types.extract_substring(text, 0, 5)
   assert_eq(result, "Hello")
 }
 
 ///|
 test "extract_substring middle" {
   let text = "Hello World"
-  let result = extract_substring(text, 6, 11)
+  let result = @types.extract_substring(text, 6, 11)
   assert_eq(result, "World")
 }
 
 ///|
 test "extract_substring end beyond length" {
   let text = "Hello"
-  let result = extract_substring(text, 0, 100)
+  let result = @types.extract_substring(text, 0, 100)
   assert_eq(result, "Hello")
 }
 
 ///|
 test "extract_substring empty range" {
   let text = "Hello"
-  let result = extract_substring(text, 2, 2)
+  let result = @types.extract_substring(text, 2, 2)
   assert_eq(result, "")
 }
 
 ///|
 test "extract_substring Japanese text" {
   let text = "こんにちは世界"
-  let result = extract_substring(text, 0, 5)
+  let result = @types.extract_substring(text, 0, 5)
   assert_eq(result, "こんにちは")
 }

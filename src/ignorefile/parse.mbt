@@ -38,7 +38,7 @@ fn parse_line(line : String, source : String) -> IgnorePattern {
 }
 
 ///|
-fn contains_slash(s : String) -> Bool {
+pub fn contains_slash(s : String) -> Bool {
   for c in s {
     if c == '/' {
       return true

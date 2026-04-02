@@ -65,7 +65,7 @@ pub fn FilterConfig::should_include(
     let mut matched = false
     for pattern in config.user_includes {
       // Check if this is a filename pattern (no slash) or path pattern
-      let is_filename_pattern = !(contains_slash(pattern))
+      let is_filename_pattern = !(@ignorefile.contains_slash(pattern))
       if is_dir {
         // For directories, check if traversal should continue
         if is_filename_pattern {
@@ -256,17 +256,6 @@ fn dir_could_contain_pattern_match(dir : String, pattern : String) -> Bool {
   if pattern.has_prefix("**/") || pattern.has_prefix("**\\") {
     // Pattern like "**/test.mbt" matches anywhere
     return true
-  }
-  false
-}
-
-///|
-/// Check if string contains a slash.
-fn contains_slash(s : String) -> Bool {
-  for c in s {
-    if c == '/' {
-      return true
-    }
   }
   false
 }

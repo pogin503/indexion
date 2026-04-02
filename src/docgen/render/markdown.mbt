@@ -117,7 +117,7 @@ pub fn render_api_reference(
       }
     }
   }
-  join_lines(lines)
+  @diagram.join_lines(lines)
 }
 
 ///|
@@ -180,7 +180,7 @@ pub fn render_cross_references(
       "| `" + sym.name + "` | " + sym.kind + " | " + count.to_string() + " |",
     )
   }
-  join_lines(lines)
+  @diagram.join_lines(lines)
 }
 
 ///|
@@ -199,20 +199,3 @@ fn pluralize(kind : String) -> String {
   }
 }
 
-///|
-/// Join lines with newline.
-fn join_lines(lines : Array[String]) -> String {
-  if lines.length() == 0 {
-    return ""
-  }
-  let result : Array[Char] = []
-  for i, line in lines {
-    if i > 0 {
-      result.push('\n')
-    }
-    for c in line.to_array() {
-      result.push(c)
-    }
-  }
-  String::from_array(result)
-}

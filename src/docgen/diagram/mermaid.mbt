@@ -698,7 +698,7 @@ fn split_by_str(s : String, sep : String) -> Array[String] {
 
 ///|
 /// Join array of strings with newline.
-fn join_lines(lines : Array[String]) -> String {
+pub fn join_lines(lines : Array[String]) -> String {
   if lines.length() == 0 {
     return ""
   }

@@ -133,7 +133,7 @@ pub fn TextSegment::length(self : TextSegment) -> Int {
 
 ///|
 /// Extract substring from text given character offsets.
-fn extract_substring(text : String, start : Int, end : Int) -> String {
+pub fn extract_substring(text : String, start : Int, end : Int) -> String {
   let chars = text.to_array()
   let buf = StringBuilder::new()
   let actual_end = if end > chars.length() { chars.length() } else { end }

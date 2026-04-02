@@ -3,18 +3,6 @@
 // chunks up to a target size.
 
 ///|
-/// Check if a string contains only whitespace.
-fn is_whitespace_only(s : String) -> Bool {
-  let chars = s.to_array()
-  for c in chars {
-    if c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\u{3000}' {
-      return false
-    }
-  }
-  true
-}
-
-///|
 /// Segment text using punctuation-based chunking.
 /// Accumulates sentences into chunks of approximately target_chunk_size,
 /// splitting at sentence boundaries when possible.
@@ -27,7 +15,7 @@ pub fn segment_by_punctuation(
   let max_size = config.max_chunk_size
 
   // Handle empty or whitespace-only text
-  if text.length() == 0 || is_whitespace_only(text) {
+  if text.length() == 0 || @utils.is_whitespace_only(text) {
     return []
   }
 
@@ -135,8 +123,8 @@ pub fn segment_by_punctuation(
       )
     } else {
       // Check if there's actual content
-      let remaining_text = extract_substring(text, chunk_start, text_length)
-      if !(is_whitespace_only(remaining_text)) {
+      let remaining_text = @types.extract_substring(text, chunk_start, text_length)
+      if !(@utils.is_whitespace_only(remaining_text)) {
         points.push(
           @types.SegmentPoint::new(
             chunk_start,
@@ -149,18 +137,6 @@ pub fn segment_by_punctuation(
   }
 
   points
-}
-
-///|
-/// Extract substring from text given character offsets.
-fn extract_substring(text : String, start : Int, end : Int) -> String {
-  let chars = text.to_array()
-  let buf = StringBuilder::new()
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  for i = start; i < actual_end; i = i + 1 {
-    buf.write_char(chars[i])
-  }
-  buf.to_string()
 }
 
 ///|
