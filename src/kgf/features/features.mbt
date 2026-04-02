@@ -307,7 +307,7 @@ fn is_visibility_modifier_arg(text : String) -> Bool {
 ///|
 /// Tokenize source content using KGF registry.
 /// Returns None if registry, language detection, or spec lookup fails.
-fn tokenize_source(
+pub fn tokenize_source(
   content : String,
   path : String,
   registry : @kgf_registry.KGFRegistry?,

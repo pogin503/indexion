@@ -74,6 +74,7 @@ fn build_command() -> @argparse.Command {
       @perf_cli.command(),
       @update_cli.command(),
       @serve_cli.command(),
+      @grep_cli.command(),
     ],
   )
 }
@@ -101,6 +102,7 @@ async fn main {
     "perf" => @perf_cli.dispatch(sub)
     "update" => @update_cli.run_matches(sub)
     "serve" => @serve_cli.run_matches(sub)
+    "grep" => @grep_cli.run_matches(sub)
     _ => ()
   }
 }
