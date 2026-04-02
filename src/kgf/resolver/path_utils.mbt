@@ -37,7 +37,7 @@ pub fn dirname(path : String) -> String {
   if last_slash == 0 {
     return "/"
   }
-  substr(normalized, 0, last_slash)
+  @config.substring(normalized, 0, last_slash)
 }
 
 ///|
@@ -52,7 +52,7 @@ pub fn basename(path : String) -> String {
   if last_slash < 0 {
     return normalized
   }
-  substr_from(normalized, last_slash + 1)
+  @config.substring_from(normalized, last_slash + 1)
 }
 
 ///|
@@ -160,36 +160,6 @@ fn find_last_char(s : String, c : Char) -> Int {
     }
   }
   -1
-}
-
-///|
-/// Returns substring from start to end position (exclusive).
-fn substr(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  let actual_start = if start < 0 { 0 } else { start }
-  if actual_start >= actual_end {
-    return ""
-  }
-  let result = StringBuilder::new()
-  for i = actual_start; i < actual_end; i = i + 1 {
-    result.write_char(chars[i])
-  }
-  result.to_string()
-}
-
-///|
-/// Returns substring from start position to end of string.
-fn substr_from(s : String, start : Int) -> String {
-  if start >= s.length() {
-    return ""
-  }
-  let chars = s.to_array()
-  let result = StringBuilder::new()
-  for i = start; i < chars.length(); i = i + 1 {
-    result.write_char(chars[i])
-  }
-  result.to_string()
 }
 
 ///|

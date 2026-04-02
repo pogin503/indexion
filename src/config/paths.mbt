@@ -41,6 +41,29 @@ pub fn extension(path : String) -> String {
 }
 
 ///|
+/// Extract substring from start (inclusive) to end (exclusive).
+/// Clamps both bounds to valid range.
+pub fn substring(s : String, start : Int, end : Int) -> String {
+  let chars = s.to_array()
+  let actual_end = if end > chars.length() { chars.length() } else { end }
+  let actual_start = if start < 0 { 0 } else { start }
+  if actual_start >= actual_end {
+    return ""
+  }
+  let result = StringBuilder::new()
+  for i = actual_start; i < actual_end; i = i + 1 {
+    result.write_char(chars[i])
+  }
+  result.to_string()
+}
+
+///|
+/// Extract substring from start (inclusive) to end of string.
+pub fn substring_from(s : String, start : Int) -> String {
+  substring(s, start, s.to_array().length())
+}
+
+///|
 /// Return whether a path is absolute.
 pub fn is_absolute_path(path : String) -> Bool {
   @osenv_path.is_absolute(path)

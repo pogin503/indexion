@@ -4,24 +4,11 @@
 ///|
 /// Extract file extension from path (without dot).
 pub fn extract_extension(path : String) -> String {
-  let chars = path.to_array()
-  let mut last_dot = -1
-  let mut last_slash = -1
-  for i = 0; i < chars.length(); i = i + 1 {
-    if chars[i] == '.' {
-      last_dot = i
-    } else if chars[i] == '/' || chars[i] == '\\' {
-      last_slash = i
-    }
-  }
-  if last_dot > last_slash && last_dot < chars.length() - 1 {
-    let result : Array[Char] = []
-    for i = last_dot + 1; i < chars.length(); i = i + 1 {
-      result.push(chars[i])
-    }
-    String::from_array(result)
+  let ext = @config.extension(path)
+  if ext.length() > 0 && ext[0] == '.' {
+    @config.substring_from(ext, 1)
   } else {
-    ""
+    ext
   }
 }
 

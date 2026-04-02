@@ -40,7 +40,7 @@ pub fn parse_issue_form(content : String) -> IssueFormTemplate {
             let arr_trimmed = trim_string(arr_line)
             if arr_trimmed.has_prefix("- ") {
               template.labels.push(
-                trim_string(substring(arr_trimmed, 2, arr_trimmed.length())),
+                trim_string(@config.substring(arr_trimmed, 2, arr_trimmed.length())),
               )
               i = i + 1
             } else if count_indent(arr_line) > 0 && arr_trimmed.length() > 0 {
@@ -234,7 +234,7 @@ fn update_field(
         }
       } else if line.has_prefix("- ") {
         // Option item
-        let opt = trim_string(substring(line, 2, line.length()))
+        let opt = trim_string(@config.substring(line, 2, line.length()))
         updated.options.push(opt)
       }
       FormField::Dropdown(updated)
@@ -380,17 +380,6 @@ fn trim_string(s : String) -> String {
   }
   let result : Array[Char] = []
   for i = start; i < end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
-fn substring(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  let result : Array[Char] = []
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  for i = start; i < actual_end; i = i + 1 {
     result.push(chars[i])
   }
   String::from_array(result)

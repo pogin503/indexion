@@ -50,7 +50,7 @@ pub fn resolve_module(
     let module0_chars = module0.to_array()
     if module0_chars.length() > 0 && module0_chars[0] == '/' {
       // Absolute relative (starts with /)
-      (project_root, substr_from_resolver(module0, 1))
+      (project_root, @config.substring_from(module0, 1))
     } else {
       // Relative to current file
       (dirname(from_file), module0)
@@ -309,7 +309,7 @@ fn execute_resolve_step(
 /// Strips relative prefixes (./, ../) from module string.
 fn strip_relative_prefix(module_str : String) -> String {
   if module_str.has_prefix("./") {
-    return substr_from_resolver(module_str, 2)
+    return @config.substring_from(module_str, 2)
   }
   if module_str.has_prefix("../") {
     // For ../ we keep it as is since it's meaningful
@@ -498,36 +498,6 @@ fn trim_string(s : String) -> String {
 }
 
 ///|
-/// Returns substring from start position to end of string.
-fn substr_from_resolver(s : String, start : Int) -> String {
-  if start >= s.length() {
-    return ""
-  }
-  let chars = s.to_array()
-  let result = StringBuilder::new()
-  for i = start; i < chars.length(); i = i + 1 {
-    result.write_char(chars[i])
-  }
-  result.to_string()
-}
-
-///|
-/// Returns substring from start to end position (exclusive).
-fn substr_resolver(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  let actual_start = if start < 0 { 0 } else { start }
-  if actual_start >= actual_end {
-    return ""
-  }
-  let result = StringBuilder::new()
-  for i = actual_start; i < actual_end; i = i + 1 {
-    result.write_char(chars[i])
-  }
-  result.to_string()
-}
-
-///|
 /// Tries to resolve a module path locally, checking extensions and index files.
 fn try_local(
   spec : @types.ResolverSpec,
@@ -610,7 +580,7 @@ fn get_module_head(module_str : String) -> String {
   if colon_pos >= 0 && colon_pos < end {
     end = colon_pos
   }
-  substr_resolver(module_str, 0, end)
+  @config.substring(module_str, 0, end)
 }
 
 ///|
@@ -809,7 +779,7 @@ pub fn parse_circular_sentinel(path : String) -> (String, String)? {
   if !(is_circular_sentinel(path)) {
     return None
   }
-  let rest = substr_from_resolver(
+  let rest = @config.substring_from(
     path,
     @types.circular_sentinel_prefix.length(),
   )
@@ -817,7 +787,7 @@ pub fn parse_circular_sentinel(path : String) -> (String, String)? {
   if sep_idx < 0 {
     return None
   }
-  let from_file = substr_resolver(rest, 0, sep_idx)
-  let module_path = substr_from_resolver(rest, sep_idx + 2)
+  let from_file = @config.substring(rest, 0, sep_idx)
+  let module_path = @config.substring_from(rest, sep_idx + 2)
   Some((from_file, module_path))
 }

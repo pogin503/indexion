@@ -569,21 +569,6 @@ fn trim_quotes(text : String) -> String {
 }
 
 ///|
-fn substring(text : String, start : Int, end : Int) -> String {
-  let chars = text.to_array()
-  let actual_start = if start < 0 { 0 } else { start }
-  let capped_end = if end > chars.length() { chars.length() } else { end }
-  if actual_start >= capped_end {
-    return ""
-  }
-  let out : Array[Char] = []
-  for i = actual_start; i < capped_end; i = i + 1 {
-    out.push(chars[i])
-  }
-  String::from_array(out)
-}
-
-///|
 fn split_lines(content : String) -> Array[String] {
   let lines : Array[String] = []
   let chars = content.to_array()

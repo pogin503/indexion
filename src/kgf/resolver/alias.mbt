@@ -26,44 +26,14 @@ fn apply_single_alias(
   // Handle simple prefix patterns (e.g., "^@/" -> "src/")
   let pattern_chars = pattern.to_array()
   if pattern_chars.length() > 0 && pattern_chars[0] == '^' {
-    let prefix = substring_from(pattern, 1)
+    let prefix = @config.substring_from(pattern, 1)
     if input.has_prefix(prefix) {
-      return replacement + substring_from(input, prefix.length())
+      return replacement + @config.substring_from(input, prefix.length())
     }
     return input
   }
   // Handle exact match or substring replacement
   replace_first(input, pattern, replacement)
-}
-
-///|
-/// Returns substring from start position to end of string.
-fn substring_from(s : String, start : Int) -> String {
-  if start >= s.length() {
-    return ""
-  }
-  let chars = s.to_array()
-  let result = StringBuilder::new()
-  for i = start; i < chars.length(); i = i + 1 {
-    result.write_char(chars[i])
-  }
-  result.to_string()
-}
-
-///|
-/// Returns substring from start to end position (exclusive).
-fn substring_range(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  let actual_start = if start < 0 { 0 } else { start }
-  if actual_start >= actual_end {
-    return ""
-  }
-  let result = StringBuilder::new()
-  for i = actual_start; i < actual_end; i = i + 1 {
-    result.write_char(chars[i])
-  }
-  result.to_string()
 }
 
 ///|
@@ -76,8 +46,8 @@ fn replace_first(s : String, pattern : String, replacement : String) -> String {
   if pos < 0 {
     return s
   }
-  let before = substring_range(s, 0, pos)
-  let after = substring_from(s, pos + pattern.length())
+  let before = @config.substring(s, 0, pos)
+  let after = @config.substring_from(s, pos + pattern.length())
   before + replacement + after
 }
 

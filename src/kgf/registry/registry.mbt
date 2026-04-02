@@ -65,7 +65,7 @@ pub fn KGFRegistry::register_spec(
 
   // Check if this is a doc spec (e.g., typescript-doc)
   if lang.has_suffix("-doc") {
-    let base_lang = substr(lang, 0, lang.length() - 4)
+    let base_lang = @config.substring(lang, 0, lang.length() - 4)
     self.lang_to_doc_spec.set(base_lang, lang)
   }
 
@@ -182,7 +182,7 @@ pub fn KGFRegistry::detect_from_path(
     }
   }
   // Then try extension-based patterns
-  let ext = extract_extension(path)
+  let ext = @config.extension(path)
   if ext.length() == 0 {
     return None
   }
@@ -308,43 +308,6 @@ fn add_project_marker(markers : Array[String], marker : String) -> Unit {
     return
   }
   markers.push(marker)
-}
-
-///|
-/// Extract file extension from path (with dot).
-fn extract_extension(path : String) -> String {
-  let chars = path.to_array()
-  let mut last_dot = -1
-  let mut last_slash = -1
-  for i = 0; i < chars.length(); i = i + 1 {
-    if chars[i] == '.' {
-      last_dot = i
-    } else if chars[i] == '/' || chars[i] == '\\' {
-      last_slash = i
-    }
-  }
-  if last_dot > last_slash && last_dot < chars.length() - 1 {
-    let result : Array[Char] = []
-    result.push('.')
-    for i = last_dot + 1; i < chars.length(); i = i + 1 {
-      result.push(chars[i])
-    }
-    String::from_array(result)
-  } else {
-    ""
-  }
-}
-
-///|
-/// Substring helper.
-fn substr(s : String, start : Int, end : Int) -> String {
-  let chars = s.to_array()
-  let result : Array[Char] = []
-  let actual_end = if end > chars.length() { chars.length() } else { end }
-  for i = start; i < actual_end; i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
 }
 
 ///|
