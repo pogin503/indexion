@@ -16,7 +16,7 @@ pub fn is_whitespace_only(s : String) -> Bool {
 ///|
 /// Find the nearest sentence boundary to a target position.
 pub fn find_nearest_sentence_end(
-  sentences : Array[@sentence.Sentence],
+  sentences : Array[@types.Sentence],
   target_pos : Int,
 ) -> Int {
   let mut nearest_end = 0
@@ -43,7 +43,7 @@ pub fn find_nearest_sentence_end(
 pub fn apply_size_constraints(
   text_length : Int,
   candidate_positions : Array[Int],
-  sentences : Array[@sentence.Sentence],
+  sentences : Array[@types.Sentence],
   min_size : Int,
   max_size : Int,
   target_size : Int,
@@ -161,7 +161,7 @@ pub fn boundaries_to_segment_points(
 /// Handle case when there are too few sentences for window analysis.
 pub fn handle_few_sentences(
   text : String,
-  sentences : Array[@sentence.Sentence],
+  sentences : Array[@types.Sentence],
   target_size : Int,
   min_size : Int,
   max_size : Int,
@@ -222,7 +222,7 @@ pub fn handle_few_sentences(
 /// Combine multiple sentences into a single text string.
 /// Takes sentences from start index with count sentences.
 pub fn combine_sentences(
-  sentences : Array[@sentence.Sentence],
+  sentences : Array[@types.Sentence],
   start : Int,
   count : Int,
 ) -> String {
@@ -241,7 +241,7 @@ pub fn combine_sentences(
 ///|
 /// Get the end position of the last sentence in a window.
 pub fn get_window_end(
-  sentences : Array[@sentence.Sentence],
+  sentences : Array[@types.Sentence],
   start : Int,
   count : Int,
 ) -> Int {

@@ -1,1 +1,4 @@
-
+import {
+  "trkbt10/indexion/src/segmentation/types" @types,
+  "trkbt10/indexion/src/segmentation/utils" @utils,
+}

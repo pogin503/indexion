@@ -1,4 +1,3 @@
 import {
-  "trkbt10/indexion/src/segmentation/sentence" @sentence,
   "trkbt10/indexion/src/segmentation/types" @types,
 }

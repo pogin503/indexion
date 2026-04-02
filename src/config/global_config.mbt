@@ -68,49 +68,22 @@ pub fn parse_global_toml_config(content : String) -> GlobalConfig {
     }
     let key = trim_string(substring(line, 0, eq_idx))
     let value = trim_string(substring(line, eq_idx + 1, line.length()))
-    match section {
-      "global" =>
-        if key == "kgfs_dir" {
-          let parsed = trim_quotes(value)
-          if parsed.length() > 0 {
-            config = { ..config, kgfs_dir: Some(expand_tilde(parsed)) }
-          }
+    if section == "global" {
+      if key == "kgfs_dir" {
+        let parsed = trim_quotes(value)
+        if parsed.length() > 0 {
+          config = { ..config, kgfs_dir: Some(expand_tilde(parsed)) }
         }
-      "reconcile" =>
-        config = {
-          ..config,
-          reconcile: parse_reconcile_section_key(config.reconcile, key, value),
-        }
-      "reconcile.mapping" =>
-        config = {
-          ..config,
-          reconcile: parse_reconcile_mapping_key(config.reconcile, key, value),
-        }
-      "reconcile.output" =>
-        config = {
-          ..config,
-          reconcile: parse_reconcile_output_key(config.reconcile, key, value),
-        }
-      "reconcile.time" =>
-        config = {
-          ..config,
-          reconcile: parse_reconcile_time_key(config.reconcile, key, value),
-        }
-      "reconcile.logical_review" =>
-        config = {
-          ..config,
-          reconcile: parse_reconcile_logical_review_key(
-            config.reconcile,
-            key,
-            value,
-          ),
-        }
-      "digest" =>
-        config = {
-          ..config,
-          digest: parse_digest_section_key(config.digest, key, value),
-        }
-      _ => ()
+      }
+    } else {
+      let (reconcile, digest) = parse_shared_toml_sections(
+        config.reconcile,
+        config.digest,
+        section,
+        key,
+        value,
+      )
+      config = { ..config, reconcile, digest }
     }
   }
   config

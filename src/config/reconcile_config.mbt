@@ -117,6 +117,35 @@ pub fn resolve_reconcile_document_scope(
 }
 
 ///|
+/// Dispatch a single TOML key-value pair to the shared reconcile/digest section
+/// handlers. Both project and global TOML parsers carry these identical sections,
+/// so this helper centralises the dispatch to avoid duplication.
+/// Returns the updated `(ReconcileFileConfig, DigestFileConfig)` pair.
+fn parse_shared_toml_sections(
+  reconcile : ReconcileFileConfig,
+  digest : DigestFileConfig,
+  section : String,
+  key : String,
+  value : String,
+) -> (ReconcileFileConfig, DigestFileConfig) {
+  match section {
+    "reconcile" =>
+      (parse_reconcile_section_key(reconcile, key, value), digest)
+    "reconcile.mapping" =>
+      (parse_reconcile_mapping_key(reconcile, key, value), digest)
+    "reconcile.output" =>
+      (parse_reconcile_output_key(reconcile, key, value), digest)
+    "reconcile.time" =>
+      (parse_reconcile_time_key(reconcile, key, value), digest)
+    "reconcile.logical_review" =>
+      (parse_reconcile_logical_review_key(reconcile, key, value), digest)
+    "digest" =>
+      (reconcile, parse_digest_section_key(digest, key, value))
+    _ => (reconcile, digest)
+  }
+}
+
+///|
 /// Load reconcile file configuration from a TOML or JSON file.
 pub fn load_reconcile_file_config(path : String) -> ReconcileFileConfig {
   if path.length() == 0 {

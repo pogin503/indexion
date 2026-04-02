@@ -42,59 +42,6 @@ priv struct QuoteStackEntry {
 }
 
 ///|
-/// Check if a character is a sentence-ending punctuation mark.
-fn is_sentence_end(c : Char) -> Bool {
-  // English sentence endings
-  c == '.' ||
-  c == '!' ||
-  c == '?' ||
-  // Japanese sentence endings
-  c == '。' ||
-  c == '！' ||
-  c == '？' ||
-  c == '．'
-}
-
-///|
-/// Check if a character is an extended sentence terminator (including closing brackets).
-fn is_extended_sentence_end(c : Char) -> Bool {
-  is_sentence_end(c) ||
-  // Japanese closing brackets
-  c == '」' ||
-  c == '』' ||
-  c == '）' ||
-  c == '】' ||
-  c == '〉' ||
-  c == '》' ||
-  // English closing brackets
-  c == '"' ||
-  c == '\'' ||
-  c == ')' ||
-  c == ']'
-}
-
-///|
-/// Check if a character is trailing punctuation that can follow a terminator.
-fn is_trailing_punctuation(c : Char) -> Bool {
-  is_sentence_end(c) ||
-  // Japanese closing brackets
-  c == '」' ||
-  c == '』' ||
-  c == '）' ||
-  c == '】' ||
-  c == '〉' ||
-  c == '》' ||
-  // English closing brackets
-  c == '"' ||
-  c == '\'' ||
-  c == ')' ||
-  c == ']' ||
-  // Whitespace
-  c == '\n' ||
-  c == ' '
-}
-
-///|
 /// Check if a character is a newline.
 fn is_newline(c : Char) -> Bool {
   c == '\n' || c == '\r'
@@ -226,9 +173,9 @@ pub fn split_sentences_with_options(
 
     // Check for sentence ending
     let is_end = if options.include_closing_brackets {
-      is_extended_sentence_end(c)
+      @utils.is_extended_terminator(c)
     } else {
-      is_sentence_end(c)
+      @utils.is_sentence_terminator(c)
     }
     let is_nl = is_newline(c)
 
@@ -237,7 +184,7 @@ pub fn split_sentences_with_options(
       let mut end_pos = if is_end { i + 1 } else { i }
 
       // Consume all trailing punctuation
-      while end_pos < len && is_trailing_punctuation(chars[end_pos]) {
+      while end_pos < len && @utils.is_trailing_punctuation(chars[end_pos]) {
         end_pos = end_pos + 1
       }
 
