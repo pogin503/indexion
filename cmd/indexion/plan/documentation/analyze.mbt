@@ -98,11 +98,32 @@ pub fn analyze_documentation(
   let packages : Array[PackageAnalysis] = []
   let all_items : Array[PubItem] = []
   let normalized_dir = @common.normalize_path(dir)
-  let filter = @pipeline.build_filter_from_root(normalized_dir)
+  let base_filter = @pipeline.build_filter_from_root(normalized_dir)
   let registry = @kgf_features.load_registry(
     specs_dir~,
     target_dir=normalized_dir,
   )
+  // Apply KGF ignore patterns (e.g. *_test.mbt, *_wbtest.mbt)
+  let filter = match registry {
+    Some(reg) => {
+      let kgf_ignore = reg.collect_ignore_patterns()
+      // Group patterns by language
+      let by_lang : Map[String, Array[String]] = {}
+      for pair in kgf_ignore {
+        let (pattern, lang) = pair
+        match by_lang.get(lang) {
+          Some(arr) => arr.push(pattern)
+          None => by_lang.set(lang, [pattern])
+        }
+      }
+      let mut f = base_filter
+      for entry in by_lang {
+        f = f.with_kgf_ignore(entry.1, entry.0)
+      }
+      f
+    }
+    None => base_filter
+  }
   collect_packages(normalized_dir, packages, "", filter, registry)
   // Aggregate stats
   let mut total_pub = 0
@@ -252,7 +273,7 @@ fn collect_packages(
 
 ///|
 /// Analyze source file for public declarations using KGF tokenization.
-/// Associates doc comments with declarations via KGF doc token extraction.
+/// Associates doc comments with declarations via single-pass KGF token extraction.
 fn analyze_source_file(
   path : String,
   rel_path : String,
@@ -261,17 +282,13 @@ fn analyze_source_file(
 ) -> Unit {
   try {
     let content = @fs.read_file_to_string(path)
-    // Extract public declarations via KGF (language-agnostic)
-    let declarations = @kgf_features.extract_pub_declarations(
+    // Extract both declarations and doc map in a single tokenization pass
+    let (declarations, doc_map) = @kgf_features.extract_pub_declarations_and_doc_map(
       content, path, registry,
     )
     if declarations.length() == 0 {
       return
     }
-    // Extract doc comments via KGF tokens (language-agnostic)
-    let doc_map = @kgf_features.extract_doc_map_from_source(
-      content, path, registry,
-    )
     // Associate declarations with their doc comments
     for decl in declarations {
       let doc_lines = match doc_map.get(decl.line) {
@@ -319,14 +336,12 @@ fn make_pub_item(
 
 ///|
 fn sort_pub_items(items : Array[PubItem]) -> Unit {
-  for i = 0; i < items.length(); i = i + 1 {
-    for j = i + 1; j < items.length(); j = j + 1 {
-      if items[j].file < items[i].file ||
-        (items[j].file == items[i].file && items[j].line < items[i].line) {
-        let tmp = items[i]
-        items[i] = items[j]
-        items[j] = tmp
-      }
+  items.sort_by(fn(a, b) {
+    let cmp = a.file.compare(b.file)
+    if cmp != 0 {
+      cmp
+    } else {
+      a.line.compare(b.line)
     }
-  }
+  })
 }

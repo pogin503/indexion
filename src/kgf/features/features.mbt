@@ -232,29 +232,12 @@ fn declaration_kind(kind : String) -> String? {
 }
 
 ///|
-/// Extract public declarations from source code using KGF tokenization.
+/// Extract public declarations from pre-tokenized tokens.
 /// Language-agnostic: uses KGF token kinds to detect visibility + declaration patterns.
-/// Returns empty array if registry or spec is unavailable.
-pub fn extract_pub_declarations(
-  content : String,
-  path : String,
-  registry : @kgf_registry.KGFRegistry?,
+pub fn extract_pub_declarations_from_tokens(
+  tokens : Array[@kgf_types.Tok],
 ) -> Array[PubDeclaration] {
   let result : Array[PubDeclaration] = []
-  let reg = match registry {
-    Some(r) => r
-    None => return result
-  }
-  let lang = match reg.detect_from_path(path) {
-    Some(l) => l
-    None => return result
-  }
-  let spec = match reg.get_spec(lang) {
-    Some(s) => s
-    None => return result
-  }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
   // Build token -> line number mapping
   let mut line = 1
   let token_lines : Array[Int] = Array::make(tokens.length(), 1)
@@ -271,13 +254,14 @@ pub fn extract_pub_declarations(
     if is_visibility_keyword(tok.get_kind()) {
       // Look ahead for a declaration keyword
       let mut j = i + 1
-      // Skip whitespace/newlines between visibility and declaration
+      // Skip whitespace, newlines, and visibility modifier args like (all), (readonly)
       while j < tokens.length() {
         let next_kind = tokens[j].get_kind()
         if next_kind == "NL" ||
           next_kind == "WS" ||
           next_kind == "LPAREN" ||
-          next_kind == "RPAREN" {
+          next_kind == "RPAREN" ||
+          (is_identifier_kind(next_kind) && is_visibility_modifier_arg(tokens[j].get_text())) {
           j += 1
         } else {
           break
@@ -312,6 +296,38 @@ pub fn extract_pub_declarations(
     i += 1
   }
   result
+}
+
+///|
+/// Check if an identifier is a visibility modifier argument (e.g. "all", "readonly", "open").
+fn is_visibility_modifier_arg(text : String) -> Bool {
+  text == "all" || text == "readonly" || text == "open" || text == "priv"
+}
+
+///|
+/// Extract public declarations from source code using KGF tokenization.
+/// Language-agnostic: uses KGF token kinds to detect visibility + declaration patterns.
+/// Returns empty array if registry or spec is unavailable.
+pub fn extract_pub_declarations(
+  content : String,
+  path : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[PubDeclaration] {
+  let reg = match registry {
+    Some(r) => r
+    None => return []
+  }
+  let lang = match reg.detect_from_path(path) {
+    Some(l) => l
+    None => return []
+  }
+  let spec = match reg.get_spec(lang) {
+    Some(s) => s
+    None => return []
+  }
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(content)
+  extract_pub_declarations_from_tokens(tokens)
 }
 
 ///|
@@ -415,4 +431,31 @@ pub fn extract_doc_map_from_source(
   let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
   let tokens = lexer.tokenize(content)
   extract_doc_map(tokens)
+}
+
+///|
+/// Extract both public declarations and doc map from source in a single tokenization pass.
+/// Avoids the cost of tokenizing the same file twice.
+pub fn extract_pub_declarations_and_doc_map(
+  content : String,
+  path : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> (Array[PubDeclaration], Map[Int, String]) {
+  let reg = match registry {
+    Some(r) => r
+    None => return ([], {})
+  }
+  let lang = match reg.detect_from_path(path) {
+    Some(l) => l
+    None => return ([], {})
+  }
+  let spec = match reg.get_spec(lang) {
+    Some(s) => s
+    None => return ([], {})
+  }
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(content)
+  let declarations = extract_pub_declarations_from_tokens(tokens)
+  let doc_map = extract_doc_map(tokens)
+  (declarations, doc_map)
 }
