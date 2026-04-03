@@ -17,8 +17,83 @@ pub enum TokenMatcher {
 }
 
 ///|
+/// Build a reverse alias table from KGF spec: literal keyword → token kind.
+/// E.g. "pub" → "KW_pub", "fn" → "KW_fn".
+/// Also maps punctuation/operators to their token kinds.
+pub fn build_alias_table(
+  registry : @kgf_registry.KGFRegistry?,
+) -> Map[String, String] {
+  let aliases : Map[String, String] = {}
+  let reg = match registry {
+    Some(r) => r
+    None => return aliases
+  }
+  // Iterate all specs to collect token aliases
+  for spec_entry in reg.specs {
+    let spec = spec_entry.1
+    let tokens = spec.get_tokens()
+    for tok_def in tokens {
+      let name = tok_def.get_name()
+      let pattern = tok_def.get_pattern()
+      if tok_def.is_skip() {
+        continue
+      }
+      // Keywords: KW_pub with pattern "pub\b" → alias "pub" → "KW_pub"
+      if name.has_prefix("KW_") && pattern.has_suffix("\\b") {
+        let literal = @config.substring(
+          pattern, 0, pattern.to_array().length() - 2,
+        )
+        if literal.length() > 0 {
+          aliases.set(literal, name)
+        }
+      }
+      // Simple punctuation: name like LPAREN with single-char pattern
+      // Map common symbols
+      match name {
+        "LPAREN" => aliases.set("(", name)
+        "RPAREN" => aliases.set(")", name)
+        "LBRACE" => aliases.set("{", name)
+        "RBRACE" => aliases.set("}", name)
+        "LBRACKET" => aliases.set("[", name)
+        "RBRACKET" => aliases.set("]", name)
+        "COMMA" => aliases.set(",", name)
+        "COLON" => aliases.set(":", name)
+        "DOT" => aliases.set(".", name)
+        "EQ" => aliases.set("=", name)
+        "ARROW" => aliases.set("->", name)
+        "FATARROW" => aliases.set("=>", name)
+        "DCOLON" => aliases.set("::", name)
+        _ => ()
+      }
+    }
+  }
+  aliases
+}
+
+///|
+/// Resolve a single pattern part using the alias table.
+/// If the part matches an alias (e.g. "pub" → "KW_pub"), return the token kind.
+/// Otherwise return the part unchanged.
+fn resolve_alias(part : String, aliases : Map[String, String]) -> String {
+  match aliases.get(part) {
+    Some(kind) => kind
+    None => part
+  }
+}
+
+///|
 /// Parse a space-separated pattern string into token matchers.
+/// Supports natural language aliases: "pub fn *" is equivalent to "KW_pub KW_fn *".
 pub fn parse_pattern(pattern : String) -> Array[TokenMatcher] {
+  parse_pattern_with_aliases(pattern, {})
+}
+
+///|
+/// Parse pattern with alias resolution from KGF spec.
+pub fn parse_pattern_with_aliases(
+  pattern : String,
+  aliases : Map[String, String],
+) -> Array[TokenMatcher] {
   let matchers : Array[TokenMatcher] = []
   let parts = split_pattern(pattern)
   for part in parts {
@@ -27,16 +102,19 @@ pub fn parse_pattern(pattern : String) -> Array[TokenMatcher] {
     } else if part == "..." {
       matchers.push(Ellipsis)
     } else if part.length() > 1 && part[0] == '!' {
-      matchers.push(Not(@config.substring_from(part, 1)))
+      let negated = resolve_alias(@config.substring_from(part, 1), aliases)
+      matchers.push(Not(negated))
     } else {
       // Check for kind:text pattern
       let colon = find_char(part, ':')
       if colon >= 0 {
         let kind = @config.substring(part, 0, colon)
         let text = @config.substring_from(part, colon + 1)
-        matchers.push(KindText(kind, text))
+        let resolved_kind = resolve_alias(kind, aliases)
+        matchers.push(KindText(resolved_kind, text))
       } else {
-        matchers.push(Kind(part))
+        let resolved = resolve_alias(part, aliases)
+        matchers.push(Kind(resolved))
       }
     }
   }

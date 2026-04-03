@@ -202,7 +202,13 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     println("Error: Pattern required (or use --undocumented / --semantic=QUERY)")
     return
   }
-  let matchers = parse_pattern(config.pattern)
+  // Build alias table from KGF specs for natural pattern syntax
+  let registry = @kgf_features.load_registry(
+    specs_dir=config.specs_dir,
+    target_dirs=paths,
+  )
+  let aliases = build_alias_table(registry)
+  let matchers = parse_pattern_with_aliases(config.pattern, aliases)
   if matchers.length() == 0 {
     println("Error: Empty pattern")
     return
