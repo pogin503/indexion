@@ -91,40 +91,74 @@ fn parse_moon_mod_json(content : String) -> ProjectInfo {
 
 ///|
 /// Analyze documentation coverage in directory.
+/// Uses @pipeline.discover_files (SoT) for file collection, then groups
+/// files by directory — the same approach as doc readme's
+/// discover_packages_from_files.
 pub fn analyze_documentation(
   dir : String,
   specs_dir? : String = "kgfs",
 ) -> DocAnalysis {
-  let packages : Array[PackageAnalysis] = []
   let all_items : Array[PubItem] = []
   let normalized_dir = @common.normalize_path(dir)
-  let base_filter = @pipeline.build_filter_from_root(normalized_dir)
   let registry = @kgf_features.load_registry(
     specs_dir~,
     target_dir=normalized_dir,
   )
-  // Apply KGF ignore patterns (e.g. *_test.mbt, *_wbtest.mbt)
-  let filter = match registry {
-    Some(reg) => {
-      let kgf_ignore = reg.collect_ignore_patterns()
-      // Group patterns by language
-      let by_lang : Map[String, Array[String]] = {}
-      for pair in kgf_ignore {
-        let (pattern, lang) = pair
-        match by_lang.get(lang) {
-          Some(arr) => arr.push(pattern)
-          None => by_lang.set(lang, [pattern])
-        }
-      }
-      let mut f = base_filter
-      for entry in by_lang {
-        f = f.with_kgf_ignore(entry.1, entry.0)
-      }
-      f
-    }
-    None => base_filter
+  // Collect KGF ignore patterns for discover_files
+  let kgf_ignore : Array[(String, String)] = match registry {
+    Some(reg) => reg.collect_ignore_patterns()
+    None => []
   }
-  collect_packages(normalized_dir, packages, "", filter, registry)
+  // Stage 1: Discover files using pipeline SoT
+  let discover_opts = @pipeline.DiscoverOptions::new(
+    recursive=true,
+    kgf_ignore~,
+  )
+  let file_paths = @pipeline.discover_files([normalized_dir], discover_opts)
+  // Stage 2: Filter to KGF-supported files and group by directory
+  let by_dir : Map[String, Array[String]] = {}
+  for path in file_paths {
+    let supported = match registry {
+      Some(reg) => reg.is_file_supported(path)
+      None => false
+    }
+    if supported {
+      let dir_path = @common.parent_dir(path)
+      match by_dir.get(dir_path) {
+        Some(arr) => arr.push(path)
+        None => by_dir.set(dir_path, [path])
+      }
+    }
+  }
+  // Stage 3: Analyze each directory group as a package
+  let packages : Array[PackageAnalysis] = []
+  for entry in by_dir {
+    let pkg_dir = entry.0
+    let files = entry.1
+    let rel_path = @common.make_relative_path(pkg_dir, normalized_dir)
+    let pkg_path = if rel_path.length() > 0 { rel_path } else { "." }
+    // Check README presence
+    let has_readme = dir_has_readme(pkg_dir)
+    // Analyze source files
+    let pub_items : Array[PubItem] = []
+    for file_path in files {
+      let file_rel = @common.make_relative_path(file_path, normalized_dir)
+      analyze_source_file(file_path, file_rel, pub_items, registry)
+    }
+    let documented = pub_items
+      .iter()
+      .filter(fn(i) { i.has_doc })
+      .fold(init=0, fn(acc, _) { acc + 1 })
+    let file_names = files.map(fn(f) { @config.basename(f) })
+    packages.push({
+      path: pkg_path,
+      files: file_names,
+      pub_items,
+      total_pub: pub_items.length(),
+      documented,
+      has_readme,
+    })
+  }
   // Aggregate stats
   let mut total_pub = 0
   let mut total_doc = 0
@@ -160,114 +194,18 @@ pub fn analyze_documentation(
 }
 
 ///|
-/// Check if a filename matches any of the given extensions.
-fn has_registered_extension(
-  filename : String,
-  extensions : Array[String],
-) -> Bool {
-  for ext in extensions {
-    if filename.has_suffix(ext) {
-      return true
-    }
-  }
-  false
-}
-
-///|
-/// Check if a filename matches any of the given package marker names.
-fn is_package_marker(filename : String, markers : Array[String]) -> Bool {
-  for marker in markers {
-    if filename == marker {
-      return true
-    }
-  }
-  false
-}
-
-///|
-fn collect_packages(
-  dir : String,
-  packages : Array[PackageAnalysis],
-  rel_path : String,
-  filter : @filter.FilterConfig,
-  registry : @kgf_registry.KGFRegistry?,
-) -> Unit {
+/// Check if a directory contains a README file.
+fn dir_has_readme(dir : String) -> Bool {
   try {
-    if !@fs.is_dir(dir) {
-      return
-    }
-    // Get extensions and package markers from KGF registry
-    let extensions = match registry {
-      Some(reg) => reg.get_extensions()
-      None => []
-    }
-    let pkg_markers = match registry {
-      Some(reg) => reg.get_package_markers()
-      None => []
-    }
-    // Load nested .gitignore/.indexionignore if present
-    let local_filter = filter
-      .with_gitignore_from_dir(dir, @vcs_git.GITIGNORE_FILENAME)
-      .with_indexionignore_from_dir(dir, @config.INDEXIONIGNORE_FILENAME)
     let entries = @fs.read_dir(dir)
-    let source_files : Array[String] = []
-    let mut has_package_marker = false
-    let mut has_readme = false
     for entry in entries {
-      let path = dir + "/" + entry
-      if is_package_marker(entry, pkg_markers) {
-        has_package_marker = true
-      } else if entry.has_prefix("README") {
-        has_readme = true
-      } else if has_registered_extension(entry, extensions) {
-        let file_rel = if rel_path.length() > 0 {
-          rel_path + "/" + entry
-        } else {
-          entry
-        }
-        match local_filter.should_include(file_rel, false) {
-          @filter.FilterResult::Include => source_files.push(entry)
-          @filter.FilterResult::Exclude(_) => ()
-        }
-      } else if @fs.is_dir(path) {
-        if !local_filter.should_skip_dir(entry) {
-          let sub_rel = if rel_path.length() > 0 {
-            rel_path + "/" + entry
-          } else {
-            entry
-          }
-          collect_packages(path, packages, sub_rel, local_filter, registry)
-        }
+      if entry.has_prefix("README") {
+        return true
       }
     }
-    // Analyze this package if it has source files and a package marker
-    if source_files.length() > 0 && has_package_marker {
-      let pkg_path = if rel_path.length() > 0 { rel_path } else { "." }
-      let pub_items : Array[PubItem] = []
-      for file in source_files {
-        let file_path = dir + "/" + file
-        let file_rel = if rel_path.length() > 0 {
-          rel_path + "/" + file
-        } else {
-          file
-        }
-        analyze_source_file(file_path, file_rel, pub_items, registry)
-      }
-      let documented = pub_items
-        .iter()
-        .filter(fn(i) { i.has_doc })
-        .fold(init=0, fn(acc, _) { acc + 1 })
-      packages.push({
-        path: pkg_path,
-        files: source_files,
-        pub_items,
-        total_pub: pub_items.length(),
-        documented,
-        has_readme,
-      })
-    }
+    false
   } catch {
-    _ => ()
+    _ => false
   }
 }
 
