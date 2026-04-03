@@ -26,7 +26,7 @@ graph TD
     end
 
     subgraph "api-client"
-        client["@indexion/api-client<br/>Typed HTTP functions"]
+        client["indexion/api-client<br/>Typed HTTP functions"]
     end
 
     ext --> config

@@ -12,8 +12,8 @@ client-side syntax highlighting without requiring a server round-trip.
 graph LR
     spec_text["KGF spec string"] --> tokenize
     source["Source code string"] --> tokenize
-    tokenize["tokenize()"] --> parser["@parser.parse_kgf"]
-    parser --> lexer["@lexer.Lexer::new"]
+    tokenize["tokenize()"] --> parser["parser.parse_kgf"]
+    parser --> lexer["lexer.Lexer::new"]
     lexer --> tokens["Token array"]
     tokens --> json["JSON string output"]
 ```

@@ -11,7 +11,7 @@ graph TD
     host_native["host_native.mbt"] -->|native| git_remote["Git Remote URL Parsing"]
     host_stub["host_stub.mbt"] -->|wasm/js| host_stubs["Stub Returns"]
     gitignore["gitignore.mbt"] -->|sync| load_gitignore["Load .gitignore"]
-    load_gitignore -->|uses| ignorefile["@ignorefile"]
+    load_gitignore -->|uses| ignorefile["ignorefile"]
 ```
 
 ## Key Types

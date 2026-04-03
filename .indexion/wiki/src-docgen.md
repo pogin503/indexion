@@ -9,7 +9,7 @@ graph TD
     build["build/pipeline"] -->|orchestrates| analyze
     build -->|orchestrates| render
     analyze["analyze/detect"] -->|FileInfo, DocSymbol| build
-    analyze -->|uses| registry["@kgf/registry"]
+    analyze -->|uses| registry["kgf/registry"]
     query["query/*"] -->|extracts from| CodeGraph
     query -->|deps, calls, hierarchy, refs| render
     query -->|deps, calls| diagram
@@ -18,7 +18,7 @@ graph TD
     render -->|uses| query
     render -->|uses| diagram
     wiki["wiki/*"] -->|reads| WikiPages
-    wiki -->|search index| vcdb["@vcdb"]
+    wiki -->|search index| vcdb["vcdb"]
 ```
 
 ## Subpackages

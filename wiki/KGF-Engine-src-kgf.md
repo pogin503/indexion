@@ -20,7 +20,7 @@ graph TD
 
     lexer_pkg -->|tokens| peg_pkg
     peg_pkg -->|parse tree| semantics_pkg
-    semantics_pkg -->|CodeGraph| graph["@graph.CodeGraph"]
+    semantics_pkg -->|CodeGraph| graph["graph.CodeGraph"]
     resolver_pkg -->|file paths| semantics_pkg
 
     types_pkg --> registry_pkg["registry: KGFRegistry"]

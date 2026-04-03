@@ -8,8 +8,8 @@ The `ignorefile` package parses `.gitignore`-style ignore files into structured 
 graph TD
     parse["parse(content, source)"] --> IgnorePattern
     load_from_dir["load_from_dir(dir, filename)"] -->|reads file| parse
-    IgnorePattern -->|consumed by| filter["@filter"]
-    IgnorePattern -->|consumed by| vcs_git["@vcs/git"]
+    IgnorePattern -->|consumed by| filter["filter"]
+    IgnorePattern -->|consumed by| vcs_git["vcs/git"]
 ```
 
 The package is intentionally minimal: it handles only parsing. Pattern matching against file paths is the responsibility of the `filter` package.

@@ -10,7 +10,7 @@ import from this package, ensuring no consumer constructs endpoint URLs directly
 
 ```mermaid
 graph TD
-    subgraph "@indexion/api-client"
+    subgraph "indexion/api-client"
         index["index.ts<br/>Barrel exports"]
         types["types.ts<br/>Response type definitions"]
         client["client.ts<br/>HttpClient factory"]

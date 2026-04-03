@@ -10,7 +10,7 @@ graph TD
     PathScope -->|contains| excludes["excludes: Array[String]"]
     PathScope -->|matches| PathSubject
     PathSubject -->|wraps| candidate_paths["candidate_paths: Array[String]"]
-    PathScope -->|uses| glob["@glob.glob_match"]
+    PathScope -->|uses| glob["glob.glob_match"]
 ```
 
 ## Key Types
