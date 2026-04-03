@@ -27,6 +27,9 @@ jobs:
       - name: Moon update
         run: moon update
 
+      - name: Sync version from moon.mod.json
+        run: ./scripts/sync-version.sh
+
       - name: Check
         run: moon check --target native
 
@@ -123,6 +126,18 @@ jobs:
 
       - name: Moon update
         run: moon update
+
+      - name: Sync version from moon.mod.json
+        if: runner.os != 'Windows'
+        run: ./scripts/sync-version.sh
+
+      - name: Sync version from moon.mod.json (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = (Get-Content moon.mod.json | ConvertFrom-Json).version
+          $file = "src/update/version.mbt"
+          (Get-Content $file) -replace 'pub let current_version : String = ".*"', "pub let current_version : String = `"$version`"" | Set-Content $file
 
       - name: Build
         run: moon build --target native --release

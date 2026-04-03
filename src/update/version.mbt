@@ -1,7 +1,7 @@
 ///|
 /// Current version of indexion.
-/// NOTE: SoT is moon.mod.json "version" field.
-/// This constant must be kept in sync manually (MoonBit has no compile-time embedding).
+/// SoT is moon.mod.json "version" field.
+/// Auto-synced by scripts/sync-version.sh (runs in CI and before local builds).
 pub let current_version : String = "0.5.0"
 
 ///|
