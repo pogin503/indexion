@@ -2,24 +2,35 @@
 /// Search engine — file discovery, tokenization, and output formatting.
 
 ///|
+/// Load KGF registry and collect files, or print error and return None.
+fn load_registry_and_files(
+  paths : Array[String],
+  config : GrepConfig,
+) -> (@kgf_registry.KGFRegistry?, Array[(String, String)])? {
+  let registry = @kgf_features.load_registry(
+    specs_dir=config.specs_dir,
+    target_dirs=paths,
+  )
+  match registry {
+    Some(reg) => Some((registry, collect_search_files(paths, config, reg)))
+    None => {
+      println("Error: No KGF specs found")
+      None
+    }
+  }
+}
+
+///|
 /// Run token pattern search across files.
 pub fn run_pattern_search(
   paths : Array[String],
   matchers : Array[TokenMatcher],
   config : GrepConfig,
 ) -> Unit {
-  let registry = @kgf_features.load_registry(
-    specs_dir=config.specs_dir,
-    target_dirs=paths,
-  )
-  let reg = match registry {
+  let (registry, files) = match load_registry_and_files(paths, config) {
     Some(r) => r
-    None => {
-      println("Error: No KGF specs found")
-      return
-    }
+    None => return
   }
-  let files = collect_search_files(paths, config, reg)
   if files.length() == 0 {
     return
   }
@@ -76,18 +87,10 @@ pub fn run_semantic_search(
     }
     _ => ()
   }
-  let registry = @kgf_features.load_registry(
-    specs_dir=config.specs_dir,
-    target_dirs=paths,
-  )
-  let reg = match registry {
+  let (registry, files) = match load_registry_and_files(paths, config) {
     Some(r) => r
-    None => {
-      println("Error: No KGF specs found")
-      return
-    }
+    None => return
   }
-  let files = collect_search_files(paths, config, reg)
   let mut total_matches = 0
   let mut total_files = 0
   for file in files {

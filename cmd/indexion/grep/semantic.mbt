@@ -108,7 +108,7 @@ fn query_by_length(
 ) -> Array[SemanticMatch] {
   let functions = @kgf_features.extract_functions(tokens, path)
   let token_lines = build_token_lines(tokens)
-  let total_lines = count_lines(content)
+  let total_lines = @common.count_lines(content)
   let results : Array[SemanticMatch] = []
   for func in functions {
     let start_line = if func.get_start() < token_lines.length() {
@@ -299,13 +299,3 @@ fn contains_substring(haystack : String, needle : String) -> Bool {
   false
 }
 
-///|
-fn count_lines(content : String) -> Int {
-  let mut count = 1
-  for c in content {
-    if c == '\n' {
-      count += 1
-    }
-  }
-  count
-}

@@ -19,18 +19,10 @@ pub fn run_similar_search(
   top_k : Int,
   config : GrepConfig,
 ) -> Unit {
-  let registry = @kgf_features.load_registry(
-    specs_dir=config.specs_dir,
-    target_dirs=paths,
-  )
-  let reg = match registry {
+  let (registry, files) = match load_registry_and_files(paths, config) {
     Some(r) => r
-    None => {
-      println("Error: No KGF specs found")
-      return
-    }
+    None => return
   }
-  let files = collect_search_files(paths, config, reg)
   if files.length() == 0 {
     println("No files found")
     return
