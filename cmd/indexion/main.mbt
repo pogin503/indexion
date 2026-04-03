@@ -35,6 +35,8 @@
 /// | `kgf` | KGF spec management and inspection |
 /// | `sim` | Calculate text similarity/distance |
 /// | `segment` | Split text into contextual segments |
+/// | `search` | Semantic search across code, wiki, and docs |
+/// | `grep` | KGF-aware token pattern search |
 /// | `perf kgf` | Run KGF parser performance benchmarks |
 ///
 /// ## Quick Start
@@ -75,6 +77,7 @@ fn build_command() -> @argparse.Command {
       @update_cli.command(),
       @serve_cli.command(),
       @grep_cli.command(),
+      @search_cli.command(),
     ],
   )
 }
@@ -103,6 +106,7 @@ async fn main {
     "update" => @update_cli.run_matches(sub)
     "serve" => @serve_cli.run_matches(sub)
     "grep" => @grep_cli.run_matches(sub)
+    "search" => @search_cli.run_matches(sub)
     _ => ()
   }
 }

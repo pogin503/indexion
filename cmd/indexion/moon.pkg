@@ -14,6 +14,7 @@ import {
   "trkbt10/indexion/cmd/indexion/digest" @digest_cli,
   "trkbt10/indexion/cmd/indexion/serve" @serve_cli,
   "trkbt10/indexion/cmd/indexion/grep" @grep_cli,
+  "trkbt10/indexion/cmd/indexion/search" @search_cli,
 }
 
 options(

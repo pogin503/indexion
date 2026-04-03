@@ -1,34 +1,14 @@
 ///|
 /// Vector similarity search — find code similar to a natural language query.
-/// Uses @text_embed.TfidfEmbeddingProvider (shared with digest).
+/// Delegates to the shared `@search.inline_search` engine.
 
 ///|
-/// A function-level document for vector search.
-priv struct FunctionDoc {
-  file : String
-  name : String
-  line : Int
-  text : String // function source text for embedding
-}
-
-///|
-/// Run vector similarity search across the codebase.
-pub fn run_similar_search(
-  paths : Array[String],
-  query_text : String,
-  top_k : Int,
-  config : GrepConfig,
-) -> Unit {
-  let (registry, files) = match load_registry_and_files(paths, config) {
-    Some(r) => r
-    None => return
-  }
-  if files.length() == 0 {
-    println("No files found")
-    return
-  }
-  // Extract function-level documents from all files
-  let docs : Array[FunctionDoc] = []
+/// Extract function-level SearchDocuments from source files.
+pub fn extract_code_documents(
+  files : Array[(String, String)],
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[@search.SearchDocument] {
+  let docs : Array[@search.SearchDocument] = []
   for file in files {
     let (path, content) = file
     let tokens = match @kgf_features.tokenize_source(content, path, registry) {
@@ -50,7 +30,6 @@ pub fn run_similar_search(
       } else {
         lines.length()
       }
-      // Extract function text for embedding
       let buf = StringBuilder::new()
       buf.write_string(func.get_name())
       buf.write_string(" ")
@@ -66,62 +45,72 @@ pub fn run_similar_search(
           buf.write_string(" ")
         }
       }
+      let lang = match registry {
+        Some(reg) =>
+          match reg.detect_from_path(path) {
+            Some(l) => l
+            None => ""
+          }
+        None => ""
+      }
+      let module_path = @common.parent_dir(path)
+      let doc_attrs : Map[String, String] = {}
+      doc_attrs["node_type"] = @kgf_features.node_type_code
+      doc_attrs["node_kind"] = "fn"
+      if lang.length() > 0 {
+        doc_attrs["language"] = lang
+      }
+      if module_path.length() > 0 {
+        doc_attrs["module"] = module_path
+      }
       docs.push({
-        file: path,
-        name: func.get_name(),
-        line: start_line,
+        id: path + ":" + start_line.to_string(),
         text: buf.to_string(),
+        title: func.get_name(),
+        source: path,
+        line: start_line,
+        kind: "fn",
+        attrs: doc_attrs,
       })
     }
   }
-  if docs.length() == 0 {
+  docs
+}
+
+///|
+/// Run vector similarity search across the codebase.
+pub fn run_similar_search(
+  paths : Array[String],
+  query_text : String,
+  top_k : Int,
+  config : GrepConfig,
+) -> Unit {
+  let (registry, files) = match load_registry_and_files(paths, config) {
+    Some(r) => r
+    None => return
+  }
+  if files.is_empty() {
+    println("No files found")
+    return
+  }
+  let docs = extract_code_documents(files, registry)
+  if docs.is_empty() {
     println("No functions found")
     return
   }
-  // Build TF-IDF embedding provider from function corpus
-  let dim = 256
-  let provider = @text_embed.TfidfEmbeddingProvider::new(dim)
-  let corpus_texts : Array[String] = []
-  for doc in docs {
-    corpus_texts.push(doc.text)
-  }
-  provider.build_vocabulary(corpus_texts)
-  // Embed query
-  let query_vector = provider.embed(query_text)
-  // Embed all functions and compute similarity
-  let scored : Array[(Int, Double)] = []
-  for i, doc in docs {
-    let doc_vector = provider.embed(doc.text)
-    let sim = @text_embed.cosine_similarity_dense(query_vector, doc_vector)
-    if sim > 0.0 {
-      scored.push((i, sim))
-    }
-  }
-  // Sort by similarity descending
-  scored.sort_by(fn(a, b) {
-    if b.1 > a.1 {
-      1
-    } else if b.1 < a.1 {
-      -1
-    } else {
-      0
-    }
-  })
-  // Output top-k results
-  let limit = if top_k < scored.length() { top_k } else { scored.length() }
-  for i = 0; i < limit; i = i + 1 {
-    let (idx, sim) = scored[i]
-    let doc = docs[idx]
-    let score_str = @common.format_percent(sim)
+  let hits = @search.inline_search(docs, query_text, top_k)
+  for hit in hits {
+    let doc = hit.document
+    let score_str = @common.format_percent(hit.score)
     if config.files_only {
-      println(doc.file)
+      println(doc.source)
     } else {
       println(
-        doc.file +
+        doc.source +
         ":" +
         doc.line.to_string() +
         ": fn " +
-        doc.name +
+        doc.title +
         "  (" +
         score_str +
         " similar)",
@@ -130,7 +119,7 @@ pub fn run_similar_search(
   }
   println("")
   println(
-    limit.to_string() +
+    hits.length().to_string() +
     " results from " +
     docs.length().to_string() +
     " functions",

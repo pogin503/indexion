@@ -36,6 +36,7 @@ pub fn load_wiki(wiki_dir : String) -> @types.WikiData? {
       id=mp.id,
       title=mp.title,
       content~,
+      file=mp.file,
       sources~,
       headings~,
       children~,
@@ -48,40 +49,54 @@ pub fn load_wiki(wiki_dir : String) -> @types.WikiData? {
 
 ///|
 /// Extract headings from markdown content for ToC.
-pub fn extract_headings(content : String) -> Array[@types.WikiHeading] {
-  let headings : Array[@types.WikiHeading] = []
-  let lines = @common.split_lines(content)
-  for line in lines {
-    if line.has_prefix("## ") {
-      let text = @common.substring(line, 3, line.to_array().length())
-      headings.push(
-        @types.WikiHeading::new(
-          level=2,
-          text~,
-          anchor=@common.make_anchor(text),
-        ),
+/// Uses KGF tokenization when a registry is available, otherwise
+/// falls back to the provided registry parameter.
+pub fn extract_headings(
+  content : String,
+  path? : String = "doc.md",
+  registry? : @kgf_registry.KGFRegistry? = None,
+) -> Array[@types.WikiHeading] {
+  let tokens = @kgf_features.tokenize_source(content, path, registry)
+  match tokens {
+    Some(toks) => {
+      let kgf_headings = @kgf_features.extract_headings(toks)
+      let results : Array[@types.WikiHeading] = []
+      for h in kgf_headings {
+        if h.level >= 2 && h.level <= 4 {
+          results.push(
+            @types.WikiHeading::new(level=h.level, text=h.text, anchor=h.anchor),
+          )
+        }
+      }
+      results
+    }
+    None => {
+      // Fallback: load registry from default kgfs directory
+      let fallback_registry = @kgf_features.load_registry(
+        specs_dir="kgfs",
+        target_dir=".",
       )
-    } else if line.has_prefix("### ") {
-      let text = @common.substring(line, 4, line.to_array().length())
-      headings.push(
-        @types.WikiHeading::new(
-          level=3,
-          text~,
-          anchor=@common.make_anchor(text),
-        ),
-      )
-    } else if line.has_prefix("#### ") {
-      let text = @common.substring(line, 5, line.to_array().length())
-      headings.push(
-        @types.WikiHeading::new(
-          level=4,
-          text~,
-          anchor=@common.make_anchor(text),
-        ),
-      )
+      match @kgf_features.tokenize_source(content, path, fallback_registry) {
+        Some(toks) => {
+          let kgf_headings = @kgf_features.extract_headings(toks)
+          let results : Array[@types.WikiHeading] = []
+          for h in kgf_headings {
+            if h.level >= 2 && h.level <= 4 {
+              results.push(
+                @types.WikiHeading::new(
+                  level=h.level,
+                  text=h.text,
+                  anchor=h.anchor,
+                ),
+              )
+            }
+          }
+          results
+        }
+        None => []
+      }
     }
   }
-  headings
 }
 
 // --- Internal helpers ---

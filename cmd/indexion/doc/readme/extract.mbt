@@ -159,40 +159,47 @@ fn first_doc_line(doc : String) -> String {
 }
 
 ///|
-/// Extract title from document content (first # heading).
+/// Extract title from document content (first level-1 heading via KGF).
 fn extract_title_from_content(content : String) -> String? {
-  let lines = @common.split_lines(content)
-  for line in lines {
-    if line.has_prefix("# ") {
-      let chars = line.to_array()
-      let result : Array[Char] = []
-      for i = 2; i < chars.length(); i = i + 1 {
-        result.push(chars[i])
-      }
-      return Some(String::from_array(result))
+  let headings = tokenize_and_extract_headings(content)
+  for h in headings {
+    if h.level == 1 {
+      return Some(h.text)
     }
   }
   None
 }
 
-// use @common (SoT): split_lines
-
 ///|
-/// Extract summary text from doc content (text before second ## heading).
+/// Extract summary text from doc content (text before second level-2 heading).
+/// Uses KGF headings to identify heading boundaries.
 pub fn extract_summary(content : String) -> String {
+  let headings = tokenize_and_extract_headings(content)
   let lines = @common.split_lines(content)
-  let result : Array[String] = []
-  let mut heading_count = 0
-  for line in lines {
-    if line.has_prefix("# ") {
-      // Skip main title
-      continue
+  // Find title line (level 1) and first two level-2 headings
+  let mut title_line = -1
+  let mut h2_count = 0
+  let mut second_h2_line = lines.length() + 1
+  for h in headings {
+    if h.level == 1 && title_line < 0 {
+      title_line = h.line
     }
-    if line.has_prefix("## ") {
-      heading_count = heading_count + 1
-      if heading_count > 1 {
+    if h.level == 2 {
+      h2_count += 1
+      if h2_count > 1 {
+        second_h2_line = h.line
         break
       }
+    }
+  }
+  let result : Array[String] = []
+  for i, line in lines {
+    let line_num = i + 1
+    if line_num == title_line {
+      continue
+    }
+    if line_num >= second_h2_line {
+      break
     }
     result.push(line)
   }

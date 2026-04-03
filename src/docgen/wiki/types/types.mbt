@@ -10,6 +10,8 @@ pub struct WikiPage {
   id : String
   title : String
   content : String
+  /// Source file name from manifest (e.g. "overview.md")
+  file : String
   sources : Array[WikiSourceRef]
   headings : Array[WikiHeading]
   children : Array[String]
@@ -85,12 +87,13 @@ pub fn WikiPage::new(
   id~ : String,
   title~ : String,
   content~ : String,
+  file? : String = "",
   sources? : Array[WikiSourceRef] = [],
   headings? : Array[WikiHeading] = [],
   children? : Array[String] = [],
   parent? : String? = None,
 ) -> WikiPage {
-  { id, title, content, sources, headings, children, parent }
+  { id, title, content, file, sources, headings, children, parent }
 }
 
 ///|

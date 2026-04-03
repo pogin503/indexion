@@ -174,10 +174,19 @@ fn merge_file_config(
 
 ///|
 fn apply_doc_scope(config : ReconcileConfig) -> ReconcileConfig {
+  let registry = @kgf_features.load_registry(
+    specs_dir=config.specs_dir,
+    target_dir=config.target_dir,
+  )
+  let (index_patterns, wildcard_patterns) = @kgf_features.get_document_patterns(
+    registry,
+  )
   let resolved = @config_paths.resolve_reconcile_document_scope(
     config.documents.scope_name,
     doc_paths=config.documents.doc_paths,
     doc_specs=config.documents.doc_specs,
+    index_patterns~,
+    wildcard_patterns~,
   )
   { ..config, documents: resolved }
 }

@@ -64,29 +64,77 @@ fn get_feature_string(
 // --- Format detection ---
 
 ///|
+/// Registry of wiki backend configs, keyed by KGF spec language name.
+/// Each wiki KGF spec (github-wiki, gitlab-wiki, etc.) maps to its config.
+let wiki_backend_registry : Map[String, () -> WikiBackendConfig] = {
+  let m : Map[String, () -> WikiBackendConfig] = {}
+  m["github-wiki"] = github_config
+  m["gitlab-wiki"] = gitlab_config
+  m
+}
+
+///|
+/// Detect which KGF wiki spec matches a directory.
+/// Probes each registered wiki spec's home_file and nav_file markers.
+/// Returns the spec language name, or None if no match.
+pub fn detect_wiki_spec(dir : String) -> String? {
+  let registry = @kgf_features.load_registry(
+    specs_dir="kgfs",
+    target_dir=".",
+  )
+  let reg = match registry {
+    Some(r) => r
+    None => return None
+  }
+  for spec_entry in reg.specs {
+    let lang = spec_entry.0
+    let spec = spec_entry.1
+    let home = get_feature_string(spec, "home_file", "")
+    let nav = get_feature_string(spec, "nav_file", "")
+    if home.length() == 0 && nav.length() == 0 {
+      continue
+    }
+    let has_home = home.length() > 0 && @fs.path_exists(dir + "/" + home)
+    let has_nav = nav.length() > 0 && @fs.path_exists(dir + "/" + nav)
+    if has_home || has_nav {
+      if wiki_backend_registry.contains(lang) {
+        return Some(lang)
+      }
+    }
+  }
+  None
+}
+
+///|
 /// Detect wiki format from directory contents.
 pub fn detect_wiki_format(dir : String) -> WikiFormat {
   if @fs.path_exists(dir + "/wiki.json") {
-    WikiFormat::Indexion
-  } else if @fs.path_exists(dir + "/Home.md") ||
-    @fs.path_exists(dir + "/_Sidebar.md") {
-    WikiFormat::GitHub
-  } else if @fs.path_exists(dir + "/home.md") ||
-    @fs.path_exists(dir + "/_sidebar.md") {
-    WikiFormat::GitLab
-  } else {
-    WikiFormat::Unknown
+    return WikiFormat::Indexion
+  }
+  match detect_wiki_spec(dir) {
+    Some("github-wiki") => WikiFormat::GitHub
+    Some("gitlab-wiki") => WikiFormat::GitLab
+    Some(_) => WikiFormat::Unknown
+    None => WikiFormat::Unknown
   }
 }
 
 ///|
 /// Load wiki from directory, auto-detecting format.
+/// Uses KGF spec features to identify the wiki backend, then delegates
+/// to the registered backend config.
 pub fn load_wiki_auto(wiki_dir : String) -> @types.WikiData? {
-  match detect_wiki_format(wiki_dir) {
-    WikiFormat::Indexion => @reader.load_wiki(wiki_dir)
-    WikiFormat::GitHub => load_github_wiki(wiki_dir)
-    WikiFormat::GitLab => load_gitlab_wiki(wiki_dir)
-    WikiFormat::Unknown => None
+  if @fs.path_exists(wiki_dir + "/wiki.json") {
+    return @reader.load_wiki(wiki_dir)
+  }
+  match detect_wiki_spec(wiki_dir) {
+    Some(spec_name) =>
+      match wiki_backend_registry.get(spec_name) {
+        Some(config_fn) =>
+          load_external_wiki(wiki_dir, config_fn())
+        None => None
+      }
+    None => None
   }
 }
 
@@ -234,6 +282,7 @@ pub fn load_external_wiki(
       id~,
       title~,
       content~,
+      file=f + ".md",
       sources~,
       headings~,
       children~,

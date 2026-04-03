@@ -1,8 +1,8 @@
 ///|
-/// Section extraction from Markdown README files.
+/// Section extraction from document files using KGF tokenization.
 
 ///|
-/// Extract specified sections from Markdown content.
+/// Extract specified sections from content.
 /// Returns content of matching sections joined together.
 pub fn extract_sections(
   content : String,
@@ -12,24 +12,28 @@ pub fn extract_sections(
     return content
   }
   let normalized_names = normalize_section_names(section_names)
+  let headings = tokenize_and_extract_headings(content)
   let lines = split_content_lines(content)
+  let heading_map = build_heading_line_map(headings)
   let result = StringBuilder::new()
-  let mut current_section = ""
   let mut in_matching_section = false
   let mut first_output = true
-  for line in lines {
-    if is_heading_line(line) {
-      let heading_text = extract_heading_text(line)
-      current_section = normalize_section_name(heading_text)
-      in_matching_section = contains_section_name(
-        normalized_names, current_section,
-      )
-      if in_matching_section {
-        if !first_output {
-          result.write_string("\n")
+  for i, line in lines {
+    let line_num = i + 1
+    match heading_map.get(line_num) {
+      Some(heading) => {
+        let normalized = normalize_section_name(heading.text)
+        in_matching_section = contains_section_name(
+          normalized_names, normalized,
+        )
+        if in_matching_section {
+          if !first_output {
+            result.write_string("\n")
+          }
+          first_output = false
         }
-        first_output = false
       }
+      None => ()
     }
     if in_matching_section {
       result.write_string(line)
@@ -40,29 +44,42 @@ pub fn extract_sections(
 }
 
 ///|
-/// Extract overview/summary section (content before first ## heading).
+/// Extract overview/summary section (content before first level-2 heading).
 pub fn extract_overview(content : String) -> String {
+  let headings = tokenize_and_extract_headings(content)
   let lines = split_content_lines(content)
   let result = StringBuilder::new()
-  let mut found_first_heading = false
   let mut skipped_title = false
-  for line in lines {
-    // Skip the # title line
-    if !skipped_title && line.has_prefix("# ") {
+  // Find line of first level-2 heading
+  let mut first_h2_line = lines.length() + 1
+  for h in headings {
+    if h.level == 2 {
+      first_h2_line = h.line
+      break
+    }
+  }
+  // Find title heading (level 1)
+  let mut title_line = -1
+  for h in headings {
+    if h.level == 1 {
+      title_line = h.line
+      break
+    }
+  }
+  for i, line in lines {
+    let line_num = i + 1
+    if !skipped_title && line_num == title_line {
       skipped_title = true
       continue
     }
-    // Stop at first ## heading
-    if line.has_prefix("## ") {
-      found_first_heading = true
+    if line_num >= first_h2_line {
       break
     }
-    if skipped_title {
+    if skipped_title || title_line < 0 {
       result.write_string(line)
       result.write_char('\n')
     }
   }
-  let _ = found_first_heading
   @common.trim_ascii_spaces(result.to_string())
 }
 
@@ -77,36 +94,12 @@ fn normalize_section_names(names : Array[String]) -> Array[String] {
 
 ///|
 fn normalize_section_name(name : String) -> String {
-  // Lowercase and remove non-alphanumeric characters
   let chars = name.to_array()
   let result : Array[Char] = []
   for ch in chars {
     if is_alpha_char(ch) || is_digit_char(ch) {
       result.push(to_lower_char(ch))
     }
-  }
-  String::from_array(result)
-}
-
-///|
-fn is_heading_line(line : String) -> Bool {
-  line.has_prefix("## ") || line.has_prefix("### ")
-}
-
-///|
-fn extract_heading_text(line : String) -> String {
-  let chars = line.to_array()
-  let mut start = 0
-  // Skip # characters and spaces
-  while start < chars.length() && (chars[start] == '#' || chars[start] == ' ') {
-    start = start + 1
-  }
-  if start >= chars.length() {
-    return ""
-  }
-  let result : Array[Char] = []
-  for i = start; i < chars.length(); i = i + 1 {
-    result.push(chars[i])
   }
   String::from_array(result)
 }
@@ -140,42 +133,6 @@ fn split_content_lines(content : String) -> Array[String] {
 }
 
 ///|
-/// Count the heading level of a line (number of leading # characters).
-/// Returns 0 if not a heading.
-fn heading_level(line : String) -> Int {
-  let chars = line.to_array()
-  let mut count = 0
-  while count < chars.length() && chars[count] == '#' {
-    count = count + 1
-  }
-  // Must be followed by a space to be a valid heading
-  if count > 0 && count < chars.length() && chars[count] == ' ' {
-    count
-  } else {
-    0
-  }
-}
-
-///|
-/// Extract heading text (without # prefix).
-fn heading_text(line : String) -> String {
-  let level = heading_level(line)
-  if level == 0 {
-    return ""
-  }
-  let chars = line.to_array()
-  let start = level + 1 // skip # chars and space
-  if start >= chars.length() {
-    return ""
-  }
-  let result : Array[Char] = []
-  for i = start; i < chars.length(); i = i + 1 {
-    result.push(chars[i])
-  }
-  String::from_array(result)
-}
-
-///|
 /// Collect lines into a trimmed text block.
 fn lines_to_text(lines : Array[String]) -> String {
   let buf = StringBuilder::new()
@@ -189,30 +146,15 @@ fn lines_to_text(lines : Array[String]) -> String {
 }
 
 ///|
-/// Parse Markdown content into a hierarchical array of PlanSections.
-/// Heading levels are represented as nesting depth, not literal # counts.
+/// Parse content into a hierarchical array of PlanSections using KGF headings.
 pub fn parse_markdown_to_sections(
   content : String,
 ) -> Array[@plan_types.PlanSection] {
+  let headings = tokenize_and_extract_headings(content)
   let lines = split_content_lines(content)
+  let heading_map = build_heading_line_map(headings)
   let result : Array[@plan_types.PlanSection] = []
-  // Find the minimum heading level in the document (base level), skipping code fences
-  let mut min_level = 99
-  let mut in_fence_scan = false
-  for line in lines {
-    if line.has_prefix("```") || line.has_prefix("~~~") {
-      in_fence_scan = !in_fence_scan
-      continue
-    }
-    if !in_fence_scan {
-      let level = heading_level(line)
-      if level > 0 && level < min_level {
-        min_level = level
-      }
-    }
-  }
-  if min_level == 99 {
-    // No headings at all — return entire content as single anonymous section
+  if headings.is_empty() {
     let text = @common.trim_ascii_spaces(content)
     if text.length() > 0 {
       result.push(
@@ -225,45 +167,40 @@ pub fn parse_markdown_to_sections(
     }
     return result
   }
-  // Parse into flat section list: (heading_level, heading_text, content_lines)
-  // Tracks code fences to avoid treating # inside code blocks as headings
+  // Find minimum heading level
+  let mut min_level = 99
+  for h in headings {
+    if h.level < min_level {
+      min_level = h.level
+    }
+  }
+  // Build flat section list: (level, heading_text, content_lines)
   let flat : Array[(Int, String, Array[String])] = []
   let mut current_lines : Array[String] = []
   let mut current_heading = ""
   let mut current_level = 0
-  let mut in_code_fence = false
-  for line in lines {
-    // Track code fences (``` or ~~~)
-    if line.has_prefix("```") || line.has_prefix("~~~") {
-      in_code_fence = !in_code_fence
-      current_lines.push(line)
-      continue
-    }
-    let level = heading_level(line)
-    if level > 0 && !in_code_fence {
-      // Flush previous section
-      if current_heading.length() > 0 || current_lines.length() > 0 {
-        flat.push((current_level, current_heading, current_lines))
+  for i, line in lines {
+    let line_num = i + 1
+    match heading_map.get(line_num) {
+      Some(heading) => {
+        if current_heading.length() > 0 || current_lines.length() > 0 {
+          flat.push((current_level, current_heading, current_lines))
+        }
+        current_heading = heading.text
+        current_level = heading.level
+        current_lines = []
       }
-      current_heading = heading_text(line)
-      current_level = level
-      current_lines = []
-    } else {
-      current_lines.push(line)
+      None => current_lines.push(line)
     }
   }
-  // Flush last section
   if current_heading.length() > 0 || current_lines.length() > 0 {
     flat.push((current_level, current_heading, current_lines))
   }
-  // Build nested structure recursively
   build_nested_sections(flat, 0, flat.length(), min_level)
 }
 
 ///|
 /// Build nested PlanSections from a flat section list.
-/// Processes sections from index `start` to `end`, grouping children under
-/// sections at `base_level`.
 fn build_nested_sections(
   flat : Array[(Int, String, Array[String])],
   start : Int,
@@ -275,7 +212,6 @@ fn build_nested_sections(
   while i < end {
     let (level, heading, lines) = flat[i]
     if level == 0 {
-      // Pre-heading content (level 0 means no heading)
       let text = lines_to_text(lines)
       if text.length() > 0 {
         result.push(
@@ -288,7 +224,6 @@ fn build_nested_sections(
       }
       i = i + 1
     } else if level == base_level {
-      // Find where this section ends (next section at same or higher level)
       let mut section_end = i + 1
       while section_end < end {
         let (next_level, _, _) = flat[section_end]
@@ -297,7 +232,6 @@ fn build_nested_sections(
         }
         section_end = section_end + 1
       }
-      // Build content: own text + nested children
       let own_text = lines_to_text(lines)
       let children = build_nested_sections(
         flat,
@@ -307,7 +241,6 @@ fn build_nested_sections(
       )
       let id = normalize_section_name(heading)
       if children.length() == 0 {
-        // Leaf section: just text content
         result.push(
           @plan_types.PlanSection::new(
             id,
@@ -316,7 +249,6 @@ fn build_nested_sections(
           ),
         )
       } else {
-        // Section with children: own text as anonymous first child + nested children
         let nested : Array[@plan_types.PlanSection] = []
         if own_text.length() > 0 {
           nested.push(
@@ -340,18 +272,6 @@ fn build_nested_sections(
       }
       i = section_end
     } else {
-      // Section at deeper level than base — treat as child
-      // This shouldn't normally happen at the top call, but handle gracefully
-      let text = lines_to_text(lines)
-      if text.length() > 0 || heading.length() > 0 {
-        result.push(
-          @plan_types.PlanSection::new(
-            normalize_section_name(heading),
-            heading,
-            @plan_types.SectionContent::text(text),
-          ),
-        )
-      }
       i = i + 1
     }
   }
@@ -359,8 +279,7 @@ fn build_nested_sections(
 }
 
 ///|
-/// Filter parsed sections by section names (e.g., ["overview", "usage"]).
-/// "overview" matches the anonymous pre-heading section.
+/// Filter parsed PlanSections by section names.
 pub fn filter_parsed_sections(
   sections : Array[@plan_types.PlanSection],
   names : Array[String],
@@ -373,7 +292,6 @@ pub fn filter_parsed_sections(
   let include_overview = contains_section_name(normalized, "overview")
   for section in sections {
     if section.heading.length() == 0 {
-      // Anonymous section = overview
       if include_overview {
         result.push(section)
       }
@@ -386,6 +304,38 @@ pub fn filter_parsed_sections(
   }
   result
 }
+
+// --- KGF tokenization helpers ---
+
+///|
+/// Tokenize content and extract headings using KGF.
+fn tokenize_and_extract_headings(
+  content : String,
+) -> Array[@kgf_features.Heading] {
+  let registry = @kgf_features.load_registry(
+    specs_dir="kgfs",
+    target_dir=".",
+  )
+  let tokens = @kgf_features.tokenize_source(content, "doc.md", registry)
+  match tokens {
+    Some(toks) => @kgf_features.extract_headings(toks)
+    None => []
+  }
+}
+
+///|
+/// Build a map from line number to Heading for fast lookup.
+fn build_heading_line_map(
+  headings : Array[@kgf_features.Heading],
+) -> Map[Int, @kgf_features.Heading] {
+  let map : Map[Int, @kgf_features.Heading] = {}
+  for h in headings {
+    map[h.line] = h
+  }
+  map
+}
+
+// --- Character helpers ---
 
 ///|
 fn is_alpha_char(ch : Char) -> Bool {
@@ -400,7 +350,7 @@ fn is_digit_char(ch : Char) -> Bool {
 ///|
 fn to_lower_char(ch : Char) -> Char {
   if ch >= 'A' && ch <= 'Z' {
-    (ch.to_int() + 32).unsafe_to_char()
+    Int::unsafe_to_char(ch.to_int() + 32)
   } else {
     ch
   }

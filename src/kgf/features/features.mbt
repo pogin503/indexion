@@ -452,3 +452,284 @@ pub fn extract_pub_declarations_and_doc_map(
     None => ([], {})
   }
 }
+
+///|
+/// Node type label for code-oriented files (no HEADING token in KGF spec).
+pub let node_type_code : String = "code"
+
+///|
+/// Node type label for document-oriented files (HEADING token present in KGF spec).
+pub let node_type_document : String = "document"
+
+///|
+/// Collect file extensions for document-oriented KGF specs (those with HEADING tokens).
+/// Returns extensions like [".md", ".markdown", ".mdx"] from all matching specs.
+pub fn get_document_extensions(
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[String] {
+  let reg = match registry {
+    Some(r) => r
+    None => return []
+  }
+  let exts : Array[String] = []
+  let seen : Map[String, Bool] = {}
+  for spec_entry in reg.specs {
+    let spec = spec_entry.1
+    if spec_has_heading_token(spec) {
+      let sources = spec.get_resolver().get_sources()
+      for src in sources {
+        let ext = if src.has_prefix(".") { src } else { "." + src }
+        if !seen.contains(ext) {
+          exts.push(ext)
+          seen[ext] = true
+        }
+      }
+    }
+  }
+  exts
+}
+
+///|
+/// Collect document path patterns from document-oriented KGF specs.
+/// Derives patterns from spec resolver's `sources` (extensions) and
+/// `indexes` (e.g. /README.md, /index.md) — no hardcoded paths.
+/// Returns (index_patterns, wildcard_patterns) for package-level scope.
+pub fn get_document_patterns(
+  registry : @kgf_registry.KGFRegistry?,
+) -> (Array[String], Array[String]) {
+  let reg = match registry {
+    Some(r) => r
+    None => return ([], [])
+  }
+  let index_patterns : Array[String] = []
+  let wild_patterns : Array[String] = []
+  let seen : Map[String, Bool] = {}
+  for spec_entry in reg.specs {
+    let spec = spec_entry.1
+    if !spec_has_heading_token(spec) {
+      continue
+    }
+    let resolver = spec.get_resolver()
+    // Index files (e.g. /README.md → README.md)
+    for idx in resolver.get_indexes() {
+      let clean = if idx.has_prefix("/") {
+        let chars = idx.to_array()
+        let buf = StringBuilder::new()
+        for i = 1; i < chars.length(); i = i + 1 {
+          buf.write_char(chars[i])
+        }
+        buf.to_string()
+      } else {
+        idx
+      }
+      if clean.length() > 0 && !seen.contains(clean) {
+        index_patterns.push(clean)
+        seen[clean] = true
+      }
+    }
+    // Wildcard patterns from extensions
+    for src in resolver.get_sources() {
+      let ext = if src.has_prefix(".") { src } else { "." + src }
+      let pattern = "*" + ext
+      if !seen.contains(pattern) {
+        wild_patterns.push(pattern)
+        seen[pattern] = true
+      }
+    }
+  }
+  (index_patterns, wild_patterns)
+}
+
+///|
+/// Check if a KGF spec defines a HEADING token kind.
+/// Specs with HEADING tokens (e.g. markdown.kgf) are document-oriented
+/// and should be indexed by section splitting rather than function extraction.
+pub fn spec_has_heading_token(spec : @kgf_types.KGFSpec) -> Bool {
+  for tok_def in spec.get_tokens() {
+    if tok_def.get_name() == "HEADING" {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// Detect whether a file's KGF spec has HEADING tokens.
+/// Returns Some(true) for document-oriented files, Some(false) for code,
+/// None if no spec matches the file.
+pub fn is_document_file(
+  path : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Bool? {
+  let reg = match registry {
+    Some(r) => r
+    None => return None
+  }
+  let lang = match reg.detect_from_path(path) {
+    Some(l) => l
+    None => return None
+  }
+  let spec = match reg.get_spec(lang) {
+    Some(s) => s
+    None => return None
+  }
+  Some(spec_has_heading_token(spec))
+}
+
+///|
+/// A heading extracted from tokens (language-agnostic via KGF HEADING token).
+pub(all) struct Heading {
+  /// Heading level (1 for "#", 2 for "##", etc.)
+  level : Int
+  /// Heading text (concatenated TEXT tokens following the HEADING token)
+  text : String
+  /// URL-safe anchor
+  anchor : String
+  /// Line number in source
+  line : Int
+}
+
+///|
+/// Extract headings from KGF tokens.
+/// Works with any KGF spec that defines a HEADING token kind.
+pub fn extract_headings(
+  tokens : Array[@kgf_types.Tok],
+) -> Array[Heading] {
+  let headings : Array[Heading] = []
+  let mut line = 1
+  let mut i = 0
+  while i < tokens.length() {
+    let tok = tokens[i]
+    let kind = tok.get_kind()
+    if kind == "NL" {
+      line += 1
+      i += 1
+      continue
+    }
+    if kind == "HEADING" {
+      let level = count_heading_level(tok.get_text())
+      let heading_line = line
+      i += 1
+      // Skip whitespace
+      while i < tokens.length() {
+        let k = tokens[i].get_kind()
+        if k == "SKIP" || k == "WS" {
+          i += 1
+        } else {
+          break
+        }
+      }
+      // Collect TEXT tokens until NL
+      let buf = StringBuilder::new()
+      let mut first = true
+      while i < tokens.length() {
+        let k = tokens[i].get_kind()
+        if k == "NL" {
+          break
+        }
+        if k == "TEXT" || k == "INLINE_CODE" {
+          if !first {
+            buf.write_string(" ")
+          }
+          buf.write_string(tokens[i].get_text())
+          first = false
+        }
+        i += 1
+      }
+      let text = buf.to_string()
+      if text.length() > 0 {
+        headings.push({
+          level,
+          text,
+          anchor: make_anchor(text),
+          line: heading_line,
+        })
+      }
+    } else {
+      i += 1
+    }
+  }
+  headings
+}
+
+///|
+/// Count '#' characters to determine heading level.
+fn count_heading_level(text : String) -> Int {
+  let mut level = 0
+  for c in text {
+    if c == '#' {
+      level += 1
+    } else {
+      break
+    }
+  }
+  level
+}
+
+///|
+/// Convert heading text to URL-safe anchor.
+fn make_anchor(text : String) -> String {
+  let buf = StringBuilder::new()
+  for c in text {
+    if c == ' ' || c == '\t' {
+      buf.write_char('-')
+    } else if (c >= 'a' && c <= 'z') ||
+      (c >= '0' && c <= '9') ||
+      c == '-' ||
+      c == '_' {
+      buf.write_char(c)
+    } else if c >= 'A' && c <= 'Z' {
+      buf.write_char(Int::unsafe_to_char(c.to_int() + 32))
+    }
+  }
+  buf.to_string()
+}
+
+///|
+/// Split content into sections at HEADING boundaries of the given level.
+/// Returns (id, title, content, level) tuples suitable for search indexing.
+/// Uses KGF tokenization — no markdown-specific hardcoding.
+pub fn extract_sections_from_tokens(
+  tokens : Array[@kgf_types.Tok],
+  content : String,
+  page_id : String,
+  page_title : String,
+  split_level~ : Int = 2,
+) -> Array[(String, String, String, Int)] {
+  let headings = extract_headings(tokens)
+  let lines = split_by_newline(content)
+  let results : Array[(String, String, String, Int)] = []
+  // Full page as a section
+  results.push((page_id, page_title, content, 1))
+  // Collect h{split_level} headings as section boundaries
+  let section_headings : Array[Heading] = []
+  for h in headings {
+    if h.level == split_level {
+      section_headings.push(h)
+    }
+  }
+  if section_headings.is_empty() {
+    return results
+  }
+  // Extract content between headings
+  for idx, heading in section_headings {
+    let start_line = heading.line
+    let end_line = if idx + 1 < section_headings.length() {
+      section_headings[idx + 1].line - 1
+    } else {
+      lines.length()
+    }
+    let buf = StringBuilder::new()
+    for j = start_line; j < end_line && j < lines.length(); j = j + 1 {
+      buf.write_string(lines[j])
+      buf.write_string("\n")
+    }
+    let section_content = buf.to_string()
+    if section_content.length() > 0 {
+      let id = page_id + "#" + heading.anchor
+      results.push((id, heading.text, section_content, split_level))
+    }
+  }
+  results
+}
+

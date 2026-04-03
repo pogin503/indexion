@@ -27,7 +27,7 @@ pub async fn DigestIndex::build_with_config(
   self.manifest = updated_manifest
   // Remove deleted from vcdb
   for vid in removed_ids {
-    let _ = self.db.remove(@vcdb_core.VectorId(vid))
+    let _ = self.engine.remove(vid)
   }
   result.removed_count = removed_ids.length()
   // Build stale set
@@ -83,7 +83,9 @@ pub async fn DigestIndex::build_with_config(
     let (m, vid) = self.manifest.allocate_vector_id()
     self.manifest = m
     // Create attributes (including hash for verification)
-    let attrs = @vcdb.empty_attrs()
+    let attrs = @search.empty_attrs()
+    attrs.set("node_type", @vcdb_core.String(@kgf_features.node_type_code))
+    attrs.set("node_kind", @vcdb_core.String(unit.symbol.kind))
     attrs.set("name", @vcdb_core.String(unit.name()))
     attrs.set("kind", @vcdb_core.String(unit.symbol.kind))
     attrs.set("module", @vcdb_core.String(unit.module_id))
@@ -95,7 +97,7 @@ pub async fn DigestIndex::build_with_config(
       None => ()
     }
     // Add to vcdb
-    self.db.add(@vcdb_core.VectorId(vid), vector, attrs)
+    self.engine.add_raw(vid, vector, attrs)
     // Update manifest
     let entry = @manifest.FunctionEntry::from_unit(unit, Some(vid))
     self.manifest = self.manifest.update_function(entry)
@@ -172,7 +174,7 @@ pub async fn DigestIndex::query_native(
     base_url: api_config.base_url,
   }
   let vector = @embed.get_embedding(config, purpose)
-  let hits = self.db.search(vector, top_k, None)
+  let hits = self.engine.search_vector(vector, top_k)
   let results : Array[@types.QueryHit] = []
   for hit in hits {
     let vid = hit.id.0
@@ -200,9 +202,9 @@ pub fn DigestIndex::from_manifest(
   db_bytes : Bytes,
 ) -> DigestIndex {
   let dim = manifest.embedding_dim
-  let db = @vcdb.VectorDB::deserialize(db_bytes)
   let provider = TfidfEmbeddingProvider::new(dim)
-  { manifest, db, provider, units: {} }
+  let engine = @search.SearchEngine::from_bytes(db_bytes).with_tfidf(provider)
+  { manifest, engine, provider, units: {} }
 }
 
 ///|
@@ -221,11 +223,15 @@ pub fn DigestIndex::with_config(config : @config.DigestConfig) -> DigestIndex {
     provider_name,
     config.embedding_dim(),
   )
-  let db = match config.vcdb_strategy {
-    @config.Hnsw => @vcdb.VectorDB::with_hnsw(config.embedding_dim())
-    @config.Ivf => @vcdb.VectorDB::with_ivf(config.embedding_dim())
-    @config.BruteForce => @vcdb.VectorDB::with_dim(config.embedding_dim())
+  let strategy : @search.VcdbStrategy = match config.vcdb_strategy {
+    @config.Hnsw => @search.Hnsw
+    @config.Ivf => @search.Ivf
+    @config.BruteForce => @search.BruteForce
   }
   let provider = TfidfEmbeddingProvider::new(config.embedding_dim())
-  { manifest, db, provider, units: {} }
+  let engine = @search.SearchEngine::create(
+    dim=config.embedding_dim(),
+    strategy~,
+  ).with_tfidf(provider)
+  { manifest, engine, provider, units: {} }
 }

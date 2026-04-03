@@ -73,17 +73,56 @@ pub fn normalize_reconcile_doc_scope(scope : String) -> String {
 
 ///|
 /// Return default document glob paths for a given scope preset.
-pub fn reconcile_doc_scope_paths(scope : String) -> Array[String] {
-  match normalize_reconcile_doc_scope(scope) {
-    "package-docs" => ["README.md", "docs/**/*.md"]
-    "tree-docs" => ["**/README.md", "**/docs/**/*.md"]
-    _ => []
+/// Uses KGF-derived patterns: index_patterns (from resolver indexes)
+/// and wildcard_patterns (from resolver sources/extensions).
+pub fn reconcile_doc_scope_paths(
+  scope : String,
+  index_patterns? : Array[String] = [],
+  wildcard_patterns? : Array[String] = [],
+) -> Array[String] {
+  let idx = if index_patterns.is_empty() {
+    ["README.md"]
+  } else {
+    index_patterns
   }
+  let wild = if wildcard_patterns.is_empty() {
+    ["*.md"]
+  } else {
+    wildcard_patterns
+  }
+  let patterns : Array[String] = []
+  match normalize_reconcile_doc_scope(scope) {
+    "package-docs" => {
+      for p in idx {
+        patterns.push(p)
+      }
+      for p in wild {
+        patterns.push("docs/**/" + p)
+      }
+    }
+    "tree-docs" => {
+      for p in idx {
+        patterns.push("**/" + p)
+      }
+      for p in wild {
+        patterns.push("**/docs/**/" + p)
+      }
+    }
+    _ => ()
+  }
+  patterns
 }
 
 ///|
 /// Return default KGF spec names for a given scope preset.
-pub fn reconcile_doc_scope_specs(scope : String) -> Array[String] {
+/// When doc_specs are provided, uses them instead of hardcoded names.
+pub fn reconcile_doc_scope_specs(
+  scope : String,
+  doc_specs? : Array[String] = [],
+) -> Array[String] {
+  if !doc_specs.is_empty() {
+    return doc_specs
+  }
   match normalize_reconcile_doc_scope(scope) {
     "package-docs" | "tree-docs" => ["markdown"]
     _ => []
@@ -96,10 +135,12 @@ pub fn resolve_reconcile_document_scope(
   scope : String,
   doc_paths? : Array[String] = [],
   doc_specs? : Array[String] = [],
+  index_patterns? : Array[String] = [],
+  wildcard_patterns? : Array[String] = [],
 ) -> ReconcileDocumentScope {
   let scope_name = normalize_reconcile_doc_scope(scope)
   let resolved_doc_paths = if doc_paths.is_empty() {
-    reconcile_doc_scope_paths(scope_name)
+    reconcile_doc_scope_paths(scope_name, index_patterns~, wildcard_patterns~)
   } else {
     doc_paths
   }

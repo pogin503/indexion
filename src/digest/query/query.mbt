@@ -3,32 +3,56 @@
 
 ///|
 /// Query by purpose and return hits with detailed info.
+/// Builds FilterExpr from options for pre-filtering in vcdb.
 pub fn query_by_purpose(
   index : @index.DigestIndex,
   purpose : String,
   options : @types.QueryOptions,
 ) -> Array[@types.QueryHit] {
-  let hits = index.query(purpose, options.top_k)
-  // Filter by min_score
+  let filter = build_query_filter(options)
+  let hits = index.query(purpose, options.top_k, filter~)
   let filtered : Array[@types.QueryHit] = []
   for hit in hits {
     if hit.score >= options.min_score {
-      // Apply module filter if specified
+      // Module filter uses contains (pattern match), which FilterExpr
+      // can't express — apply as post-filter
       let module_ok = match options.filter_module {
         Some(pattern) => hit.function.module_id.contains(pattern)
         None => true
       }
-      // Apply kind filter if specified
-      let kind_ok = match options.filter_kind {
-        Some(kind) => hit.function.symbol.kind == kind
-        None => true
-      }
-      if module_ok && kind_ok {
+      if module_ok {
         filtered.push(hit)
       }
     }
   }
   filtered
+}
+
+///|
+/// Build FilterExpr from QueryOptions.
+/// Kind filter uses exact match via FilterExpr.
+/// Module filter uses contains (not supported by FilterExpr) — handled post-filter.
+fn build_query_filter(
+  options : @types.QueryOptions,
+) -> @vcdb_filter.FilterExpr? {
+  let exprs : Array[@vcdb_filter.FilterExpr] = []
+  match options.filter_kind {
+    Some(kind) =>
+      exprs.push(
+        @vcdb_filter.FilterExpr::match_(
+          "kind",
+          @vcdb_core.AttrValue::String(kind),
+        ),
+      )
+    None => ()
+  }
+  if exprs.is_empty() {
+    None
+  } else if exprs.length() == 1 {
+    Some(exprs[0])
+  } else {
+    Some(@vcdb_filter.FilterExpr::must(exprs))
+  }
 }
 
 ///|

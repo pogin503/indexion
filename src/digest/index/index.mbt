@@ -51,11 +51,12 @@ pub type TfidfEmbeddingProvider = @text_embed.TfidfEmbeddingProvider
 
 ///|
 /// DigestIndex - Main index structure.
+/// Uses SearchEngine as the vcdb backend for consistency with search command.
 pub struct DigestIndex {
   /// Manifest for tracking state.
   mut manifest : @manifest.DigestManifest
-  /// vcdb vector database.
-  db : @vcdb.VectorDB
+  /// Search engine wrapping vcdb.
+  engine : @search.SearchEngine
   /// TF-IDF embedding provider.
   provider : TfidfEmbeddingProvider
   /// Cached function units.
@@ -73,13 +74,17 @@ pub fn DigestIndex::new(config : IndexConfig) -> DigestIndex {
     config.embedding_provider,
     config.embedding_dim,
   )
-  let db = match config.vcdb_strategy {
-    "hnsw" => @vcdb.VectorDB::with_hnsw(config.embedding_dim)
-    "ivf" => @vcdb.VectorDB::with_ivf(config.embedding_dim)
-    _ => @vcdb.VectorDB::with_dim(config.embedding_dim)
+  let strategy : @search.VcdbStrategy = match config.vcdb_strategy {
+    "hnsw" => @search.Hnsw
+    "ivf" => @search.Ivf
+    _ => @search.BruteForce
   }
   let provider = TfidfEmbeddingProvider::new(config.embedding_dim)
-  { manifest, db, provider, units: {} }
+  let engine = @search.SearchEngine::create(
+    dim=config.embedding_dim,
+    strategy~,
+  ).with_tfidf(provider)
+  { manifest, engine, provider, units: {} }
 }
 
 ///|
@@ -114,7 +119,7 @@ pub fn DigestIndex::build(
   self.manifest = updated_manifest
   // Remove deleted from vcdb
   for vid in removed_ids {
-    let _ = self.db.remove(@vcdb_core.VectorId(vid))
+    let _ = self.engine.remove(vid)
   }
   result.removed_count = removed_ids.length()
   // Process functions in bottom-up order
@@ -131,7 +136,9 @@ pub fn DigestIndex::build(
       let (m, vid) = self.manifest.allocate_vector_id()
       self.manifest = m
       // Create attributes
-      let attrs = @vcdb.empty_attrs()
+      let attrs = @search.empty_attrs()
+      attrs.set("node_type", @vcdb_core.AttrValue::String(@kgf_features.node_type_code))
+      attrs.set("node_kind", @vcdb_core.AttrValue::String(unit.symbol.kind))
       attrs.set("name", @vcdb_core.AttrValue::String(unit.name()))
       attrs.set("kind", @vcdb_core.AttrValue::String(unit.symbol.kind))
       attrs.set("module", @vcdb_core.AttrValue::String(unit.module_id))
@@ -141,7 +148,7 @@ pub fn DigestIndex::build(
         None => ()
       }
       // Add to vcdb
-      self.db.add(@vcdb_core.VectorId(vid), vector, attrs)
+      self.engine.add_raw(vid, vector, attrs)
       // Update manifest
       let entry = @manifest.FunctionEntry::from_unit(unit, Some(vid))
       self.manifest = self.manifest.update_function(entry)
@@ -154,14 +161,15 @@ pub fn DigestIndex::build(
 }
 
 ///|
-/// Query by purpose text.
+/// Query by purpose text with optional FilterExpr.
 pub fn DigestIndex::query(
   self : DigestIndex,
   purpose : String,
   top_k : Int,
+  filter? : @vcdb_filter.FilterExpr? = None,
 ) -> Array[@types.QueryHit] {
   let vector = self.provider.embed(purpose)
-  let hits = self.db.search(vector, top_k, None)
+  let hits = self.engine.search_vector(vector, top_k, filter~)
   let results : Array[@types.QueryHit] = []
   for hit in hits {
     // Get function ID from vector ID
@@ -207,12 +215,12 @@ pub fn DigestIndex::build_with_remote(
   let first_embedding = remote_provider.get(remote_provider.cached_ids()[0])
   match first_embedding {
     Some(vec) =>
-      if vec.length() != self.db.dim() {
+      if vec.length() != self.engine.dim() {
         // Dimension mismatch - we need to recreate the db with correct dim
         // For now, just note the error
         result.errors.push(
           "Dimension mismatch: expected " +
-          self.db.dim().to_string() +
+          self.engine.dim().to_string() +
           ", got " +
           vec.length().to_string(),
         )
@@ -237,7 +245,7 @@ pub fn DigestIndex::build_with_remote(
   self.manifest = updated_manifest
   // Remove deleted from vcdb
   for vid in removed_ids {
-    let _ = self.db.remove(@vcdb_core.VectorId(vid))
+    let _ = self.engine.remove(vid)
   }
   result.removed_count = removed_ids.length()
   // Process functions
@@ -253,13 +261,15 @@ pub fn DigestIndex::build_with_remote(
           let (m, vid) = self.manifest.allocate_vector_id()
           self.manifest = m
           // Create attributes
-          let attrs = @vcdb.empty_attrs()
+          let attrs = @search.empty_attrs()
+          attrs.set("node_type", @vcdb_core.AttrValue::String(@kgf_features.node_type_code))
+          attrs.set("node_kind", @vcdb_core.AttrValue::String(unit.symbol.kind))
           attrs.set("name", @vcdb_core.AttrValue::String(unit.name()))
           attrs.set("kind", @vcdb_core.AttrValue::String(unit.symbol.kind))
           attrs.set("module", @vcdb_core.AttrValue::String(unit.module_id))
           attrs.set("depth", @vcdb_core.AttrValue::Int(unit.depth.to_int64()))
           // Add to vcdb
-          self.db.add(@vcdb_core.VectorId(vid), vector, attrs)
+          self.engine.add_raw(vid, vector, attrs)
           // Update manifest
           let entry = @manifest.FunctionEntry::from_unit(unit, Some(vid))
           self.manifest = self.manifest.update_function(entry)
@@ -283,7 +293,7 @@ pub fn DigestIndex::query_with_remote(
   query_embedding : Array[Double],
   top_k : Int,
 ) -> Array[@types.QueryHit] {
-  let hits = self.db.search(query_embedding, top_k, None)
+  let hits = self.engine.search_vector(query_embedding, top_k)
   let results : Array[@types.QueryHit] = []
   for hit in hits {
     let vid = hit.id.to_int64()
@@ -308,7 +318,7 @@ pub fn DigestIndex::query_with_remote(
 /// Serialize index for persistence.
 pub fn DigestIndex::serialize(self : DigestIndex) -> (String, Bytes) {
   let manifest_json = self.manifest.to_json_string()
-  let db_bytes = self.db.serialize()
+  let db_bytes = self.engine.serialize()
   (manifest_json, db_bytes)
 }
 
@@ -317,7 +327,7 @@ pub fn DigestIndex::serialize(self : DigestIndex) -> (String, Bytes) {
 pub fn DigestIndex::stats(self : DigestIndex) -> Map[String, Int] {
   let stats : Map[String, Int] = {}
   stats.set("function_count", self.manifest.functions.length())
-  stats.set("vector_count", self.db.size())
+  stats.set("vector_count", self.engine.size())
   stats.set("embedding_dim", self.provider.dim)
   stats
 }
