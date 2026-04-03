@@ -21,5 +21,7 @@ import {
   "trkbt10/indexion/src/digest/query" @query,
   "trkbt10/indexion/src/digest/embed" @embed,
   "trkbt10/indexion/src/config" @config,
-  "trkbt10/indexion/src/docgen/wiki" @wiki,
+  "trkbt10/indexion/src/docgen/wiki/types" @wiki_types,
+  "trkbt10/indexion/src/docgen/wiki/interop" @wiki_interop,
+  "trkbt10/indexion/src/docgen/wiki/search" @wiki_search,
 }

@@ -1,7 +1,8 @@
 ///|
 /// # Wiki Types
 ///
-/// Data model for wiki pages read from .indexion/wiki/.
+/// Backend-agnostic data model for wiki pages.
+/// Used by reader, interop, search, and all CLI consumers.
 
 ///|
 /// A single wiki page with content and metadata.
@@ -78,8 +79,6 @@ pub fn WikiSourceRef::new(
 ) -> WikiSourceRef {
   { file, start_line, end_line }
 }
-
-// --- Constructors for external use ---
 
 ///|
 pub fn WikiPage::new(

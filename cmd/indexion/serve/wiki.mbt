@@ -8,19 +8,22 @@
 async fn load_wiki_pages(
   config : ServeConfig,
   provider : @dconfig.EmbeddingProvider,
-) -> (@wiki.WikiData, @wiki.WikiSearchIndex?) {
-  let wiki_dir = @config.resolve_project_indexion_dir(config.workspace_dir, "wiki")
-  match @wiki.load_wiki(wiki_dir) {
+) -> (@wiki_types.WikiData, @wiki_search.WikiSearchIndex?) {
+  let wiki_dir = @config.resolve_project_indexion_dir(
+    config.workspace_dir,
+    "wiki",
+  )
+  match @wiki_interop.load_wiki_auto(wiki_dir) {
     Some(data) => {
       @digest_cli.log_progress(
         "Wiki: " + data.pages.length().to_string() + " pages loaded.",
       )
-      let search = @wiki.build_search_index(data.pages, provider) catch {
+      let search = @wiki_search.build_search_index(data.pages, provider) catch {
         _ => {
           @digest_cli.log_progress(
             "Wiki search: embedding failed, using TF-IDF fallback.",
           )
-          @wiki.build_search_index(data.pages, @dconfig.TfIdf(256)) catch {
+          @wiki_search.build_search_index(data.pages, @dconfig.TfIdf(256)) catch {
             _ => {
               @digest_cli.log_progress("Wiki search: failed to build index.")
               return (data, None)
@@ -48,7 +51,7 @@ async fn load_wiki_pages(
 async fn handle_wiki_search(
   conn : @mhttp.ServerConnection,
   body_text : String,
-  search_index : @wiki.WikiSearchIndex?,
+  search_index : @wiki_search.WikiSearchIndex?,
   cors : Bool,
 ) -> Unit {
   match search_index {
@@ -85,16 +88,16 @@ async fn handle_wiki_search(
 }
 
 ///|
-fn empty_wiki() -> @wiki.WikiData {
-  let placeholder = @wiki.WikiPage::new(
+fn empty_wiki() -> @wiki_types.WikiData {
+  let placeholder = @wiki_types.WikiPage::new(
     id="overview",
     title="Wiki Not Generated",
     content="# Wiki Not Generated\n\nRun `indexion plan wiki` to generate a wiki structure, then have an agent write the pages.\n",
   )
-  let pages : Map[String, @wiki.WikiPage] = {}
+  let pages : Map[String, @wiki_types.WikiPage] = {}
   pages["overview"] = placeholder
-  let nav = @wiki.WikiNav::new(pages=[
-    @wiki.WikiNavItem::new(id="overview", title="Overview"),
+  let nav = @wiki_types.WikiNav::new(pages=[
+    @wiki_types.WikiNavItem::new(id="overview", title="Overview"),
   ])
-  @wiki.WikiData::new(nav~, pages~)
+  @wiki_types.WikiData::new(nav~, pages~)
 }

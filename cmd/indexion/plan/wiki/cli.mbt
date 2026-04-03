@@ -92,7 +92,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
       return
     }
   }
-  let existing_wiki = @docgen_wiki.load_wiki(config.wiki_dir)
+  let existing_wiki = @wiki_reader.load_wiki(config.wiki_dir)
   let plan = analyze_and_plan(graph, existing_wiki, config)
   let output_content = match config.format {
     "json" => plan.to_json().stringify(indent=2)
@@ -105,7 +105,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
 ///|
 fn analyze_and_plan(
   graph : @graph.CodeGraph,
-  existing : @docgen_wiki.WikiData?,
+  existing : @wiki_types.WikiData?,
   _config : WikiPlanConfig,
 ) -> @plan_types.PlanDocument {
   let doc = @plan_types.PlanDocument::new("Wiki Documentation Plan")
@@ -235,7 +235,7 @@ fn propose_page_structure(graph : @graph.CodeGraph) -> @plan_types.PlanSection {
 ///|
 fn build_writing_tasks(
   graph : @graph.CodeGraph,
-  existing : @docgen_wiki.WikiData?,
+  existing : @wiki_types.WikiData?,
 ) -> @plan_types.PlanSection {
   let items : Array[@plan_types.ChecklistItem] = []
   let existing_pages : Map[String, Bool] = {}
@@ -296,13 +296,13 @@ fn build_writing_tasks(
 }
 
 ///|
-fn detect_update_needs(wiki : @docgen_wiki.WikiData) -> @plan_types.PlanSection {
+fn detect_update_needs(wiki : @wiki_types.WikiData) -> @plan_types.PlanSection {
   let items : Array[@plan_types.ChecklistItem] = []
   for entry in wiki.pages {
     let page = entry.1
     let mut missing = 0
     for src in page.sources {
-      if !(@fs.path_exists(src.file)) {
+      if !@fs.path_exists(src.file) {
         missing = missing + 1
       }
     }

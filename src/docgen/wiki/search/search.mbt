@@ -43,7 +43,7 @@ pub struct WikiSearchIndex {
 /// Build a search index from wiki pages.
 /// Uses the same EmbeddingProvider as digest — TF-IDF or OpenAI.
 pub async fn build_search_index(
-  pages : Map[String, WikiPage],
+  pages : Map[String, @types.WikiPage],
   provider : @dconfig.EmbeddingProvider,
 ) -> WikiSearchIndex raise @embed.EmbedError {
   // 1. Extract sections

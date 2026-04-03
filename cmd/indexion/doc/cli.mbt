@@ -14,9 +14,14 @@
 pub fn command() -> @argparse.Command {
   @argparse.Command(
     "doc",
-    about="Documentation commands (graph, readme, init)",
+    about="Documentation commands (graph, readme, init, wiki)",
     subcommand_required=true,
-    subcommands=[@init.command(), @graph.command(), @readme.command()],
+    subcommands=[
+      @init.command(),
+      @graph.command(),
+      @readme.command(),
+      @doc_wiki.command(),
+    ],
   )
 }
 
@@ -28,6 +33,7 @@ pub fn dispatch(matches : @argparse.Matches) -> Unit {
     "init" => @init.run_matches(sub)
     "graph" => @graph.run_matches(sub)
     "readme" => @readme.run_matches(sub)
+    "wiki" => @doc_wiki.dispatch(sub)
     _ => ()
   }
 }

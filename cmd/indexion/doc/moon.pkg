@@ -3,4 +3,5 @@ import {
   "trkbt10/indexion/cmd/indexion/doc/init" @init,
   "trkbt10/indexion/cmd/indexion/doc/graph" @graph,
   "trkbt10/indexion/cmd/indexion/doc/readme" @readme,
+  "trkbt10/indexion/cmd/indexion/doc/wiki" @doc_wiki,
 }

@@ -191,8 +191,8 @@ priv struct ServerState {
   mut index_json : String
   mut stats_json : String
   mut provider : @dconfig.EmbeddingProvider
-  mut wiki : @wiki.WikiData
-  mut wiki_search : @wiki.WikiSearchIndex?
+  mut wiki : @wiki_types.WikiData
+  mut wiki_search : @wiki_search.WikiSearchIndex?
 }
 
 ///|
@@ -419,7 +419,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       }
       if effective_static_dir != "" &&
         req.meth == @mhttp.Get &&
-        !(path.has_prefix("/api/")) {
+        !path.has_prefix("/api/") {
         conn.skip_request_body()
         serve_static(conn, effective_static_dir, path)
         return
@@ -463,9 +463,9 @@ async fn do_load(
   let manifest_path = config.index_dir + "/manifest.json"
   let vectors_path = config.index_dir + "/vectors.db"
   let graph_path = config.index_dir + "/graph.json"
-  if !(@fs.path_exists(manifest_path)) ||
-    !(@fs.path_exists(vectors_path)) ||
-    !(@fs.path_exists(graph_path)) {
+  if !@fs.path_exists(manifest_path) ||
+    !@fs.path_exists(vectors_path) ||
+    !@fs.path_exists(graph_path) {
     return None
   }
   @digest_cli.log_progress("Loading index from " + config.index_dir + "...")
