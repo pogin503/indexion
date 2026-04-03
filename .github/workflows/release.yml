@@ -138,6 +138,10 @@ jobs:
           $version = (Get-Content moon.mod.json | ConvertFrom-Json).version
           $file = "src/update/version.mbt"
           (Get-Content $file) -replace 'pub let current_version : String = ".*"', "pub let current_version : String = `"$version`"" | Set-Content $file
+          $mkt = "skills/.claude-plugin/marketplace.json"
+          if (Test-Path $mkt) {
+            (Get-Content $mkt) -replace '"version": "[^"]*"', "`"version`": `"$version`"" | Set-Content $mkt
+          }
 
       - name: Build
         run: moon build --target native --release

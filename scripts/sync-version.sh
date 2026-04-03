@@ -1,6 +1,10 @@
 #!/bin/sh
-# Sync version from moon.mod.json (SoT) to src/update/version.mbt
+# Sync version from moon.mod.json (SoT) to all version references.
 # Run this before building to ensure version consistency.
+#
+# Targets:
+#   - src/update/version.mbt (binary version constant)
+#   - skills/.claude-plugin/marketplace.json (skills plugin version)
 
 set -e
 
@@ -9,24 +13,39 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 MOD_JSON="$ROOT/moon.mod.json"
 VERSION_MBT="$ROOT/src/update/version.mbt"
+MARKETPLACE_JSON="$ROOT/skills/.claude-plugin/marketplace.json"
 
-# Extract version from moon.mod.json
-VERSION=$(grep '"version"' "$MOD_JSON" | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+# Extract version from moon.mod.json (SoT)
+VERSION=$(grep '"version"' "$MOD_JSON" | head -1 | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 
 if [ -z "$VERSION" ]; then
   echo "Error: Could not extract version from $MOD_JSON" >&2
   exit 1
 fi
 
-# Check current version in version.mbt
-CURRENT=$(grep 'current_version' "$VERSION_MBT" | sed 's/.*"\([^"]*\)".*/\1/')
+CHANGED=0
 
-if [ "$VERSION" = "$CURRENT" ]; then
-  exit 0
+# --- Sync version.mbt ---
+CURRENT_MBT=$(grep 'current_version' "$VERSION_MBT" | sed 's/.*"\([^"]*\)".*/\1/')
+if [ "$VERSION" != "$CURRENT_MBT" ]; then
+  echo "version.mbt: $CURRENT_MBT -> $VERSION"
+  sed -i.bak "s/pub let current_version : String = \".*\"/pub let current_version : String = \"$VERSION\"/" "$VERSION_MBT"
+  rm -f "$VERSION_MBT.bak"
+  CHANGED=1
 fi
 
-echo "Syncing version: $CURRENT -> $VERSION"
+# --- Sync marketplace.json ---
+if [ -f "$MARKETPLACE_JSON" ]; then
+  # Replace all "version": "x.y.z" occurrences
+  CURRENT_MKT=$(grep '"version"' "$MARKETPLACE_JSON" | head -1 | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  if [ "$VERSION" != "$CURRENT_MKT" ]; then
+    echo "marketplace.json: $CURRENT_MKT -> $VERSION"
+    sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/g" "$MARKETPLACE_JSON"
+    rm -f "$MARKETPLACE_JSON.bak"
+    CHANGED=1
+  fi
+fi
 
-# Generate version.mbt from template
-sed -i.bak "s/pub let current_version : String = \".*\"/pub let current_version : String = \"$VERSION\"/" "$VERSION_MBT"
-rm -f "$VERSION_MBT.bak"
+if [ "$CHANGED" -eq 0 ]; then
+  exit 0
+fi
