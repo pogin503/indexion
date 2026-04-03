@@ -247,7 +247,7 @@ fn parse_ignore(text : String) -> Array[String]? {
   let result : Array[String] = []
   for line in lines {
     let trimmed = trim_str(line)
-    if trimmed.length() > 0 && !(starts_with(trimmed, "#")) {
+    if trimmed.length() > 0 && !starts_with(trimmed, "#") {
       result.push(trimmed)
     }
   }
@@ -265,7 +265,7 @@ fn parse_preprocess(text : String) -> Array[String]? {
   let result : Array[String] = []
   for line in lines {
     let trimmed = trim_str(line)
-    if trimmed.length() > 0 && !(starts_with(trimmed, "#")) {
+    if trimmed.length() > 0 && !starts_with(trimmed, "#") {
       result.push(trimmed)
     }
   }

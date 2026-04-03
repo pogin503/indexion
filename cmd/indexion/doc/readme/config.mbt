@@ -60,9 +60,7 @@ fn build_root_document(
         let parsed = parse_markdown_to_sections(content)
         for s in parsed {
           // Skip the first heading that became the document title
-          if !(title_extracted) &&
-            s.heading == title &&
-            s.heading.length() > 0 {
+          if !title_extracted && s.heading == title && s.heading.length() > 0 {
             title_extracted = true
             // Add children of the title section as top-level sections
             match s.content {
@@ -91,7 +89,7 @@ fn build_root_document(
         let children : Array[@plan_types.PlanSection] = []
         let filtered = filter_packages(config.packages, filter)
         for entry in filtered {
-          if !(entry.include_in_root) {
+          if !entry.include_in_root {
             continue
           }
           match build_package_section(entry) {
@@ -142,7 +140,7 @@ fn flush_pending_toc(
   has_pending : Bool,
   children : Array[@plan_types.PlanSection],
 ) -> Unit {
-  if !(has_pending) {
+  if !has_pending {
     return
   }
   if children.length() > 0 {
@@ -268,12 +266,12 @@ fn glob_match_path(pattern : String, path : String) -> Bool {
   // Handle "cmd/*" pattern
   if pattern.has_suffix("/*") {
     let prefix = @common.substring(pattern, 0, pattern.length() - 2)
-    if !(path.has_prefix(prefix)) {
+    if !path.has_prefix(prefix) {
       return false
     }
     // Check that there's no additional / after the prefix
     let rest = @common.substring(path, prefix.length() + 1, path.length())
-    return !(rest.contains("/"))
+    return !rest.contains("/")
   }
   // Exact match
   pattern == path

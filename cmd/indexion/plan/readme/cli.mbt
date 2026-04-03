@@ -297,12 +297,12 @@ fn discover_docs_recursive(
   )
   for entry in entries {
     let full_path = current_dir + "/" + entry
-    if entry.has_suffix(".md") && !(@common.is_directory(full_path)) {
+    if entry.has_suffix(".md") && !@common.is_directory(full_path) {
       let rel_path = @common.make_relative_path(full_path, base_dir)
       let title = extract_doc_title(full_path)
       docs.push({ path: rel_path, title })
     } else if @common.is_directory(full_path) {
-      if !(local_config.should_skip_dir(entry)) {
+      if !local_config.should_skip_dir(entry) {
         discover_docs_recursive(base_dir, full_path, docs, local_config)
       }
     }
@@ -374,7 +374,7 @@ fn discover_packages_recursive(
   let mut has_mbt_files = false
   let mut pub_count = 0
   for entry in entries {
-    if entry.has_suffix(".mbt") && !(entry.has_suffix("_wbtest.mbt")) {
+    if entry.has_suffix(".mbt") && !entry.has_suffix("_wbtest.mbt") {
       has_mbt_files = true
       let file_path = current_dir + "/" + entry
       let content = @fs.read_file_to_string(file_path) catch { _ => continue }
@@ -391,7 +391,7 @@ fn discover_packages_recursive(
     let full_path = current_dir + "/" + entry
     if @common.is_directory(full_path) {
       // Use filter to skip excluded directories
-      if !(local_config.should_skip_dir(entry)) {
+      if !local_config.should_skip_dir(entry) {
         discover_packages_recursive(
           base_dir, full_path, packages, local_config, registry,
         )

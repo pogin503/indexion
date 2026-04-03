@@ -25,7 +25,7 @@ pub fn extract_sections(
         normalized_names, current_section,
       )
       if in_matching_section {
-        if !(first_output) {
+        if !first_output {
           result.write_string("\n")
         }
         first_output = false
@@ -48,7 +48,7 @@ pub fn extract_overview(content : String) -> String {
   let mut skipped_title = false
   for line in lines {
     // Skip the # title line
-    if !(skipped_title) && line.has_prefix("# ") {
+    if !skipped_title && line.has_prefix("# ") {
       skipped_title = true
       continue
     }
@@ -201,10 +201,10 @@ pub fn parse_markdown_to_sections(
   let mut in_fence_scan = false
   for line in lines {
     if line.has_prefix("```") || line.has_prefix("~~~") {
-      in_fence_scan = !(in_fence_scan)
+      in_fence_scan = !in_fence_scan
       continue
     }
-    if !(in_fence_scan) {
+    if !in_fence_scan {
       let level = heading_level(line)
       if level > 0 && level < min_level {
         min_level = level
@@ -235,12 +235,12 @@ pub fn parse_markdown_to_sections(
   for line in lines {
     // Track code fences (``` or ~~~)
     if line.has_prefix("```") || line.has_prefix("~~~") {
-      in_code_fence = !(in_code_fence)
+      in_code_fence = !in_code_fence
       current_lines.push(line)
       continue
     }
     let level = heading_level(line)
-    if level > 0 && !(in_code_fence) {
+    if level > 0 && !in_code_fence {
       // Flush previous section
       if current_heading.length() > 0 || current_lines.length() > 0 {
         flat.push((current_level, current_heading, current_lines))

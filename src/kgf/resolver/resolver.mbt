@@ -35,7 +35,7 @@ pub fn resolve_module(
     module0,
     spec.get_relative_prefixes(),
   )
-  if has_ns_prefix && is_namespaced && !(is_relative_prefixed) {
+  if has_ns_prefix && is_namespaced && !is_relative_prefixed {
     let parts = split_by_backslash(module0)
     let take = min_int(spec.get_ns_segments(), parts.length())
     let key = join_with_backslash(parts, take)
@@ -776,7 +776,7 @@ pub fn is_circular_sentinel(path : String) -> Bool {
 /// Parses a circular sentinel to extract (from_file, module_path).
 /// Returns None if not a valid sentinel.
 pub fn parse_circular_sentinel(path : String) -> (String, String)? {
-  if !(is_circular_sentinel(path)) {
+  if !is_circular_sentinel(path) {
     return None
   }
   let rest = @config.substring_from(

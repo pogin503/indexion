@@ -103,7 +103,7 @@ fn compute_keyroots(size : Int, leftmost_leaf : Array[Int]) -> Array[Int] {
   // Traverse in reverse postorder (from root to leaves)
   for i = size; i >= 1; i = i - 1 {
     let l = leftmost_leaf[i]
-    if !(visited_l[l]) {
+    if !visited_l[l] {
       visited_l[l] = true
       keyroots.push(i)
     }
@@ -209,7 +209,7 @@ pub fn get_keyroots(infos : Array[NodeInfo]) -> Array[Int] {
   }
   let keyroots : Array[Int] = []
   for i = 0; i < infos.length(); i = i + 1 {
-    if !(is_leftmost_child[i]) {
+    if !is_leftmost_child[i] {
       keyroots.push(i)
     }
   }

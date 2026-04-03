@@ -523,7 +523,7 @@ fn categorize_matches(
         break
       }
     }
-    if !(matched) {
+    if !matched {
       unmatched.push(m)
     }
   }

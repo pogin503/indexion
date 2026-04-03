@@ -21,7 +21,7 @@ fn normalize_spaces(text : String) -> String {
   for ch in chars {
     let is_space = ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
     if is_space {
-      if !(last_space) {
+      if !last_space {
         buf.write_char(' ')
       }
       last_space = true

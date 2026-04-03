@@ -18,7 +18,7 @@ pub fn run_parallel(tasks : Array[() -> String]) -> Array[String] {
   if tasks.length() == 0 {
     return []
   }
-  if tasks.length() == 1 || !(available()) {
+  if tasks.length() == 1 || !available() {
     let results : Array[String] = []
     for task in tasks {
       results.push(task())
@@ -52,7 +52,7 @@ pub fn run_parallel(tasks : Array[() -> String]) -> Array[String] {
       break
     }
   }
-  if !(all_forked) {
+  if !all_forked {
     // Wait for already-forked children
     for w in workers {
       let _ = waitpid_native(w.0)

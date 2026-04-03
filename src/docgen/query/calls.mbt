@@ -63,7 +63,7 @@ pub fn get_call_chain(
     visited.set(current, true)
     for call in get_callees(graph, current) {
       result.push(call)
-      if !(visited.contains(call.callee)) {
+      if !visited.contains(call.callee) {
         queue.push((call.callee, depth + 1))
       }
     }

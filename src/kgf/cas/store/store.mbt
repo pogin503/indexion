@@ -106,7 +106,7 @@ pub fn MemoryChunkStore::find_orphans(
   }
   let orphans : Array[@types.ContentHash] = []
   for entry in self.chunks {
-    if !(ref_set.contains(entry.0)) {
+    if !ref_set.contains(entry.0) {
       orphans.push(entry.0)
     }
   }

@@ -175,7 +175,7 @@ fn skip_whitespace(text : String, start : Int) -> Int {
 /// Reads an identifier from the text.
 fn read_identifier(text : String, start : Int) -> (String, Int) {
   let arr = text.to_array()
-  if start >= arr.length() || !(is_ident_start(arr[start])) {
+  if start >= arr.length() || !is_ident_start(arr[start]) {
     return ("", start)
   }
   let mut end = start + 1

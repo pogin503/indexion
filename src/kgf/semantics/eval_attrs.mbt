@@ -330,7 +330,7 @@ fn resolve_import_path(ctx : SemEvalCtx, path : String) -> String {
   } else {
     // No resolver, return path with bare prefix if needed
     let bare_prefix = resolver_spec.get_bare_prefix()
-    if bare_prefix.length() > 0 && !(is_relative_path(path)) {
+    if bare_prefix.length() > 0 && !is_relative_path(path) {
       bare_prefix + path
     } else {
       path

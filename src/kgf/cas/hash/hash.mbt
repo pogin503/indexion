@@ -206,7 +206,7 @@ pub fn is_valid_hash(hash : String) -> Bool {
     let valid = (c >= '0' && c <= '9') ||
       (c >= 'a' && c <= 'f') ||
       (c >= 'A' && c <= 'F')
-    if !(valid) {
+    if !valid {
       return false
     }
   }

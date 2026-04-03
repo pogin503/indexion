@@ -296,7 +296,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     }
     None =>
       // If not using template and not per-package, output combined docs
-      if !(config.per_package) {
+      if !config.per_package {
         let format = OutputFormat::from_string(config.format)
         let content = match format {
           Markdown => render_markdown(docs)

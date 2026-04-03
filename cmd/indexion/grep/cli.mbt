@@ -149,16 +149,12 @@ pub fn command() -> @argparse.Command {
         "semantic",
         about="Semantic query: proxy, short:N, long:N, params-gte:N, name:substr, undocumented",
       ),
-      @argparse.OptionArg(
-        "specs-dir",
-        about="KGF specs directory",
-        default_values=["kgfs"],
-      ),
-      @argparse.OptionArg(
-        "context",
-        about="Lines of context around matches",
-        default_values=["0"],
-      ),
+      @argparse.OptionArg("specs-dir", about="KGF specs directory", default_values=[
+        "kgfs",
+      ]),
+      @argparse.OptionArg("context", about="Lines of context around matches", default_values=[
+        "0",
+      ]),
     ],
     positionals=[
       @argparse.PositionArg(
@@ -199,7 +195,9 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     return
   }
   if config.pattern.length() == 0 {
-    println("Error: Pattern required (or use --undocumented / --semantic=QUERY)")
+    println(
+      "Error: Pattern required (or use --undocumented / --semantic=QUERY)",
+    )
     return
   }
   // Build alias table from KGF specs for natural pattern syntax

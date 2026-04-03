@@ -161,7 +161,7 @@ pub fn compare_hybrid(
     let i = if pi < pj { pi } else { pj }
     let j = if pi < pj { pj } else { pi }
     let key = @candidates.pair_key(i, j)
-    if !(seen.contains(key)) && sim >= threshold {
+    if !seen.contains(key) && sim >= threshold {
       matches.push(
         SimilarityMatch::new(
           i,

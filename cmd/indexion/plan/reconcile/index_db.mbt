@@ -63,7 +63,7 @@ pub fn ReconcileManifest::allocate_vector_id(
 ///|
 fn load_record_db(index_dir : String) -> @vcdb.VectorDB {
   let path = records_db_path(index_dir)
-  if !(@fs.path_exists(path)) {
+  if !@fs.path_exists(path) {
     return @vcdb.VectorDB::with_dim(1)
   }
   let bytes = @fs.read_file_to_bytes(path) catch {
@@ -253,7 +253,7 @@ fn prune_index_state(
   let keep_records = keep_record_keys(record_keys)
   let stale_records : Array[String] = []
   for entry in manifest.records {
-    if !(keep_records.contains(entry.0)) {
+    if !keep_records.contains(entry.0) {
       stale_records.push(entry.0)
     }
   }
@@ -268,7 +268,7 @@ fn prune_index_state(
   let keep_reviews = keep_record_keys(review_keys)
   let stale_reviews : Array[String] = []
   for entry in manifest.logical_reviews {
-    if !(keep_reviews.contains(entry.0)) {
+    if !keep_reviews.contains(entry.0) {
       stale_reviews.push(entry.0)
     }
   }

@@ -65,8 +65,7 @@ pub fn discover_packages_from_files(
   for entry in by_dir {
     let dir = entry.0
     let files = entry.1
-    if files.length() == 0 ||
-      !(filter.should_include(dir, true).is_included()) {
+    if files.length() == 0 || !filter.should_include(dir, true).is_included() {
       continue
     }
     let name = extract_dir_name(dir)
@@ -84,11 +83,11 @@ fn discover_impl(
   packages : Array[PackageInfo],
 ) -> Unit {
   try {
-    if !(@fs.is_dir(path)) {
+    if !@fs.is_dir(path) {
       return
     }
     // Check if path should be included
-    if !(filter.should_include(path, true).is_included()) {
+    if !filter.should_include(path, true).is_included() {
       return
     }
     // Collect supported files in this directory

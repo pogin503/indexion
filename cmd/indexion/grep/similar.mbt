@@ -55,7 +55,11 @@ pub fn run_similar_search(
       buf.write_string(func.get_name())
       buf.write_string(" ")
       let start_idx = start_line - 1
-      let end_idx = if end_line > lines.length() { lines.length() } else { end_line }
+      let end_idx = if end_line > lines.length() {
+        lines.length()
+      } else {
+        end_line
+      }
       for i = start_idx; i < end_idx; i = i + 1 {
         if i < lines.length() {
           buf.write_string(lines[i])
@@ -126,7 +130,9 @@ pub fn run_similar_search(
   }
   println("")
   println(
-    limit.to_string() + " results from " + docs.length().to_string() +
+    limit.to_string() +
+    " results from " +
+    docs.length().to_string() +
     " functions",
   )
 }

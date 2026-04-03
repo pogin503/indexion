@@ -161,7 +161,7 @@ pub fn run_to_string(config : GraphConfig) -> String? {
       break
     }
   }
-  if !(has_existing_input) {
+  if !has_existing_input {
     return None
   }
   let registry = @kgf_features.load_registry_or_empty(

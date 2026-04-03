@@ -82,7 +82,7 @@ fn render_architecture_section(
               break
             }
           }
-          if !(exists) {
+          if !exists {
             arr.push(file)
           }
         }
@@ -134,7 +134,7 @@ fn render_dependency_section(
           break
         }
       }
-      if !(exists) {
+      if !exists {
         dirs.push(dir)
       }
     }
@@ -177,7 +177,7 @@ fn render_problems_section(
               break
             }
           }
-          if !(exists) {
+          if !exists {
             dup_funcs.push(name)
           }
         }
@@ -248,7 +248,7 @@ fn render_phases(buf : StringBuilder, plan : RefactorPlanJSON) -> Unit {
             break
           }
         }
-        if !(exists) {
+        if !exists {
           shared_modules.push(cluster.suggestions.shared_module)
         }
       }
@@ -260,7 +260,7 @@ fn render_phases(buf : StringBuilder, plan : RefactorPlanJSON) -> Unit {
             break
           }
         }
-        if !(exists) {
+        if !exists {
           all_funcs.push(name)
         }
       }
@@ -386,7 +386,7 @@ fn render_checklists(buf : StringBuilder, plan : RefactorPlanJSON) -> Unit {
             break
           }
         }
-        if !(exists) {
+        if !exists {
           shared_modules.push(cluster.suggestions.shared_module)
         }
       }

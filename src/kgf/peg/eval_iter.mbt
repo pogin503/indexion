@@ -208,7 +208,7 @@ fn process_seq_cont(
   labels : Labels,
 ) -> Unit {
   let result = ctx.results.pop().unwrap()
-  if !(result.ok) {
+  if !result.ok {
     let memo_idx = node_id * ctx.num_positions + start_pos
     ctx.memo[memo_idx] = Failed
     ctx.results.push({ ok: false, end_pos: start_pos, labels: empty_labels() })
@@ -271,7 +271,7 @@ fn process_star_cont(
   labels : Labels,
 ) -> Unit {
   let result = ctx.results.pop().unwrap()
-  if !(result.ok) || result.end_pos == current_pos {
+  if !result.ok || result.end_pos == current_pos {
     ctx.results.push({ ok: true, end_pos: current_pos, labels })
     return
   }
@@ -291,7 +291,7 @@ fn process_plus_first(
   start_pos : Int,
 ) -> Unit {
   let result = ctx.results.pop().unwrap()
-  if !(result.ok) {
+  if !result.ok {
     let memo_idx = node_id * ctx.num_positions + start_pos
     ctx.memo[memo_idx] = Failed
     ctx.results.push({ ok: false, end_pos: start_pos, labels: empty_labels() })
@@ -312,7 +312,7 @@ fn process_plus_rest(
   labels : Labels,
 ) -> Unit {
   let result = ctx.results.pop().unwrap()
-  if !(result.ok) || result.end_pos == current_pos {
+  if !result.ok || result.end_pos == current_pos {
     ctx.results.push({ ok: true, end_pos: current_pos, labels })
     return
   }
@@ -385,9 +385,7 @@ fn process_rule_ref_cont(
   start_pos : Int,
 ) -> Unit {
   let result = ctx.results.pop().unwrap()
-  if result.ok &&
-    !(target_is_rule_ref) &&
-    should_emit_rule_iter(ctx, rule_name) {
+  if result.ok && !target_is_rule_ref && should_emit_rule_iter(ctx, rule_name) {
     // Materialize for callback
     let labels_map = materialize(result.labels, ctx.tokens)
     (ctx.on_rule_match)(rule_name, labels_map, start_pos, result.end_pos)
@@ -437,7 +435,7 @@ fn process_predicate_cont(
 ) -> Unit {
   let result = ctx.results.pop().unwrap()
   let memo_idx = node_id * ctx.num_positions + pos
-  let matched = if negate { !(result.ok) } else { result.ok }
+  let matched = if negate { !result.ok } else { result.ok }
   if matched {
     let labels = empty_labels()
     ctx.memo[memo_idx] = Succeeded(pos, labels)

@@ -40,7 +40,9 @@ pub fn parse_issue_form(content : String) -> IssueFormTemplate {
             let arr_trimmed = trim_string(arr_line)
             if arr_trimmed.has_prefix("- ") {
               template.labels.push(
-                trim_string(@config.substring(arr_trimmed, 2, arr_trimmed.length())),
+                trim_string(
+                  @config.substring(arr_trimmed, 2, arr_trimmed.length()),
+                ),
               )
               i = i + 1
             } else if count_indent(arr_line) > 0 && arr_trimmed.length() > 0 {
@@ -321,12 +323,12 @@ fn parse_inline_array(s : String) -> Array[String] {
   let mut quote_char : Char = '"'
   while start < end {
     let c = chars[start]
-    if !(in_quote) && (c == '"' || c == '\'') {
+    if !in_quote && (c == '"' || c == '\'') {
       in_quote = true
       quote_char = c
     } else if in_quote && c == quote_char {
       in_quote = false
-    } else if !(in_quote) && c == ',' {
+    } else if !in_quote && c == ',' {
       let item = trim_string(String::from_array(current))
       if item.length() > 0 {
         result.push(item)

@@ -89,7 +89,7 @@ pub fn build_peg(spec : @types.KGFSpec) -> PEG raise {
   // Collect non-skip tokens and assign IDs
   let mut token_id_counter = 0
   for token_def in spec.tokens {
-    if !(token_def.skip) {
+    if !token_def.skip {
       tokens.add(token_def.name)
       token_ids.set(token_def.name, token_id_counter)
       token_id_counter = token_id_counter + 1

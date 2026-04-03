@@ -175,7 +175,7 @@ fn run_project_init(target_dir : String, force : Bool) -> Unit {
 
 ///|
 fn write_file_if_ok(path : String, content : String, force : Bool) -> Bool {
-  if !(force) {
+  if !force {
     if @fs.path_exists(path) {
       return false
     }

@@ -308,7 +308,7 @@ fn eval_func_hex_to_int(args : Array[Json]) -> Json {
   match args[0] {
     String(s) => {
       let trimmed = trim_string(s)
-      if !(is_valid_hex(trimmed)) {
+      if !is_valid_hex(trimmed) {
         return Json::null()
       }
       match parse_hex(trimmed) {
@@ -355,7 +355,7 @@ fn is_valid_hex(s : String) -> Bool {
     return false
   }
   for c in s {
-    if !(is_hex_char(c)) {
+    if !is_hex_char(c) {
       return false
     }
   }

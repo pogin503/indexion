@@ -26,7 +26,7 @@ fn collect_specs_recursive(
   specs : Array[KgfSpecInfo],
 ) -> Unit {
   try {
-    if !(@fs.is_dir(dir)) {
+    if !@fs.is_dir(dir) {
       return
     }
     let entries = @fs.read_dir(dir)
@@ -37,7 +37,7 @@ fn collect_specs_recursive(
           Some(info) => specs.push(info)
           None => ()
         }
-      } else if @fs.is_dir(path) && !(entry.has_prefix(".")) {
+      } else if @fs.is_dir(path) && !entry.has_prefix(".") {
         collect_specs_recursive(path, root_dir, specs)
       }
     }

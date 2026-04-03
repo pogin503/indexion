@@ -179,7 +179,7 @@ pub fn split_sentences_with_options(
     }
     let is_nl = is_newline(c)
 
-    if (is_end || is_nl) && !(is_protected) {
+    if (is_end || is_nl) && !is_protected {
       // Include the punctuation in the sentence
       let mut end_pos = if is_end { i + 1 } else { i }
 
@@ -194,7 +194,7 @@ pub fn split_sentences_with_options(
         let check_end = if is_end { i + 1 } else { i }
         let mut has_content = false
         for j = current_start; j < check_end; j = j + 1 {
-          if !(is_whitespace(chars[j])) {
+          if !is_whitespace(chars[j]) {
             has_content = true
             break
           }
@@ -242,7 +242,7 @@ pub fn split_sentences_with_options(
   if current_start < len {
     let mut has_content = false
     for j = current_start; j < len; j = j + 1 {
-      if !(is_whitespace(chars[j])) {
+      if !is_whitespace(chars[j]) {
         has_content = true
         break
       }

@@ -129,8 +129,7 @@ fn parse_shared_toml_sections(
   value : String,
 ) -> (ReconcileFileConfig, DigestFileConfig) {
   match section {
-    "reconcile" =>
-      (parse_reconcile_section_key(reconcile, key, value), digest)
+    "reconcile" => (parse_reconcile_section_key(reconcile, key, value), digest)
     "reconcile.mapping" =>
       (parse_reconcile_mapping_key(reconcile, key, value), digest)
     "reconcile.output" =>
@@ -139,8 +138,7 @@ fn parse_shared_toml_sections(
       (parse_reconcile_time_key(reconcile, key, value), digest)
     "reconcile.logical_review" =>
       (parse_reconcile_logical_review_key(reconcile, key, value), digest)
-    "digest" =>
-      (reconcile, parse_digest_section_key(digest, key, value))
+    "digest" => (reconcile, parse_digest_section_key(digest, key, value))
     _ => (reconcile, digest)
   }
 }
@@ -479,7 +477,7 @@ fn parse_json_object(value : Json) -> Map[String, Json]? {
 ///|
 fn parse_string_array_literal(value : String) -> Array[String] {
   let trimmed = trim_string(value)
-  if !(trimmed.has_prefix("[")) || !(trimmed.has_suffix("]")) {
+  if !trimmed.has_prefix("[") || !trimmed.has_suffix("]") {
     return []
   }
   let inner = substring(trimmed, 1, trimmed.length() - 1)

@@ -247,7 +247,7 @@ fn render_action_items(buf : StringBuilder, analysis : DocAnalysis) -> Unit {
   }
 
   // Priority 2: Missing README
-  let no_readme = analysis.packages.filter(fn(p) { !(p.has_readme) })
+  let no_readme = analysis.packages.filter(fn(p) { !p.has_readme })
   if no_readme.length() > 0 {
     buf.write_string("### Priority 2: Missing README\n\n")
     for pkg in no_readme {

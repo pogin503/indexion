@@ -1,6 +1,6 @@
 ///|
 fn document_path_scope(config : ReconcileConfig) -> @scope.PathScope {
-  if !(config.documents.path_scope.is_empty()) ||
+  if !config.documents.path_scope.is_empty() ||
     config.documents.doc_paths.is_empty() {
     config.documents.path_scope
   } else {
@@ -20,7 +20,7 @@ fn is_document_path(
 ) -> Bool {
   let rel = @config_paths.relative_to(config.target_dir, path)
   let subject = @scope.PathSubject::new(rel, additional_paths=[path])
-  if !(document_path_scope(config).matches(subject)) {
+  if !document_path_scope(config).matches(subject) {
     return false
   }
   select_document_spec(path, config, registry) is Some(_)

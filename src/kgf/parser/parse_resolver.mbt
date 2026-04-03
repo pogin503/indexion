@@ -167,7 +167,7 @@ fn parse_aliases_block(
   while i < lines.length() {
     let li = lines[i]
     // Check if still in indented block
-    if !(is_indented(li)) {
+    if !is_indented(li) {
       break
     }
     let sub = trim_str(li)
@@ -218,7 +218,7 @@ fn parse_single_alias(
   while i < lines.length() {
     let s = lines[i]
     // Must be double-indented
-    if !(is_double_indented(s)) {
+    if !is_double_indented(s) {
       break
     }
     let t = trim_str(s)
@@ -251,7 +251,7 @@ fn parse_resolve_block(
   while i < lines.length() {
     let li = lines[i]
     // Check if still in indented block
-    if !(is_indented(li)) {
+    if !is_indented(li) {
       break
     }
     let sub = trim_str(li)
@@ -361,7 +361,7 @@ fn parse_multi_line_resolve_step(
   while i < lines.length() {
     let s = lines[i]
     // Must be double-indented
-    if !(is_double_indented(s)) {
+    if !is_double_indented(s) {
       break
     }
     let t = trim_str(s)

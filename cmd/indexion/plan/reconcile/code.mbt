@@ -65,7 +65,7 @@ fn build_code_units_fast(
     // Build code units from pub declarations
     for decl in pub_decls {
       let kind = decl.kind
-      if !(symbol_kinds.contains(kind)) {
+      if !symbol_kinds.contains(kind) {
         continue
       }
       let symbol_id = path + "::" + decl.name
@@ -104,7 +104,7 @@ fn build_code_units_fast(
         continue
       }
       // Only include if it matches document_symbol_kinds
-      if !(symbol_kinds.contains("function")) {
+      if !symbol_kinds.contains("function") {
         continue
       }
       let code_hash = make_hash([

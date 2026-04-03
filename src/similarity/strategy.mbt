@@ -72,7 +72,7 @@ pub fn StrategyKind::is_text_strategy(self : StrategyKind) -> Bool {
 ///|
 /// Check if strategy operates on trees.
 pub fn StrategyKind::is_tree_strategy(self : StrategyKind) -> Bool {
-  !(self.is_text_strategy())
+  !self.is_text_strategy()
 }
 
 ///|

@@ -31,7 +31,7 @@ pub fn KGFRegistry::load_from_dir(dir : String) -> KGFRegistry {
 /// Recursively load KGF specs from a directory.
 fn load_specs_recursive(registry : KGFRegistry, dir : String) -> Unit {
   try {
-    if !(@fs.is_dir(dir)) {
+    if !@fs.is_dir(dir) {
       return
     }
     let entries = @fs.read_dir(dir)
@@ -44,7 +44,7 @@ fn load_specs_recursive(registry : KGFRegistry, dir : String) -> Unit {
           Some(spec) => registry.register_spec(spec)
           None => ()
         }
-      } else if @fs.is_dir(path) && !(entry.has_prefix(".")) {
+      } else if @fs.is_dir(path) && !entry.has_prefix(".") {
         // Recurse into subdirectory
         load_specs_recursive(registry, path)
       }
@@ -172,7 +172,7 @@ pub fn KGFRegistry::detect_from_path(
   for entry in self.ext_to_lang {
     let pattern = entry.0
     let lang = entry.1
-    if !(pattern.has_prefix(".")) {
+    if !pattern.has_prefix(".") {
       // Filename pattern (e.g., "moon.pkg")
       if path == pattern ||
         path.has_suffix("/" + pattern) ||
@@ -225,7 +225,7 @@ pub fn KGFRegistry::get_external_prefixes(self : KGFRegistry) -> Array[String] {
           break
         }
       }
-      if !(exists) {
+      if !exists {
         prefixes.push(prefix)
       }
     }
@@ -274,7 +274,7 @@ pub fn KGFRegistry::get_package_markers(self : KGFRegistry) -> Array[String] {
     let spec = entry.1
     let resolver = spec.get_resolver()
     for marker in resolver.get_package_markers() {
-      if !(contains_string(markers, marker)) {
+      if !contains_string(markers, marker) {
         markers.push(marker)
       }
     }
@@ -297,14 +297,14 @@ fn contains_string(values : Array[String], value : String) -> Bool {
 ///|
 fn is_filename_pattern(pattern : String) -> Bool {
   pattern.length() > 0 &&
-  !(pattern.has_prefix(".")) &&
-  !(pattern.contains("/")) &&
-  !(pattern.contains("\\"))
+  !pattern.has_prefix(".") &&
+  !pattern.contains("/") &&
+  !pattern.contains("\\")
 }
 
 ///|
 fn add_project_marker(markers : Array[String], marker : String) -> Unit {
-  if !(is_filename_pattern(marker)) || contains_string(markers, marker) {
+  if !is_filename_pattern(marker) || contains_string(markers, marker) {
     return
   }
   markers.push(marker)

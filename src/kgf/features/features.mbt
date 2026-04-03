@@ -261,7 +261,10 @@ pub fn extract_pub_declarations_from_tokens(
           next_kind == "WS" ||
           next_kind == "LPAREN" ||
           next_kind == "RPAREN" ||
-          (is_identifier_kind(next_kind) && is_visibility_modifier_arg(tokens[j].get_text())) {
+          (
+            is_identifier_kind(next_kind) &&
+            is_visibility_modifier_arg(tokens[j].get_text())
+          ) {
           j += 1
         } else {
           break
@@ -391,7 +394,7 @@ pub fn extract_doc_map(tokens : Array[@kgf_types.Tok]) -> Map[Int, String] {
           let value = tokens[i].get_value()
           // skip_value tokens (e.g. ///|) produce empty string — skip them
           if value.length() > 0 {
-            if !(first) {
+            if !first {
               doc_buf.write_string("\n")
             }
             doc_buf.write_string(value)
@@ -444,7 +447,8 @@ pub fn extract_pub_declarations_and_doc_map(
   registry : @kgf_registry.KGFRegistry?,
 ) -> (Array[PubDeclaration], Map[Int, String]) {
   match tokenize_source(content, path, registry) {
-    Some(tokens) => (extract_pub_declarations_from_tokens(tokens), extract_doc_map(tokens))
+    Some(tokens) =>
+      (extract_pub_declarations_from_tokens(tokens), extract_doc_map(tokens))
     None => ([], {})
   }
 }

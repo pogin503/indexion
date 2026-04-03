@@ -14,7 +14,7 @@ pub fn join_path(parts : Array[String]) -> String {
   let mut path = result[0]
   for i = 1; i < result.length(); i = i + 1 {
     let part = result[i]
-    if path.length() > 0 && !(path.has_suffix("/")) {
+    if path.length() > 0 && !path.has_suffix("/") {
       path = path + "/"
     }
     path = path + part
@@ -71,7 +71,7 @@ pub fn normalize_path(path : String) -> String {
     } else if part == ".." {
       if stack.length() > 0 && stack[stack.length() - 1] != ".." {
         let _ = stack.pop()
-      } else if !(is_abs) {
+      } else if !is_abs {
         stack.push("..")
       }
     } else {

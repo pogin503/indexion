@@ -44,7 +44,7 @@ pub fn assemble_graph(
   for chunk in loaded_chunk_data {
     for ext_ref in chunk.external_refs {
       // Check if the referenced module exists in the graph
-      if !(graph.modules.contains(ext_ref.ref_str)) {
+      if !graph.modules.contains(ext_ref.ref_str) {
         unresolved_refs.push(ext_ref.ref_str)
       }
     }
@@ -110,7 +110,7 @@ pub fn assemble_partial_graph(
   // Collect unresolved external references
   for chunk in loaded_chunk_data {
     for ext_ref in chunk.external_refs {
-      if !(graph.modules.contains(ext_ref.ref_str)) {
+      if !graph.modules.contains(ext_ref.ref_str) {
         unresolved_refs.push(ext_ref.ref_str)
       }
     }
@@ -140,7 +140,7 @@ pub fn validate_manifest(
   for entry in manifest.modules {
     let module_id = entry.0
     let hash = entry.1
-    if !(store.has(hash)) {
+    if !store.has(hash) {
       missing.push(module_id)
     }
   }

@@ -83,7 +83,7 @@ async fn run_async(config : UpdateConfig) -> Unit {
     }
     return
   }
-  if !(result.has_update) && !(config.force) {
+  if !result.has_update && !config.force {
     println("")
     println("Already up to date.")
     return

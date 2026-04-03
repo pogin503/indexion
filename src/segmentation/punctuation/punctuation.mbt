@@ -123,8 +123,10 @@ pub fn segment_by_punctuation(
       )
     } else {
       // Check if there's actual content
-      let remaining_text = @types.extract_substring(text, chunk_start, text_length)
-      if !(@utils.is_whitespace_only(remaining_text)) {
+      let remaining_text = @types.extract_substring(
+        text, chunk_start, text_length,
+      )
+      if !@utils.is_whitespace_only(remaining_text) {
         points.push(
           @types.SegmentPoint::new(
             chunk_start,

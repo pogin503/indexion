@@ -6,7 +6,7 @@
 ///|
 /// Validate that a path does not contain path traversal sequences.
 fn validate_path(path : String) -> Bool {
-  !(path.contains(".."))
+  !path.contains("..")
 }
 
 ///|
@@ -90,7 +90,7 @@ async fn handle_explore(
     return
   }
   for dir in target_dirs {
-    if !(validate_path(dir)) {
+    if !validate_path(dir) {
       send_json_error(conn, 400, "Invalid path", cors)
       return
     }
@@ -125,7 +125,7 @@ async fn handle_kgf_tokens(
     }
   }
   let file = json_string(json, "file", "")
-  if file.length() == 0 || !(validate_path(file)) {
+  if file.length() == 0 || !validate_path(file) {
     send_json_error(conn, 400, "Valid file path required", cors)
     return
   }
@@ -150,7 +150,7 @@ async fn handle_kgf_edges(
     }
   }
   let file = json_string(json, "file", "")
-  if file.length() == 0 || !(validate_path(file)) {
+  if file.length() == 0 || !validate_path(file) {
     send_json_error(conn, 400, "Valid file path required", cors)
     return
   }
@@ -180,7 +180,7 @@ async fn handle_doc_graph(
     return
   }
   for p in input_paths {
-    if !(validate_path(p)) {
+    if !validate_path(p) {
       send_json_error(conn, 400, "Invalid path", cors)
       return
     }
@@ -220,7 +220,7 @@ async fn handle_plan_refactor(
     }
   }
   let target_dir = json_string(json, "targetDir", "")
-  if target_dir.length() == 0 || !(validate_path(target_dir)) {
+  if target_dir.length() == 0 || !validate_path(target_dir) {
     send_json_error(conn, 400, "Valid targetDir required", cors)
     return
   }
@@ -256,7 +256,7 @@ async fn handle_plan_documentation(
     }
   }
   let target_dir = json_string(json, "targetDir", "")
-  if target_dir.length() == 0 || !(validate_path(target_dir)) {
+  if target_dir.length() == 0 || !validate_path(target_dir) {
     send_json_error(conn, 400, "Valid targetDir required", cors)
     return
   }
@@ -289,7 +289,7 @@ async fn handle_plan_reconcile(
     }
   }
   let target_dir = json_string(json, "targetDir", "")
-  if target_dir.length() == 0 || !(validate_path(target_dir)) {
+  if target_dir.length() == 0 || !validate_path(target_dir) {
     send_json_error(conn, 400, "Valid targetDir required", cors)
     return
   }
@@ -331,7 +331,7 @@ async fn handle_plan_solid(
     return
   }
   for dir in from_dirs {
-    if !(validate_path(dir)) {
+    if !validate_path(dir) {
       send_json_error(conn, 400, "Invalid path", cors)
       return
     }
@@ -369,7 +369,7 @@ async fn handle_plan_unwrap(
     }
   }
   let target_dir = json_string(json, "targetDir", "")
-  if target_dir.length() == 0 || !(validate_path(target_dir)) {
+  if target_dir.length() == 0 || !validate_path(target_dir) {
     send_json_error(conn, 400, "Valid targetDir required", cors)
     return
   }
@@ -405,7 +405,7 @@ async fn handle_plan_readme(
     }
   }
   let target_dir = json_string(json, "targetDir", ".")
-  if !(validate_path(target_dir)) {
+  if !validate_path(target_dir) {
     send_json_error(conn, 400, "Invalid path", cors)
     return
   }

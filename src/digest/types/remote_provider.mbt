@@ -15,7 +15,7 @@ pub struct RemoteEmbeddingConfig {
 pub fn RemoteEmbeddingConfig::default() -> RemoteEmbeddingConfig {
   {
     embeddings_file: @config.resolve_project_indexion_dir(".", "digest") +
-      "/embeddings.jsonl",
+    "/embeddings.jsonl",
     dim: 1536,
   }
 }

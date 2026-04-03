@@ -73,7 +73,7 @@ fn find_extracted_dir(tmp_dir : String) -> String? {
     let entries = @fs.read_dir(tmp_dir)
     for entry in entries {
       let path = @config.join_path(tmp_dir, entry)
-      if @fs.is_dir(path) && !(entry.has_prefix(".")) {
+      if @fs.is_dir(path) && !entry.has_prefix(".") {
         return Some(path)
       }
     }

@@ -175,7 +175,7 @@ fn build_action_section(analysis : DocAnalysis) -> @plan_types.PlanSection {
     )
   }
   // Priority 2: Missing README
-  let no_readme = analysis.packages.filter(fn(p) { !(p.has_readme) })
+  let no_readme = analysis.packages.filter(fn(p) { !p.has_readme })
   if no_readme.length() > 0 {
     let items : Array[@plan_types.ChecklistItem] = []
     for pkg in no_readme {

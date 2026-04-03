@@ -129,12 +129,12 @@ pub fn extract_function_units(
   for entry in graph.get_symbols() {
     let symbol = entry.1
     // Check symbol kind
-    if !(should_include_kind(symbol.kind, config)) {
+    if !should_include_kind(symbol.kind, config) {
       continue
     }
     // Check if internal/external
     let is_internal = is_internal_module(graph, symbol.module_id)
-    if !(is_internal) && !(config.include_external) {
+    if !is_internal && !config.include_external {
       continue
     }
     let unit = extract_function_unit(graph, symbol, depth_memo)

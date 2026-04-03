@@ -61,7 +61,7 @@ pub fn run_pattern_search(
       print_match(m, lines, config.context_lines)
     }
   }
-  if !(config.files_only) && !(config.count_only) {
+  if !config.files_only && !config.count_only {
     println("")
     println(
       total_matches.to_string() +
@@ -99,7 +99,9 @@ pub fn run_semantic_search(
       Some(t) => t
       None => continue
     }
-    let matches = run_semantic_query_on_file(query, tokens, path, content, registry)
+    let matches = run_semantic_query_on_file(
+      query, tokens, path, content, registry,
+    )
     if matches.length() == 0 {
       continue
     }
@@ -115,7 +117,13 @@ pub fn run_semantic_search(
     }
     for m in matches {
       println(
-        m.file + ":" + m.line.to_string() + ": " + m.kind + " " + m.name +
+        m.file +
+        ":" +
+        m.line.to_string() +
+        ": " +
+        m.kind +
+        " " +
+        m.name +
         "  (" +
         m.detail +
         ")",
@@ -157,7 +165,7 @@ fn collect_search_files(
           break
         }
       }
-      if !(matched) {
+      if !matched {
         continue
       }
     }
@@ -169,7 +177,7 @@ fn collect_search_files(
         break
       }
     }
-    if !(has_ext) {
+    if !has_ext {
       continue
     }
     try {

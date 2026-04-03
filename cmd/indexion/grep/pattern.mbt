@@ -41,7 +41,9 @@ pub fn build_alias_table(
       // Keywords: KW_pub with pattern "pub\b" → alias "pub" → "KW_pub"
       if name.has_prefix("KW_") && pattern.has_suffix("\\b") {
         let literal = @config.substring(
-          pattern, 0, pattern.to_array().length() - 2,
+          pattern,
+          0,
+          pattern.to_array().length() - 2,
         )
         if literal.length() > 0 {
           aliases.set(literal, name)
@@ -211,9 +213,13 @@ pub fn find_matches(
         let matched = extract_matched_text(
           significant, pos, end, content, token_lines,
         )
-        results.push(
-          { file, line, start_tok: start_idx, end_tok: end_idx, matched_text: matched },
-        )
+        results.push({
+          file,
+          line,
+          start_tok: start_idx,
+          end_tok: end_idx,
+          matched_text: matched,
+        })
         pos = end
       }
       None => pos += 1

@@ -72,7 +72,7 @@ pub fn get_ancestors(
     visited.set(current, true)
     for rel in get_parents(graph, current) {
       result.push(rel)
-      if !(visited.contains(rel.parent)) {
+      if !visited.contains(rel.parent) {
         queue.push(rel.parent)
       }
     }
@@ -97,7 +97,7 @@ pub fn get_descendants(
     visited.set(current, true)
     for rel in get_children(graph, current) {
       result.push(rel)
-      if !(visited.contains(rel.child)) {
+      if !visited.contains(rel.child) {
         queue.push(rel.child)
       }
     }

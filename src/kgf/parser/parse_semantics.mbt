@@ -141,7 +141,7 @@ fn parse_on_blocks(src : String) -> Array[@types.SemOnBlock] {
       continue
     }
     // Check for "on" keyword
-    if !(starts_with_at(src, pos, "on")) {
+    if !starts_with_at(src, pos, "on") {
       pos += 1
       continue
     }
@@ -224,7 +224,7 @@ fn skip_ws(arr : Array[Char], start : Int) -> Int {
 ///|
 /// Reads an identifier at the given position.
 fn read_ident_at(src : String, arr : Array[Char], start : Int) -> (String, Int) {
-  if start >= arr.length() || !(is_ident_start(arr[start])) {
+  if start >= arr.length() || !is_ident_start(arr[start]) {
     return ("", start)
   }
   let mut end = start + 1
@@ -316,7 +316,7 @@ fn parse_edge_stmt(ln : String) -> @types.SemStmt? {
   }
   pos = skip_ws(arr, after_kind)
   // Expect "from"
-  if !(starts_with_at(ln, pos, "from")) {
+  if !starts_with_at(ln, pos, "from") {
     return None
   }
   pos = skip_ws(arr, pos + 4)
@@ -348,7 +348,7 @@ fn parse_bind_stmt(ln : String) -> @types.SemStmt? {
   // Skip "bind "
   let mut pos = skip_ws(arr, 5)
   // Expect "ns"
-  if !(starts_with_at(ln, pos, "ns")) {
+  if !starts_with_at(ln, pos, "ns") {
     return None
   }
   pos = skip_ws(arr, pos + 2)
@@ -441,10 +441,9 @@ fn find_keyword(src : String, start : Int, keyword : String) -> Int {
   while i < src.length() {
     if starts_with_at(src, i, keyword) {
       // Check it's not part of a larger identifier
-      let before_ok = i == 0 || !(is_ident_char(arr[i - 1]))
+      let before_ok = i == 0 || !is_ident_char(arr[i - 1])
       let after_pos = i + keyword.length()
-      let after_ok = after_pos >= src.length() ||
-        !(is_ident_char(arr[after_pos]))
+      let after_ok = after_pos >= src.length() || !is_ident_char(arr[after_pos])
       if before_ok && after_ok {
         return i
       }
@@ -576,11 +575,11 @@ fn is_identifier(s : String) -> Bool {
     return false
   }
   let arr = s.to_array()
-  if !(is_ident_start(arr[0])) {
+  if !is_ident_start(arr[0]) {
     return false
   }
   for i in 1..<arr.length() {
-    if !(is_ident_char(arr[i])) {
+    if !is_ident_char(arr[i]) {
       return false
     }
   }
@@ -595,7 +594,7 @@ fn has_call_syntax(s : String, offset : Int) -> Bool {
     return false
   }
   // Must start with identifier
-  if !(is_ident_start(arr[offset])) {
+  if !is_ident_start(arr[offset]) {
     return false
   }
   // Find opening paren
@@ -639,15 +638,15 @@ fn split_args(arglist : String) -> Array[String] {
   let mut in_str = false
   for c in arglist {
     if c == '"' {
-      in_str = !(in_str)
+      in_str = !in_str
       buf.write_char(c)
-    } else if !(in_str) && (c == '(' || c == '{') {
+    } else if !in_str && (c == '(' || c == '{') {
       depth += 1
       buf.write_char(c)
-    } else if !(in_str) && (c == ')' || c == '}') {
+    } else if !in_str && (c == ')' || c == '}') {
       depth -= 1
       buf.write_char(c)
-    } else if !(in_str) && depth == 0 && c == ',' {
+    } else if !in_str && depth == 0 && c == ',' {
       let part = trim_str(buf.to_string())
       if part.length() > 0 {
         result.push(part)

@@ -121,11 +121,11 @@ fn generate_dep_diagram_impl(
     )
     original_to_label.set(dep.from, from_label)
     original_to_label.set(dep.to, to_label)
-    if !(label_to_id.contains(from_label)) {
+    if !label_to_id.contains(from_label) {
       label_to_id.set(from_label, "N" + id_counter.to_string())
       id_counter = id_counter + 1
     }
-    if !(label_to_id.contains(to_label)) {
+    if !label_to_id.contains(to_label) {
       label_to_id.set(to_label, "N" + id_counter.to_string())
       id_counter = id_counter + 1
     }
@@ -147,11 +147,11 @@ fn generate_dep_diagram_impl(
     )
     original_to_label.set(circ.from, from_label)
     original_to_label.set(circ.to, to_label)
-    if !(label_to_id.contains(from_label)) {
+    if !label_to_id.contains(from_label) {
       label_to_id.set(from_label, "N" + id_counter.to_string())
       id_counter = id_counter + 1
     }
-    if !(label_to_id.contains(to_label)) {
+    if !label_to_id.contains(to_label) {
       label_to_id.set(to_label, "N" + id_counter.to_string())
       id_counter = id_counter + 1
     }
@@ -169,7 +169,7 @@ fn generate_dep_diagram_impl(
     let from_label = original_to_label.get(dep.from).unwrap()
     let to_label = original_to_label.get(dep.to).unwrap()
     let edge_key = from_label + "->" + to_label
-    if !(seen_edges.contains(edge_key)) && from_label != to_label {
+    if !seen_edges.contains(edge_key) && from_label != to_label {
       seen_edges.set(edge_key, true)
       let from_id = label_to_id.get(from_label).unwrap()
       let to_id = label_to_id.get(to_label).unwrap()
@@ -183,7 +183,7 @@ fn generate_dep_diagram_impl(
       let from_label = original_to_label.get(circ.from).unwrap()
       let to_label = original_to_label.get(circ.to).unwrap()
       let edge_key = from_label + "->circular->" + to_label
-      if !(seen_edges.contains(edge_key)) && from_label != to_label {
+      if !seen_edges.contains(edge_key) && from_label != to_label {
         seen_edges.set(edge_key, true)
         let from_id = label_to_id.get(from_label).unwrap()
         let to_id = label_to_id.get(to_label).unwrap()
@@ -237,11 +237,11 @@ pub fn generate_call_diagram(
   let node_ids : Map[String, String] = {}
   let mut id_counter = 0
   for call in filtered {
-    if !(node_ids.contains(call.caller)) {
+    if !node_ids.contains(call.caller) {
       node_ids.set(call.caller, "F" + id_counter.to_string())
       id_counter = id_counter + 1
     }
-    if !(node_ids.contains(call.callee)) {
+    if !node_ids.contains(call.callee) {
       node_ids.set(call.callee, "F" + id_counter.to_string())
       id_counter = id_counter + 1
     }
@@ -557,7 +557,7 @@ fn is_filename_source_pattern(
   source_patterns : Array[String],
 ) -> Bool {
   for pattern in source_patterns {
-    if !(pattern.has_prefix(".")) && segment == pattern {
+    if !pattern.has_prefix(".") && segment == pattern {
       return true
     }
   }

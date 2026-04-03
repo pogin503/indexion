@@ -176,11 +176,7 @@ fn query_by_params(
 ///|
 /// Count parameters in a function signature by counting commas + 1 inside
 /// the first LPAREN/RPAREN pair after the function name.
-fn count_params(
-  tokens : Array[@kgf_types.Tok],
-  start : Int,
-  end : Int,
-) -> Int {
+fn count_params(tokens : Array[@kgf_types.Tok], start : Int, end : Int) -> Int {
   // Find first LPAREN
   let mut paren_start = -1
   let mut i = start
@@ -215,7 +211,11 @@ fn count_params(
     }
     i += 1
   }
-  if has_params { comma_count + 1 } else { 0 }
+  if has_params {
+    comma_count + 1
+  } else {
+    0
+  }
 }
 
 ///|
@@ -298,4 +298,3 @@ fn contains_substring(haystack : String, needle : String) -> Bool {
   }
   false
 }
-

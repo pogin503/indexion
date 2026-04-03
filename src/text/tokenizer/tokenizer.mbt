@@ -58,7 +58,7 @@ pub fn normalize_text(text : String) -> String {
   let mut last_was_space = true // Start true to trim leading space
   for c in chars {
     if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
-      if !(last_was_space) {
+      if !last_was_space {
         result.push(' ')
         last_was_space = true
       }
@@ -82,7 +82,7 @@ pub fn extract_word_tokens(text : String) -> Array[String] {
   let tokens : Array[String] = []
   let current_word : Array[Char] = []
   for c in chars {
-    if is_word_char(c) && !(is_cjk_char(c)) {
+    if is_word_char(c) && !is_cjk_char(c) {
       // Only include non-CJK word characters
       current_word.push(c)
     } else {
