@@ -15,6 +15,7 @@ flowchart TD
     INDEXION --> SEGMENT[segment]
     INDEXION --> PERF[perf]
     INDEXION --> UPDATE[update]
+    INDEXION --> GREP[grep]
     INDEXION --> SERVE[serve]
 
     PLAN --> PR[refactor]
@@ -285,6 +286,27 @@ indexion kgf <subcommand> [options] <file>
 | `--spec=NAME` | Force a specific spec (default: auto-detect) |
 
 **When to use:** Developing or debugging a KGF spec. Verify that a file is tokenized and parsed correctly.
+
+---
+
+## grep
+
+KGF-aware token pattern search across source files. Unlike text-based grep, this matches on token kinds, enabling structural queries like "public function without doc comment."
+
+```bash
+indexion grep [options] <pattern> [paths...]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--spec=NAME` | Force a specific KGF spec | auto-detect |
+| `--include=PATTERN` | Include glob pattern (repeatable) | `*` |
+| `--exclude=PATTERN` | Exclude glob pattern (repeatable) | -- |
+| `--context=INT` | Lines of context around matches | `0` |
+
+**Pattern syntax:** Space-separated token matchers. `KW_fn` matches a token kind exactly, `Ident:foo` matches kind and text, `*` matches any single token, `...` matches zero or more tokens, `!KW_pub` negates.
+
+**When to use:** Structural code search. "Find all functions that don't have a doc comment" or "find nested for loops."
 
 ---
 

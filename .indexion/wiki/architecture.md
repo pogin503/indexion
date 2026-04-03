@@ -25,7 +25,7 @@ graph TB
     subgraph Analysis["Analysis Layer"]
         Similarity["Similarity Engine\n(TF-IDF, APTED, NCD, Hybrid)"]
         Digest["Digest & Embedding"]
-        PlanCmds["Plan Commands\n(refactor, docs, reconcile,\nunwrap, solid, readme)"]
+        PlanCmds["Plan Commands\n(refactor, docs, reconcile,\nunwrap, solid, readme, wiki)"]
         DocGen["DocGen\n(graph, readme, wiki)"]
     end
 
@@ -76,7 +76,7 @@ graph TB
 
 **Output Layer** -- A Plan IR (`src/plan/types/plan_ir.mbt`) serves as the common intermediate representation for all plan outputs. Renderers convert PlanDocument objects into Markdown (`src/plan/render/markdown.mbt`), GitHub Issues (`src/plan/render/github_issue.mbt`), or other formats. DocGen renders Mermaid diagrams and JSON graphs (`src/docgen/diagram/`).
 
-**Integration Layer** -- The CLI (`cmd/indexion/`) parses arguments via `@argparse` and delegates to library code. Each subcommand module exposes a `command()` and `run_matches()` pair. The VS Code extension (`vscode-plugin/`) and DeepWiki frontend (`deepwiki/`) communicate through the HTTP server (`cmd/indexion/serve/`).
+**Integration Layer** -- The CLI (`cmd/indexion/`) parses arguments via `@argparse` and delegates to library code. Each subcommand module exposes a `command()` and `run_matches()` pair. The VS Code extension (`packages/vscode-plugin/`) and DeepWiki frontend (`packages/wiki/`) communicate through the HTTP server (`cmd/indexion/serve/`).
 
 ## Data Flow
 
@@ -186,9 +186,12 @@ Each subdirectory under `cmd/indexion/` corresponds to a top-level subcommand. E
 | `cmd/indexion/plan/unwrap/` | `plan unwrap` | `src/kgf/features/`, `src/plan/` |
 | `cmd/indexion/plan/solid/` | `plan solid` | `src/pipeline/`, `src/plan/` |
 | `cmd/indexion/plan/readme/` | `plan readme` | `src/docgen/`, `src/plan/` |
-| `cmd/indexion/doc/` | `doc graph`, `doc readme` | `src/docgen/`, `src/core/graph/` |
+| `cmd/indexion/plan/wiki/` | `plan wiki` | `src/docgen/wiki/`, `src/plan/` |
+| `cmd/indexion/doc/` | `doc graph`, `doc readme`, `doc init` | `src/docgen/`, `src/core/graph/` |
 | `cmd/indexion/digest/` | `digest` | `src/digest/` |
 | `cmd/indexion/kgf/` | `kgf` | `src/kgf/` |
+| `cmd/indexion/grep/` | `grep` | `src/kgf/`, KGF-aware token pattern search |
+| `cmd/indexion/perf/` | `perf` | Performance benchmarks (KGF parse, etc.) |
 | `cmd/indexion/similarity/` | `sim` | `src/similarity/` |
 | `cmd/indexion/segment/` | `segment` | `src/segmentation/` |
 | `cmd/indexion/serve/` | `serve` | HTTP server for IDE/DeepWiki integration |

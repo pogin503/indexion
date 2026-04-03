@@ -19,12 +19,16 @@ flowchart TD
     CG --> DOCS[plan documentation]
     CG --> RECONCILE[plan reconcile]
     FILES --> RECONCILE
+    CG --> README[plan readme]
+    CG --> WIKI[plan wiki]
 
     REFACTOR --> MD[Markdown / JSON / GitHub Issue]
     SOLID --> MD
     UNWRAP --> MD
     DOCS --> MD
     RECONCILE --> MD
+    README --> MD
+    WIKI --> MD
 ```
 
 ## plan refactor

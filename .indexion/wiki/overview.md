@@ -71,7 +71,11 @@ flowchart LR
         REC["plan reconcile<br/>(doc drift)"]
         SOL["plan solid<br/>(extraction plan)"]
         UNW["plan unwrap<br/>(wrapper removal)"]
-        DOC["doc readme<br/>(doc generation)"]
+        PDOC["plan documentation<br/>(coverage audit)"]
+        PREAD["plan readme<br/>(README plans)"]
+        PWIKI["plan wiki<br/>(wiki plans)"]
+        DOC["doc graph/readme/init<br/>(doc generation)"]
+        GRP["grep<br/>(token search)"]
         DIG["digest<br/>(semantic index)"]
     end
 
@@ -145,7 +149,13 @@ as a subcommand of the `indexion` CLI:
 | `plan solid`         | Plans extraction of shared code into a common package            |
 | `plan unwrap`        | Finds trivial wrapper functions that can be inlined              |
 | `plan reconcile`     | Detects drift between code symbols and documentation             |
+| `plan documentation` | Audits documentation coverage across the codebase                |
+| `plan readme`        | Generates README writing plans for packages                      |
+| `plan wiki`          | Generates wiki writing/update plans from project analysis        |
+| `doc graph`          | Generates dependency graphs in Mermaid format                    |
 | `doc readme`         | Generates per-package README files from doc comments             |
+| `doc init`           | Initializes documentation template structure                     |
+| `grep`               | KGF-aware token pattern search across source files               |
 | `sim`                | Point comparison of two texts with multiple algorithms           |
 | `digest`             | Builds a semantic index for purpose-based function lookup        |
 
@@ -331,9 +341,12 @@ indexion/
     common/                   #   Shared CLI utilities (@common)
     explore/                  #   indexion explore
     plan/{refactor,solid,     #   indexion plan {refactor,solid,
-          unwrap,reconcile}/  #     unwrap,reconcile}
-    doc/readme/               #   indexion doc readme
+          unwrap,reconcile,   #     unwrap,reconcile,
+          documentation,      #     documentation,
+          readme,wiki}/       #     readme,wiki}
+    doc/{graph,readme,init}/  #   indexion doc {graph,readme,init}
     digest/ similarity/       #   indexion digest, indexion sim
+    grep/ perf/               #   indexion grep, indexion perf
     serve/ segment/ kgf/      #   indexion serve, segment, kgf
   src/
     core/graph/               # CodeGraph types and construction
