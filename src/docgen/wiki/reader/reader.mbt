@@ -56,10 +56,24 @@ pub fn extract_headings(
   path? : String = "doc.md",
   registry? : @kgf_registry.KGFRegistry? = None,
 ) -> Array[@types.WikiHeading] {
-  let tokens = @kgf_features.tokenize_source(content, path, registry)
+  // Try with provided registry first, then fallback to default
+  let effective_registry = match registry {
+    Some(_) => registry
+    None =>
+      @kgf_features.load_registry(specs_dir="kgfs", target_dir=".")
+  }
+  let reg = match effective_registry {
+    Some(r) => r
+    None => return []
+  }
+  let spec = match reg.detect_from_path(path) {
+    Some(lang) => reg.get_spec(lang)
+    None => None
+  }
+  let tokens = @kgf_features.tokenize_source(content, path, effective_registry)
   match tokens {
     Some(toks) => {
-      let kgf_headings = @kgf_features.extract_headings(toks)
+      let kgf_headings = @kgf_features.extract_headings(toks, spec~)
       let results : Array[@types.WikiHeading] = []
       for h in kgf_headings {
         if h.level >= 2 && h.level <= 4 {
@@ -70,32 +84,7 @@ pub fn extract_headings(
       }
       results
     }
-    None => {
-      // Fallback: load registry from default kgfs directory
-      let fallback_registry = @kgf_features.load_registry(
-        specs_dir="kgfs",
-        target_dir=".",
-      )
-      match @kgf_features.tokenize_source(content, path, fallback_registry) {
-        Some(toks) => {
-          let kgf_headings = @kgf_features.extract_headings(toks)
-          let results : Array[@types.WikiHeading] = []
-          for h in kgf_headings {
-            if h.level >= 2 && h.level <= 4 {
-              results.push(
-                @types.WikiHeading::new(
-                  level=h.level,
-                  text=h.text,
-                  anchor=h.anchor,
-                ),
-              )
-            }
-          }
-          results
-        }
-        None => []
-      }
-    }
+    None => []
   }
 }
 

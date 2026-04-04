@@ -316,9 +316,17 @@ fn tokenize_and_extract_headings(
     specs_dir="kgfs",
     target_dir=".",
   )
+  let reg = match registry {
+    Some(r) => r
+    None => return []
+  }
+  let spec = match reg.detect_from_path("doc.md") {
+    Some(lang) => reg.get_spec(lang)
+    None => None
+  }
   let tokens = @kgf_features.tokenize_source(content, "doc.md", registry)
   match tokens {
-    Some(toks) => @kgf_features.extract_headings(toks)
+    Some(toks) => @kgf_features.extract_headings(toks, spec~)
     None => []
   }
 }

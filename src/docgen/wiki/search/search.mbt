@@ -118,13 +118,31 @@ pub fn extract_sections(
       @kgf_features.load_registry(specs_dir="kgfs", target_dir=".")
   }
   let effective_path = if path.length() > 0 { path } else { page_id }
+  let effective_reg = match effective_registry {
+    Some(r) => r
+    None =>
+      return [
+        WikiSection::{
+          id: page_id,
+          title: page_title,
+          content,
+          page_id,
+          level: 1,
+        },
+      ]
+  }
+  let spec = match effective_reg.detect_from_path(effective_path) {
+    Some(lang) => effective_reg.get_spec(lang)
+    None => None
+  }
   let tokens = @kgf_features.tokenize_source(
     content,
     effective_path,
     effective_registry,
   )
   match tokens {
-    Some(toks) => extract_sections_from_tokens(toks, content, page_id, page_title)
+    Some(toks) =>
+      extract_sections_from_tokens(toks, content, page_id, page_title, spec~)
     None =>
       // If no KGF spec matches, return full page as single section
       [
@@ -146,12 +164,14 @@ fn extract_sections_from_tokens(
   content : String,
   page_id : String,
   page_title : String,
+  spec? : @kgf_types.KGFSpec? = None,
 ) -> Array[WikiSection] {
   let raw_sections = @kgf_features.extract_sections_from_tokens(
     tokens,
     content,
     page_id,
     page_title,
+    spec~,
   )
   let sections : Array[WikiSection] = []
   for section in raw_sections {

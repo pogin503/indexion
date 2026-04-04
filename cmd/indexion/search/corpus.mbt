@@ -6,7 +6,7 @@
 
 ///|
 /// Build a search corpus from the given paths.
-/// Classifies files using KGF spec features: specs with HEADING tokens
+/// Classifies files using KGF spec features: specs with content_type: document
 /// are indexed by section splitting, others by function extraction.
 fn build_corpus(
   paths : Array[String],
@@ -51,7 +51,7 @@ fn build_corpus(
       kgf_ignore~,
     )
     let discovered = @pipeline.discover_files(file_paths, opts)
-    // 4. Classify by KGF spec: document-oriented (HEADING) vs code
+    // 4. Classify by KGF spec: document-oriented (content_type: document) vs code
     let code_files : Array[(String, String)] = []
     let doc_files : Array[(String, String)] = []
     for path in discovered {
@@ -88,7 +88,7 @@ fn build_corpus(
         documents,
       )
     }
-    // 6. Build document-oriented documents (section splitting via HEADING tokens)
+    // 6. Build document-oriented documents (section splitting via KGF section_token)
     for file in doc_files {
       let (path, content) = file
       extract_document_sections(path, content, registry, documents)
@@ -178,7 +178,7 @@ fn extract_wiki_documents(
 
 ///|
 /// Extract SearchDocuments from a document-oriented file using KGF tokenization.
-/// Uses HEADING tokens for section splitting — driven entirely by KGF spec.
+/// Section splitting is driven by the KGF spec's `section_token` feature.
 fn extract_document_sections(
   path : String,
   content : String,
@@ -187,22 +187,27 @@ fn extract_document_sections(
 ) -> Unit {
   let file_id = path
   let file_title = @config.basename(path)
+  let reg = match registry {
+    Some(r) => r
+    None => return
+  }
+  let spec = match reg.detect_from_path(path) {
+    Some(lang) => reg.get_spec(lang)
+    None => None
+  }
   let tokens = match @kgf_features.tokenize_source(content, path, registry) {
     Some(toks) => toks
-    None => return // Should not happen — is_document_file already verified spec exists
+    None => return
   }
   let raw_sections = @kgf_features.extract_sections_from_tokens(
     tokens,
     content,
     file_id,
     file_title,
+    spec~,
   )
-  let lang = match registry {
-    Some(reg) =>
-      match reg.detect_from_path(path) {
-        Some(l) => l
-        None => ""
-      }
+  let lang = match reg.detect_from_path(path) {
+    Some(l) => l
     None => ""
   }
   for section in raw_sections {

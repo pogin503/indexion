@@ -478,45 +478,17 @@ fn contains_str(arr : Array[String], value : String) -> Bool {
 }
 
 ///|
-/// Node type label for code-oriented files (no HEADING token in KGF spec).
+/// Node type label for code-oriented files (content_type absent or non-document).
 pub let node_type_code : String = "code"
 
 ///|
-/// Node type label for document-oriented files (HEADING token present in KGF spec).
+/// Node type label for document-oriented files (content_type: document).
 pub let node_type_document : String = "document"
 
 ///|
-/// Collect file extensions for document-oriented KGF specs (those with HEADING tokens).
-/// Returns extensions like [".md", ".markdown", ".mdx"] from all matching specs.
-pub fn get_document_extensions(
-  registry : @kgf_registry.KGFRegistry?,
-) -> Array[String] {
-  let reg = match registry {
-    Some(r) => r
-    None => return []
-  }
-  let exts : Array[String] = []
-  let seen : Map[String, Bool] = {}
-  for spec_entry in reg.specs {
-    let spec = spec_entry.1
-    if spec_has_heading_token(spec) {
-      let sources = spec.get_resolver().get_sources()
-      for src in sources {
-        let ext = if src.has_prefix(".") { src } else { "." + src }
-        if !seen.contains(ext) {
-          exts.push(ext)
-          seen[ext] = true
-        }
-      }
-    }
-  }
-  exts
-}
-
-///|
-/// Collect document path patterns from document-oriented KGF specs.
+/// Collect document path patterns from document-oriented KGF specs (content_type: document).
 /// Derives patterns from spec resolver's `sources` (extensions) and
-/// `indexes` (e.g. /README.md, /index.md) — no hardcoded paths.
+/// `indexes` (e.g. /README.md, /index.html) — no hardcoded paths.
 /// Returns (index_patterns, wildcard_patterns) for package-level scope.
 pub fn get_document_patterns(
   registry : @kgf_registry.KGFRegistry?,
@@ -530,7 +502,7 @@ pub fn get_document_patterns(
   let seen : Map[String, Bool] = {}
   for spec_entry in reg.specs {
     let spec = spec_entry.1
-    if !spec_has_heading_token(spec) {
+    if !is_document_spec(spec) {
       continue
     }
     let resolver = spec.get_resolver()
@@ -565,20 +537,20 @@ pub fn get_document_patterns(
 }
 
 ///|
-/// Check if a KGF spec defines a HEADING token kind.
-/// Specs with HEADING tokens (e.g. markdown.kgf) are document-oriented
-/// and should be indexed by section splitting rather than function extraction.
-pub fn spec_has_heading_token(spec : @kgf_types.KGFSpec) -> Bool {
-  for tok_def in spec.get_tokens() {
-    if tok_def.get_name() == "HEADING" {
-      return true
-    }
+/// Check if a KGF spec is document-oriented via the `content_type` feature.
+/// Returns true if content_type is "document".
+/// This replaces the old HEADING token check — content type is now
+/// explicitly declared by each KGF spec, not inferred from token names.
+pub fn is_document_spec(spec : @kgf_types.KGFSpec) -> Bool {
+  match spec.get_feature("content_type") {
+    Some(values) => values.length() > 0 && values[0] == "document"
+    None => false
   }
-  false
 }
 
+
 ///|
-/// Detect whether a file's KGF spec has HEADING tokens.
+/// Detect whether a file's KGF spec declares `content_type: document`.
 /// Returns Some(true) for document-oriented files, Some(false) for code,
 /// None if no spec matches the file.
 pub fn is_document_file(
@@ -597,15 +569,15 @@ pub fn is_document_file(
     Some(s) => s
     None => return None
   }
-  Some(spec_has_heading_token(spec))
+  Some(is_document_spec(spec))
 }
 
 ///|
-/// A heading extracted from tokens (language-agnostic via KGF HEADING token).
+/// A section heading extracted from tokens via KGF features.
 pub(all) struct Heading {
-  /// Heading level (1 for "#", 2 for "##", etc.)
+  /// Heading level (derived from section_level strategy in KGF spec).
   level : Int
-  /// Heading text (concatenated TEXT tokens following the HEADING token)
+  /// Heading text (collected from heading_text_tokens defined in KGF spec).
   text : String
   /// URL-safe anchor
   anchor : String
@@ -614,12 +586,41 @@ pub(all) struct Heading {
 }
 
 ///|
-/// Extract headings from KGF tokens.
-/// Works with any KGF spec that defines a HEADING token kind.
+/// Extract section headings from KGF tokens.
+/// Uses `section_token`, `section_level`, and `heading_text_tokens` features
+/// from the KGF spec. No hardcoded token names or level calculation logic.
+///
+/// When spec is provided, section structure is fully KGF-driven.
+/// When spec is None, returns empty (no spec = no section knowledge).
 pub fn extract_headings(
   tokens : Array[@kgf_types.Tok],
+  spec? : @kgf_types.KGFSpec? = None,
 ) -> Array[Heading] {
   let headings : Array[Heading] = []
+  // Resolve section configuration from KGF spec features
+  let the_spec = match spec {
+    Some(s) => s
+    None => return headings
+  }
+  let section_token = match the_spec.get_feature("section_token") {
+    Some(values) => if values.length() > 0 { values[0] } else { return headings }
+    None => return headings
+  }
+  let section_level_strategy = match the_spec.get_feature("section_level") {
+    Some(values) => if values.length() > 0 { values[0] } else { "text_length" }
+    None => "text_length"
+  }
+  let text_token_set : Map[String, Bool] = {}
+  match the_spec.get_feature("heading_text_tokens") {
+    Some(kinds) =>
+      for kind in kinds {
+        text_token_set[kind] = true
+      }
+    None => ()
+  }
+  // If heading_text_tokens includes the section_token itself,
+  // the section token's text IS the heading text (e.g. TOML [section.name]).
+  let section_is_text = text_token_set.contains(section_token)
   let mut line = 1
   let mut i = 0
   while i < tokens.length() {
@@ -630,35 +631,41 @@ pub fn extract_headings(
       i += 1
       continue
     }
-    if kind == "HEADING" {
-      let level = count_heading_level(tok.get_text())
+    if kind == section_token {
+      let level = compute_section_level(tok.get_text(), section_level_strategy)
       let heading_line = line
-      i += 1
-      // Skip whitespace
-      while i < tokens.length() {
-        let k = tokens[i].get_kind()
-        if k == "SKIP" || k == "WS" {
-          i += 1
-        } else {
-          break
-        }
-      }
-      // Collect TEXT tokens until NL
       let buf = StringBuilder::new()
-      let mut first = true
-      while i < tokens.length() {
-        let k = tokens[i].get_kind()
-        if k == "NL" {
-          break
-        }
-        if k == "TEXT" || k == "INLINE_CODE" {
-          if !first {
-            buf.write_string(" ")
+      if section_is_text {
+        // The section token itself carries the heading text
+        buf.write_string(tok.get_text())
+      }
+      i += 1
+      if !section_is_text {
+        // Skip whitespace after section token
+        while i < tokens.length() {
+          let k = tokens[i].get_kind()
+          if k == "SKIP" || k == "WS" {
+            i += 1
+          } else {
+            break
           }
-          buf.write_string(tokens[i].get_text())
-          first = false
         }
-        i += 1
+        // Collect heading text tokens until NL
+        let mut first = true
+        while i < tokens.length() {
+          let k = tokens[i].get_kind()
+          if k == "NL" {
+            break
+          }
+          if text_token_set.contains(k) {
+            if !first {
+              buf.write_string(" ")
+            }
+            buf.write_string(tokens[i].get_text())
+            first = false
+          }
+          i += 1
+        }
       }
       let text = buf.to_string()
       if text.length() > 0 {
@@ -677,17 +684,19 @@ pub fn extract_headings(
 }
 
 ///|
-/// Count '#' characters to determine heading level.
-fn count_heading_level(text : String) -> Int {
-  let mut level = 0
-  for c in text {
-    if c == '#' {
-      level += 1
-    } else {
-      break
-    }
+/// Compute section level from token text using the strategy defined in KGF spec.
+/// - "text_length": token text length is the level (e.g. "##" → 2)
+/// - "flat": all sections are level 1
+fn compute_section_level(text : String, strategy : String) -> Int {
+  if strategy == "flat" {
+    return 1
   }
-  level
+  // Default: text_length — count characters in the section token text
+  let mut count = 0
+  for _c in text {
+    count += 1
+  }
+  count
 }
 
 ///|
@@ -710,17 +719,18 @@ fn make_anchor(text : String) -> String {
 }
 
 ///|
-/// Split content into sections at HEADING boundaries of the given level.
+/// Split content into sections at section token boundaries of the given level.
 /// Returns (id, title, content, level) tuples suitable for search indexing.
-/// Uses KGF tokenization — no markdown-specific hardcoding.
+/// Section boundaries are determined by the KGF spec's `section_token` feature.
 pub fn extract_sections_from_tokens(
   tokens : Array[@kgf_types.Tok],
   content : String,
   page_id : String,
   page_title : String,
   split_level~ : Int = 2,
+  spec? : @kgf_types.KGFSpec? = None,
 ) -> Array[(String, String, String, Int)] {
-  let headings = extract_headings(tokens)
+  let headings = extract_headings(tokens, spec~)
   let lines = split_by_newline(content)
   let results : Array[(String, String, String, Int)] = []
   // Full page as a section
