@@ -18,3 +18,10 @@ import {
   "trkbt10/indexion/src/mcp/types" @mcp_types,
   "trkbt10/indexion/src/mcp/transport" @transport,
 }
+
+options(
+  targets: {
+    "stdio.mbt": [ "native" ],
+    "stdio_js.mbt": [ "js", "wasm", "wasm-gc" ],
+  },
+)
