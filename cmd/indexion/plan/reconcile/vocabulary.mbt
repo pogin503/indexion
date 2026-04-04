@@ -5,7 +5,7 @@
 
 ///|
 /// Tokenized module group for vocabulary comparison.
-struct TokenizedModuleGroup {
+priv struct TokenizedModuleGroup {
   module_path : String
   source_tokens : Array[String]
   doc_tokens : Array[String]
@@ -111,7 +111,7 @@ pub fn compute_vocabulary_divergences(
 
 ///|
 /// A group of source files and documentation files within a directory.
-struct ModuleFileGroup {
+priv struct ModuleFileGroup {
   module_path : String
   source_paths : Array[String]
   doc_paths : Array[String]
@@ -353,7 +353,7 @@ fn extract_token_value(token : String) -> String {
     }
   }
   if colon_idx >= 0 && colon_idx < token.length() - 1 {
-    token.substring(start=colon_idx + 1)
+    token[colon_idx + 1:].to_string()
   } else {
     token
   }
