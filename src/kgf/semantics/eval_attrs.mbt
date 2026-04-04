@@ -120,6 +120,19 @@ fn eval_attr_def(
     Some(d) => edge_attrs.set("doc", d)
     None => ()
   }
+  // Include visibility from scope if available, falling back to
+  // default_visibility feature from KGF spec
+  match ctx.lookup_scope("value", "current_visibility") {
+    Some(vis) => edge_attrs.set("visibility", vis)
+    None =>
+      match ctx.spec.get_feature("default_visibility") {
+        Some(values) =>
+          if values.length() > 0 {
+            edge_attrs.set("visibility", values[0])
+          }
+        None => ()
+      }
+  }
   ctx.graph.add_edge(
     @graph.EdgeKind::from_string("declares"),
     ctx.file,
