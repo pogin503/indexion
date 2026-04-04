@@ -2,32 +2,14 @@
 fn document_symbol_kinds_for_path(
   path : String,
   registry : @registry.KGFRegistry,
-) -> Map[String, Bool] {
-  let fallback = default_document_symbol_kinds()
+) -> Map[String, Bool]? {
   match registry.detect_from_path(path) {
     Some(lang) =>
       match registry.get_spec(lang) {
-        Some(spec) =>
-          match spec.get_feature("document_symbol_kinds") {
-            Some(values) => {
-              let configured : Map[String, Bool] = {}
-              for value in values {
-                let normalized = lower_string(@common.trim_ascii_spaces(value))
-                if normalized.length() > 0 {
-                  configured.set(normalized, true)
-                }
-              }
-              if configured.is_empty() {
-                fallback
-              } else {
-                configured
-              }
-            }
-            None => fallback
-          }
-        None => fallback
+        Some(spec) => document_symbol_kinds(spec)
+        None => None
       }
-    None => fallback
+    None => None
   }
 }
 
@@ -37,9 +19,10 @@ fn should_include_symbol(
   module_path : String,
   registry : @registry.KGFRegistry,
 ) -> Bool {
-  document_symbol_kinds_for_path(module_path, registry).contains(
-    lower_string(kind),
-  )
+  match document_symbol_kinds_for_path(module_path, registry) {
+    Some(filter) => filter.contains(lower_string(kind))
+    None => true // No filter = include all kinds
+  }
 }
 
 ///|

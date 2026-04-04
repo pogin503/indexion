@@ -15,7 +15,7 @@ pub fn find_kgfs_dir(
 
 ///|
 /// Convert string to lowercase.
-fn to_lower_str(s : String) -> String {
+pub fn to_lower_str(s : String) -> String {
   let chars = s.to_array()
   let result : Array[Char] = []
   for c in chars {
@@ -122,7 +122,7 @@ pub fn build_line_func_map(
   }
   let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
   let tokens = lexer.tokenize(content)
-  let functions = extract_functions(tokens, path)
+  let functions = extract_functions(tokens, path, spec=spec)
   // Build token_index -> line_number mapping by counting NL tokens
   let token_lines : Array[Int] = Array::make(tokens.length(), 1)
   let mut line = 1
@@ -200,122 +200,6 @@ pub struct PubDeclaration {
   category : String
 }
 
-///|
-/// Check if a token kind represents a visibility modifier.
-/// Detects KW_pub, KW_public, KW_export by prefix convention.
-fn is_visibility_keyword(kind : String) -> Bool {
-  kind == "KW_pub" || kind == "KW_public" || kind == "KW_export"
-}
-
-///|
-/// Check if a token kind represents a declaration keyword.
-/// Returns the normalized kind name (e.g. "KW_fn" -> "fn", "KW_function" -> "function").
-fn declaration_kind(kind : String) -> String? {
-  // Function declarations
-  if kind == "KW_fn" ||
-    kind == "KW_function" ||
-    kind == "KW_def" ||
-    kind == "KW_func" ||
-    kind == "KW_fun" {
-    return Some(kind[3:].to_string())
-  }
-  // Type declarations
-  if kind == "KW_struct" ||
-    kind == "KW_class" ||
-    kind == "KW_enum" ||
-    kind == "KW_type" ||
-    kind == "KW_trait" ||
-    kind == "KW_interface" ||
-    kind == "KW_protocol" ||
-    kind == "KW_actor" ||
-    kind == "KW_object" ||
-    kind == "KW_record" ||
-    kind == "KW_module" {
-    return Some(kind[3:].to_string())
-  }
-  // Variable/constant declarations
-  if kind == "KW_let" || kind == "KW_const" || kind == "KW_var" {
-    return Some(kind[3:].to_string())
-  }
-  None
-}
-
-///|
-/// Extract public declarations from pre-tokenized tokens.
-/// Language-agnostic: uses KGF token kinds to detect visibility + declaration patterns.
-pub fn extract_pub_declarations_from_tokens(
-  tokens : Array[@kgf_types.Tok],
-) -> Array[PubDeclaration] {
-  let result : Array[PubDeclaration] = []
-  // Build token -> line number mapping
-  let mut line = 1
-  let token_lines : Array[Int] = Array::make(tokens.length(), 1)
-  for i, tok in tokens {
-    token_lines[i] = line
-    if tok.get_kind() == "NL" {
-      line += 1
-    }
-  }
-  // Scan for visibility keyword followed by declaration keyword + identifier
-  let mut i = 0
-  while i < tokens.length() {
-    let tok = tokens[i]
-    if is_visibility_keyword(tok.get_kind()) {
-      // Look ahead for a declaration keyword
-      let mut j = i + 1
-      // Skip whitespace, newlines, and visibility modifier args like (all), (readonly)
-      while j < tokens.length() {
-        let next_kind = tokens[j].get_kind()
-        if next_kind == "NL" ||
-          next_kind == "WS" ||
-          next_kind == "LPAREN" ||
-          next_kind == "RPAREN" ||
-          (
-            is_identifier_kind(next_kind) &&
-            is_visibility_modifier_arg(tokens[j].get_text())
-          ) {
-          j += 1
-        } else {
-          break
-        }
-      }
-      if j < tokens.length() {
-        match declaration_kind(tokens[j].get_kind()) {
-          Some(kind) => {
-            // Find the identifier (name) after the declaration keyword
-            let mut k = j + 1
-            while k < tokens.length() {
-              let kind_k = tokens[k].get_kind()
-              if is_identifier_kind(kind_k) || kind_k == "TypeIdent" {
-                result.push({
-                  kind,
-                  name: tokens[k].get_text(),
-                  line: token_lines[i],
-                  category: "function",
-                })
-                break
-              } else if kind_k == "NL" || kind_k == "LBRACE" {
-                break // No identifier found before block/newline
-              }
-              k += 1
-            }
-            i = k + 1
-            continue
-          }
-          None => ()
-        }
-      }
-    }
-    i += 1
-  }
-  result
-}
-
-///|
-/// Check if an identifier is a visibility modifier argument (e.g. "all", "readonly", "open").
-fn is_visibility_modifier_arg(text : String) -> Bool {
-  text == "all" || text == "readonly" || text == "open" || text == "priv"
-}
 
 ///|
 /// Tokenize source content using KGF registry.
@@ -341,30 +225,16 @@ pub fn tokenize_source(
   Some(lexer.tokenize(content))
 }
 
-///|
-/// Extract public declarations from source code using KGF tokenization.
-/// Language-agnostic: uses KGF token kinds to detect visibility + declaration patterns.
-/// Returns empty array if registry or spec is unavailable.
-pub fn extract_pub_declarations(
-  content : String,
-  path : String,
-  registry : @kgf_registry.KGFRegistry?,
-) -> Array[PubDeclaration] {
-  match tokenize_source(content, path, registry) {
-    Some(tokens) => extract_pub_declarations_from_tokens(tokens)
-    None => []
-  }
-}
 
 ///|
-/// Count public declarations in source code using KGF tokenization.
-/// Convenience wrapper around extract_pub_declarations.
+/// Count public declarations in source code using full KGF pipeline.
 pub fn count_pub_declarations(
   content : String,
   path : String,
   registry : @kgf_registry.KGFRegistry?,
 ) -> Int {
-  extract_pub_declarations(content, path, registry).length()
+  let (decls, _) = extract_pub_declarations_and_doc_map(content, path, registry)
+  decls.length()
 }
 
 ///|
@@ -510,7 +380,7 @@ pub fn extract_pub_declarations_and_doc_map(
     let name = edge.attrs.get("name").unwrap_or("")
     let kind = edge.attrs.get("kind").unwrap_or("")
     let doc = edge.attrs.get("doc").unwrap_or("")
-    let normalized = normalize_kind(kind)
+    let normalized = to_lower_str(kind)
     let category = if contains_str(function_kinds, kind) {
       "function"
     } else {
@@ -573,29 +443,6 @@ fn estimate_declaration_line(
   1
 }
 
-///|
-/// Normalize edge kind to short form (e.g. "Function" -> "fn", "Class" -> "class").
-fn normalize_kind(kind : String) -> String {
-  match kind {
-    "Function" => "fn"
-    "Class" => "class"
-    "Struct" => "struct"
-    "Enum" => "enum"
-    "Interface" => "interface"
-    "Trait" => "trait"
-    "Type" => "type"
-    "Protocol" => "protocol"
-    "Actor" => "actor"
-    "Record" => "record"
-    "Module" => "module"
-    "Variable" => "var"
-    "Const" => "const"
-    "Property" => "property"
-    "Method" => "method"
-    "Macro" => "macro"
-    _ => kind
-  }
-}
 
 ///|
 fn contains_str(arr : Array[String], value : String) -> Bool {

@@ -63,30 +63,39 @@ pub fn ExtractedFunction::qualified_name(self : ExtractedFunction) -> String {
 
 ///|
 /// Extract functions from tokenized source code.
-/// Returns array of ExtractedFunction with token ranges.
+/// Uses the KGF spec's `function_keyword` feature to identify the function declaration
+/// keyword. Falls back to "KW_fn" if the feature is not defined.
 pub fn extract_functions(
   tokens : Array[@kgf_types.Tok],
   file : String,
+  spec? : @kgf_types.KGFSpec,
 ) -> Array[ExtractedFunction] {
+  let fn_keyword = match spec {
+    Some(s) =>
+      match s.get_feature("function_keyword") {
+        Some(keywords) => if keywords.length() > 0 { keywords[0] } else { "KW_fn" }
+        None => "KW_fn"
+      }
+    None => "KW_fn"
+  }
   let functions : Array[ExtractedFunction] = []
   let mut i = 0
   while i < tokens.length() {
     let tok = tokens[i]
-    // Look for fn keyword
-    if tok.get_kind() == "KW_fn" {
-      // Find function name (next identifier after optional type)
+    if tok.get_kind() == fn_keyword {
+      // Find function name (next identifier after optional qualifiers)
       let fn_start = i
       let mut name = ""
       let mut j = i + 1
-      // Skip optional type (TypeIdent::)
+      // Skip optional qualifiers (TypeIdent::, keywords, etc.) until Ident
       while j < tokens.length() {
         let t = tokens[j]
         let kind = t.get_kind()
-        if kind == "Ident" {
+        if is_identifier_kind(kind) || kind == "Ident" {
           name = t.get_text()
           j += 1
           break
-        } else if kind == "TypeIdent" || kind == "DCOLON" {
+        } else if kind == "TypeIdent" || kind == "DCOLON" || kind.has_prefix("KW_") {
           j += 1
         } else {
           break
@@ -100,13 +109,12 @@ pub fn extract_functions(
           body_start = j
           break
         } else if t.get_kind() == "NL" && body_start < 0 {
-          // Function declaration without body (trait method)
+          // Function declaration without body (trait method / signature)
           break
         }
         j += 1
       }
       if body_start >= 0 && name.length() > 0 {
-        // Find matching RBRACE
         let fn_end = find_matching_brace(tokens, body_start)
         if fn_end > body_start {
           functions.push(
@@ -255,8 +263,9 @@ fn token_label(tok : @kgf_types.Tok) -> String {
 pub fn extract_function_trees(
   tokens : Array[@kgf_types.Tok],
   file : String,
+  spec? : @kgf_types.KGFSpec,
 ) -> Array[(ExtractedFunction, @apted.TreeNode)] {
-  let functions = extract_functions(tokens, file)
+  let functions = extract_functions(tokens, file, spec?)
   let result : Array[(ExtractedFunction, @apted.TreeNode)] = []
   for func in functions {
     let tree = tokens_to_tree_node(tokens, func.start, func.end)

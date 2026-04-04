@@ -1,13 +1,16 @@
 ///|
-fn default_document_symbol_kinds() -> Map[String, Bool] {
-  let kinds : Map[String, Bool] = {}
-  for
-    kind in [
-      "function", "type", "struct", "enum", "trait", "class", "interface", "module",
-    ] {
-    kinds.set(kind, true)
+/// Get document symbol kinds from KGF spec, falling back to "all kinds" if not specified.
+fn document_symbol_kinds(spec : @kgf_types.KGFSpec) -> Map[String, Bool]? {
+  match spec.get_feature("document_symbol_kinds") {
+    Some(kinds) => {
+      let m : Map[String, Bool] = {}
+      for kind in kinds {
+        m.set(@kgf_features.to_lower_str(kind), true)
+      }
+      Some(m)
+    }
+    None => None // No filter — include all kinds
   }
-  kinds
 }
 
 ///|
@@ -30,16 +33,14 @@ fn discovery_roots(target_dir : String) -> Array[String] {
 }
 
 ///|
-/// Fast code unit extraction using KGF lexer only (no PEG parse).
-/// ~10x faster than graph-based extraction for large projects.
+/// Code unit extraction using full KGF pipeline (tokenize → parse → eval_semantics → declares edges).
+/// All public declarations are identified via KGF semantics — no hardcoded keyword patterns.
 fn build_code_units_fast(
   discovered_paths : Array[String],
   registry : @registry.KGFRegistry,
 ) -> Array[CodeUnit] {
   let units : Array[CodeUnit] = []
-  let symbol_kinds = default_document_symbol_kinds()
   for path in discovered_paths {
-    // Only process files the registry recognizes
     let lang = match registry.detect_from_path(path) {
       Some(l) => l
       None => continue
@@ -49,27 +50,25 @@ fn build_code_units_fast(
       None => continue
     }
     let content = @fs.read_file_to_string(path) catch { _ => continue }
-    // Use KGF lexer to extract pub declarations (no PEG needed)
-    let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-    let tokens = lexer.tokenize(content)
-    let functions = @kgf_features.extract_functions(tokens, path)
-    let pub_decls = @kgf_features.extract_pub_declarations(
-      content,
-      path,
-      Some(registry),
+    // Full KGF pipeline: tokenize → parse → eval_semantics → declares edges
+    let (pub_decls, doc_map) = @kgf_features.extract_pub_declarations_and_doc_map(
+      content, path, Some(registry),
     )
-    // Extract doc comments via KGF tokens (language-agnostic)
-    let line_docs = @kgf_features.extract_doc_map(tokens)
-    // Module ID from path (dirname-based)
+    // Optional kind filter from KGF spec's document_symbol_kinds feature
+    let kind_filter = document_symbol_kinds(spec)
     let module_id = path
-    // Build code units from pub declarations
     for decl in pub_decls {
       let kind = decl.kind
-      if !symbol_kinds.contains(kind) {
-        continue
+      // Apply kind filter if the spec defines document_symbol_kinds
+      match kind_filter {
+        Some(filter) =>
+          if !filter.contains(kind) {
+            continue
+          }
+        None => ()
       }
       let symbol_id = path + "::" + decl.name
-      let inline_doc = line_docs.get(decl.line)
+      let inline_doc = doc_map.get(decl.line)
       let code_hash = make_hash([
         symbol_id,
         decl.name,
@@ -86,43 +85,6 @@ fn build_code_units_fast(
         module_id,
         module_path: path,
         inline_doc,
-        code_hash,
-      })
-    }
-    // Also include functions (which may not have pub prefix in some languages)
-    for func in functions {
-      let symbol_id = path + "::" + func.get_name()
-      // Skip if already added from pub_decls
-      let mut exists = false
-      for u in units {
-        if u.symbol_id == symbol_id {
-          exists = true
-          break
-        }
-      }
-      if exists {
-        continue
-      }
-      // Only include if it matches document_symbol_kinds
-      if !symbol_kinds.contains("function") {
-        continue
-      }
-      let code_hash = make_hash([
-        symbol_id,
-        func.get_name(),
-        "function",
-        "",
-        module_id,
-        "",
-      ])
-      units.push({
-        symbol_id,
-        name: func.get_name(),
-        kind: "function",
-        ns: "",
-        module_id,
-        module_path: path,
-        inline_doc: None,
         code_hash,
       })
     }

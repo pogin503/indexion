@@ -56,28 +56,50 @@ pub fn UnwrapEdit::new(
 
 ///|
 /// Token kinds that indicate control flow or bindings (non-proxy bodies).
+/// Any KW_ prefixed token is a keyword — if it appears in a function body
+/// it likely means the body contains logic beyond a simple forwarding call.
+/// Exceptions: KW_self (method receiver), KW_fn/KW_function/KW_def etc.
+/// (closures/lambdas passed as arguments are acceptable in a proxy body).
 fn is_disqualifying_keyword(kind : String) -> Bool {
-  kind == "KW_if" ||
-  kind == "KW_match" ||
-  kind == "KW_let" ||
-  kind == "KW_mut" ||
-  kind == "KW_for" ||
-  kind == "KW_while" ||
-  kind == "KW_return" ||
-  kind == "KW_break" ||
-  kind == "KW_continue"
+  if !kind.has_prefix("KW_") {
+    return false
+  }
+  // Allow keywords that don't imply control flow or bindings
+  kind != "KW_self" && kind != "KW_fn" && kind != "KW_function" &&
+  kind != "KW_def" && kind != "KW_func" && kind != "KW_fun"
 }
 
 ///|
 /// Token kinds to skip when analyzing function body.
+/// Skips whitespace/newlines (NL, SKIP, WS), comments (*Comment*),
+/// and doc tokens (Doc* prefix). These are KGF naming conventions
+/// shared across all language specs.
 fn is_skip_token(kind : String) -> Bool {
-  kind == "NL" ||
-  kind == "LineComment" ||
-  kind == "BlockComment" ||
-  kind == "DocComment" ||
-  kind == "DocLine" ||
-  kind == "DocSection" ||
-  kind == "SKIP"
+  kind == "NL" || kind == "SKIP" || kind == "WS" ||
+  kind.has_prefix("Doc") ||
+  has_substring(kind, "Comment")
+}
+
+///|
+fn has_substring(s : String, sub : String) -> Bool {
+  let s_chars = s.to_array()
+  let sub_chars = sub.to_array()
+  if sub_chars.length() > s_chars.length() {
+    return false
+  }
+  for i = 0; i <= s_chars.length() - sub_chars.length(); i = i + 1 {
+    let mut matched = true
+    for j = 0; j < sub_chars.length(); j = j + 1 {
+      if s_chars[i + j] != sub_chars[j] {
+        matched = false
+        break
+      }
+    }
+    if matched {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -93,8 +115,9 @@ pub fn detect_proxy_functions(
   file : String,
   include_self_delegation? : Bool = false,
   include_bare_constructors? : Bool = false,
+  spec? : @kgf_types.KGFSpec,
 ) -> Array[ProxyFunction] {
-  let functions = extract_functions(tokens, file)
+  let functions = extract_functions(tokens, file, spec?)
   let result : Array[ProxyFunction] = []
   // Build token index → line number mapping
   let token_lines : Array[Int] = Array::make(tokens.length(), 1)
@@ -480,6 +503,7 @@ pub fn detect_proxy_functions_from_file(
     path,
     include_self_delegation~,
     include_bare_constructors~,
+    spec=spec,
   )
 }
 

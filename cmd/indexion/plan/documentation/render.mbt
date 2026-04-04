@@ -341,7 +341,7 @@ fn generate_readme_content(
   let main_types : Array[PubItem] = []
   for pkg in analysis.packages {
     for item in pkg.pub_items {
-      if item.kind == "struct" || item.kind == "type" {
+      if item.kind_category != "function" {
         main_types.push(item)
         if main_types.length() >= 3 {
           break
