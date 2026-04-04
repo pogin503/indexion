@@ -8,6 +8,7 @@ pub struct ProjectFileConfig {
   inherit_global : Bool
   reconcile : ReconcileFileConfig
   digest : DigestFileConfig
+  mcp : McpFileConfig
 } derive(Eq, Show)
 
 ///|
@@ -26,6 +27,7 @@ pub fn ProjectFileConfig::default() -> ProjectFileConfig {
     inherit_global: true,
     reconcile: ReconcileFileConfig::empty(),
     digest: DigestFileConfig::empty(),
+    mcp: McpFileConfig::empty(),
   }
 }
 
@@ -74,6 +76,8 @@ pub fn parse_project_toml_config(content : String) -> ProjectFileConfig {
           None => ()
         }
       }
+    } else if section == "mcp" {
+      config = { ..config, mcp: parse_mcp_section_key(config.mcp, key, value) }
     } else {
       let (reconcile, digest) = parse_shared_toml_sections(
         config.reconcile,
@@ -119,7 +123,9 @@ fn parse_project_json_config(content : String) -> ProjectFileConfig {
   let reconcile = load_reconcile_from_json_root(root)
   // Parse [digest] section
   let digest = load_digest_from_json_root(root)
-  { ..config, reconcile, digest }
+  // Parse [mcp] section
+  let mcp = load_mcp_from_json_root(root)
+  { ..config, reconcile, digest, mcp }
 }
 
 ///|

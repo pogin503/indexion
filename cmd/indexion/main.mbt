@@ -78,6 +78,7 @@ fn build_command() -> @argparse.Command {
       @serve_cli.command(),
       @grep_cli.command(),
       @search_cli.command(),
+      @mcp_cli.command(),
     ],
   )
 }
@@ -107,6 +108,7 @@ async fn main {
     "serve" => @serve_cli.run_matches(sub)
     "grep" => @grep_cli.run_matches(sub)
     "search" => @search_cli.run_matches(sub)
+    "mcp" => @mcp_cli.run_matches(sub)
     _ => ()
   }
 }

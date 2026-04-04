@@ -1,0 +1,9 @@
+import {
+  "trkbt10/indexion/src/mcp/protocol" @protocol,
+  "trkbt10/indexion/src/mcp/types" @types,
+}
+
+import {
+  "moonbitlang/async",
+  "moonbitlang/core/json" @json,
+} for "wbtest"

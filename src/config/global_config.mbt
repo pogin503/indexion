@@ -8,6 +8,7 @@ pub struct GlobalConfig {
   kgfs_dir : String?
   reconcile : ReconcileFileConfig
   digest : DigestFileConfig
+  mcp : McpFileConfig
 } derive(Eq, Show)
 
 ///|
@@ -17,6 +18,7 @@ pub fn GlobalConfig::empty() -> GlobalConfig {
     kgfs_dir: None,
     reconcile: ReconcileFileConfig::empty(),
     digest: DigestFileConfig::empty(),
+    mcp: McpFileConfig::empty(),
   }
 }
 
@@ -75,6 +77,8 @@ pub fn parse_global_toml_config(content : String) -> GlobalConfig {
           config = { ..config, kgfs_dir: Some(expand_tilde(parsed)) }
         }
       }
+    } else if section == "mcp" {
+      config = { ..config, mcp: parse_mcp_section_key(config.mcp, key, value) }
     } else {
       let (reconcile, digest) = parse_shared_toml_sections(
         config.reconcile,
