@@ -105,7 +105,10 @@ fn resolve_wiki_path(path : String) -> String {
       @common.substring(path, 0, path.to_array().length() - 14)
     }
     let resolved_base = if base.length() == 0 { "." } else { base }
-    @config.resolve_project_indexion_dir(resolved_base, "wiki")
+    match @config.resolve_project_indexion_dir(resolved_base, "wiki") {
+      Some(dir) => dir
+      None => path
+    }
   } else {
     path
   }

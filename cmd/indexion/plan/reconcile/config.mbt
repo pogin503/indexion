@@ -518,7 +518,7 @@ pub fn resolve_config_from_matches(
         config_path,
         effective.global.reconcile.index_dir,
         effective.global_config_path,
-        @config_paths.default_reconcile_index_dir(target_dir),
+        @config_paths.default_reconcile_index_dir(target_dir).unwrap_or(""),
       )
     },
     review_results_path: if parsed.explicit_review_results_path {

@@ -425,7 +425,13 @@ async fn handle_plan_readme(
       if v.length() > 0 {
         v
       } else {
-        @config.resolve_project_indexion_dir(target_dir, "plans")
+        match @config.resolve_project_indexion_dir(target_dir, "plans") {
+          Some(dir) => dir
+          None => {
+            send_json_error(conn, 500, "Project root not found", cors)
+            return
+          }
+        }
       }
     },
   }

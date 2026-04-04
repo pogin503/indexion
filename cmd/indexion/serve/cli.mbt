@@ -20,6 +20,7 @@ pub struct ServeConfig {
   api_key_env : String
   api_base_url : String
   model : String
+  watch_stdin : Bool
 }
 
 ///|
@@ -38,6 +39,7 @@ pub fn ServeConfig::default() -> ServeConfig {
     api_key_env: @dconfig.DEFAULT_API_KEY_ENV,
     api_base_url: @dconfig.DEFAULT_API_BASE_URL,
     model: @dconfig.DEFAULT_EMBEDDING_MODEL,
+    watch_stdin: false,
   }
 }
 
@@ -107,6 +109,9 @@ pub fn ServeConfig::from_matches(matches : @argparse.Matches) -> ServeConfig {
   if matches.flags.get("cors").unwrap_or(false) {
     config = { ..config, cors: true }
   }
+  if matches.flags.get("watch-stdin").unwrap_or(false) {
+    config = { ..config, watch_stdin: true }
+  }
   config
 }
 
@@ -150,7 +155,13 @@ pub fn command() -> @argparse.Command {
     "serve",
     about="Start HTTP server for codebase search",
     options=serve_options(),
-    flags=[@argparse.FlagArg("cors", about="Enable CORS headers")],
+    flags=[
+      @argparse.FlagArg("cors", about="Enable CORS headers"),
+      @argparse.FlagArg(
+        "watch-stdin",
+        about="Exit when stdin is closed (for IDE integration)",
+      ),
+    ],
     positionals=[
       @argparse.PositionArg(
         "workspace",
@@ -259,25 +270,55 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
   let merged = ServeConfig::from_matches(matches).apply_file_config(
     @digest_cli.load_digest_file_config(),
   )
+  let resolved_index_dir : String? = if merged.index_dir == @dconfig.DEFAULT_INDEX_DIR {
+    @config.resolve_project_indexion_dir(merged.workspace_dir, "digest")
+  } else {
+    Some(merged.index_dir)
+  }
   let config = {
     ..merged,
-    index_dir: if merged.index_dir == @dconfig.DEFAULT_INDEX_DIR {
-      @config.resolve_project_indexion_dir(merged.workspace_dir, "digest")
-    } else {
-      merged.index_dir
+    index_dir: match resolved_index_dir {
+      Some(dir) => dir
+      None => "" // no project root — skip index loading
     },
   }
   let digest_cli_config = make_digest_cli_config(config)
   let digest_config = @digest_cli.build_digest_config(digest_cli_config)
-  // Load existing index, or build if none exists
-  let state = match do_load(config, digest_cli_config, digest_config) {
+  // Try to load existing index if project root was found.
+  // Users can explicitly build via POST /api/digest/rebuild.
+  let state = if resolved_index_dir is None {
+    None
+  } else {
+    do_load(config, digest_cli_config, digest_config)
+  }
+  let state = match state {
     Some(s) => s
-    None =>
-      // No existing index — do initial build
-      match do_build(config, digest_cli_config, digest_config) {
-        Some(s) => s
-        None => return
+    None => {
+      if resolved_index_dir is None {
+        @digest_cli.log_progress(
+          "No project root found. Server starts without digest index.",
+        )
+      } else {
+        @digest_cli.log_progress(
+          "No existing index found. Use POST /api/digest/rebuild to build.",
+        )
       }
+      let provider = @digest_cli.resolve_provider(digest_cli_config)
+      let (wiki, wiki_search) = load_wiki_pages(config, provider)
+      let empty_index = @digest_cli.load_or_create_index(
+        config.index_dir,
+        digest_config,
+      )
+      ServerState::{
+        graph_json: "{}",
+        index: empty_index,
+        index_json: "[]",
+        stats_json: "{}",
+        provider,
+        wiki,
+        wiki_search,
+      }
+    }
   }
   // Build GET route table (SoT for API paths)
   let get_routes = build_get_routes(state, config)
@@ -290,7 +331,11 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
   }
   let listen_port = server.port()
   println("Serving on http://" + config.host + ":" + listen_port.to_string())
-  println("Press Ctrl+C to stop.")
+  if config.watch_stdin {
+    println("Watching stdin — will exit on EOF.")
+  } else {
+    println("Press Ctrl+C to stop.")
+  }
   server.run_forever(
     (req, body, conn) => {
       let path = strip_query_string(req.path)

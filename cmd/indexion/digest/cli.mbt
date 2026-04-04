@@ -269,7 +269,13 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
   let config = {
     ..merged,
     index_dir: if merged.index_dir == @dconfig.DEFAULT_INDEX_DIR {
-      @config.resolve_project_indexion_dir(".", "digest")
+      match @config.resolve_project_indexion_dir(".", "digest") {
+        Some(dir) => dir
+        None => {
+          println("Error: Could not find project root directory.")
+          return
+        }
+      }
     } else {
       merged.index_dir
     },

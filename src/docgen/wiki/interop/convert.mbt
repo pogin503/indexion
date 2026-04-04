@@ -120,9 +120,12 @@ pub fn detect_wiki_format(dir : String) -> WikiFormat {
 /// Load wiki from directory, auto-detecting format.
 /// Uses KGF spec features to identify the wiki backend, then delegates
 /// to the registered backend config.
-pub fn load_wiki_auto(wiki_dir : String) -> @types.WikiData? {
+pub fn load_wiki_auto(
+  wiki_dir : String,
+  registry? : @kgf_registry.KGFRegistry? = None,
+) -> @types.WikiData? {
   if @fs.path_exists(wiki_dir + "/wiki.json") {
-    return @reader.load_wiki(wiki_dir)
+    return @reader.load_wiki(wiki_dir, registry=registry)
   }
   match detect_wiki_spec(wiki_dir) {
     Some(spec_name) =>

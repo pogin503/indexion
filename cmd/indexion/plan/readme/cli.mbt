@@ -169,7 +169,13 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
   let config = {
     ..parsed,
     plans_dir: if parsed.plans_dir == ".indexion/plans" {
-      @config.resolve_project_indexion_dir(parsed.target_dir, "plans")
+      match @config.resolve_project_indexion_dir(parsed.target_dir, "plans") {
+        Some(dir) => dir
+        None => {
+          println("Error: Could not find project root directory.")
+          return
+        }
+      }
     } else {
       parsed.plans_dir
     },

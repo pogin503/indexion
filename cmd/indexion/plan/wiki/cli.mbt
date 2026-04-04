@@ -78,7 +78,13 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
   let config = {
     ..parsed,
     wiki_dir: if parsed.wiki_dir == ".indexion/wiki" {
-      @config.resolve_project_indexion_dir(parsed.target_dir, "wiki")
+      match @config.resolve_project_indexion_dir(parsed.target_dir, "wiki") {
+        Some(dir) => dir
+        None => {
+          println("Error: Could not find project root directory.")
+          return
+        }
+      }
     } else {
       parsed.wiki_dir
     },
@@ -92,7 +98,11 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
       return
     }
   }
-  let existing_wiki = @wiki_reader.load_wiki(config.wiki_dir)
+  let registry = @kgf_features.load_registry(
+    specs_dir=config.specs_dir,
+    target_dir=config.target_dir,
+  )
+  let existing_wiki = @wiki_reader.load_wiki(config.wiki_dir, registry=registry)
   let plan = analyze_and_plan(graph, existing_wiki, config)
   let output_content = match config.format {
     "json" => plan.to_json().stringify(indent=2)

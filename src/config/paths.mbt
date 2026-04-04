@@ -152,26 +152,22 @@ let project_root_markers : Array[String] = [
 
 ///|
 /// Resolve the .indexion tool directory under the project root.
-/// Walks up from target_dir using find_project_root to locate the project root,
+/// Walks up from target_dir to find a project root marker (.git, .indexion, etc.),
 /// then returns project_root/.indexion/{tool_subdir}.
-/// Aborts if no project root is found.
+/// Returns None if no project root is found.
 pub fn resolve_project_indexion_dir(
   target_dir : String,
   tool_subdir : String,
-) -> String {
-  let root = match find_project_root(target_dir, project_root_markers) {
-    Some(r) => r
-    None =>
-      abort(
-        "Project root not found from \{target_dir}. Run inside a directory containing .git or .indexion.",
-      )
+) -> String? {
+  match find_project_root(target_dir, project_root_markers) {
+    Some(root) => Some(join_path(root, ".indexion/" + tool_subdir))
+    None => None
   }
-  join_path(root, ".indexion/" + tool_subdir)
 }
 
 ///|
 /// Default cache/index directory for `indexion plan reconcile`.
-pub fn default_reconcile_index_dir(target_dir : String) -> String {
+pub fn default_reconcile_index_dir(target_dir : String) -> String? {
   resolve_project_indexion_dir(target_dir, "cache/reconcile")
 }
 

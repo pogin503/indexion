@@ -7,7 +7,10 @@
 ///|
 /// Load wiki data from a wiki directory (indexion format).
 /// Returns None if wiki.json doesn't exist or can't be parsed.
-pub fn load_wiki(wiki_dir : String) -> @types.WikiData? {
+pub fn load_wiki(
+  wiki_dir : String,
+  registry? : @kgf_registry.KGFRegistry? = None,
+) -> @types.WikiData? {
   let manifest_path = wiki_dir + "/wiki.json"
   let manifest_text = @fs.read_file_to_string(manifest_path) catch {
     _ => return None
@@ -26,7 +29,7 @@ pub fn load_wiki(wiki_dir : String) -> @types.WikiData? {
     let md_path = wiki_dir + "/" + mp.file
     let content = @fs.read_file_to_string(md_path) catch { _ => "" }
     let sources = parse_source_refs(mp.sources)
-    let headings = extract_headings(content)
+    let headings = extract_headings(content, registry=registry)
     let children : Array[String] = []
     for child_id in mp.children {
       children.push(child_id)
@@ -56,12 +59,7 @@ pub fn extract_headings(
   path? : String = "doc.md",
   registry? : @kgf_registry.KGFRegistry? = None,
 ) -> Array[@types.WikiHeading] {
-  // Try with provided registry first, then fallback to default
-  let effective_registry = match registry {
-    Some(_) => registry
-    None => @kgf_features.load_registry(specs_dir="kgfs", target_dir=".")
-  }
-  let reg = match effective_registry {
+  let reg = match registry {
     Some(r) => r
     None => return []
   }
@@ -69,7 +67,7 @@ pub fn extract_headings(
     Some(lang) => reg.get_spec(lang)
     None => None
   }
-  let tokens = @kgf_features.tokenize_source(content, path, effective_registry)
+  let tokens = @kgf_features.tokenize_source(content, path, registry)
   match tokens {
     Some(toks) => {
       let kgf_headings = @kgf_features.extract_headings(toks, spec~)

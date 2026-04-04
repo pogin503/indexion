@@ -588,7 +588,10 @@ fn register_plan_readme(
           if v.length() > 0 {
             v
           } else {
-            @config.resolve_project_indexion_dir(target_dir, "plans")
+            match @config.resolve_project_indexion_dir(target_dir, "plans") {
+              Some(dir) => dir
+              None => return @mcp_types.error_result("Project root not found")
+            }
           }
         },
       }

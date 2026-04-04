@@ -109,7 +109,13 @@ fn run_export(matches : @argparse.Matches) -> Unit {
   }
   let input_dir = get_option(matches, "input", ".indexion/wiki")
   let input_resolved = if input_dir == ".indexion/wiki" {
-    @config.resolve_project_indexion_dir(".", "wiki")
+    match @config.resolve_project_indexion_dir(".", "wiki") {
+      Some(dir) => dir
+      None => {
+        println("Error: Could not find project root directory.")
+        return
+      }
+    }
   } else {
     input_dir
   }
@@ -178,7 +184,13 @@ fn run_import(matches : @argparse.Matches) -> Unit {
   }
   let output_dir = get_option(matches, "output", ".indexion/wiki")
   let output_resolved = if output_dir == ".indexion/wiki" {
-    @config.resolve_project_indexion_dir(".", "wiki")
+    match @config.resolve_project_indexion_dir(".", "wiki") {
+      Some(dir) => dir
+      None => {
+        println("Error: Could not find project root directory.")
+        return
+      }
+    }
   } else {
     output_dir
   }

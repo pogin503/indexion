@@ -39,6 +39,7 @@ pub struct WikiSearchIndex {
 pub async fn build_search_index(
   pages : Map[String, @types.WikiPage],
   provider : @dconfig.EmbeddingProvider,
+  registry? : @kgf_registry.KGFRegistry? = None,
 ) -> WikiSearchIndex raise @embed.EmbedError {
   let sections : Map[String, WikiSection] = {}
   let documents : Array[@search_engine.SearchDocument] = []
@@ -46,7 +47,9 @@ pub async fn build_search_index(
     let page_id = entry.0
     let page = entry.1
     let page_file = if page.file.length() > 0 { page.file } else { page_id }
-    for s in extract_sections(page_id, page.title, page.content, path=page_file) {
+    for s in extract_sections(
+      page_id, page.title, page.content, path=page_file, registry=registry,
+    ) {
       sections[s.id] = s
       let kind_str = if s.level == 1 { "page" } else { "section" }
       let doc_attrs : Map[String, String] = {}
@@ -109,12 +112,8 @@ pub fn extract_sections(
   path? : String = "",
   registry? : @kgf_registry.KGFRegistry? = None,
 ) -> Array[WikiSection] {
-  let effective_registry = match registry {
-    Some(_) => registry
-    None => @kgf_features.load_registry(specs_dir="kgfs", target_dir=".")
-  }
   let effective_path = if path.length() > 0 { path } else { page_id }
-  let effective_reg = match effective_registry {
+  let effective_reg = match registry {
     Some(r) => r
     None =>
       return [
@@ -132,7 +131,7 @@ pub fn extract_sections(
     None => None
   }
   let tokens = @kgf_features.tokenize_source(
-    content, effective_path, effective_registry,
+    content, effective_path, registry,
   )
   match tokens {
     Some(toks) =>
