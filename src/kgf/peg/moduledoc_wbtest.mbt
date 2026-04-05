@@ -6,9 +6,7 @@
 ///|
 /// Load the real MoonBit KGF spec from disk.
 fn load_moonbit_kgf() -> String {
-  try {
-    @fs.read_file_to_string("kgfs/programming/moonbit.kgf")
-  } catch {
+  @fs.read_file_to_string("kgfs/programming/moonbit.kgf") catch {
     _ => panic()
   }
 }
@@ -204,7 +202,10 @@ test "moonbit kgf: standalone doc block becomes ModuleDoc" {
   let graph = run_moonbit_pipeline(source)
   let edges = get_declares_edges(graph)
   // No declaration edges (filtered: Documentation kind from StandaloneDoc is not a real decl)
-  let real_edges = edges.iter().filter(fn(e) { e.1 != "Documentation" }).collect()
+  let real_edges = edges
+    .iter()
+    .filter(fn(e) { e.1 != "Documentation" })
+    .collect()
   assert_eq(real_edges.length(), 0)
   // ModuleDoc note should exist
   let notes = graph.get_notes("module_doc", "test.mbt")

@@ -24,7 +24,9 @@ pub struct MinHashSignature {
 /// Create a MinHash signature from a set of tokens.
 /// Uses the formula h_i(x) = (a_i * hash(x) + b_i) mod p
 /// where p is a large prime and (a_i, b_i) are per-hash-function constants.
-pub fn MinHashSignature::from_tokens(tokens : Array[String]) -> MinHashSignature {
+pub fn MinHashSignature::from_tokens(
+  tokens : Array[String],
+) -> MinHashSignature {
   let values = Array::make(num_hashes, 2147483647) // Int max
   if tokens.length() == 0 {
     return { values, }
@@ -114,7 +116,8 @@ fn universal_hash(base_hash : Int, index : Int) -> Int {
   // Mersenne prime modulo: x mod (2^31-1) = (x & p) + (x >> 31), repeat if needed
   // Mersenne prime modulo using bit operations
   // For non-negative values, lsr(31) is equivalent to division by 2^31
-  let r = axb.land(0x7FFFFFFFL) + (axb.reinterpret_as_uint64() >> 31).reinterpret_as_int64()
+  let r = axb.land(0x7FFFFFFFL) +
+    (axb.reinterpret_as_uint64() >> 31).reinterpret_as_int64()
   let result = if r >= p.to_int64() { r - p.to_int64() } else { r }
   result.to_int()
 }

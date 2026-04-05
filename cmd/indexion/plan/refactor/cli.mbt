@@ -179,9 +179,11 @@ pub fn command() -> @argparse.Command {
       @argparse.OptionArg("threshold", about="Similarity threshold (0.0-1.0)", default_values=[
         "0.7",
       ]),
-      @argparse.OptionArg("strategy", about="Algorithm: hybrid, tfidf, bm25, jsd, ncd", default_values=[
-        "hybrid",
-      ]),
+      @argparse.OptionArg(
+        "strategy",
+        about="Algorithm: hybrid, tfidf, bm25, jsd, ncd",
+        default_values=["hybrid"],
+      ),
       @argparse.OptionArg(
         "fdr",
         about="FDR correction level (0=disabled, 0.05=5% false discovery rate)",

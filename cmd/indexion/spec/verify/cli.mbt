@@ -37,15 +37,10 @@ pub fn command() -> @argparse.Command {
         about="Filter by token kind (e.g., ident, text, vocab, all)",
         default_values=["all"],
       ),
-      @argparse.OptionArg(
-        "max-candidates",
-        about="Maximum items in output",
-        default_values=["200"],
-      ),
-      @argparse.OptionArg(
-        "specs-dir",
-        about=@help.specs_dir,
-      ),
+      @argparse.OptionArg("max-candidates", about="Maximum items in output", default_values=[
+        "200",
+      ]),
+      @argparse.OptionArg("specs-dir", about=@help.specs_dir),
       @argparse.OptionArg("output", short='o', about=@help.output),
     ],
     positionals=[
@@ -67,17 +62,11 @@ fn resolve_config_from_matches(matches : @argparse.Matches) -> VerifyConfig {
     _ => ()
   }
   match matches.values.get("format") {
-    Some(arr) =>
-      if arr.length() > 0 {
-        config = { ..config, format: arr[0] }
-      }
+    Some(arr) => if arr.length() > 0 { config = { ..config, format: arr[0] } }
     _ => ()
   }
   match matches.values.get("focus") {
-    Some(arr) =>
-      if arr.length() > 0 {
-        config = { ..config, focus: arr[0] }
-      }
+    Some(arr) => if arr.length() > 0 { config = { ..config, focus: arr[0] } }
     _ => ()
   }
   match matches.values.get("max-candidates") {
@@ -95,10 +84,7 @@ fn resolve_config_from_matches(matches : @argparse.Matches) -> VerifyConfig {
     _ => ()
   }
   match matches.values.get("output") {
-    Some(arr) =>
-      if arr.length() > 0 {
-        config = { ..config, output: arr[0] }
-      }
+    Some(arr) => if arr.length() > 0 { config = { ..config, output: arr[0] } }
     _ => ()
   }
   match matches.values.get("directory") {
@@ -116,7 +102,9 @@ fn resolve_config_from_matches(matches : @argparse.Matches) -> VerifyConfig {
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
   let config = resolve_config_from_matches(matches)
   if config.spec_patterns.length() == 0 {
-    println("Error: --spec is required. Provide one or more glob patterns for spec documents.")
+    println(
+      "Error: --spec is required. Provide one or more glob patterns for spec documents.",
+    )
     println("")
     println(command().render_help())
     return

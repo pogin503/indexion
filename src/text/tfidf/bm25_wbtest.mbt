@@ -2,7 +2,7 @@
 test "build_bm25_vector returns empty for empty tokens" {
   let df : Map[String, Int] = {}
   let vec = build_bm25_vector([], df, 10, 100.0)
-  assert_true!(vec.is_empty())
+  assert_true(vec.is_empty())
 }
 
 ///|
@@ -10,8 +10,8 @@ test "build_bm25_vector produces non-zero weights" {
   let tokens = ["hello", "world", "hello"]
   let df : Map[String, Int] = { "hello": 2, "world": 1 }
   let vec = build_bm25_vector(tokens, df, 10, 3.0)
-  assert_true!(vec.get("hello") > 0.0)
-  assert_true!(vec.get("world") > 0.0)
+  assert_true(vec.get("hello") > 0.0)
+  assert_true(vec.get("world") > 0.0)
 }
 
 ///|
@@ -25,9 +25,9 @@ test "BM25 saturates repeated terms" {
   let w_low = vec_low.get("x")
   let w_high = vec_high.get("x")
   // Weight should increase but not linearly
-  assert_true!(w_high > w_low)
+  assert_true(w_high > w_low)
   // 5x more occurrences should give less than 5x weight increase
-  assert_true!(w_high < w_low * 5.0)
+  assert_true(w_high < w_low * 5.0)
 }
 
 ///|
@@ -54,21 +54,21 @@ test "BM25 normalizes by document length" {
   let vec_short = build_bm25_vector(tokens_short, df, 10, avg_dl)
   let vec_long = build_bm25_vector(tokens_long, df_long, 10, avg_dl)
   // "x" should have higher weight in short doc (less diluted)
-  assert_true!(vec_short.get("x") > vec_long.get("x"))
+  assert_true(vec_short.get("x") > vec_long.get("x"))
 }
 
 ///|
 test "BM25Batch::from_tokens creates batch with correct size" {
   let tokenized = [["a", "b", "c"], ["b", "c", "d"], ["d", "e", "f"]]
   let batch = BM25Batch::from_tokens(tokenized)
-  assert_eq!(batch.length(), 3)
+  assert_eq(batch.length(), 3)
 }
 
 ///|
 test "BM25Batch::similarity returns 1.0 for same document" {
   let tokenized = [["a", "b", "c"], ["d", "e", "f"]]
   let batch = BM25Batch::from_tokens(tokenized)
-  assert_eq!(batch.similarity(0, 0), 1.0)
+  assert_eq(batch.similarity(0, 0), 1.0)
 }
 
 ///|
@@ -81,7 +81,7 @@ test "BM25Batch::similarity is higher for similar documents" {
   let batch = BM25Batch::from_tokens(tokenized)
   let sim_01 = batch.similarity(0, 1)
   let sim_02 = batch.similarity(0, 2)
-  assert_true!(sim_01 > sim_02)
+  assert_true(sim_01 > sim_02)
 }
 
 ///|
@@ -97,12 +97,12 @@ test "BM25Batch::all_pairs_above_threshold filters correctly" {
   let mut found_01 = false
   for result in results {
     let (i, j, sim) = result
-    assert_true!(sim >= 0.3)
+    assert_true(sim >= 0.3)
     let lo = if i < j { i } else { j }
     let hi = if i < j { j } else { i }
     if lo == 0 && hi == 1 {
       found_01 = true
     }
   }
-  assert_true!(found_01)
+  assert_true(found_01)
 }

@@ -125,7 +125,7 @@ pub fn load_wiki_auto(
   registry? : @kgf_registry.KGFRegistry? = None,
 ) -> @types.WikiData? {
   if @fs.path_exists(wiki_dir + "/wiki.json") {
-    return @reader.load_wiki(wiki_dir, registry=registry)
+    return @reader.load_wiki(wiki_dir, registry~)
   }
   match detect_wiki_spec(wiki_dir) {
     Some(spec_name) =>

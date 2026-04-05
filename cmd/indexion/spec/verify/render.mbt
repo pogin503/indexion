@@ -100,7 +100,7 @@ fn collect_unique_kinds(items : Array[VerifyItem]) -> Array[String] {
   let result : Array[String] = []
   for item in items {
     let kind = item.spec_symbol.kind
-    if !(seen.contains(kind)) {
+    if !seen.contains(kind) {
       seen[kind] = true
       result.push(kind)
     }

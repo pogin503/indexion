@@ -45,5 +45,9 @@ pub fn kneedle_threshold_index(weights : Array[Double]) -> Int {
       best_idx = i
     }
   }
-  if best_idx < 1 { 1 } else { best_idx }
+  if best_idx < 1 {
+    1
+  } else {
+    best_idx
+  }
 }

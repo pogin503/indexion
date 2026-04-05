@@ -707,7 +707,9 @@ pub fn extract_headings(
           if has_source {
             let cur_pos = tokens[i].get_pos()
             let mut crossed_newline = false
-            for j = heading_pos; j < cur_pos && j < source_chars.length(); j = j + 1 {
+            for j = heading_pos
+                j < cur_pos && j < source_chars.length()
+                j = j + 1 {
               if source_chars[j] == '\n' {
                 crossed_newline = true
                 break

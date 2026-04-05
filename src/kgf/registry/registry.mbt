@@ -83,7 +83,7 @@ pub fn KGFRegistry::register_spec(
         // Extension already registered. Only overwrite if the new spec is
         // general-purpose (not domain-specific). Domain-specific specs
         // (with special_files) should not steal extensions from general ones.
-        if !(is_domain_specific) {
+        if !is_domain_specific {
           self.ext_to_lang.set(ext, lang)
         }
       None => self.ext_to_lang.set(ext, lang)

@@ -80,10 +80,7 @@ pub fn compare_bm25(
 /// Run batch comparison using Jensen-Shannon Divergence.
 /// JSD measures divergence between token probability distributions,
 /// capturing different information than cosine similarity.
-pub fn compare_jsd(
-  files : Array[FileEntry],
-  threshold : Double,
-) -> BatchResult {
+pub fn compare_jsd(files : Array[FileEntry], threshold : Double) -> BatchResult {
   if files.length() < 2 {
     return { matches: [], file_count: files.length(), pairs_compared: 0 }
   }

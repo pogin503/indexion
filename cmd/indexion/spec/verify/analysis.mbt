@@ -28,20 +28,16 @@ fn run_analysis(config : VerifyConfig) -> VerifyReport {
     kgf_ignore~,
     root_dir=effective_root,
   )
-  let impl_paths = @pipeline.discover_files(
-    [config.target_dir],
-    discover_opts,
-  )
+  let impl_paths = @pipeline.discover_files([config.target_dir], discover_opts)
   let spec_tokens = tokenize_file_set(spec_paths, registry)
   let impl_tokens = tokenize_file_set(impl_paths, registry)
   if spec_tokens.length() == 0 {
     return empty_report(config, spec_paths, impl_paths)
   }
-  let result = @vocab.measure_divergence(
-    spec_tokens,
-    impl_tokens,
-    { ..@vocab.GapConfig::default(), max_terms: config.max_candidates },
-  )
+  let result = @vocab.measure_divergence(spec_tokens, impl_tokens, {
+    ..@vocab.GapConfig::default(),
+    max_terms: config.max_candidates,
+  })
   let filtered_gaps = apply_focus(result.gap_terms, config.focus)
   let items = gap_terms_to_items(filtered_gaps)
   let summary = build_summary(items, result.cosine_distance)
@@ -98,27 +94,25 @@ fn apply_focus(
 ///|
 /// Convert gap terms to VerifyItems for the report.
 fn gap_terms_to_items(gaps : Array[@vocab.GapTerm]) -> Array[VerifyItem] {
-  gaps.map(
-    fn(g) {
-      {
-        status: "missing",
-        spec_symbol: {
-          identifier: g.value,
-          kind: g.kind,
-          context: "",
-          source_path: "",
-          source_line: 0,
-        },
-        evidence: {
-          found_in: [],
-          match_kind: "",
-          note: "spec term not found in implementation (weight: " +
-            format_weight(g.weight) +
-            ")",
-        },
-      }
-    },
-  )
+  gaps.map(fn(g) {
+    {
+      status: "missing",
+      spec_symbol: {
+        identifier: g.value,
+        kind: g.kind,
+        context: "",
+        source_path: "",
+        source_line: 0,
+      },
+      evidence: {
+        found_in: [],
+        match_kind: "",
+        note: "spec term not found in implementation (weight: " +
+        format_weight(g.weight) +
+        ")",
+      },
+    }
+  })
 }
 
 ///|
@@ -170,7 +164,7 @@ fn expand_spec_patterns(patterns : Array[String]) -> Array[String] {
   for pattern in patterns {
     let paths = @glob.expand_glob(pattern)
     for path in paths {
-      if !(seen.contains(path)) {
+      if !seen.contains(path) {
         seen[path] = true
         result.push(path)
       }
@@ -191,7 +185,7 @@ fn collect_used_specs(
   for path in all_paths {
     match registry.detect_from_path(path) {
       Some(lang) =>
-        if !(seen.contains(lang)) {
+        if !seen.contains(lang) {
           seen[lang] = true
           result.push(lang)
         }

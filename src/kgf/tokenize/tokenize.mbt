@@ -20,10 +20,7 @@
 ///
 /// Identifier tokens (as defined by the spec's identifier_kinds) produce
 /// "Kind:text"; all others produce "Kind" only.
-pub fn tok_to_feature(
-  tok : @types.Tok,
-  id_set~ : Map[String, Bool],
-) -> String {
+pub fn tok_to_feature(tok : @types.Tok, id_set~ : Map[String, Bool]) -> String {
   @features.kgf_tok_to_tfidf_token(tok, id_set~)
 }
 
@@ -140,7 +137,7 @@ pub fn tokenize_file(
     match fence_token {
       Some(ft) =>
         if kind == ft {
-          if !(in_fence) {
+          if !in_fence {
             in_fence = true
             fence_spec = resolve_embedded_spec(tok, registry)
           } else {
@@ -231,7 +228,11 @@ fn resolve_embedded_spec(
   match spec {
     Some(s) => {
       let id_kinds = @features.build_identifier_set(spec=s)
-      if id_kinds.is_empty() { None } else { Some(s) }
+      if id_kinds.is_empty() {
+        None
+      } else {
+        Some(s)
+      }
     }
     None => None
   }

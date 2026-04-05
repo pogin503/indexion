@@ -29,7 +29,7 @@ pub fn load_wiki(
     let md_path = wiki_dir + "/" + mp.file
     let content = @fs.read_file_to_string(md_path) catch { _ => "" }
     let sources = parse_source_refs(mp.sources)
-    let headings = extract_headings(content, registry=registry)
+    let headings = extract_headings(content, registry~)
     let children : Array[String] = []
     for child_id in mp.children {
       children.push(child_id)

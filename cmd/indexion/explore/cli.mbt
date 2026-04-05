@@ -505,7 +505,10 @@ fn run_core(
       files.length() * (files.length() - 1) / 2
     }
     apply_fdr_to_file_pairs(
-      dir_filtered, total_pairs, config.fdr, min_similarity,
+      dir_filtered,
+      total_pairs,
+      config.fdr,
+      min_similarity,
     )
   } else {
     dir_filtered
@@ -593,7 +596,11 @@ fn count_cross_dir_pairs(files : Array[(String, String)]) -> Int {
     }
   }
   // Ensure at least 1 to avoid division by zero in BH
-  if total < 1 { 1 } else { total }
+  if total < 1 {
+    1
+  } else {
+    total
+  }
 }
 
 ///|
@@ -641,7 +648,10 @@ fn apply_fdr_to_file_pairs(
     )
   }
   let filtered = @batch.apply_fdr_correction(
-    matches, alpha, total_pairs, threshold~,
+    matches,
+    alpha,
+    total_pairs,
+    threshold~,
   )
   let result : Array[FilePair] = []
   for m in filtered {

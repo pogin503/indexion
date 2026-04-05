@@ -102,7 +102,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     specs_dir=config.specs_dir,
     target_dir=config.target_dir,
   )
-  let existing_wiki = @wiki_reader.load_wiki(config.wiki_dir, registry=registry)
+  let existing_wiki = @wiki_reader.load_wiki(config.wiki_dir, registry~)
   let plan = analyze_and_plan(graph, existing_wiki, config)
   let output_content = match config.format {
     "json" => plan.to_json().stringify(indent=2)

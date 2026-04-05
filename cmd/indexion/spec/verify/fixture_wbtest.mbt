@@ -56,10 +56,7 @@ test "spec-verify/moonbit: markdown spec produces vocabulary analysis" {
     report.summary.cosine_distance > 0.0,
     msg="cosine distance should be > 0 (spec and impl differ)",
   )
-  assert_true(
-    report.summary.spec_symbols > 0,
-    msg="spec should produce tokens",
-  )
+  assert_true(report.summary.spec_symbols > 0, msg="spec should produce tokens")
 }
 
 ///|
@@ -91,10 +88,7 @@ test "spec-verify/moonbit: HTML RFC spec produces report" {
   let config = fixture_config_html("moonbit")
   let report = run_analysis(config)
   assert_true(report.summary.spec_files == 1, msg="expected 1 HTML spec file")
-  assert_true(
-    report.summary.impl_files > 0,
-    msg="no impl files discovered",
-  )
+  assert_true(report.summary.impl_files > 0, msg="no impl files discovered")
   assert_true(
     report.summary.spec_symbols > 0,
     msg="no spec symbols from HTML RFC",

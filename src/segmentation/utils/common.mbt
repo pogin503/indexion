@@ -327,7 +327,11 @@ fn calculate_prominence(values : Array[Double]) -> Array[Double] {
     }
     // Prominence: distance from peak to the higher of the two key cols
     let col = if has_left && has_right {
-      if left_min > right_min { left_min } else { right_min }
+      if left_min > right_min {
+        left_min
+      } else {
+        right_min
+      }
     } else if has_left {
       left_min
     } else if has_right {

@@ -31,12 +31,7 @@ pub struct LSHIndex {
 /// The total number of hash values used = bands × rows_per_band ≤ num_hashes.
 pub fn LSHIndex::new(target_threshold : Double) -> LSHIndex {
   let (bands, rows_per_band) = select_band_params(target_threshold)
-  {
-    bands,
-    rows_per_band,
-    buckets: init_buckets(bands),
-    signatures: [],
-  }
+  { bands, rows_per_band, buckets: init_buckets(bands), signatures: [] }
 }
 
 ///|
@@ -53,10 +48,7 @@ fn init_buckets(n : Int) -> Array[Map[Int, Array[Int]]] {
 ///|
 /// Insert a document's MinHash signature into the LSH index.
 /// Returns the document's index in the index.
-pub fn LSHIndex::insert(
-  self : LSHIndex,
-  signature : MinHashSignature,
-) -> Int {
+pub fn LSHIndex::insert(self : LSHIndex, signature : MinHashSignature) -> Int {
   let doc_id = self.signatures.length()
   self.signatures.push(signature)
   let values = signature.get_values()

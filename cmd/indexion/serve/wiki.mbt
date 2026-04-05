@@ -9,15 +9,11 @@ async fn load_wiki_pages(
   config : ServeConfig,
   provider : @dconfig.EmbeddingProvider,
 ) -> (@wiki_types.WikiData, @wiki_search.WikiSearchIndex?) {
-  let wiki_dir = match @config.resolve_project_indexion_dir(
-    config.workspace_dir,
-    "wiki",
-  ) {
+  let wiki_dir = match
+    @config.resolve_project_indexion_dir(config.workspace_dir, "wiki") {
     Some(dir) => dir
     None => {
-      @digest_cli.log_progress(
-        "Wiki: no project root found. Skipping wiki.",
-      )
+      @digest_cli.log_progress("Wiki: no project root found. Skipping wiki.")
       return (empty_wiki(), None)
     }
   }
@@ -25,17 +21,25 @@ async fn load_wiki_pages(
     specs_dir=config.specs_dir,
     target_dir=config.workspace_dir,
   )
-  match @wiki_interop.load_wiki_auto(wiki_dir, registry=registry) {
+  match @wiki_interop.load_wiki_auto(wiki_dir, registry~) {
     Some(data) => {
       @digest_cli.log_progress(
         "Wiki: " + data.pages.length().to_string() + " pages loaded.",
       )
-      let search = @wiki_search.build_search_index(data.pages, provider, registry=registry) catch {
+      let search = @wiki_search.build_search_index(
+        data.pages,
+        provider,
+        registry~,
+      ) catch {
         _ => {
           @digest_cli.log_progress(
             "Wiki search: embedding failed, using TF-IDF fallback.",
           )
-          @wiki_search.build_search_index(data.pages, @dconfig.TfIdf(256), registry=registry) catch {
+          @wiki_search.build_search_index(
+            data.pages,
+            @dconfig.TfIdf(256),
+            registry~,
+          ) catch {
             _ => {
               @digest_cli.log_progress("Wiki search: failed to build index.")
               return (data, None)

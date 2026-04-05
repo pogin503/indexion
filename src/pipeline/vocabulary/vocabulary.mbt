@@ -79,11 +79,7 @@ pub fn measure_divergence(
   let target_tf = @tfidf.build_term_frequency(target_flat)
   let ubiquity_threshold = total_docs / 3 + 1
   let gap_terms = extract_gap_terms(
-    source_vec,
-    target_tf,
-    project_df,
-    ubiquity_threshold,
-    config,
+    source_vec, target_tf, project_df, ubiquity_threshold, config,
   )
   { cosine_distance: cosine_dist, gap_terms }
 }
@@ -113,7 +109,7 @@ fn extract_gap_terms(
     let term = entry.0
     let weight = entry.1
     // Only identifier-style tokens (Kind:value), not vocab: sub-tokens
-    if !(@kgf_tokenize.feature_has_value(term)) || term.has_prefix("vocab:") {
+    if !@kgf_tokenize.feature_has_value(term) || term.has_prefix("vocab:") {
       continue
     }
     let value = @kgf_tokenize.feature_value(term)

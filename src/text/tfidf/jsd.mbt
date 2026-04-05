@@ -137,7 +137,9 @@ pub fn JSDBatch::length(self : JSDBatch) -> Int {
 /// Calculate JSD similarity between two documents by index.
 /// Returns 1.0 for identical, 0.0 for maximally different.
 pub fn JSDBatch::similarity(self : JSDBatch, i : Int, j : Int) -> Double {
-  if i < 0 || j < 0 || i >= self.term_freqs.length() ||
+  if i < 0 ||
+    j < 0 ||
+    i >= self.term_freqs.length() ||
     j >= self.term_freqs.length() {
     return 0.0
   }

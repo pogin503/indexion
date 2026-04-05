@@ -270,7 +270,8 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
   let merged = ServeConfig::from_matches(matches).apply_file_config(
     @digest_cli.load_digest_file_config(),
   )
-  let resolved_index_dir : String? = if merged.index_dir == @dconfig.DEFAULT_INDEX_DIR {
+  let resolved_index_dir : String? = if merged.index_dir ==
+    @dconfig.DEFAULT_INDEX_DIR {
     @config.resolve_project_indexion_dir(merged.workspace_dir, "digest")
   } else {
     Some(merged.index_dir)

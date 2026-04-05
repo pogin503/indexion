@@ -47,9 +47,14 @@ pub async fn build_search_index(
     let page_id = entry.0
     let page = entry.1
     let page_file = if page.file.length() > 0 { page.file } else { page_id }
-    for s in extract_sections(
-      page_id, page.title, page.content, path=page_file, registry=registry,
-    ) {
+    for
+      s in extract_sections(
+        page_id,
+        page.title,
+        page.content,
+        path=page_file,
+        registry~,
+      ) {
       sections[s.id] = s
       let kind_str = if s.level == 1 { "page" } else { "section" }
       let doc_attrs : Map[String, String] = {}
@@ -130,9 +135,7 @@ pub fn extract_sections(
     Some(lang) => effective_reg.get_spec(lang)
     None => None
   }
-  let tokens = @kgf_features.tokenize_source(
-    content, effective_path, registry,
-  )
+  let tokens = @kgf_features.tokenize_source(content, effective_path, registry)
   match tokens {
     Some(toks) =>
       extract_sections_from_tokens(toks, content, page_id, page_title, spec~)

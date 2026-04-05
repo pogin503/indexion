@@ -38,8 +38,8 @@ test "kneedle: gradual descent" {
 test "kneedle: steep drop then plateau" {
   // Mimics real TF-IDF: few high-weight terms, many at minimum
   let weights : Array[Double] = [
-    5.6, 4.6, 4.3, 3.9, 3.9, 3.7, 3.7, 3.4, 3.4, 3.4, 3.4, 3.4, 3.4,
-    2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4,
+    5.6, 4.6, 4.3, 3.9, 3.9, 3.7, 3.7, 3.4, 3.4, 3.4, 3.4, 3.4, 3.4, 2.4, 2.4, 2.4,
+    2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4,
   ]
   let cutoff = kneedle_threshold_index(weights)
   // Should cut at the transition to the 2.4 plateau

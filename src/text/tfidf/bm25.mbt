@@ -54,7 +54,8 @@ pub fn build_bm25_vector(
       ) +
       1.0
     // BM25 TF component with saturation and length normalization
-    let tf_norm = tf_val * (bm25_k1 + 1.0) /
+    let tf_norm = tf_val *
+      (bm25_k1 + 1.0) /
       (tf_val + bm25_k1 * (1.0 - bm25_b + bm25_b * dl / avg_doc_length))
     vector.set(term, idf * tf_norm)
   }

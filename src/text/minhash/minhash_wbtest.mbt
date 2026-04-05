@@ -2,7 +2,7 @@
 test "MinHashSignature::from_tokens creates signature of correct length" {
   let tokens = ["hello", "world", "foo", "bar"]
   let sig = MinHashSignature::from_tokens(tokens)
-  assert_eq!(sig.get_values().length(), 128)
+  assert_eq(sig.get_values().length(), 128)
 }
 
 ///|
@@ -10,7 +10,7 @@ test "MinHashSignature::jaccard returns 1.0 for identical token sets" {
   let tokens = ["the", "quick", "brown", "fox"]
   let sig1 = MinHashSignature::from_tokens(tokens)
   let sig2 = MinHashSignature::from_tokens(tokens)
-  assert_eq!(sig1.jaccard(sig2), 1.0)
+  assert_eq(sig1.jaccard(sig2), 1.0)
 }
 
 ///|
@@ -22,8 +22,8 @@ test "MinHashSignature::jaccard returns high value for similar sets" {
   let jaccard = sig1.jaccard(sig2)
   // True Jaccard = |intersection|/|union| = 4/6 ≈ 0.667
   // MinHash estimate should be in the ballpark (±0.2)
-  assert_true!(jaccard > 0.4)
-  assert_true!(jaccard < 0.9)
+  assert_true(jaccard > 0.4)
+  assert_true(jaccard < 0.9)
 }
 
 ///|
@@ -34,7 +34,7 @@ test "MinHashSignature::jaccard returns low value for disjoint sets" {
   let sig2 = MinHashSignature::from_tokens(tokens2)
   let jaccard = sig1.jaccard(sig2)
   // True Jaccard = 0/6 = 0.0
-  assert_true!(jaccard < 0.2)
+  assert_true(jaccard < 0.2)
 }
 
 ///|
@@ -44,17 +44,17 @@ test "MinHashSignature::from_tokens deduplicates tokens" {
   let sig1 = MinHashSignature::from_tokens(tokens1)
   let sig2 = MinHashSignature::from_tokens(tokens2)
   // Same unique set → same signature
-  assert_eq!(sig1.jaccard(sig2), 1.0)
+  assert_eq(sig1.jaccard(sig2), 1.0)
 }
 
 ///|
 test "MinHashSignature::from_tokens handles empty input" {
   let tokens : Array[String] = []
   let sig = MinHashSignature::from_tokens(tokens)
-  assert_eq!(sig.get_values().length(), 128)
+  assert_eq(sig.get_values().length(), 128)
   // All values should be max int (no minimums found)
   for v in sig.get_values() {
-    assert_eq!(v, 2147483647)
+    assert_eq(v, 2147483647)
   }
 }
 
@@ -70,8 +70,7 @@ test "LSHIndex finds candidate pairs for highly similar documents" {
   ]
   // One completely different
   let tokens3 = [
-    "import", "os", "sys", "path", "join", "open", "read", "write", "close",
-    "flush",
+    "import", "os", "sys", "path", "join", "open", "read", "write", "close", "flush",
   ]
   let sig1 = MinHashSignature::from_tokens(tokens1)
   let sig2 = MinHashSignature::from_tokens(tokens2)
@@ -88,7 +87,7 @@ test "LSHIndex finds candidate pairs for highly similar documents" {
       has_01 = true
     }
   }
-  assert_true!(has_01)
+  assert_true(has_01)
 }
 
 ///|
@@ -107,18 +106,18 @@ test "LSHIndex::candidate_pairs_above_threshold filters by jaccard" {
   // (0,1) should pass threshold, (0,2) and (1,2) should not
   for result in results {
     let (i, j, jaccard) = result
-    assert_true!(jaccard >= 0.5)
+    assert_true(jaccard >= 0.5)
     // Should not be a pair of completely different documents
-    assert_true!(!(i == 0 && j == 2) && !(i == 1 && j == 2))
+    assert_true(!(i == 0 && j == 2) && !(i == 1 && j == 2))
   }
 }
 
 ///|
 test "select_band_params returns valid factorization" {
   let (bands, rows) = select_band_params(0.8)
-  assert_true!(bands * rows <= 128)
-  assert_true!(bands >= 1)
-  assert_true!(rows >= 1)
+  assert_true(bands * rows <= 128)
+  assert_true(bands >= 1)
+  assert_true(rows >= 1)
 }
 
 ///|
@@ -128,5 +127,5 @@ test "select_band_params adapts to threshold" {
   let (bands_low, rows_low) = select_band_params(0.3)
   // Higher threshold should use more rows per band (stricter)
   // or fewer bands (less chance of accidental match)
-  assert_true!(rows_high >= rows_low || bands_high <= bands_low)
+  assert_true(rows_high >= rows_low || bands_high <= bands_low)
 }
