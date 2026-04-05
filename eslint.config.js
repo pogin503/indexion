@@ -40,6 +40,7 @@ export default tseslint.config(
       "eslint/**",
       "**/vitest.config.*",
       "**/vite.*.config.*",
+      "**/.vscode-test/**",
     ],
   },
 
@@ -157,10 +158,11 @@ export default tseslint.config(
       },
     },
     rules: {
-      // Allow vitest globals and mocks in test files
+      // Allow vitest globals, mocks, and test-specific patterns in test files
       "no-restricted-globals": "off",
       "no-restricted-imports": "off",
       "no-restricted-properties": "off",
+      "no-restricted-syntax": "off",
       "custom/no-as-outside-guard": "off",
     },
   },
