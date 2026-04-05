@@ -131,6 +131,7 @@ fn register_explore(server : @mcp_server.McpServer, config : McpConfig) -> Unit 
         format: "json",
         strategy: json_string(params, "strategy", "tfidf"),
         threshold: json_double(params, "threshold", 0.5),
+        fdr: json_double(params, "fdr", 0.0),
         extensions: [],
         includes: json_string_array(params, "includes"),
         excludes: json_string_array(params, "excludes"),
@@ -312,6 +313,7 @@ fn register_plan_refactor(
       let refactor_config : @plan_refactor.RefactorPlanConfig = {
         target_dir,
         threshold: json_double(params, "threshold", 0.7),
+        fdr: json_double(params, "fdr", 0.0),
         strategy: json_string(params, "strategy", "hybrid"),
         includes: json_string_array(params, "includes"),
         excludes: json_string_array(params, "excludes"),

@@ -51,7 +51,8 @@
 pub(all) struct RefactorPlanConfig {
   target_dir : String
   threshold : Double // similarity threshold (default: 0.7 = 70%)
-  strategy : String // "hybrid", "ncd", "tfidf"
+  fdr : Double // FDR correction level (0 = disabled, 0.05 = 5% FDR)
+  strategy : String // "hybrid", "ncd", "tfidf", "bm25", "jsd"
   includes : Array[String] // glob patterns to include
   excludes : Array[String] // glob patterns to exclude
   output : String // output file path (empty = stdout)
@@ -67,6 +68,7 @@ pub fn RefactorPlanConfig::default() -> RefactorPlanConfig {
   {
     target_dir: "",
     threshold: 0.7,
+    fdr: 0.0,
     strategy: "hybrid",
     includes: [],
     excludes: [],
@@ -143,9 +145,19 @@ pub fn RefactorPlanConfig::from_matches(
     Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
     _ => ""
   }
+  let fdr = match matches.values.get("fdr") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        @common.parse_double(arr[0])
+      } else {
+        0.0
+      }
+    _ => 0.0
+  }
   {
     target_dir,
     threshold,
+    fdr,
     strategy,
     includes,
     excludes,
@@ -167,9 +179,14 @@ pub fn command() -> @argparse.Command {
       @argparse.OptionArg("threshold", about="Similarity threshold (0.0-1.0)", default_values=[
         "0.7",
       ]),
-      @argparse.OptionArg("strategy", about="Algorithm: hybrid, tfidf, ncd", default_values=[
+      @argparse.OptionArg("strategy", about="Algorithm: hybrid, tfidf, bm25, jsd, ncd", default_values=[
         "hybrid",
       ]),
+      @argparse.OptionArg(
+        "fdr",
+        about="FDR correction level (0=disabled, 0.05=5% false discovery rate)",
+        default_values=["0"],
+      ),
       @argparse.OptionArg("include", action=Append, about=@help.include_pattern),
       @argparse.OptionArg("exclude", action=Append, about=@help.exclude_pattern),
       @argparse.OptionArg("output", short='o', about=@help.output),
@@ -510,37 +527,35 @@ fn collect_similar_pairs(
   files : Array[(String, String)],
   config : RefactorPlanConfig,
 ) -> Array[SimilarPair] {
-  let pairs : Array[SimilarPair] = []
-  if config.strategy == "tfidf" || config.strategy == "hybrid" {
-    let entries : Array[@batch.FileEntry] = []
-    for f in files {
-      entries.push(@batch.FileEntry::new(f.0, f.1))
+  let entries : Array[@batch.FileEntry] = []
+  for f in files {
+    entries.push(@batch.FileEntry::new(f.0, f.1))
+  }
+  // Use batch compare dispatch for known strategies
+  let result = match config.strategy {
+    "tfidf" | "hybrid" | "bm25" | "jsd" | "apted" | "tsed" =>
+      @batch.compare(
+        entries,
+        @batch.BatchConfig::create(config.threshold, config.strategy),
+      )
+    _ => {
+      // Custom strategy: NCD or hybrid with prefilter
+      let score_fn : (String, String) -> Double = match config.strategy {
+        "ncd" => fn(t1, t2) { @ncd.NCDStrategy::new().similarity(t1, t2) }
+        _ => fn(t1, t2) { @hybrid.HybridStrategy::new().similarity(t1, t2) }
+      }
+      @batch.compare_with_prefilter(entries, config.threshold, score_fn)
     }
-    let result = if config.strategy == "hybrid" {
-      @batch.compare_hybrid(entries, config.threshold)
-    } else {
-      @batch.compare_tfidf(entries, config.threshold)
-    }
-    for m in result.matches {
-      pairs.push({ file1: m.file1, file2: m.file2, similarity: m.similarity })
-    }
+  }
+  // Apply FDR correction if enabled
+  let filtered_result = if config.fdr > 0.0 {
+    result.apply_fdr(config.fdr, threshold=config.threshold)
   } else {
-    let entries : Array[@batch.FileEntry] = []
-    for f in files {
-      entries.push(@batch.FileEntry::new(f.0, f.1))
-    }
-    let score_fn : (String, String) -> Double = match config.strategy {
-      "ncd" => fn(t1, t2) { @ncd.NCDStrategy::new().similarity(t1, t2) }
-      _ => fn(t1, t2) { @hybrid.HybridStrategy::new().similarity(t1, t2) }
-    }
-    let result = @batch.compare_with_prefilter(
-      entries,
-      config.threshold,
-      score_fn,
-    )
-    for m in result.matches {
-      pairs.push({ file1: m.file1, file2: m.file2, similarity: m.similarity })
-    }
+    result
+  }
+  let pairs : Array[SimilarPair] = []
+  for m in filtered_result.matches {
+    pairs.push({ file1: m.file1, file2: m.file2, similarity: m.similarity })
   }
   pairs
 }

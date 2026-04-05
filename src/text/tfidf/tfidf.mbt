@@ -65,17 +65,12 @@ pub fn build_tfidf_vector(
 }
 
 ///|
-/// Calculate the square root using Newton's method.
+/// Calculate the square root.
 pub fn sqrt(x : Double) -> Double {
   if x <= 0.0 {
     return 0.0
   }
-  let mut guess = x / 2.0
-  for i = 0; i < 20; i = i + 1 {
-    ignore(i)
-    guess = (guess + x / guess) / 2.0
-  }
-  guess
+  @math.pow(x, 0.5)
 }
 
 ///|

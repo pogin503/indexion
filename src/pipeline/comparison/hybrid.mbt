@@ -54,11 +54,11 @@ pub fn compare_hybrid(
   for file in files {
     file_pairs.push((file.display_name, file.content))
   }
-  // TF-IDF: always computed (fast, also needed for pre-filtering)
+  // BM25: always computed (fast lexical scoring with length normalization)
   let (tokenized, _) = @kgf_features.tokenize_files_with_kgf(
     file_pairs, registry,
   )
-  let batch = @tfidf.TfidfBatch::from_tokens(tokenized)
+  let batch = @tfidf.BM25Batch::from_tokens(tokenized)
   let tfidf_pairs = batch.all_pairs_above_threshold(threshold)
   // Extract trees and measure complexity
   let all_trees : Array[Array[@apted.TreeNode]] = []

@@ -57,8 +57,9 @@
 pub(all) struct ExploreConfig {
   target_dirs : Array[String] // multiple directories supported
   format : String // "matrix", "list", "cluster", "json"
-  strategy : String // "hybrid", "ncd", "tfidf", "apted", "tsed"
+  strategy : String // "hybrid", "ncd", "tfidf", "apted", "tsed", "bm25", "jsd"
   threshold : Double // similarity threshold for clustering
+  fdr : Double // FDR correction level (0 = disabled, 0.05 = 5% FDR)
   extensions : Array[String] // file extensions to include
   includes : Array[String] // glob patterns to include
   excludes : Array[String] // glob patterns to exclude
@@ -73,6 +74,7 @@ pub fn ExploreConfig::default() -> ExploreConfig {
     format: "matrix",
     strategy: "tfidf",
     threshold: 0.5,
+    fdr: 0.0,
     extensions: [],
     includes: [],
     excludes: [],
@@ -122,11 +124,21 @@ pub fn ExploreConfig::from_matches(
     Some(arr) => if arr.length() > 0 { arr[0] } else { "kgfs" }
     _ => "kgfs"
   }
+  let fdr = match matches.values.get("fdr") {
+    Some(arr) =>
+      if arr.length() > 0 {
+        @common.parse_double(arr[0])
+      } else {
+        0.0
+      }
+    _ => 0.0
+  }
   {
     target_dirs,
     format,
     strategy,
     threshold,
+    fdr,
     extensions,
     includes,
     excludes,
@@ -148,7 +160,7 @@ pub fn command() -> @argparse.Command {
       ),
       @argparse.OptionArg(
         "strategy",
-        about="Similarity strategy: tfidf, ncd, hybrid, apted, tsed",
+        about="Similarity strategy: tfidf, bm25, jsd, ncd, hybrid, apted, tsed",
         default_values=["tfidf"],
       ),
       @argparse.OptionArg(
@@ -163,6 +175,11 @@ pub fn command() -> @argparse.Command {
       ),
       @argparse.OptionArg("include", action=Append, about=@help.include_pattern),
       @argparse.OptionArg("exclude", action=Append, about=@help.exclude_pattern),
+      @argparse.OptionArg(
+        "fdr",
+        about="FDR correction level (0=disabled, 0.05=5% false discovery rate)",
+        default_values=["0"],
+      ),
       @argparse.OptionArg("specs-dir", about=@help.specs_dir, default_values=[
         "kgfs",
       ]),
@@ -465,13 +482,33 @@ fn run_core(
     let batch = @tfidf.TfidfBatch::from_tokens(tokenized)
     let (pairs, _) = calculate_tfidf_pairs(batch, files, min_similarity)
     pairs
+  } else if config.strategy == "bm25" || config.strategy == "jsd" {
+    calculate_batch_pairs(files, config.strategy, min_similarity)
   } else {
     calculate_pairs(files, config.strategy, min_similarity)
   }
-  let filtered_pairs = if config.target_dirs.length() > 1 {
+  let is_cross_dir = config.target_dirs.length() > 1
+  let dir_filtered = if is_cross_dir {
     filter_cross_dir_pairs(pairs)
   } else {
     pairs
+  }
+  // Apply FDR correction if enabled
+  let filtered_pairs = if config.fdr > 0.0 {
+    // The BH denominator must match the hypothesis family being tested.
+    // After cross-directory filtering, only cross-directory pairs remain,
+    // so the denominator is the number of cross-directory combinations,
+    // not all-file nC2.
+    let total_pairs = if is_cross_dir {
+      count_cross_dir_pairs(files)
+    } else {
+      files.length() * (files.length() - 1) / 2
+    }
+    apply_fdr_to_file_pairs(
+      dir_filtered, total_pairs, config.fdr, min_similarity,
+    )
+  } else {
+    dir_filtered
   }
   Some((files, filtered_pairs))
 }
@@ -529,6 +566,93 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     "json" => output_json(files, filtered_pairs)
     _ => output_matrix(files, filtered_pairs)
   }
+}
+
+///|
+/// Count the number of cross-directory file pairs.
+/// Groups files by their directory prefix (the part before ':'),
+/// then sums |dir_i| × |dir_j| for all i < j.
+fn count_cross_dir_pairs(files : Array[(String, String)]) -> Int {
+  // Count files per directory prefix
+  let dir_counts : Map[String, Int] = {}
+  for f in files {
+    let prefix = @common.get_dirname_prefix(f.0)
+    let current = dir_counts.get(prefix).unwrap_or(0)
+    dir_counts.set(prefix, current + 1)
+  }
+  // Collect counts into array
+  let counts : Array[Int] = []
+  for entry in dir_counts {
+    counts.push(entry.1)
+  }
+  // Sum cross-bucket combinations: Σ_{i<j} counts[i] × counts[j]
+  let mut total = 0
+  for i = 0; i < counts.length(); i = i + 1 {
+    for j = i + 1; j < counts.length(); j = j + 1 {
+      total += counts[i] * counts[j]
+    }
+  }
+  // Ensure at least 1 to avoid division by zero in BH
+  if total < 1 { 1 } else { total }
+}
+
+///|
+/// Calculate pairs using @batch.compare for strategies that have
+/// dedicated batch implementations (bm25, jsd, etc.).
+fn calculate_batch_pairs(
+  files : Array[(String, String)],
+  strategy : String,
+  min_similarity : Double,
+) -> Array[FilePair] {
+  let entries : Array[@batch.FileEntry] = []
+  for f in files {
+    entries.push(@batch.FileEntry::new(f.0, f.1))
+  }
+  let result = @batch.compare(
+    entries,
+    @batch.BatchConfig::create(min_similarity, strategy),
+  )
+  let pairs : Array[FilePair] = []
+  for m in result.matches {
+    pairs.push({
+      file1: m.file1,
+      file2: m.file2,
+      similarity: m.similarity,
+      _distance: 1.0 - m.similarity,
+    })
+  }
+  pairs
+}
+
+///|
+/// Apply BH FDR correction to FilePair results.
+/// Converts FilePairs to SimilarityMatches, applies FDR, converts back.
+/// `total_pairs` is the number of hypotheses tested (the family size for BH).
+fn apply_fdr_to_file_pairs(
+  pairs : Array[FilePair],
+  total_pairs : Int,
+  alpha : Double,
+  threshold : Double,
+) -> Array[FilePair] {
+  let matches : Array[@batch.SimilarityMatch] = []
+  for i, pair in pairs {
+    matches.push(
+      @batch.SimilarityMatch::new(i, 0, pair.file1, pair.file2, pair.similarity),
+    )
+  }
+  let filtered = @batch.apply_fdr_correction(
+    matches, alpha, total_pairs, threshold~,
+  )
+  let result : Array[FilePair] = []
+  for m in filtered {
+    result.push({
+      file1: m.file1,
+      file2: m.file2,
+      similarity: m.similarity,
+      _distance: 1.0 - m.similarity,
+    })
+  }
+  result
 }
 
 ///|

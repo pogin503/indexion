@@ -49,6 +49,31 @@ pub fn normalize_pairs(raw : Array[(Int, Int, Double)]) -> Array[(Int, Int)] {
 }
 
 ///|
+/// Use MinHash + LSH to find candidate pairs with approximate Jaccard similarity.
+/// Near-linear time complexity: O(N × num_hashes × bands) for indexing,
+/// versus O(N²) for brute-force or inverted-index approaches.
+/// Takes (display_name, content) pairs. Returns (i, j) where i < j.
+pub fn minhash_prefilter(
+  files : Array[(String, String)],
+  registry : @kgf_registry.KGFRegistry?,
+  prefilter_threshold : Double,
+) -> Array[(Int, Int)] {
+  let (tokenized, _) = @kgf_features.tokenize_files_with_kgf(files, registry)
+  let index = @minhash.LSHIndex::new(prefilter_threshold)
+  for tokens in tokenized {
+    let sig = @minhash.MinHashSignature::from_tokens(tokens)
+    ignore(index.insert(sig))
+  }
+  let results = index.candidate_pairs_above_threshold(prefilter_threshold)
+  let pairs : Array[(Int, Int)] = []
+  for result in results {
+    let (i, j, _) = result
+    pairs.push((i, j))
+  }
+  pairs
+}
+
+///|
 /// Create a deduplication key for a pair (i, j).
 pub fn pair_key(i : Int, j : Int) -> String {
   i.to_string() + ":" + j.to_string()

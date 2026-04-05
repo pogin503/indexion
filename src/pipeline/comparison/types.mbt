@@ -92,6 +92,12 @@ pub fn BatchResult::get_matches(self : BatchResult) -> Array[SimilarityMatch] {
 let prefilter_min_files : Int = 10
 
 ///|
+/// File count above which MinHash+LSH is used instead of TF-IDF
+/// inverted index for candidate generation. LSH scales near-linearly
+/// while TF-IDF inverted index degrades on large vocabulary sets.
+let minhash_min_files : Int = 200
+
+///|
 /// TF-IDF threshold relaxation factor for pre-filtering.
 /// Lower means more candidates pass the pre-filter.
 let prefilter_factor : Double = 0.5
@@ -103,6 +109,8 @@ pub fn compare(files : Array[FileEntry], config : BatchConfig) -> BatchResult {
     "apted" => compare_apted(files, config.threshold)
     "tsed" => compare_tsed(files, config.threshold)
     "tfidf" => compare_tfidf(files, config.threshold)
+    "bm25" => compare_bm25(files, config.threshold)
+    "jsd" => compare_jsd(files, config.threshold)
     _ => compare_hybrid(files, config.threshold)
   }
 }

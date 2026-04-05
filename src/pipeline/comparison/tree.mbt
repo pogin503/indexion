@@ -42,18 +42,26 @@ fn compare_trees_core(
     all_trees.push(trees)
   }
   let n = files.length()
-  let candidate_pairs = if n > prefilter_min_files {
+  let candidate_pairs = if n <= prefilter_min_files {
+    @candidates.brute_force(n)
+  } else {
     let file_pairs : Array[(String, String)] = []
     for file in files {
       file_pairs.push((file.display_name, file.content))
     }
-    @candidates.tfidf_prefilter(
-      file_pairs,
-      registry,
-      threshold * prefilter_factor,
-    )
-  } else {
-    @candidates.brute_force(n)
+    if n >= minhash_min_files {
+      @candidates.minhash_prefilter(
+        file_pairs,
+        registry,
+        threshold * prefilter_factor,
+      )
+    } else {
+      @candidates.tfidf_prefilter(
+        file_pairs,
+        registry,
+        threshold * prefilter_factor,
+      )
+    }
   }
   let matches : Array[SimilarityMatch] = []
   let mut pairs_compared = 0

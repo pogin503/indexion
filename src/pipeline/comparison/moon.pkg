@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/math" @math,
   "trkbt10/indexion/src/text/tfidf" @tfidf,
   "trkbt10/indexion/src/kgf/features" @kgf_features,
   "trkbt10/indexion/src/similarity/apted" @apted,

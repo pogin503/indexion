@@ -100,6 +100,7 @@ async fn handle_explore(
     format: "json",
     strategy: json_string(json, "strategy", "tfidf"),
     threshold: json_double(json, "threshold", 0.5),
+    fdr: json_double(json, "fdr", 0.0),
     extensions: json_string_array(json, "extensions"),
     includes: json_string_array(json, "includes"),
     excludes: json_string_array(json, "excludes"),
@@ -227,6 +228,7 @@ async fn handle_plan_refactor(
   let refactor_config : @plan_refactor.RefactorPlanConfig = {
     target_dir,
     threshold: json_double(json, "threshold", 0.7),
+    fdr: json_double(json, "fdr", 0.0),
     strategy: json_string(json, "strategy", "hybrid"),
     includes: json_string_array(json, "includes"),
     excludes: json_string_array(json, "excludes"),
