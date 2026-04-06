@@ -15,7 +15,7 @@ fn wrap_ok(data_json : String) -> String {
 /// Write a string to a file, creating parent directories as needed.
 fn write_file(path : String, content : String) -> Bool {
   let parent = @common.parent_dir(path)
-  @digest_cli.ensure_dir_exists(parent)
+  @config.ensure_dir_recursive(parent)
   @fs.write_string_to_file(path, content) catch {
     e => {
       @digest_cli.log_error("Failed to write " + path + ": " + e.to_string())
@@ -29,7 +29,7 @@ fn write_file(path : String, content : String) -> Bool {
 /// Copy a single file (binary-safe).
 fn copy_file(src : String, dst : String) -> Bool {
   let parent = @common.parent_dir(dst)
-  @digest_cli.ensure_dir_exists(parent)
+  @config.ensure_dir_recursive(parent)
   let content = @fs.read_file_to_bytes(src) catch {
     e => {
       @digest_cli.log_error("Failed to read " + src + ": " + e.to_string())
@@ -49,7 +49,7 @@ fn copy_file(src : String, dst : String) -> Bool {
 /// Recursively copy a directory tree.
 fn copy_dir_recursive(src_dir : String, dst_dir : String) -> Int {
   let mut count = 0
-  @digest_cli.ensure_dir_exists(dst_dir)
+  @config.ensure_dir_recursive(dst_dir)
   let entries = @fs.read_dir(src_dir) catch { _ => return 0 }
   for entry in entries {
     let src_path = src_dir + "/" + entry

@@ -92,7 +92,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
   println("Analyzing project structure...")
   let graph = match
     @digest_cli.build_graph_from_source(config.target_dir, config.specs_dir) {
-    Some(g) => g
+    Some(r) => r.graph
     None => {
       println("Failed to build project graph.")
       return

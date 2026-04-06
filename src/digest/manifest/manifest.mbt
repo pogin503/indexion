@@ -28,8 +28,14 @@ pub struct FunctionEntry {
 } derive(Eq, Show, ToJson, @json.FromJson)
 
 ///|
+/// Current manifest schema version. Increment when making incompatible changes.
+pub const MANIFEST_VERSION : Int = 2
+
+///|
 /// DigestManifest tracks function-level indexing state.
 pub struct DigestManifest {
+  /// Schema version for forward/backward compatibility.
+  version : Int
   /// Creation timestamp (ISO 8601).
   created_at : String
   /// Last update timestamp.
@@ -57,6 +63,7 @@ pub fn DigestManifest::new(
 ) -> DigestManifest {
   let now = get_timestamp()
   {
+    version: MANIFEST_VERSION,
     created_at: now,
     updated_at: now,
     spec_hash,
@@ -225,6 +232,37 @@ pub fn FunctionEntry::from_unit(
 }
 
 ///|
+/// Check if a file's content hash matches the stored hash.
+/// Returns true if the file is tracked and hash matches (file unchanged).
+pub fn DigestManifest::is_file_unchanged(
+  self : DigestManifest,
+  file_path : String,
+  current_hash : @cas_types.ContentHash,
+) -> Bool {
+  match self.files.get(file_path) {
+    Some(entry) => entry.source_hash == current_hash
+    None => false
+  }
+}
+
+///|
+/// Update or add a file entry in the manifest.
+pub fn DigestManifest::update_file(
+  self : DigestManifest,
+  file_path : String,
+  content_hash : @cas_types.ContentHash,
+  function_ids : Array[String],
+) -> DigestManifest {
+  let entry : FileEntry = {
+    file_path,
+    source_hash: content_hash,
+    functions: function_ids,
+  }
+  self.files.set(file_path, entry)
+  { ..self, updated_at: get_timestamp() }
+}
+
+///|
 /// Serialize manifest to JSON string.
 pub fn DigestManifest::to_json_string(self : DigestManifest) -> String {
   self.to_json().stringify()
@@ -232,8 +270,20 @@ pub fn DigestManifest::to_json_string(self : DigestManifest) -> String {
 
 ///|
 /// Parse manifest from JSON string.
+/// Returns None if the JSON is invalid or the manifest version is incompatible,
+/// which causes the caller to trigger a full rebuild.
 pub fn DigestManifest::from_json_string(json_str : String) -> DigestManifest? {
   let json : Json = @json.parse(json_str) catch { _ => return None }
+  // Check version before full deserialization.
+  // Old manifests without a version field (v1) are incompatible with the
+  // current schema (v2+: file-level hashing, source_hash semantics changed).
+  match json {
+    { "version": Number(v, ..), .. } =>
+      if v.to_int() != MANIFEST_VERSION {
+        return None
+      }
+    _ => return None // No version field → v1 manifest, incompatible
+  }
   let manifest : DigestManifest = @json.from_json(json) catch {
     _ => return None
   }

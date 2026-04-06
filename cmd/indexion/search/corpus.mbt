@@ -238,9 +238,9 @@ fn extract_code_documents_with_graph(
   target_dir : String,
   out : Array[@search_engine.SearchDocument],
 ) -> Unit {
-  let graph = @digest_cli.build_graph_from_source(target_dir, specs_dir)
-  match graph {
-    Some(g) => extract_code_from_graph(g, code_files, registry, out)
+  let build_result = @digest_cli.build_graph_from_source(target_dir, specs_dir)
+  match build_result {
+    Some(r) => extract_code_from_graph(r.graph, code_files, registry, out)
     None => {
       // Fallback: use direct function extraction (no graph edges)
       let code_docs = @grep.extract_code_documents(code_files, registry)

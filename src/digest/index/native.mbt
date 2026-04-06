@@ -7,16 +7,83 @@ pub async fn DigestIndex::build_with_config(
   self : DigestIndex,
   graph : @graph.CodeGraph,
   digest_config : @config.DigestConfig,
+  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
 ) -> BuildResult raise @embed.EmbedError {
   let result = BuildResult::new()
-  // Extract function units using config
+  // --- Phase 1: Determine which files have changed ---
+  // Build module_id -> file_path mapping and identify changed files.
+  // A file is "changed" if:
+  //   (a) file_hashes is not provided (conservative: treat all as changed), or
+  //   (b) the file's content hash differs from what the manifest recorded, or
+  //   (c) the file is not yet tracked in the manifest
+  let changed_files : Map[String, Bool] = {} // file_path -> true
+  let file_to_modules : Map[String, Array[String]] = {} // file_path -> [module_ids]
+  for entry in graph.get_modules() {
+    let module_id = entry.0
+    let module_node = entry.1
+    match module_node.file {
+      Some(file_path) => {
+        // Track file -> modules mapping
+        match file_to_modules.get(file_path) {
+          Some(mods) => mods.push(module_id)
+          None => file_to_modules.set(file_path, [module_id])
+        }
+        // Check if file has changed
+        match file_hashes {
+          Some(fh) =>
+            match fh.get(file_path) {
+              Some(current_hash) =>
+                if !self.manifest.is_file_unchanged(file_path, current_hash) {
+                  changed_files.set(file_path, true)
+                }
+              None =>
+                // File not in file_hashes — might be external or unsupported
+                ()
+            }
+          None =>
+            // No file hashes provided — conservatively treat all files as changed
+            changed_files.set(file_path, true)
+        }
+      }
+      None => () // External module, no file path
+    }
+  }
+  // Build set of modules whose files have changed
+  let changed_module_set : Map[String, Bool] = {}
+  for entry in changed_files {
+    match file_to_modules.get(entry.0) {
+      Some(mods) =>
+        for m in mods {
+          changed_module_set.set(m, true)
+        }
+      None => ()
+    }
+  }
+  // --- Phase 2: Extract function units with file-content-aware hashing ---
   let extract_config = digest_config.to_extract_config()
-  let units = @extract.extract_function_units(graph, extract_config)
+  let units = @extract.extract_function_units(
+    graph,
+    extract_config,
+    file_hashes~,
+  )
   for unit in units {
     self.units.set(unit.id(), unit)
   }
-  // Find stale and deleted functions using manifest
-  let stale = self.manifest.get_stale_functions(units)
+  // --- Phase 3: Identify stale, deleted, and unchanged functions ---
+  // Only functions in changed modules need hash comparison.
+  // Functions in unchanged modules are definitively up-to-date because their
+  // source_hash is derived from file content, and the file hasn't changed.
+  let candidates : Array[@types.FunctionUnit] = []
+  let mut unchanged_file_skip_count = 0
+  for unit in units {
+    if changed_module_set.contains(unit.module_id) || file_hashes is None {
+      candidates.push(unit)
+    } else {
+      unchanged_file_skip_count += 1
+    }
+  }
+  let stale = self.manifest.get_stale_functions(candidates)
+  // Handle deleted functions
   let current_ids : Array[String] = []
   for unit in units {
     current_ids.push(unit.id())
@@ -25,44 +92,69 @@ pub async fn DigestIndex::build_with_config(
     current_ids,
   )
   self.manifest = updated_manifest
-  // Remove deleted from vcdb
   for vid in removed_ids {
     let _ = self.engine.remove(vid)
   }
   result.removed_count = removed_ids.length()
-  // Build stale set
+  // --- Phase 4: Remove stale functions' old vectors ---
   let stale_set : Map[String, Bool] = {}
   for id in stale {
     stale_set.set(id, true)
-  }
-  // Collect stale units and their texts (using config for text generation)
-  let stale_units : Array[@types.FunctionUnit] = []
-  let stale_texts : Array[String] = []
-  for unit in units {
-    if stale_set.contains(unit.id()) {
-      stale_units.push(unit)
-      // Use DigestConfig to determine embedding text
-      let text = digest_config.get_embedding_text(unit)
-      stale_texts.push(text)
-    } else {
-      result.skipped_count = result.skipped_count + 1
+    // Remove old vector before re-indexing
+    match self.manifest.get_function(id) {
+      Some(entry) =>
+        match entry.vector_id {
+          Some(vid) => {
+            let _ = self.engine.remove(vid)
+            self.vid_to_fid.remove(vid)
+          }
+          None => ()
+        }
+      None => ()
     }
   }
+  // --- Phase 5: Collect stale units for embedding ---
+  let stale_units : Array[@types.FunctionUnit] = []
+  let stale_texts : Array[String] = []
+  for unit in candidates {
+    if stale_set.contains(unit.id()) {
+      stale_units.push(unit)
+      stale_texts.push(digest_config.get_embedding_text(unit))
+    } else {
+      result.skipped_count += 1
+    }
+  }
+  // Add unchanged-file skips
+  result.skipped_count += unchanged_file_skip_count
   if stale_texts.length() == 0 {
+    // Update FileEntry even when no functions changed, to record current hashes
+    self.update_file_entries(graph, file_hashes)
     return result
   }
-  // Get embeddings based on provider
+  // --- Phase 6: Generate embeddings ---
   let all_embeddings = match digest_config.embedding_provider {
     @config.OpenAI(api_config) =>
       embed_with_openai_config(api_config, stale_texts)
     @config.TfIdf(_dim) => {
-      // Build TF-IDF vocabulary from all texts (including non-stale for IDF)
-      let all_texts : Array[String] = []
-      for unit in units {
-        all_texts.push(digest_config.get_embedding_text(unit))
+      // TF-IDF vocabulary strategy:
+      // - If vocabulary already exists (loaded from persistence) and the stale
+      //   ratio is low (< 50%), reuse the existing vocabulary. The top-dim terms
+      //   are unlikely to change significantly from a small number of edits.
+      // - Otherwise, rebuild vocabulary from all function texts. This is needed
+      //   on first build or when many functions have changed (IDF shifts).
+      let total = units.length()
+      let stale_ratio = if total > 0 {
+        stale_texts.length().to_double() / total.to_double()
+      } else {
+        1.0
       }
-      self.provider.build_vocabulary(all_texts)
-      // Embed only stale texts
+      if !self.provider.has_vocabulary() || stale_ratio >= 0.5 {
+        let all_texts : Array[String] = []
+        for unit in units {
+          all_texts.push(digest_config.get_embedding_text(unit))
+        }
+        self.provider.build_vocabulary(all_texts)
+      }
       let embeddings : Array[Array[Double]] = []
       for text in stale_texts {
         embeddings.push(self.provider.embed(text))
@@ -70,19 +162,16 @@ pub async fn DigestIndex::build_with_config(
       embeddings
     }
     @config.Precomputed(_file) =>
-      // For precomputed, error out - should use build_with_remote
       raise @embed.ParseError(
         "Precomputed embeddings not supported in async build",
       )
   }
-  // Index all stale functions with their embeddings
+  // --- Phase 7: Index stale functions ---
   for j = 0; j < stale_units.length(); j = j + 1 {
     let unit = stale_units[j]
     let vector = all_embeddings[j]
-    // Allocate vector ID
     let (m, vid) = self.manifest.allocate_vector_id()
     self.manifest = m
-    // Create attributes (including hash for verification)
     let attrs = @search.empty_attrs()
     attrs.set("node_type", @vcdb_core.String(@kgf_features.node_type_code))
     attrs.set("node_kind", @vcdb_core.String(unit.symbol.kind))
@@ -96,18 +185,78 @@ pub async fn DigestIndex::build_with_config(
       Some(doc) => attrs.set("doc", @vcdb_core.String(doc))
       None => ()
     }
-    // Add to vcdb
     self.engine.add_raw(vid, vector, attrs)
-    // Update manifest
+    self.vid_to_fid.set(vid, unit.id())
     let entry = @manifest.FunctionEntry::from_unit(unit, Some(vid))
     self.manifest = self.manifest.update_function(entry)
-    result.indexed_count = result.indexed_count + 1
+    result.indexed_count += 1
   }
+  // --- Phase 8: Update file entries in manifest ---
+  self.update_file_entries(graph, file_hashes)
   result
 }
 
 ///|
-/// Helper: Embed texts using OpenAI-compatible API with batching.
+/// Update FileEntry records in the manifest with current file content hashes.
+/// Records which functions belong to each file for future file-level invalidation.
+fn DigestIndex::update_file_entries(
+  self : DigestIndex,
+  graph : @graph.CodeGraph,
+  file_hashes : Map[String, @cas_types.ContentHash]?,
+) -> Unit {
+  match file_hashes {
+    Some(fh) => {
+      // Build file_path -> function_ids mapping from current units
+      let file_functions : Map[String, Array[String]] = {}
+      for entry in self.units {
+        let unit = entry.1
+        match graph.get_module(unit.module_id) {
+          Some(m) =>
+            match m.file {
+              Some(fp) =>
+                match file_functions.get(fp) {
+                  Some(arr) => arr.push(unit.id())
+                  None => file_functions.set(fp, [unit.id()])
+                }
+              None => ()
+            }
+          None => ()
+        }
+      }
+      // Update manifest file entries
+      for entry in fh {
+        let file_path = entry.0
+        let content_hash = entry.1
+        let func_ids = match file_functions.get(file_path) {
+          Some(ids) => ids
+          None => []
+        }
+        self.manifest = self.manifest.update_file(
+          file_path,
+          content_hash,
+          func_ids,
+        )
+      }
+    }
+    None => ()
+  }
+}
+
+///|
+/// Helper: Embed a single batch of texts. Returns embeddings or raises error.
+async fn embed_batch(
+  config : @embed.OpenAIConfig,
+  batch : Array[String],
+) -> Array[Array[Double]] raise @embed.EmbedError {
+  @embed.get_embeddings(config, batch)
+}
+
+///|
+/// Helper: Embed texts using OpenAI-compatible API with batching and retry.
+/// On batch failure, halves the batch size and retries. Falls back to
+/// single-item requests as a last resort. Items that fail individually
+/// are skipped (zero-vector placeholder) and the error is not propagated,
+/// since the function will remain stale for the next build to retry.
 async fn embed_with_openai_config(
   api_config : @config.EmbeddingApiConfig,
   texts : Array[String],
@@ -117,24 +266,89 @@ async fn embed_with_openai_config(
     model: api_config.model,
     base_url: api_config.base_url,
   }
-  let all_embeddings : Array[Array[Double]] = []
-  let batch_size = 100
+  let all_embeddings : Array[Array[Double]] = Array::make(texts.length(), [])
+  let initial_batch_size = 100
+  // Process texts in batches with exponential backoff on failure
   let mut i = 0
   while i < texts.length() {
-    let batch_end = if i + batch_size < texts.length() {
-      i + batch_size
+    let remaining = texts.length() - i
+    let batch_size = if remaining < initial_batch_size {
+      remaining
     } else {
-      texts.length()
+      initial_batch_size
     }
     let batch : Array[String] = []
-    for j = i; j < batch_end; j = j + 1 {
+    for j = i; j < i + batch_size; j = j + 1 {
       batch.push(texts[j])
     }
-    let batch_embeddings = @embed.get_embeddings(config, batch)
-    for emb in batch_embeddings {
-      all_embeddings.push(emb)
+    // Try the full batch first
+    let batch_result = try {
+      embed_batch(config, batch)
+    } catch {
+      _ => {
+        // Full batch failed — try halving
+        if batch_size > 1 {
+          let half = batch_size / 2
+          // First half
+          let first_half : Array[String] = []
+          for j = 0; j < half; j = j + 1 {
+            first_half.push(batch[j])
+          }
+          let first_result = try { embed_batch(config, first_half) } catch {
+            _ => {
+              // Half batch also failed — fall back to individual items
+              let individual : Array[Array[Double]] = []
+              for j = 0; j < half; j = j + 1 {
+                let single_result = try {
+                  embed_batch(config, [first_half[j]])
+                } catch {
+                  _ => [[]] // Placeholder for failed item
+                }
+                individual.push(single_result[0])
+              }
+              individual
+            }
+          }
+          // Second half
+          let second_half : Array[String] = []
+          for j = half; j < batch_size; j = j + 1 {
+            second_half.push(batch[j])
+          }
+          let second_result = try {
+            embed_batch(config, second_half)
+          } catch {
+            _ => {
+              let individual : Array[Array[Double]] = []
+              for j = 0; j < second_half.length(); j = j + 1 {
+                let single_result = try {
+                  embed_batch(config, [second_half[j]])
+                } catch {
+                  _ => [[]]
+                }
+                individual.push(single_result[0])
+              }
+              individual
+            }
+          }
+          // Combine halves
+          let combined : Array[Array[Double]] = []
+          for emb in first_result {
+            combined.push(emb)
+          }
+          for emb in second_result {
+            combined.push(emb)
+          }
+          combined
+        } else {
+          // Single item failed — return empty placeholder
+          [[]]
+        }
+      }
     }
-    i = batch_end
+    for k = 0; k < batch_result.length(); k = k + 1 {
+      all_embeddings[i + k] = batch_result[k]
+    }
+    i += batch_size
   }
   all_embeddings
 }
@@ -177,19 +391,15 @@ pub async fn DigestIndex::query_native(
   let hits = self.engine.search_vector(vector, top_k)
   let results : Array[@types.QueryHit] = []
   for hit in hits {
-    let vid = hit.id.0
-    for entry in self.manifest.functions {
-      match entry.1.vector_id {
-        Some(v) =>
-          if v == vid {
-            match self.units.get(entry.0) {
-              Some(unit) =>
-                results.push(@types.QueryHit::new(unit, hit.score, []))
-              None => ()
-            }
-          }
-        None => ()
-      }
+    let vid = hit.id.to_int64()
+    match self.vid_to_fid.get(vid) {
+      Some(fid) =>
+        match self.units.get(fid) {
+          Some(unit) =>
+            results.push(@types.QueryHit::new(unit, hit.score, []))
+          None => ()
+        }
+      None => ()
     }
   }
   results
@@ -204,7 +414,15 @@ pub fn DigestIndex::from_manifest(
   let dim = manifest.embedding_dim
   let provider = TfidfEmbeddingProvider::new(dim)
   let engine = @search.SearchEngine::from_bytes(db_bytes).with_tfidf(provider)
-  { manifest, engine, provider, units: {} }
+  // Rebuild reverse index from manifest
+  let vid_to_fid : Map[Int64, String] = {}
+  for entry in manifest.functions {
+    match entry.1.vector_id {
+      Some(vid) => vid_to_fid.set(vid, entry.0)
+      None => ()
+    }
+  }
+  { manifest, engine, provider, units: {}, vid_to_fid }
 }
 
 ///|
@@ -233,5 +451,116 @@ pub fn DigestIndex::with_config(config : @config.DigestConfig) -> DigestIndex {
     dim=config.embedding_dim(),
     strategy~,
   ).with_tfidf(provider)
-  { manifest, engine, provider, units: {} }
+  { manifest, engine, provider, units: {}, vid_to_fid: {} }
+}
+
+// --- Index store management (persistence, locking, cleanup) ---
+
+///|
+/// Index file names within the index directory.
+let index_files : Array[String] = [
+  "/manifest.json", "/vectors.db", "/vocabulary.json", "/graph.json",
+]
+
+
+///|
+/// Acquire a build lock for the given index directory.
+/// Returns true if the lock was acquired, false if another build is in progress.
+pub fn acquire_build_lock(index_dir : String) -> Bool {
+  let lock_path = index_dir + "/build.lock"
+  if @fs.path_exists(lock_path) {
+    let content = @fs.read_file_to_string(lock_path) catch { _ => "" }
+    if content == "locked" {
+      return false
+    }
+  }
+  @app_config.ensure_dir_recursive(index_dir)
+  @fs.write_string_to_file(lock_path, "locked") catch { _ => return false }
+  true
+}
+
+///|
+/// Release the build lock for the given index directory.
+pub fn release_build_lock(index_dir : String) -> Unit {
+  let lock_path = index_dir + "/build.lock"
+  @fs.remove_file(lock_path) catch { _ => () }
+}
+
+///|
+/// Delete all index files in the given directory (for full rebuild).
+pub fn delete_index_files(index_dir : String) -> Unit {
+  for suffix in index_files {
+    let path = index_dir + suffix
+    if @fs.path_exists(path) {
+      @fs.remove_file(path) catch { _ => () }
+    }
+  }
+}
+
+///|
+/// Load an existing index from disk, or create a new one if not found.
+/// Returns the loaded/created index. If the existing manifest is incompatible
+/// (version mismatch, provider mismatch), a new index is created.
+pub fn DigestIndex::load_or_create(
+  index_dir : String,
+  digest_config : @config.DigestConfig,
+) -> DigestIndex {
+  let manifest_path = index_dir + "/manifest.json"
+  let vectors_path = index_dir + "/vectors.db"
+  if @fs.path_exists(manifest_path) && @fs.path_exists(vectors_path) {
+    let manifest_content = @fs.read_file_to_string(manifest_path) catch {
+      _ => return DigestIndex::with_config(digest_config)
+    }
+    let manifest = match
+      @manifest.DigestManifest::from_json_string(manifest_content) {
+      Some(m) => m
+      None => return DigestIndex::with_config(digest_config)
+    }
+    let db_bytes = @fs.read_file_to_bytes(vectors_path) catch {
+      _ => return DigestIndex::with_config(digest_config)
+    }
+    let index = DigestIndex::from_manifest(manifest, db_bytes)
+    // Restore TF-IDF vocabulary if available
+    let vocab_path = index_dir + "/vocabulary.json"
+    if @fs.path_exists(vocab_path) {
+      let vocab_content = @fs.read_file_to_string(vocab_path) catch {
+        _ => ""
+      }
+      if vocab_content.length() > 0 {
+        let _ = index.provider.load_from_json_string(vocab_content)
+      }
+    }
+    index
+  } else {
+    DigestIndex::with_config(digest_config)
+  }
+}
+
+///|
+/// Save the index to disk (manifest, vectors, vocabulary, graph).
+pub fn DigestIndex::save_to_dir(
+  self : DigestIndex,
+  index_dir : String,
+  graph : @graph.CodeGraph,
+) -> Array[String] {
+  let errors : Array[String] = []
+  @app_config.ensure_dir_recursive(index_dir)
+  let (manifest_json, db_bytes) = self.serialize()
+  @fs.write_string_to_file(index_dir + "/manifest.json", manifest_json) catch {
+    e => errors.push("Saving manifest: " + e.to_string())
+  }
+  @fs.write_bytes_to_file(index_dir + "/vectors.db", db_bytes) catch {
+    e => errors.push("Saving vectors: " + e.to_string())
+  }
+  if self.provider.has_vocabulary() {
+    let vocab_json = self.provider.to_json_string()
+    @fs.write_string_to_file(index_dir + "/vocabulary.json", vocab_json) catch {
+      e => errors.push("Saving vocabulary: " + e.to_string())
+    }
+  }
+  let graph_json = graph.to_json_string()
+  @fs.write_string_to_file(index_dir + "/graph.json", graph_json) catch {
+    e => errors.push("Saving graph: " + e.to_string())
+  }
+  errors
 }

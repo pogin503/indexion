@@ -122,6 +122,69 @@ pub fn TfidfEmbeddingProvider::dim(self : TfidfEmbeddingProvider) -> Int {
 }
 
 ///|
+/// Check if vocabulary has been built.
+pub fn TfidfEmbeddingProvider::has_vocabulary(
+  self : TfidfEmbeddingProvider,
+) -> Bool {
+  self.vocabulary.length() > 0
+}
+
+///|
+/// Serialize vocabulary and IDF to JSON string for persistence.
+pub fn TfidfEmbeddingProvider::to_json_string(
+  self : TfidfEmbeddingProvider,
+) -> String {
+  let vocab_entries : Array[Json] = []
+  for entry in self.vocabulary {
+    vocab_entries.push({ "t": entry.0.to_json(), "i": entry.1.to_json() })
+  }
+  let idf_entries : Array[Json] = []
+  for entry in self.idf {
+    idf_entries.push({ "t": entry.0.to_json(), "v": entry.1.to_json() })
+  }
+  let json : Json = {
+    "dim": self.dim.to_json(),
+    "vocabulary": vocab_entries.to_json(),
+    "idf": idf_entries.to_json(),
+  }
+  json.stringify()
+}
+
+///|
+/// Restore vocabulary and IDF from JSON string.
+/// Returns true if successfully loaded, false on parse error.
+pub fn TfidfEmbeddingProvider::load_from_json_string(
+  self : TfidfEmbeddingProvider,
+  json_str : String,
+) -> Bool {
+  let json : Json = @json.parse(json_str) catch { _ => return false }
+  // Extract vocabulary: array of { "t": term, "i": index }
+  let vocab_arr = match json {
+    { "vocabulary": Array(arr), .. } => arr
+    _ => return false
+  }
+  for item in vocab_arr {
+    match item {
+      { "t": String(term), "i": Number(idx, ..), .. } =>
+        self.vocabulary.set(term, idx.to_int())
+      _ => ()
+    }
+  }
+  // Extract IDF: array of { "t": term, "v": value }
+  let idf_arr = match json {
+    { "idf": Array(arr), .. } => arr
+    _ => return false
+  }
+  for item in idf_arr {
+    match item {
+      { "t": String(term), "v": Number(val, ..), .. } => self.idf.set(term, val)
+      _ => ()
+    }
+  }
+  true
+}
+
+///|
 /// Compute cosine similarity between two dense vectors.
 pub fn cosine_similarity_dense(a : Array[Double], b : Array[Double]) -> Double {
   if a.length() != b.length() || a.length() == 0 {

@@ -306,7 +306,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       }
       let provider = @digest_cli.resolve_provider(digest_cli_config)
       let (wiki, wiki_search) = load_wiki_pages(config, provider)
-      let empty_index = @digest_cli.load_or_create_index(
+      let empty_index = @index.DigestIndex::load_or_create(
         config.index_dir,
         digest_config,
       )
@@ -496,6 +496,8 @@ fn make_digest_cli_config(config : ServeConfig) -> @digest_cli.CliConfig {
     api_key_env: config.api_key_env,
     api_base_url: config.api_base_url,
     model: config.model,
+    source_dir: config.workspace_dir,
+    no_update: false,
   }
 }
 
@@ -525,7 +527,7 @@ async fn do_load(
   @digest_cli.log_progress(
     "Graph: " + graph.symbol_count().to_string() + " symbols",
   )
-  let index = @digest_cli.load_or_create_index(config.index_dir, digest_config)
+  let index = @index.DigestIndex::load_or_create(config.index_dir, digest_config)
   // Populate units from graph (incremental — skips unchanged)
   let _ = index.build_with_config(graph, digest_config) catch {
     _ => return None
@@ -557,9 +559,9 @@ async fn do_build(
 ) -> ServerState? {
   @digest_cli.log_progress("Building from " + config.workspace_dir + "...")
   // Build graph from source
-  let graph = match
+  let build_result = match
     @digest_cli.build_graph_from_source(config.workspace_dir, config.specs_dir) {
-    Some(g) => g
+    Some(r) => r
     None => {
       @digest_cli.log_error(
         "Failed to build graph from " + config.workspace_dir,
@@ -567,14 +569,18 @@ async fn do_build(
       return None
     }
   }
+  let graph = build_result.graph
+  let file_hashes : Map[String, @cas_types.ContentHash]? = Some(
+    build_result.file_hashes,
+  )
   let graph_json = graph.to_json_string()
   @digest_cli.log_progress(
     "Graph: " + graph.symbol_count().to_string() + " symbols",
   )
   // Load existing index for incremental update, or create new
-  let index = @digest_cli.load_or_create_index(config.index_dir, digest_config)
-  // Build — this is incremental: hashes detect unchanged functions
-  let result = index.build_with_config(graph, digest_config) catch {
+  let index = @index.DigestIndex::load_or_create(config.index_dir, digest_config)
+  // Build — this is incremental: file hashes detect unchanged files
+  let result = index.build_with_config(graph, digest_config, file_hashes~) catch {
     @embed.ParseError(msg) => {
       @digest_cli.log_error("Build error: " + msg)
       return None
@@ -599,7 +605,7 @@ async fn do_build(
     result.removed_count.to_string(),
   )
   // Persist to disk
-  @digest_cli.ensure_dir_exists(config.index_dir)
+  @config.ensure_dir_recursive(config.index_dir)
   let (manifest_json, db_bytes) = index.serialize()
   @fs.write_string_to_file(config.index_dir + "/manifest.json", manifest_json) catch {
     e => {

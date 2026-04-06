@@ -90,18 +90,63 @@ fn compute_depth(
 }
 
 ///|
+/// Resolve the file path for a symbol via its module.
+fn resolve_file_path(
+  graph : @graph.CodeGraph,
+  module_id : String,
+) -> String? {
+  match graph.get_module(module_id) {
+    Some(m) => m.file
+    None => None
+  }
+}
+
+///|
 /// Extract a single FunctionUnit from a symbol.
+/// When `file_hashes` is provided, the source_hash is derived from the file's
+/// content hash combined with the symbol identity — this correctly detects when
+/// the file containing the function has changed, even though CodeGraph does not
+/// store function bodies.
+/// When `file_hashes` is absent, falls back to symbol metadata hashing (legacy).
 pub fn extract_function_unit(
   graph : @graph.CodeGraph,
   symbol : @graph.SymbolNode,
   depth_memo : Map[String, Int],
+  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
 ) -> @types.FunctionUnit {
   let callers = graph.get_callers(symbol.id)
   let callees = graph.get_callees(symbol.id)
-  // Compute source hash from symbol info (placeholder - actual source not available in graph)
-  // In real use, source would be fetched from file system
-  let source_content = symbol.id + ":" + symbol.name + ":" + symbol.kind
-  let source_hash = @hash.compute_source_hash(source_content)
+  // Compute source hash:
+  // - With file_hashes: hash(file_content_hash + symbol.id + symbol.name + symbol.kind)
+  //   This changes when the file changes OR when the symbol identity changes.
+  // - Without file_hashes: hash(symbol.id + symbol.name + symbol.kind) (legacy fallback)
+  let source_hash = match file_hashes {
+    Some(fh) => {
+      let file_path = resolve_file_path(graph, symbol.module_id)
+      let file_hash = match file_path {
+        Some(p) => match fh.get(p) {
+          Some(h) => h.to_string()
+          None => ""
+        }
+        None => ""
+      }
+      // Combine file hash with symbol identity for a per-symbol source hash
+      // that accurately reflects file content changes
+      let source_content = file_hash +
+        "\u0000" +
+        symbol.id +
+        "\u0000" +
+        symbol.name +
+        "\u0000" +
+        symbol.kind
+      @hash.compute_source_hash(source_content)
+    }
+    None => {
+      // Legacy fallback: symbol metadata only (cannot detect body changes)
+      let source_content = symbol.id + ":" + symbol.name + ":" + symbol.kind
+      @hash.compute_source_hash(source_content)
+    }
+  }
   // Compute context hash including call relationships
   let context_hash = @hash.compute_context_hash(source_hash, callers, callees)
   // Compute depth
@@ -120,9 +165,12 @@ pub fn extract_function_unit(
 
 ///|
 /// Extract all FunctionUnits from a CodeGraph.
+/// When `file_hashes` is provided (path -> content hash), source_hash is computed
+/// from actual file content, enabling accurate change detection.
 pub fn extract_function_units(
   graph : @graph.CodeGraph,
   config : ExtractConfig,
+  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
 ) -> Array[@types.FunctionUnit] {
   let result : Array[@types.FunctionUnit] = []
   let depth_memo : Map[String, Int] = {}
@@ -137,7 +185,7 @@ pub fn extract_function_units(
     if !is_internal && !config.include_external {
       continue
     }
-    let unit = extract_function_unit(graph, symbol, depth_memo)
+    let unit = extract_function_unit(graph, symbol, depth_memo, file_hashes~)
     result.push(unit)
   }
   result
@@ -148,8 +196,9 @@ pub fn extract_function_units(
 pub fn extract_leaf_functions(
   graph : @graph.CodeGraph,
   config : ExtractConfig,
+  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
 ) -> Array[@types.FunctionUnit] {
-  let all_units = extract_function_units(graph, config)
+  let all_units = extract_function_units(graph, config, file_hashes~)
   all_units.filter(fn(u) { u.is_leaf() })
 }
 
@@ -159,8 +208,9 @@ pub fn extract_functions_at_depth(
   graph : @graph.CodeGraph,
   config : ExtractConfig,
   depth : Int,
+  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
 ) -> Array[@types.FunctionUnit] {
-  let all_units = extract_function_units(graph, config)
+  let all_units = extract_function_units(graph, config, file_hashes~)
   all_units.filter(fn(u) { u.depth == depth })
 }
 

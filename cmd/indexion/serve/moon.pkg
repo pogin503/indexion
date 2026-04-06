@@ -15,6 +15,7 @@ import {
   "trkbt10/indexion/cmd/indexion/plan/solid" @plan_solid,
   "trkbt10/indexion/cmd/indexion/plan/unwrap" @plan_unwrap,
   "trkbt10/indexion/cmd/indexion/plan/readme" @plan_readme,
+  "trkbt10/indexion/src/kgf/cas/types" @cas_types,
   "trkbt10/indexion/src/core/graph" @graph,
   "trkbt10/indexion/src/digest/types" @types,
   "trkbt10/indexion/src/digest/index" @index,
