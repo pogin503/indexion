@@ -71,9 +71,9 @@ pub const INDEX_LOCK_FILE : String = "build.lock"
 /// Legacy file names from previous versions — used for cleanup only.
 let legacy_file_names : Array[String] = [
   "vectors.db", // v2
-  "vectors_tfidf.db", // v3
-  "vectors_remote.db", // v3
-  "vocabulary.json", // v3 (non-keyed)
+   "vectors_tfidf.db", // v3
+   "vectors_remote.db", // v3
+   "vocabulary.json", // v3 (non-keyed)
 ]
 
 ///|
@@ -102,10 +102,7 @@ pub fn lock_path(index_dir : String) -> String {
 
 ///|
 /// Path to the vector database for a given provider key.
-pub fn vectors_db_path(
-  index_dir : String,
-  provider_key : String,
-) -> String {
+pub fn vectors_db_path(index_dir : String, provider_key : String) -> String {
   index_path(index_dir, "vectors_" + provider_key + ".db")
 }
 
@@ -120,9 +117,7 @@ pub fn vocabulary_json_path(
 
 ///|
 /// Compute the list of all index file names for a given set of provider keys.
-pub fn compute_index_file_names(
-  provider_keys : Array[String],
-) -> Array[String] {
+pub fn compute_index_file_names(provider_keys : Array[String]) -> Array[String] {
   let names : Array[String] = [INDEX_MANIFEST_FILE, INDEX_GRAPH_FILE]
   for key in provider_keys {
     names.push("vectors_" + key + ".db")
@@ -221,7 +216,9 @@ pub fn DigestConfig::openai(api_key : String) -> DigestConfig {
     embedding_source: @embed_config.Raw,
     providers: [
       @embed_config.ProviderConfig::tfidf(),
-      @embed_config.ProviderConfig::remote(@embed_config.EmbeddingApiConfig::new(api_key)),
+      @embed_config.ProviderConfig::remote(
+        @embed_config.EmbeddingApiConfig::new(api_key),
+      ),
     ],
     vcdb_strategy: @embed_config.Hnsw,
     include_external: false,
@@ -237,7 +234,9 @@ pub fn DigestConfig::with_impressions(api_key : String) -> DigestConfig {
     embedding_source: @embed_config.Impression,
     providers: [
       @embed_config.ProviderConfig::tfidf(),
-      @embed_config.ProviderConfig::remote(@embed_config.EmbeddingApiConfig::new(api_key)),
+      @embed_config.ProviderConfig::remote(
+        @embed_config.EmbeddingApiConfig::new(api_key),
+      ),
     ],
     vcdb_strategy: @embed_config.Hnsw,
     include_external: false,

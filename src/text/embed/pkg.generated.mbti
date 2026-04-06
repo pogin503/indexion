@@ -15,7 +15,10 @@ pub struct TfidfEmbeddingProvider {
 pub fn TfidfEmbeddingProvider::build_vocabulary(Self, Array[String]) -> Unit
 pub fn TfidfEmbeddingProvider::dim(Self) -> Int
 pub fn TfidfEmbeddingProvider::embed(Self, String) -> Array[Double]
+pub fn TfidfEmbeddingProvider::has_vocabulary(Self) -> Bool
+pub fn TfidfEmbeddingProvider::load_from_json_string(Self, String) -> Bool
 pub fn TfidfEmbeddingProvider::new(Int) -> Self
+pub fn TfidfEmbeddingProvider::to_json_string(Self) -> String
 
 // Type aliases
 

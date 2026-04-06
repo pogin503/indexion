@@ -1,4 +1,181 @@
 ///|
+type FragmentMatchSignals = @reconcile_plan.FragmentMatchSignals
+
+///|
+fn lower_string(s : String) -> String {
+  @reconcile_plan.lower_string(s)
+}
+
+///|
+fn make_hash(parts : Array[String]) -> String {
+  @reconcile_plan.make_hash(parts)
+}
+
+///|
+fn contains_string(values : Array[String], target : String) -> Bool {
+  @reconcile_plan.contains_string(values, target)
+}
+
+///|
+fn match_fragment_with_terms(
+  unit : CodeUnit,
+  terms : @reconcile_plan.UnitMatchTerms,
+  signals : FragmentMatchSignals,
+  allow_file_fallback : Bool,
+) -> (Int, String, Array[String]) {
+  @reconcile_plan.match_fragment_with_terms(
+    unit, terms, signals, allow_file_fallback,
+  )
+}
+
+///|
+fn unit_match_terms(unit : CodeUnit) -> @reconcile_plan.UnitMatchTerms {
+  @reconcile_plan.unit_match_terms(unit)
+}
+
+///|
+fn is_document_path(
+  path : String,
+  config : ReconcileConfig,
+  registry : @registry.KGFRegistry,
+) -> Bool {
+  @reconcile_plan.is_document_path(path, config, registry)
+}
+
+///|
+fn extract_markdown_fragments(
+  path : String,
+  spec : String,
+  content : String,
+) -> Array[DocFragment] {
+  @reconcile_plan.extract_markdown_fragments(path, spec, content)
+}
+
+///|
+fn extract_toml_fragments(
+  path : String,
+  spec : String,
+  content : String,
+) -> Array[DocFragment] {
+  @reconcile_plan.extract_toml_fragments(path, spec, content)
+}
+
+///|
+fn make_fragment(
+  path : String,
+  spec : String,
+  kind : String,
+  title : String,
+  content : String,
+) -> DocFragment {
+  @reconcile_plan.make_fragment(path, spec, kind, title, content)
+}
+
+///|
+async fn build_candidates(
+  units : Array[CodeUnit],
+  fragments : Array[DocFragment],
+  config : ReconcileConfig,
+  registry : @registry.KGFRegistry,
+) -> @reconcile_plan.CandidateBuildResult {
+  @reconcile_plan.build_candidates(units, fragments, config, registry)
+}
+
+///|
+fn build_fragment_match_signals(
+  fragments : Array[DocFragment],
+  registry : @registry.KGFRegistry,
+) -> Map[String, FragmentMatchSignals] {
+  @reconcile_plan.build_fragment_match_signals(fragments, registry)
+}
+
+///|
+fn classify_match_result(
+  time_relation : String,
+  mapping_confidence : Int,
+  match_kind : String,
+) -> (String, String) {
+  let (status, action, _reason) = @reconcile_plan.classify_match_result(
+    time_relation, mapping_confidence, match_kind,
+  )
+  (status, action)
+}
+
+///|
+fn discovery_roots(target_dir : String) -> Array[String] {
+  @reconcile_plan.discovery_roots(target_dir)
+}
+
+///|
+fn cleanup_stale_index(index_dir : String) -> Unit {
+  @reconcile_plan.cleanup_stale_index(index_dir)
+}
+
+///|
+fn build_aggregate_suggestions(
+  raw_candidates : Array[ReconcileCandidate],
+  visible_candidates : Array[ReconcileCandidate],
+  doc_fragments : Array[DocFragment],
+  target_dir : String,
+  project_markers : Array[String],
+) -> Array[ReconcileAggregateSuggestion] {
+  @reconcile_plan.build_aggregate_suggestions(
+    raw_candidates, visible_candidates, doc_fragments, target_dir, project_markers,
+  )
+}
+
+///|
+fn collapse_aggregate_only_candidates(
+  candidates : Array[ReconcileCandidate],
+  aggregate_suggestions : Array[ReconcileAggregateSuggestion],
+  target_dir : String,
+  project_markers : Array[String],
+) -> Array[ReconcileCandidate] {
+  @reconcile_plan.collapse_aggregate_only_candidates(
+    candidates, aggregate_suggestions, target_dir, project_markers,
+  )
+}
+
+///|
+fn sync_candidates_with_index(
+  candidates : Array[ReconcileCandidate],
+  manifest : ReconcileManifest,
+  db : @vcdb.VectorDB,
+  logical_review_mode : String,
+  generated_at : Int,
+) -> @reconcile_plan.IndexSyncResult {
+  @reconcile_plan.sync_candidates_with_index(
+    candidates, manifest, db, logical_review_mode, generated_at,
+  )
+}
+
+///|
+fn apply_review_decisions(
+  manifest : ReconcileManifest,
+  db : @vcdb.VectorDB,
+  decisions : Array[ReviewDecisionInput],
+  generated_at : Int,
+) -> (ReconcileManifest, @vcdb.VectorDB) {
+  @reconcile_plan.apply_review_decisions(manifest, db, decisions, generated_at)
+}
+
+///|
+fn build_summary(
+  code_units : Array[CodeUnit],
+  doc_fragments : Array[DocFragment],
+  candidates : Array[ReconcileCandidate],
+  aggregate_suggestions : Array[ReconcileAggregateSuggestion],
+  module_covered_symbols : Int,
+  logical_reviews : Array[LogicalReviewTask],
+  reused_logical_reviews : Int,
+) -> ReconcileSummary {
+  @reconcile_plan.build_summary(
+    code_units, doc_fragments, candidates, aggregate_suggestions, module_covered_symbols,
+    logical_reviews, reused_logical_reviews,
+  )
+}
+
+///|
 fn document_symbol_kinds_for_path(
   path : String,
   registry : @registry.KGFRegistry,
@@ -6,7 +183,7 @@ fn document_symbol_kinds_for_path(
   match registry.detect_from_path(path) {
     Some(lang) =>
       match registry.get_spec(lang) {
-        Some(spec) => document_symbol_kinds(spec)
+        Some(spec) => @reconcile_plan.document_symbol_kinds(spec)
         None => None
       }
     None => None
@@ -693,7 +870,7 @@ fn sample_doc_anchor() -> DocAnchor {
 
 ///|
 fn sample_timestamp(epoch_seconds : Int) -> TimestampInfo {
-  { epoch_seconds: Some(epoch_seconds), source: "git", is_dirty: false }
+  @reconcile_tracking.TimestampInfo::new(Some(epoch_seconds), "git", false)
 }
 
 ///|

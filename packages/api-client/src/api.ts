@@ -150,6 +150,21 @@ export type PlanRequest = {
   readonly [key: string]: unknown;
 };
 
+export type SpecAlignRequest = {
+  readonly specPath: string;
+  readonly implPath: string;
+  readonly format?: string;
+  readonly specFormat?: string;
+  readonly algorithm?: string;
+  readonly threshold?: number;
+  readonly cacheDir?: string;
+  readonly direction?: string;
+  readonly agent?: string;
+  readonly failOn?: string;
+  readonly incremental?: boolean;
+  readonly gitBase?: string;
+};
+
 export const runPlanRefactor = (
   client: HttpClient,
   body: PlanRequest,
@@ -194,6 +209,34 @@ export const runPlanReadme = (
   signal?: AbortSignal,
 ): Promise<ApiResponse<string>> =>
   client.post<string>("/plan/readme", body, signal);
+
+export const runSpecAlignDiff = (
+  client: HttpClient,
+  body: SpecAlignRequest,
+  signal?: AbortSignal,
+): Promise<ApiResponse<string>> =>
+  client.post<string>("/spec/align/diff", body, signal);
+
+export const runSpecAlignTrace = (
+  client: HttpClient,
+  body: SpecAlignRequest,
+  signal?: AbortSignal,
+): Promise<ApiResponse<string>> =>
+  client.post<string>("/spec/align/trace", body, signal);
+
+export const runSpecAlignSuggest = (
+  client: HttpClient,
+  body: SpecAlignRequest,
+  signal?: AbortSignal,
+): Promise<ApiResponse<string>> =>
+  client.post<string>("/spec/align/suggest", body, signal);
+
+export const runSpecAlignStatus = (
+  client: HttpClient,
+  body: SpecAlignRequest,
+  signal?: AbortSignal,
+): Promise<ApiResponse<string>> =>
+  client.post<string>("/spec/align/status", body, signal);
 
 // --- Health ---
 

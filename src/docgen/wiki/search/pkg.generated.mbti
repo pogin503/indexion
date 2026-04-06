@@ -2,9 +2,9 @@
 package "trkbt10/indexion/src/docgen/wiki/search"
 
 import {
-  "trkbt10/indexion/src/digest/config",
   "trkbt10/indexion/src/digest/embed",
   "trkbt10/indexion/src/docgen/wiki/types",
+  "trkbt10/indexion/src/embedding/config",
   "trkbt10/indexion/src/kgf/registry",
 }
 

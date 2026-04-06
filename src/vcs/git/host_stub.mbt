@@ -14,6 +14,34 @@ async fn git_last_commit_seconds_native(_root : String, _path : String) -> Int? 
 }
 
 ///|
+async fn git_repo_root_native(_anchor : String) -> String? {
+  None
+}
+
+///|
+async fn git_head_commit_native(
+  _root : String,
+  short? : Bool = false,
+) -> String? {
+  ignore(short)
+  None
+}
+
+///|
+async fn git_head_commit_seconds_native(_root : String) -> Int? {
+  None
+}
+
+///|
+async fn git_changed_files_native(
+  _root : String,
+  _base : String,
+  _paths : Array[String],
+) -> Array[String]? {
+  None
+}
+
+///|
 /// Return the file modification time in seconds, or None if unavailable.
 pub async fn file_mtime_seconds(_path : String) -> Int? {
   None

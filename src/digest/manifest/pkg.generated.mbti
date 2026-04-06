@@ -6,31 +6,35 @@ import {
 }
 
 // Values
+pub const MANIFEST_VERSION : Int = 4
 
 // Errors
 
 // Types and methods
 pub struct DigestManifest {
+  version : Int
   created_at : String
   updated_at : String
   spec_hash : @trkbt10/indexion/src/kgf/cas/types.ContentHash
-  embedding_provider : String
-  embedding_dim : Int
+  providers : Map[String, ProviderMeta]
   files : Map[String, FileEntry]
   functions : Map[String, FunctionEntry]
-  vector_id_counter : Int64
 } derive(Eq, Show, ToJson, @json.FromJson)
-pub fn DigestManifest::allocate_vector_id(Self) -> (Self, Int64)
+pub fn DigestManifest::allocate_vector_id(Self, String) -> (Self, Int64)
 pub fn DigestManifest::from_json_string(String) -> Self?
 pub fn DigestManifest::get_deleted_functions(Self, Array[String]) -> Array[String]
 pub fn DigestManifest::get_function(Self, String) -> FunctionEntry?
 pub fn DigestManifest::get_function_ids(Self) -> Array[String]
 pub fn DigestManifest::get_stale_functions(Self, Array[@trkbt10/indexion/src/digest/types.FunctionUnit]) -> Array[String]
+pub fn DigestManifest::is_file_unchanged(Self, String, @trkbt10/indexion/src/kgf/cas/types.ContentHash) -> Bool
 pub fn DigestManifest::is_function_valid(Self, String, @trkbt10/indexion/src/digest/types.FunctionHash, @trkbt10/indexion/src/digest/types.FunctionHash) -> Bool
-pub fn DigestManifest::new(@trkbt10/indexion/src/kgf/cas/types.ContentHash, String, Int) -> Self
-pub fn DigestManifest::remove_deleted_functions(Self, Array[String]) -> (Self, Array[Int64])
+pub fn DigestManifest::new(@trkbt10/indexion/src/kgf/cas/types.ContentHash, Map[String, ProviderMeta]) -> Self
+pub fn DigestManifest::provider_description(Self) -> String
+pub fn DigestManifest::provider_keys(Self) -> Array[String]
+pub fn DigestManifest::remove_deleted_functions(Self, Array[String]) -> (Self, Map[String, Array[Int64]])
 pub fn DigestManifest::remove_function(Self, String) -> Self
 pub fn DigestManifest::to_json_string(Self) -> String
+pub fn DigestManifest::update_file(Self, String, @trkbt10/indexion/src/kgf/cas/types.ContentHash, Array[String]) -> Self
 pub fn DigestManifest::update_function(Self, FunctionEntry) -> Self
 
 pub struct FileEntry {
@@ -43,10 +47,18 @@ pub struct FunctionEntry {
   function_id : String
   source_hash : @trkbt10/indexion/src/digest/types.FunctionHash
   context_hash : @trkbt10/indexion/src/digest/types.FunctionHash
-  vector_id : Int64?
+  vector_ids : Map[String, Int64]
   impression_hash : @trkbt10/indexion/src/digest/types.FunctionHash?
 } derive(Eq, Show, ToJson, @json.FromJson)
-pub fn FunctionEntry::from_unit(@trkbt10/indexion/src/digest/types.FunctionUnit, Int64?) -> Self
+pub fn FunctionEntry::from_unit(@trkbt10/indexion/src/digest/types.FunctionUnit, Map[String, Int64]) -> Self
+
+pub(all) struct ProviderMeta {
+  kind : String
+  dim : Int
+  model : String?
+  base_url : String?
+  vector_id_counter : Int64
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 // Type aliases
 

@@ -6,6 +6,9 @@ import {
 }
 
 // Values
+pub const WIKI_MANIFEST_FILE : String = "wiki.json"
+
+pub fn wiki_manifest_path(String) -> String
 
 // Errors
 

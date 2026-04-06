@@ -315,6 +315,76 @@ async fn handle_plan_reconcile(
 }
 
 ///|
+fn build_spec_align_config(
+  json : Json,
+  config : ServeConfig,
+  subcommand : String,
+  default_format : String,
+) -> @spec_align.SpecAlignConfig? {
+  let spec_path = json_string(json, "specPath", "")
+  let impl_path = json_string(json, "implPath", "")
+  if spec_path.length() == 0 || impl_path.length() == 0 {
+    return None
+  }
+  if !validate_path(spec_path) || !validate_path(impl_path) {
+    return None
+  }
+  Some({
+    ..@spec_align.SpecAlignConfig::default(),
+    subcommand,
+    spec_path,
+    impl_path,
+    specs_dir: config.specs_dir,
+    format: json_string(json, "format", default_format),
+    spec_format: json_string(json, "specFormat", "auto"),
+    algorithm: json_string(json, "algorithm", "hybrid"),
+    threshold: json_double(json, "threshold", 0.6),
+    cache_dir: json_string(json, "cacheDir", ""),
+    direction: json_string(json, "direction", "both"),
+    agent: json_string(json, "agent", "generic"),
+    fail_on: json_string(json, "failOn", "none"),
+    incremental: json_bool(json, "incremental", false),
+    git_base: json_string(json, "gitBase", "HEAD"),
+  })
+}
+
+///|
+async fn handle_spec_align(
+  conn : @mhttp.ServerConnection,
+  body_text : String,
+  config : ServeConfig,
+  cors : Bool,
+  subcommand : String,
+  default_format : String,
+) -> Unit {
+  let json : Json = @json.parse(body_text) catch {
+    _ => {
+      send_json_error(conn, 400, "Invalid JSON body", cors)
+      return
+    }
+  }
+  let align_config = match
+    build_spec_align_config(json, config, subcommand, default_format) {
+    Some(value) => value
+    None => {
+      send_json_error(
+        conn, 400, "Valid specPath and implPath are required", cors,
+      )
+      return
+    }
+  }
+  match @spec_align_cli.run_to_string(align_config) {
+    Some(result) =>
+      if align_config.format == "json" {
+        send_json_ok(conn, result, cors)
+      } else {
+        send_json_ok(conn, Json::string(result).stringify(), cors)
+      }
+    None => send_json_error(conn, 404, "No results", cors)
+  }
+}
+
+///|
 async fn handle_plan_solid(
   conn : @mhttp.ServerConnection,
   body_text : String,

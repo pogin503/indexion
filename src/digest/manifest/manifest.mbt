@@ -103,16 +103,12 @@ pub fn DigestManifest::allocate_vector_id(
   match self.providers.get(provider_key) {
     Some(meta) => {
       let id = meta.vector_id_counter
-      self.providers.set(provider_key, {
-        ..meta,
-        vector_id_counter: id + 1L,
-      })
+      self.providers.set(provider_key, { ..meta, vector_id_counter: id + 1L })
       ({ ..self, updated_at: get_timestamp() }, id)
     }
-    None => {
+    None =>
       // Provider not registered — should not happen, but handle gracefully
       (self, 0L)
-    }
   }
 }
 
@@ -328,8 +324,7 @@ pub fn DigestManifest::provider_description(self : DigestManifest) -> String {
     let key = entry.0
     let meta = entry.1
     let desc = match meta.model {
-      Some(model) =>
-        key + " (" + model + ", " + meta.dim.to_string() + " dims)"
+      Some(model) => key + " (" + model + ", " + meta.dim.to_string() + " dims)"
       None => key + " (" + meta.kind + ", " + meta.dim.to_string() + " dims)"
     }
     parts.push(desc)

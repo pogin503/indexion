@@ -1,4 +1,5 @@
 import {
   "moonbitlang/core/argparse" @argparse,
+  "trkbt10/indexion/cmd/indexion/spec/align" @align,
   "trkbt10/indexion/cmd/indexion/spec/verify" @verify,
 }

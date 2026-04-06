@@ -28,6 +28,8 @@ pub fn extract_doc_map(Array[@types.Tok]) -> Map[Int, String]
 
 pub fn extract_doc_map_from_source(String, String, @registry.KGFRegistry?) -> Map[Int, String]
 
+pub fn extract_document_sections(Array[@types.Tok], String, spec? : @types.KGFSpec?) -> Array[DocumentSection]
+
 pub fn extract_function_trees(Array[@types.Tok], String, spec~ : @types.KGFSpec) -> Array[(ExtractedFunction, @apted.TreeNode)]
 
 pub fn extract_functions(Array[@types.Tok], String, spec~ : @types.KGFSpec) -> Array[ExtractedFunction]
@@ -73,6 +75,15 @@ pub fn tokens_to_tree_node(Array[@types.Tok], Int, Int, spec~ : @types.KGFSpec) 
 // Errors
 
 // Types and methods
+pub struct DocumentSection {
+  level : Int
+  title : String
+  anchor : String
+  line : Int
+  end_line : Int
+  content : String
+}
+
 pub struct ExtractedFunction {
   name : String
   start : Int

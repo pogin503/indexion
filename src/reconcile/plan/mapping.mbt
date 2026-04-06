@@ -5,7 +5,7 @@ priv struct ModuleSignals {
 }
 
 ///|
-priv struct CandidateBuildResult {
+pub(all) struct CandidateBuildResult {
   candidates : Array[ReconcileCandidate]
   module_covered_symbols : Int
 }
@@ -25,7 +25,7 @@ priv struct AggregateBucket {
 }
 
 ///|
-priv struct FragmentMatchSignals {
+pub(all) struct FragmentMatchSignals {
   exact_tokens : Map[String, Bool]
   reference_tokens : Map[String, Bool]
   lowered_text : String
@@ -33,7 +33,7 @@ priv struct FragmentMatchSignals {
 
 ///|
 /// Pre-computed lowered search terms for a code unit.
-priv struct UnitMatchTerms {
+pub(all) struct UnitMatchTerms {
   lowered_name : String
   lowered_qualified_dot : String
   lowered_qualified_colon : String
@@ -479,7 +479,7 @@ fn build_module_coverage_index(
 }
 
 ///|
-fn build_fragment_match_signals(
+pub fn build_fragment_match_signals(
   fragments : Array[DocFragment],
   registry : @registry.KGFRegistry,
 ) -> Map[String, FragmentMatchSignals] {
@@ -524,7 +524,7 @@ fn build_fragment_match_signals(
 
 ///|
 /// Optimized match using pre-computed lowered text and unit terms.
-fn match_fragment_with_terms(
+pub fn match_fragment_with_terms(
   unit : CodeUnit,
   terms : UnitMatchTerms,
   signals : FragmentMatchSignals,
@@ -559,7 +559,7 @@ fn match_fragment_with_terms(
 
 ///|
 /// Build pre-computed match terms for a code unit.
-fn unit_match_terms(unit : CodeUnit) -> UnitMatchTerms {
+pub fn unit_match_terms(unit : CodeUnit) -> UnitMatchTerms {
   let lowered_name = lower_string(unit.name)
   let has_ns = unit.ns.length() > 0
   {
@@ -605,27 +605,6 @@ fn build_doc_anchor(fragment : DocFragment) -> DocAnchor {
 }
 
 ///|
-/// Cache for timestamp_for_path results.
-/// Eliminates redundant git subprocess calls for the same path.
-let timestamp_cache : Map[String, TimestampInfo] = {}
-
-///|
-/// Cache for is_repo check (one per root directory).
-let repo_check_cache : Map[String, Bool] = {}
-
-///|
-async fn is_repo_cached(root : String) -> Bool {
-  match repo_check_cache.get(root) {
-    Some(v) => v
-    None => {
-      let v = @git.is_repo(root)
-      repo_check_cache.set(root, v)
-      v
-    }
-  }
-}
-
-///|
 /// Get timestamp info for a path, with memoization.
 /// Each unique path's git status is queried at most once per run.
 async fn timestamp_for_path(
@@ -633,61 +612,11 @@ async fn timestamp_for_path(
   path : String,
   config : ReconcileConfig,
 ) -> TimestampInfo {
-  match timestamp_cache.get(path) {
-    Some(cached) => return cached
-    None => ()
-  }
-  let result = timestamp_for_path_uncached(root, path, config)
-  timestamp_cache.set(path, result)
-  result
-}
-
-///|
-async fn timestamp_for_path_uncached(
-  root : String,
-  path : String,
-  config : ReconcileConfig,
-) -> TimestampInfo {
-  let repo_ok = config.git_preferred && is_repo_cached(root)
-  if repo_ok {
-    let git_time = @git.last_commit_seconds(root, path)
-    let dirty = @git.status_dirty(root, path)
-    if dirty {
-      if config.mtime_fallback {
-        match @git.file_mtime_seconds(path) {
-          Some(seconds) =>
-            return {
-              epoch_seconds: Some(seconds),
-              source: "mtime",
-              is_dirty: true,
-            }
-          None => ()
-        }
-      }
-    } else {
-      match git_time {
-        Some(seconds) =>
-          return {
-            epoch_seconds: Some(seconds),
-            source: "git",
-            is_dirty: false,
-          }
-        None => ()
-      }
-    }
-  }
-  if config.mtime_fallback {
-    match @git.file_mtime_seconds(path) {
-      Some(seconds) =>
-        return {
-          epoch_seconds: Some(seconds),
-          source: "mtime",
-          is_dirty: false,
-        }
-      None => ()
-    }
-  }
-  TimestampInfo::unknown()
+  let shared_config = @reconcile_tracking.FileTrackingConfig::new(
+    config.git_preferred,
+    config.mtime_fallback,
+  )
+  @reconcile_tracking.timestamp_for_path(root, path, shared_config)
 }
 
 ///|
@@ -712,7 +641,7 @@ fn time_relation(
 }
 
 ///|
-fn classify_match_result(
+pub fn classify_match_result(
   relation : String,
   mapping_confidence : Int,
   match_kind : String,
@@ -872,7 +801,7 @@ async fn match_units_batch(
               match_kind: "none",
               reason: "No external document fragment matched this symbol.",
               code_time,
-              doc_time: TimestampInfo::unknown(),
+              doc_time: @reconcile_tracking.TimestampInfo::unknown(),
             },
             logical_review_key: None,
             logical_review_status: "pending",
@@ -926,7 +855,7 @@ async fn match_units_batch(
 }
 
 ///|
-async fn build_candidates(
+pub async fn build_candidates(
   units : Array[CodeUnit],
   fragments : Array[DocFragment],
   config : ReconcileConfig,
@@ -969,7 +898,7 @@ async fn build_candidates(
 ///|
 /// Build candidates using async task group concurrency.
 /// Partitions units across multiple workers and merges results.
-async fn build_candidates_concurrent(
+pub async fn build_candidates_concurrent(
   units : Array[CodeUnit],
   fragments : Array[DocFragment],
   config : ReconcileConfig,
@@ -1058,7 +987,7 @@ fn limit_candidates(
 }
 
 ///|
-fn build_summary(
+pub fn build_summary(
   units : Array[CodeUnit],
   fragments : Array[DocFragment],
   candidates : Array[ReconcileCandidate],
@@ -1262,7 +1191,7 @@ fn project_doc_paths(
 }
 
 ///|
-fn build_aggregate_suggestions(
+pub fn build_aggregate_suggestions(
   raw_candidates : Array[ReconcileCandidate],
   visible_candidates : Array[ReconcileCandidate],
   fragments : Array[DocFragment],
@@ -1368,7 +1297,7 @@ fn build_aggregate_suggestions(
 }
 
 ///|
-fn collapse_aggregate_only_candidates(
+pub fn collapse_aggregate_only_candidates(
   candidates : Array[ReconcileCandidate],
   aggregate_suggestions : Array[ReconcileAggregateSuggestion],
   root_dir : String,

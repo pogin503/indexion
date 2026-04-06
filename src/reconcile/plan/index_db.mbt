@@ -1,5 +1,5 @@
 ///|
-priv struct IndexSyncResult {
+pub(all) struct IndexSyncResult {
   candidates : Array[ReconcileCandidate]
   logical_reviews : Array[LogicalReviewTask]
   manifest : ReconcileManifest
@@ -293,7 +293,7 @@ fn load_review_decisions(path : String) -> Array[ReviewDecisionInput] {
 }
 
 ///|
-fn apply_review_decisions(
+pub fn apply_review_decisions(
   manifest : ReconcileManifest,
   db : @vcdb.VectorDB,
   decisions : Array[ReviewDecisionInput],
@@ -323,7 +323,7 @@ fn apply_review_decisions(
 }
 
 ///|
-fn sync_candidates_with_index(
+pub fn sync_candidates_with_index(
   candidates : Array[ReconcileCandidate],
   manifest : ReconcileManifest,
   db : @vcdb.VectorDB,

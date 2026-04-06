@@ -91,10 +91,7 @@ fn compute_depth(
 
 ///|
 /// Resolve the file path for a symbol via its module.
-fn resolve_file_path(
-  graph : @graph.CodeGraph,
-  module_id : String,
-) -> String? {
+fn resolve_file_path(graph : @graph.CodeGraph, module_id : String) -> String? {
   match graph.get_module(module_id) {
     Some(m) => m.file
     None => None
@@ -112,7 +109,7 @@ pub fn extract_function_unit(
   graph : @graph.CodeGraph,
   symbol : @graph.SymbolNode,
   depth_memo : Map[String, Int],
-  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
+  file_hashes? : Map[String, @cas_types.ContentHash]? = None,
 ) -> @types.FunctionUnit {
   let callers = graph.get_callers(symbol.id)
   let callees = graph.get_callees(symbol.id)
@@ -124,10 +121,11 @@ pub fn extract_function_unit(
     Some(fh) => {
       let file_path = resolve_file_path(graph, symbol.module_id)
       let file_hash = match file_path {
-        Some(p) => match fh.get(p) {
-          Some(h) => h.to_string()
-          None => ""
-        }
+        Some(p) =>
+          match fh.get(p) {
+            Some(h) => h.to_string()
+            None => ""
+          }
         None => ""
       }
       // Combine file hash with symbol identity for a per-symbol source hash
@@ -170,7 +168,7 @@ pub fn extract_function_unit(
 pub fn extract_function_units(
   graph : @graph.CodeGraph,
   config : ExtractConfig,
-  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
+  file_hashes? : Map[String, @cas_types.ContentHash]? = None,
 ) -> Array[@types.FunctionUnit] {
   let result : Array[@types.FunctionUnit] = []
   let depth_memo : Map[String, Int] = {}
@@ -196,7 +194,7 @@ pub fn extract_function_units(
 pub fn extract_leaf_functions(
   graph : @graph.CodeGraph,
   config : ExtractConfig,
-  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
+  file_hashes? : Map[String, @cas_types.ContentHash]? = None,
 ) -> Array[@types.FunctionUnit] {
   let all_units = extract_function_units(graph, config, file_hashes~)
   all_units.filter(fn(u) { u.is_leaf() })
@@ -208,7 +206,7 @@ pub fn extract_functions_at_depth(
   graph : @graph.CodeGraph,
   config : ExtractConfig,
   depth : Int,
-  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
+  file_hashes? : Map[String, @cas_types.ContentHash]? = None,
 ) -> Array[@types.FunctionUnit] {
   let all_units = extract_function_units(graph, config, file_hashes~)
   all_units.filter(fn(u) { u.depth == depth })

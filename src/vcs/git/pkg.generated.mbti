@@ -8,7 +8,13 @@ import {
 // Values
 pub const GITIGNORE_FILENAME : String = ".gitignore"
 
+pub async fn changed_files(String, String, Array[String]) -> Array[String]?
+
 pub async fn file_mtime_seconds(String) -> Int?
+
+pub async fn head_commit(String, short? : Bool) -> String?
+
+pub async fn head_commit_seconds(String) -> Int?
 
 pub async fn is_repo(String) -> Bool
 
@@ -17,6 +23,8 @@ pub async fn last_commit_seconds(String, String) -> Int?
 pub fn load_gitignore(String) -> Array[@ignorefile.IgnorePattern]
 
 pub fn query_path(String, String) -> String
+
+pub async fn repo_root(String) -> String?
 
 pub async fn status_dirty(String, String) -> Bool
 

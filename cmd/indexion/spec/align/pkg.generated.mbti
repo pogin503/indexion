@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/cmd/indexion/spec/align"
+
+import {
+  "moonbitlang/core/argparse",
+}
+
+// Values
+pub fn command() -> @argparse.Command
+
+pub fn render_diff(@trkbt10/indexion/src/spec/align.AlignDiffReport, String) -> String
+
+pub fn render_status(@trkbt10/indexion/src/spec/align.AlignStatusReport, String) -> String
+
+pub fn render_suggest(@trkbt10/indexion/src/spec/align.AlignSuggestReport, String) -> String
+
+pub fn render_trace(@trkbt10/indexion/src/spec/align.AlignTraceReport, String) -> String
+
+pub async fn run_matches(@argparse.Matches) -> Unit
+
+pub async fn run_to_string(@trkbt10/indexion/src/spec/align.SpecAlignConfig) -> String?
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -1,5 +1,5 @@
 ///|
-fn lower_string(s : String) -> String {
+pub fn lower_string(s : String) -> String {
   s.to_lower()
 }
 
@@ -14,7 +14,7 @@ fn is_blank_line(line : String) -> Bool {
 }
 
 ///|
-fn normalize_spaces(text : String) -> String {
+pub fn normalize_spaces(text : String) -> String {
   let chars = text.to_array()
   let buf = StringBuilder::new()
   let mut last_space = false
@@ -34,7 +34,7 @@ fn normalize_spaces(text : String) -> String {
 }
 
 ///|
-fn preview_text(text : String, max_len? : Int = 120) -> String {
+pub fn preview_text(text : String, max_len? : Int = 120) -> String {
   let normalized = normalize_spaces(text)
   if normalized.length() <= max_len {
     normalized
@@ -44,12 +44,12 @@ fn preview_text(text : String, max_len? : Int = 120) -> String {
 }
 
 ///|
-fn make_hash(parts : Array[String]) -> String {
+pub fn make_hash(parts : Array[String]) -> String {
   @cas_hash.compute_hash(parts.join("\u0000")).to_string()
 }
 
 ///|
-fn contains_string(values : Array[String], target : String) -> Bool {
+pub fn contains_string(values : Array[String], target : String) -> Bool {
   for value in values {
     if value == target {
       return true

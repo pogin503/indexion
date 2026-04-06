@@ -88,8 +88,7 @@ pub fn DigestIndex::query_local(
     match reverse.get(vid) {
       Some(fid) =>
         match self.units.get(fid) {
-          Some(unit) =>
-            results.push(@types.QueryHit::new(unit, hit.score, []))
+          Some(unit) => results.push(@types.QueryHit::new(unit, hit.score, []))
           None => ()
         }
       None => ()
@@ -100,10 +99,7 @@ pub fn DigestIndex::query_local(
 
 ///|
 /// Whether this index has a given provider.
-pub fn DigestIndex::has_provider(
-  self : DigestIndex,
-  key : String,
-) -> Bool {
+pub fn DigestIndex::has_provider(self : DigestIndex, key : String) -> Bool {
   self.engines.contains(key)
 }
 

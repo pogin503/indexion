@@ -10,7 +10,7 @@ pub async fn DigestIndex::build_with_config(
   self : DigestIndex,
   graph : @graph.CodeGraph,
   digest_config : @config.DigestConfig,
-  file_hashes~ : Map[String, @cas_types.ContentHash]? = None,
+  file_hashes? : Map[String, @cas_types.ContentHash]? = None,
 ) -> BuildResult raise @embed.EmbedError {
   let result = BuildResult::new()
   // --- Phase 1: Determine which files have changed ---
@@ -189,14 +189,10 @@ pub async fn DigestIndex::build_with_config(
         // Remote provider
         match provider.api_config {
           Some(api_config) =>
-            try {
-              Some(embed_with_openai_config(api_config, stale_texts))
-            } catch {
+            Some(embed_with_openai_config(api_config, stale_texts)) catch {
               _ => {
                 result.errors.push(
-                  "Embedding failed for provider '" +
-                  key +
-                  "'; skipping",
+                  "Embedding failed for provider '" + key + "'; skipping",
                 )
                 None
               }
@@ -301,9 +297,7 @@ fn DigestIndex::update_file_entries(
           None => []
         }
         self.manifest = self.manifest.update_file(
-          file_path,
-          content_hash,
-          func_ids,
+          file_path, content_hash, func_ids,
         )
       }
     }
@@ -345,23 +339,19 @@ async fn embed_with_openai_config(
     for j = i; j < i + batch_size; j = j + 1 {
       batch.push(texts[j])
     }
-    let batch_result = try {
-      embed_batch(config, batch)
-    } catch {
-      _ => {
+    let batch_result = embed_batch(config, batch) catch {
+      _ =>
         if batch_size > 1 {
           let half = batch_size / 2
           let first_half : Array[String] = []
           for j = 0; j < half; j = j + 1 {
             first_half.push(batch[j])
           }
-          let first_result = try { embed_batch(config, first_half) } catch {
+          let first_result = embed_batch(config, first_half) catch {
             _ => {
               let individual : Array[Array[Double]] = []
               for j = 0; j < half; j = j + 1 {
-                let single_result = try {
-                  embed_batch(config, [first_half[j]])
-                } catch {
+                let single_result = embed_batch(config, [first_half[j]]) catch {
                   _ => [[]]
                 }
                 individual.push(single_result[0])
@@ -373,15 +363,11 @@ async fn embed_with_openai_config(
           for j = half; j < batch_size; j = j + 1 {
             second_half.push(batch[j])
           }
-          let second_result = try {
-            embed_batch(config, second_half)
-          } catch {
+          let second_result = embed_batch(config, second_half) catch {
             _ => {
               let individual : Array[Array[Double]] = []
               for j = 0; j < second_half.length(); j = j + 1 {
-                let single_result = try {
-                  embed_batch(config, [second_half[j]])
-                } catch {
+                let single_result = embed_batch(config, [second_half[j]]) catch {
                   _ => [[]]
                 }
                 individual.push(single_result[0])
@@ -400,7 +386,6 @@ async fn embed_with_openai_config(
         } else {
           [[]]
         }
-      }
     }
     for k = 0; k < batch_result.length(); k = k + 1 {
       all_embeddings[i + k] = batch_result[k]
@@ -440,8 +425,7 @@ pub async fn DigestIndex::query_api(
     match reverse.get(vid) {
       Some(fid) =>
         match self.units.get(fid) {
-          Some(unit) =>
-            results.push(@types.QueryHit::new(unit, hit.score, []))
+          Some(unit) => results.push(@types.QueryHit::new(unit, hit.score, []))
           None => ()
         }
       None => ()
@@ -546,14 +530,18 @@ pub fn acquire_build_lock(index_dir : String) -> Bool {
     }
   }
   @app_config.ensure_dir_recursive(index_dir)
-  @fs.write_string_to_file(lp, "locked") catch { _ => return false }
+  @fs.write_string_to_file(lp, "locked") catch {
+    _ => return false
+  }
   true
 }
 
 ///|
 /// Release the build lock for the given index directory.
 pub fn release_build_lock(index_dir : String) -> Unit {
-  @fs.remove_file(@config.lock_path(index_dir)) catch { _ => () }
+  @fs.remove_file(@config.lock_path(index_dir)) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -565,7 +553,9 @@ pub fn delete_index_files(
   for name in @config.compute_index_file_names(provider_keys) {
     let path = @config.index_path(index_dir, name)
     if @fs.path_exists(path) {
-      @fs.remove_file(path) catch { _ => () }
+      @fs.remove_file(path) catch {
+        _ => ()
+      }
     }
   }
 }
@@ -605,9 +595,7 @@ pub fn DigestIndex::load_or_create(
     let prov = entry.1
     let vocab_path = @config.vocabulary_json_path(index_dir, key)
     if @fs.path_exists(vocab_path) {
-      let vocab_content = @fs.read_file_to_string(vocab_path) catch {
-        _ => ""
-      }
+      let vocab_content = @fs.read_file_to_string(vocab_path) catch { _ => "" }
       if vocab_content.length() > 0 {
         let _ = prov.load_from_json_string(vocab_content)
       }
@@ -627,24 +615,15 @@ pub fn DigestIndex::save_to_dir(
   @app_config.ensure_dir_recursive(index_dir)
   let (manifest_json, db_map) = self.serialize()
   // Write manifest
-  @fs.write_string_to_file(
-    @config.manifest_path(index_dir),
-    manifest_json,
-  ) catch {
+  @fs.write_string_to_file(@config.manifest_path(index_dir), manifest_json) catch {
     e => errors.push("Saving manifest: " + e.to_string())
   }
   // Write vector databases per provider
   for entry in db_map {
     let key = entry.0
     let bytes = entry.1
-    @fs.write_bytes_to_file(
-      @config.vectors_db_path(index_dir, key),
-      bytes,
-    ) catch {
-      e =>
-        errors.push(
-          "Saving vectors for '" + key + "': " + e.to_string(),
-        )
+    @fs.write_bytes_to_file(@config.vectors_db_path(index_dir, key), bytes) catch {
+      e => errors.push("Saving vectors for '" + key + "': " + e.to_string())
     }
   }
   // Write TF-IDF vocabularies
@@ -658,9 +637,7 @@ pub fn DigestIndex::save_to_dir(
         vocab_json,
       ) catch {
         e =>
-          errors.push(
-            "Saving vocabulary for '" + key + "': " + e.to_string(),
-          )
+          errors.push("Saving vocabulary for '" + key + "': " + e.to_string())
       }
     }
   }

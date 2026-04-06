@@ -17,6 +17,10 @@ fn build_server(config : McpConfig) -> @mcp_server.McpServer {
   register_plan_refactor(server, config)
   register_plan_documentation(server, config)
   register_plan_reconcile(server, config)
+  register_spec_align_diff(server, config)
+  register_spec_align_trace(server, config)
+  register_spec_align_suggest(server, config)
+  register_spec_align_status(server, config)
   register_plan_solid(server, config)
   register_plan_unwrap(server, config)
   register_plan_readme(server, config)
@@ -419,6 +423,192 @@ fn register_plan_reconcile(
         None => @mcp_types.error_result("No results")
       }
     },
+  )
+}
+
+///|
+fn build_spec_align_config(
+  params : Json?,
+  specs_dir : String,
+  subcommand : String,
+  default_format : String,
+) -> @spec_align.SpecAlignConfig? {
+  let spec_path = json_string(params, "specPath", "")
+  let impl_path = json_string(params, "implPath", "")
+  if spec_path.length() == 0 || impl_path.length() == 0 {
+    return None
+  }
+  if !validate_path(spec_path) || !validate_path(impl_path) {
+    return None
+  }
+  Some({
+    ..@spec_align.SpecAlignConfig::default(),
+    subcommand,
+    spec_path,
+    impl_path,
+    specs_dir,
+    format: json_string(params, "format", default_format),
+    spec_format: json_string(params, "specFormat", "auto"),
+    algorithm: json_string(params, "algorithm", "hybrid"),
+    threshold: json_double(params, "threshold", 0.6),
+    cache_dir: json_string(params, "cacheDir", ""),
+    direction: json_string(params, "direction", "both"),
+    agent: json_string(params, "agent", "generic"),
+    fail_on: json_string(params, "failOn", "none"),
+    incremental: json_bool(params, "incremental", false),
+    git_base: json_string(params, "gitBase", "HEAD"),
+  })
+}
+
+///|
+fn register_spec_align_tool(
+  server : @mcp_server.McpServer,
+  config : McpConfig,
+  name : String,
+  description : String,
+  subcommand : String,
+  default_format : String,
+  formats : Array[String],
+) -> Unit {
+  let specs_dir = config.specs_dir
+  server.register_tool(
+    {
+      name,
+      description,
+      input_schema: {
+        properties: {
+          "specPath": @mcp_types.string_prop(
+            "Specification file or directory (required)",
+          ),
+          "implPath": @mcp_types.string_prop(
+            "Implementation file or directory (required)",
+          ),
+          "format": @mcp_types.enum_prop(
+            "Output format",
+            formats,
+            default=default_format,
+          ),
+          "specFormat": @mcp_types.string_prop(
+            "SDD KGF spec name or auto",
+            default="auto",
+          ),
+          "algorithm": @mcp_types.enum_prop(
+            "Similarity algorithm",
+            ["hybrid", "tfidf", "ncd"],
+            default="hybrid",
+          ),
+          "threshold": @mcp_types.number_prop(
+            "Similarity threshold (0.0-1.0)",
+            default="0.6",
+          ),
+          "cacheDir": @mcp_types.string_prop(
+            "Cache directory (auto-resolved if empty)",
+          ),
+          "direction": @mcp_types.enum_prop(
+            "Suggestion direction",
+            ["both", "spec-wins", "impl-wins"],
+            default="both",
+          ),
+          "agent": @mcp_types.enum_prop(
+            "Agent hint for task rendering",
+            ["generic", "claude", "copilot"],
+            default="generic",
+          ),
+          "failOn": @mcp_types.enum_prop(
+            "Failure condition for status",
+            ["none", "drifted", "spec-only", "any"],
+            default="none",
+          ),
+          "incremental": @mcp_types.bool_prop(
+            "Restrict results to files changed from git base",
+            default="false",
+          ),
+          "gitBase": @mcp_types.string_prop(
+            "Git base ref for incremental mode",
+            default="HEAD",
+          ),
+        },
+        required: ["specPath", "implPath"],
+      },
+    },
+    async fn(params) {
+      let align_config = match
+        build_spec_align_config(params, specs_dir, subcommand, default_format) {
+        Some(value) => value
+        None =>
+          return @mcp_types.error_result(
+            "Valid specPath and implPath are required",
+          )
+      }
+      match @spec_align_cli.run_to_string(align_config) {
+        Some(result) => @mcp_types.text_result(result)
+        None => @mcp_types.error_result("No alignment data found")
+      }
+    },
+  )
+}
+
+///|
+fn register_spec_align_diff(
+  server : @mcp_server.McpServer,
+  config : McpConfig,
+) -> Unit {
+  register_spec_align_tool(
+    server,
+    config,
+    "spec_align_diff",
+    "Detect drift between SDD requirements and implementation.",
+    "diff",
+    "json",
+    ["json", "markdown", "summary"],
+  )
+}
+
+///|
+fn register_spec_align_trace(
+  server : @mcp_server.McpServer,
+  config : McpConfig,
+) -> Unit {
+  register_spec_align_tool(
+    server,
+    config,
+    "spec_align_trace",
+    "Generate requirement-to-implementation traceability for SDD specs.",
+    "trace",
+    "json",
+    ["json", "yaml", "mermaid"],
+  )
+}
+
+///|
+fn register_spec_align_suggest(
+  server : @mcp_server.McpServer,
+  config : McpConfig,
+) -> Unit {
+  register_spec_align_tool(
+    server,
+    config,
+    "spec_align_suggest",
+    "Generate provenance-backed SDD alignment suggestions.",
+    "suggest",
+    "json",
+    ["json", "markdown", "delta-spec", "tasks"],
+  )
+}
+
+///|
+fn register_spec_align_status(
+  server : @mcp_server.McpServer,
+  config : McpConfig,
+) -> Unit {
+  register_spec_align_tool(
+    server,
+    config,
+    "spec_align_status",
+    "Summarize SDD alignment status for CI and automation.",
+    "status",
+    "json",
+    ["json", "text", "badge"],
   )
 }
 

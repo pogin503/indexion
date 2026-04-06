@@ -27,7 +27,12 @@ export type {
   DocGraphFormat,
 } from "./types.ts";
 
-export type { ExploreRequest, DocGraphRequest, PlanRequest } from "./api.ts";
+export type {
+  ExploreRequest,
+  DocGraphRequest,
+  PlanRequest,
+  SpecAlignRequest,
+} from "./api.ts";
 export {
   fetchGraph,
   queryDigest,
@@ -48,6 +53,10 @@ export {
   runPlanSolid,
   runPlanUnwrap,
   runPlanReadme,
+  runSpecAlignDiff,
+  runSpecAlignTrace,
+  runSpecAlignSuggest,
+  runSpecAlignStatus,
   checkHealth,
   fetchConfig,
 } from "./api.ts";

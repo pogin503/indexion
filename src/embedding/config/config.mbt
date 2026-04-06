@@ -105,16 +105,16 @@ pub(all) struct ProviderConfig {
 
 ///|
 /// Create a default TF-IDF provider config.
-pub fn ProviderConfig::tfidf(
-  dim? : Int = DEFAULT_TFIDF_DIM,
-) -> ProviderConfig {
+pub fn ProviderConfig::tfidf(dim? : Int = DEFAULT_TFIDF_DIM) -> ProviderConfig {
   { key: DEFAULT_TFIDF_KEY, kind: "tfidf", dim, api_config: None }
 }
 
 ///|
 /// Create a remote provider config from an EmbeddingApiConfig.
 /// Key defaults to the sanitized model name.
-pub fn ProviderConfig::remote(api_config : EmbeddingApiConfig) -> ProviderConfig {
+pub fn ProviderConfig::remote(
+  api_config : EmbeddingApiConfig,
+) -> ProviderConfig {
   {
     key: sanitize_provider_key(api_config.model),
     kind: "remote",

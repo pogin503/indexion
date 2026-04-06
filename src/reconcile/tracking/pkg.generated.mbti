@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/reconcile/tracking"
+
+import {
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn build_source_fingerprint(String, Array[FileState]) -> String
+
+pub async fn timestamp_for_path(String, String, FileTrackingConfig) -> TimestampInfo
+
+// Errors
+
+// Types and methods
+pub(all) struct FileState {
+  path : String
+  file_kind : String
+  spec : String
+  content_hash : String
+  git_time : Int?
+  mtime : Int?
+  git_dirty : Bool
+} derive(Eq, Show, ToJson, @json.FromJson)
+pub fn FileState::new(String, String, String, String, Int?, Int?, Bool) -> Self
+
+pub(all) struct FileTrackingConfig {
+  git_preferred : Bool
+  mtime_fallback : Bool
+} derive(Eq, Show)
+pub fn FileTrackingConfig::default() -> Self
+pub fn FileTrackingConfig::new(Bool, Bool) -> Self
+
+pub(all) struct TimestampInfo {
+  epoch_seconds : Int?
+  source : String
+  is_dirty : Bool
+} derive(Eq, Show, ToJson, @json.FromJson)
+pub fn TimestampInfo::new(Int?, String, Bool) -> Self
+pub fn TimestampInfo::unknown(source? : String) -> Self
+
+// Type aliases
+
+// Traits
+

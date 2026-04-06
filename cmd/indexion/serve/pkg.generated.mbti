@@ -32,7 +32,7 @@ pub struct ServeConfig {
   model : String
   watch_stdin : Bool
 }
-pub fn ServeConfig::apply_file_config(Self, @config.DigestFileConfig) -> Self
+pub fn ServeConfig::apply_embedding_file_config(Self, @config.EmbeddingFileConfig) -> Self
 pub fn ServeConfig::default() -> Self
 pub fn ServeConfig::from_matches(@argparse.Matches) -> Self
 

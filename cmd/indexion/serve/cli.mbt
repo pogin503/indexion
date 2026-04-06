@@ -438,6 +438,36 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         handle_plan_reconcile(conn, body_text, config, cors_enabled)
         return
       }
+      if req.meth == @mhttp.Post && path == "/api/spec/align/diff" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_spec_align(conn, body_text, config, cors_enabled, "diff", "json")
+        return
+      }
+      if req.meth == @mhttp.Post && path == "/api/spec/align/trace" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_spec_align(
+          conn, body_text, config, cors_enabled, "trace", "json",
+        )
+        return
+      }
+      if req.meth == @mhttp.Post && path == "/api/spec/align/suggest" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_spec_align(
+          conn, body_text, config, cors_enabled, "suggest", "json",
+        )
+        return
+      }
+      if req.meth == @mhttp.Post && path == "/api/spec/align/status" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_spec_align(
+          conn, body_text, config, cors_enabled, "status", "json",
+        )
+        return
+      }
       if req.meth == @mhttp.Post && path == "/api/plan/solid" {
         let body_data = body.read_all()
         let body_text = body_data.text()
@@ -522,9 +552,7 @@ async fn do_load(
     return None
   }
   @digest_cli.log_progress("Loading index from " + config.index_dir + "...")
-  let graph_json = @fs.read_file_to_string(gp) catch {
-    _ => return None
-  }
+  let graph_json = @fs.read_file_to_string(gp) catch { _ => return None }
   let graph = match @graph.CodeGraph::from_json_string(graph_json) {
     Some(g) => g
     None => return None
@@ -532,7 +560,10 @@ async fn do_load(
   @digest_cli.log_progress(
     "Graph: " + graph.symbol_count().to_string() + " symbols",
   )
-  let index = @index.DigestIndex::load_or_create(config.index_dir, digest_config)
+  let index = @index.DigestIndex::load_or_create(
+    config.index_dir,
+    digest_config,
+  )
   // Populate units from graph (incremental — skips unchanged)
   let _ = index.build_with_config(graph, digest_config) catch {
     _ => return None
@@ -583,7 +614,10 @@ async fn do_build(
     "Graph: " + graph.symbol_count().to_string() + " symbols",
   )
   // Load existing index for incremental update, or create new
-  let index = @index.DigestIndex::load_or_create(config.index_dir, digest_config)
+  let index = @index.DigestIndex::load_or_create(
+    config.index_dir,
+    digest_config,
+  )
   // Build — this is incremental: file hashes detect unchanged files
   let result = index.build_with_config(graph, digest_config, file_hashes~) catch {
     @embed.ParseError(msg) => {
@@ -814,9 +848,7 @@ async fn serve_query_cascade(
     if p.kind == "remote" && index.has_provider(p.key) {
       match p.api_config {
         Some(api_config) => {
-          let hits = try {
-            index.query_api(purpose, top_k, p.key, api_config)
-          } catch {
+          let hits = index.query_api(purpose, top_k, p.key, api_config) catch {
             _ => continue
           }
           return hits

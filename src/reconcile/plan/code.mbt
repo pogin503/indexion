@@ -1,6 +1,6 @@
 ///|
 /// Get document symbol kinds from KGF spec, falling back to "all kinds" if not specified.
-fn document_symbol_kinds(spec : @kgf_types.KGFSpec) -> Map[String, Bool]? {
+pub fn document_symbol_kinds(spec : @kgf_types.KGFSpec) -> Map[String, Bool]? {
   match spec.get_feature("document_symbol_kinds") {
     Some(kinds) => {
       let m : Map[String, Bool] = {}
@@ -14,7 +14,7 @@ fn document_symbol_kinds(spec : @kgf_types.KGFSpec) -> Map[String, Bool]? {
 }
 
 ///|
-fn discovery_roots(target_dir : String) -> Array[String] {
+pub fn discovery_roots(target_dir : String) -> Array[String] {
   if target_dir != "." {
     return [target_dir]
   }
@@ -35,7 +35,7 @@ fn discovery_roots(target_dir : String) -> Array[String] {
 ///|
 /// Code unit extraction using full KGF pipeline (tokenize → parse → eval_semantics → declares edges).
 /// All public declarations are identified via KGF semantics — no hardcoded keyword patterns.
-fn build_code_units_fast(
+pub fn build_code_units_fast(
   discovered_paths : Array[String],
   registry : @registry.KGFRegistry,
 ) -> Array[CodeUnit] {

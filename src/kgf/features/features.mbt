@@ -604,6 +604,23 @@ pub(all) struct Heading {
 }
 
 ///|
+/// A heading-bounded document section extracted via KGF features.
+pub struct DocumentSection {
+  /// Heading level.
+  level : Int
+  /// Heading text.
+  title : String
+  /// URL-safe anchor derived from the heading text.
+  anchor : String
+  /// Start line of the section heading in the source.
+  line : Int
+  /// End line of the section body in the source.
+  end_line : Int
+  /// Raw section content from the heading line through the line before the next heading.
+  content : String
+}
+
+///|
 /// Extract section headings from KGF tokens.
 /// Uses `section_token`, `section_level`, and `heading_text_tokens` features
 /// from the KGF spec. No hardcoded token names or level calculation logic.
@@ -781,6 +798,42 @@ fn make_anchor(text : String) -> String {
 }
 
 ///|
+/// Extract heading-bounded sections for every heading the KGF spec recognizes.
+pub fn extract_document_sections(
+  tokens : Array[@kgf_types.Tok],
+  content : String,
+  spec? : @kgf_types.KGFSpec? = None,
+) -> Array[DocumentSection] {
+  let headings = extract_headings(tokens, spec~, source=content)
+  let lines = split_by_newline(content)
+  let sections : Array[DocumentSection] = []
+  for idx, heading in headings {
+    let end_line = if idx + 1 < headings.length() {
+      headings[idx + 1].line - 1
+    } else {
+      lines.length()
+    }
+    let buf = StringBuilder::new()
+    for j = heading.line; j < end_line && j < lines.length(); j = j + 1 {
+      buf.write_string(lines[j])
+      buf.write_string("\n")
+    }
+    let section_content = buf.to_string()
+    if section_content.length() > 0 {
+      sections.push({
+        level: heading.level,
+        title: heading.text,
+        anchor: heading.anchor,
+        line: heading.line,
+        end_line,
+        content: section_content,
+      })
+    }
+  }
+  sections
+}
+
+///|
 /// Split content into sections at section token boundaries of the given level.
 /// Returns (id, title, content, level) tuples suitable for search indexing.
 /// Section boundaries are determined by the KGF spec's `section_token` feature.
@@ -792,38 +845,17 @@ pub fn extract_sections_from_tokens(
   split_level? : Int = 2,
   spec? : @kgf_types.KGFSpec? = None,
 ) -> Array[(String, String, String, Int)] {
-  let headings = extract_headings(tokens, spec~)
-  let lines = split_by_newline(content)
+  let sections = extract_document_sections(tokens, content, spec~)
   let results : Array[(String, String, String, Int)] = []
   // Full page as a section
   results.push((page_id, page_title, content, 1))
-  // Collect h{split_level} headings as section boundaries
-  let section_headings : Array[Heading] = []
-  for h in headings {
-    if h.level == split_level {
-      section_headings.push(h)
-    }
-  }
-  if section_headings.is_empty() {
+  if sections.is_empty() {
     return results
   }
-  // Extract content between headings
-  for idx, heading in section_headings {
-    let start_line = heading.line
-    let end_line = if idx + 1 < section_headings.length() {
-      section_headings[idx + 1].line - 1
-    } else {
-      lines.length()
-    }
-    let buf = StringBuilder::new()
-    for j = start_line; j < end_line && j < lines.length(); j = j + 1 {
-      buf.write_string(lines[j])
-      buf.write_string("\n")
-    }
-    let section_content = buf.to_string()
-    if section_content.length() > 0 {
-      let id = page_id + "#" + heading.anchor
-      results.push((id, heading.text, section_content, split_level))
+  for section in sections {
+    if section.level == split_level {
+      let id = page_id + "#" + section.anchor
+      results.push((id, section.title, section.content, split_level))
     }
   }
   results

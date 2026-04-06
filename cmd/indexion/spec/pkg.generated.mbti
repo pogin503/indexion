@@ -8,7 +8,7 @@ import {
 // Values
 pub fn command() -> @argparse.Command
 
-pub fn dispatch(@argparse.Matches) -> Unit
+pub async fn dispatch(@argparse.Matches) -> Unit
 
 // Errors
 

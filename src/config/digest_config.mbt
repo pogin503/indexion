@@ -137,7 +137,7 @@ pub fn start_embedding_provider_entry(
 ) -> EmbeddingFileConfig {
   let providers = config.providers
   providers.push(ProviderFileEntry::empty())
-  { ..config, providers }
+  { ..config, providers, }
 }
 
 ///|

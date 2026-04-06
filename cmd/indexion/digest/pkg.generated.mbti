@@ -4,31 +4,29 @@ package "trkbt10/indexion/cmd/indexion/digest"
 import {
   "moonbitlang/core/argparse",
   "trkbt10/indexion/src/core/graph",
-  "trkbt10/indexion/src/digest/index",
+  "trkbt10/indexion/src/kgf/cas/types",
 }
 
 // Values
-pub fn build_digest_config(CliConfig) -> @trkbt10/indexion/src/digest/config.DigestConfig
+pub fn build_digest_config(CliConfig, file_providers? : Array[@trkbt10/indexion/src/config.ProviderFileEntry]) -> @trkbt10/indexion/src/digest/config.DigestConfig
 
-pub fn build_graph_from_source(String, String) -> @graph.CodeGraph?
+pub fn build_graph_from_source(String, String) -> GraphBuildResult?
 
 pub fn command() -> @argparse.Command
-
-pub fn ensure_dir_exists(String) -> Unit
 
 pub fn is_provider_available(CliConfig) -> Bool
 
 pub fn load_digest_file_config() -> @trkbt10/indexion/src/config.DigestFileConfig
 
-pub fn load_graph_from_file(String) -> @graph.CodeGraph?
+pub fn load_embedding_file_config() -> @trkbt10/indexion/src/config.EmbeddingFileConfig
 
-pub fn load_or_create_index(String, @trkbt10/indexion/src/digest/config.DigestConfig) -> @index.DigestIndex
+pub fn load_graph_from_file(String) -> @graph.CodeGraph?
 
 pub fn log_error(String) -> Unit
 
 pub fn log_progress(String) -> Unit
 
-pub fn resolve_provider(CliConfig) -> @trkbt10/indexion/src/digest/config.EmbeddingProvider
+pub fn resolve_provider(CliConfig) -> @trkbt10/indexion/src/embedding/config.EmbeddingProvider
 
 pub async fn run_matches(@argparse.Matches) -> Unit
 
@@ -49,10 +47,18 @@ pub(all) struct CliConfig {
   api_key_env : String
   api_base_url : String
   model : String
+  source_dir : String
+  no_update : Bool
+  file_providers : Array[@trkbt10/indexion/src/config.ProviderFileEntry]
 }
-pub fn CliConfig::apply_file_config(Self, @trkbt10/indexion/src/config.DigestFileConfig) -> Self
+pub fn CliConfig::apply_embedding_file_config(Self, @trkbt10/indexion/src/config.EmbeddingFileConfig) -> Self
 pub fn CliConfig::default() -> Self
 pub fn CliConfig::from_matches(@argparse.Matches) -> Self
+
+pub(all) struct GraphBuildResult {
+  graph : @graph.CodeGraph
+  file_hashes : Map[String, @types.ContentHash]
+}
 
 // Type aliases
 

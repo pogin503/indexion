@@ -1,23 +1,4 @@
 ///|
-fn report_config(config : ReconcileConfig) -> ReconcileReportConfig {
-  {
-    target_dir: config.target_dir,
-    specs_dir: config.specs_dir,
-    index_dir: config.index_dir,
-    review_results_path: config.review_results_path,
-    doc_scope: config.documents.scope_name,
-    doc_paths: config.documents.doc_paths,
-    doc_specs: config.documents.doc_specs,
-    threshold_seconds: config.threshold_seconds,
-    max_candidates: config.max_candidates,
-    allow_file_fallback: config.allow_file_fallback,
-    git_preferred: config.git_preferred,
-    mtime_fallback: config.mtime_fallback,
-    logical_review_mode: config.logical_review_mode,
-  }
-}
-
-///|
 fn render_aggregate_suggestions(
   buf : StringBuilder,
   report : ReconcileReport,

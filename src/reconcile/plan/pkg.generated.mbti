@@ -1,0 +1,328 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/reconcile/plan"
+
+import {
+  "moonbitlang/core/json",
+  "trkbt10/indexion/src/config",
+  "trkbt10/indexion/src/kgf/registry",
+  "trkbt10/indexion/src/kgf/types",
+  "trkbt10/indexion/src/reconcile/tracking",
+  "trkbt10/vcdb",
+}
+
+// Values
+pub fn apply_review_decisions(ReconcileManifest, @vcdb.VectorDB, Array[ReviewDecisionInput], Int) -> (ReconcileManifest, @vcdb.VectorDB)
+
+pub fn build_aggregate_suggestions(Array[ReconcileCandidate], Array[ReconcileCandidate], Array[DocFragment], String, Array[String]) -> Array[ReconcileAggregateSuggestion]
+
+pub async fn build_candidates(Array[CodeUnit], Array[DocFragment], ReconcileConfig, @registry.KGFRegistry) -> CandidateBuildResult
+
+pub async fn build_candidates_concurrent(Array[CodeUnit], Array[DocFragment], ReconcileConfig, @registry.KGFRegistry, Int) -> CandidateBuildResult
+
+pub fn build_code_units_fast(Array[String], @registry.KGFRegistry) -> Array[CodeUnit]
+
+pub fn build_fragment_match_signals(Array[DocFragment], @registry.KGFRegistry) -> Map[String, FragmentMatchSignals]
+
+pub fn build_summary(Array[CodeUnit], Array[DocFragment], Array[ReconcileCandidate], Array[ReconcileAggregateSuggestion], Int, Array[LogicalReviewTask], Int) -> ReconcileSummary
+
+pub fn classify_match_result(String, Int, String) -> (String, String, String)
+
+pub fn cleanup_stale_index(String) -> Unit
+
+pub fn collapse_aggregate_only_candidates(Array[ReconcileCandidate], Array[ReconcileAggregateSuggestion], String, Array[String]) -> Array[ReconcileCandidate]
+
+pub async fn collect_document_fragments(Array[String], ReconcileConfig, @registry.KGFRegistry) -> (Array[DocFragment], Array[@tracking.FileState], Array[String])
+
+pub fn compute_vocabulary_divergences(Array[String], ReconcileConfig, @registry.KGFRegistry) -> Array[VocabularyDivergence]
+
+pub fn contains_string(Array[String], String) -> Bool
+
+pub fn discovery_roots(String) -> Array[String]
+
+pub fn document_symbol_kinds(@types.KGFSpec) -> Map[String, Bool]?
+
+pub fn extract_document_fragments(String, String, String) -> Array[DocFragment]
+
+pub fn extract_markdown_fragments(String, String, String) -> Array[DocFragment]
+
+pub fn extract_toml_fragments(String, String, String) -> Array[DocFragment]
+
+pub fn is_document_path(String, ReconcileConfig, @registry.KGFRegistry) -> Bool
+
+pub fn lower_string(String) -> String
+
+pub fn make_fragment(String, String, String, String, String) -> DocFragment
+
+pub fn make_hash(Array[String]) -> String
+
+pub fn match_fragment_with_terms(CodeUnit, UnitMatchTerms, FragmentMatchSignals, Bool) -> (Int, String, Array[String])
+
+pub fn normalize_spaces(String) -> String
+
+pub async fn persisted_report(ReconcileConfig) -> ReconcileReport?
+
+pub fn preview_text(String, max_len? : Int) -> String
+
+pub async fn report(ReconcileConfig) -> ReconcileReport?
+
+pub fn select_document_spec(String, ReconcileConfig, @registry.KGFRegistry) -> String?
+
+pub fn sync_candidates_with_index(Array[ReconcileCandidate], ReconcileManifest, @vcdb.VectorDB, String, Int) -> IndexSyncResult
+
+pub fn unit_match_terms(CodeUnit) -> UnitMatchTerms
+
+// Errors
+
+// Types and methods
+pub(all) struct CacheState {
+  cache_hit : Bool
+  source_fingerprint : String
+  review_state_hash : String
+  reused_candidates : Int
+  reused_logical_reviews : Int
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct CandidateBuildResult {
+  candidates : Array[ReconcileCandidate]
+  module_covered_symbols : Int
+}
+
+pub(all) struct CodeAnchor {
+  symbol_id : String
+  name : String
+  kind : String
+  ns : String
+  module_path : String
+  inline_doc : String?
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct CodeUnit {
+  symbol_id : String
+  name : String
+  kind : String
+  ns : String
+  module_id : String
+  module_path : String
+  inline_doc : String?
+  code_hash : String
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct DocAnchor {
+  fragment_id : String
+  path : String
+  spec : String
+  kind : String
+  title : String
+  preview : String
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct DocFragment {
+  id : String
+  path : String
+  spec : String
+  kind : String
+  title : String
+  content : String
+  preview : String
+  fragment_hash : String
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct FragmentMatchSignals {
+  exact_tokens : Map[String, Bool]
+  reference_tokens : Map[String, Bool]
+  lowered_text : String
+}
+
+pub(all) struct IndexSyncResult {
+  candidates : Array[ReconcileCandidate]
+  logical_reviews : Array[LogicalReviewTask]
+  manifest : ReconcileManifest
+  db : @vcdb.VectorDB
+  reused_candidates : Int
+  reused_logical_reviews : Int
+}
+
+pub(all) struct IndexedRecordEntry {
+  record_key : String
+  record_kind : String
+  digest : String
+  vector_id : Int64
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct LogicalReviewEntry {
+  review_key : String
+  candidate_id : String
+  digest : String
+  status : String
+  verdict : String?
+  updated_at : Int
+  vector_id : Int64
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct LogicalReviewTask {
+  review_key : String
+  candidate_id : String
+  digest : String
+  status : String
+  reused : Bool
+  code_anchor : CodeAnchor
+  doc_anchor : DocAnchor?
+  evidence : MappingEvidence
+  recommended_action : String
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct MappingEvidence {
+  matched_terms : Array[String]
+  match_kind : String
+  reason : String
+  code_time : @tracking.TimestampInfo
+  doc_time : @tracking.TimestampInfo
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct ReconcileAggregateSuggestion {
+  id : String
+  scope : String
+  path : String
+  status : String
+  recommended_action : String
+  candidate_count : Int
+  logical_review_count : Int
+  symbol_ids : Array[String]
+  symbol_names : Array[String]
+  doc_paths : Array[String]
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct ReconcileCandidate {
+  id : String
+  symbol_id : String
+  status : String
+  time_relation : String
+  mapping_confidence : Int
+  recommended_action : String
+  mechanical_digest : String
+  code_anchor : CodeAnchor
+  doc_anchor : DocAnchor?
+  evidence : MappingEvidence
+  logical_review_key : String?
+  logical_review_status : String
+  logical_review_reused : Bool
+  needs_logical_review : Bool
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct ReconcileConfig {
+  target_dir : String
+  output : String
+  format : String
+  documents : @config.ReconcileDocumentScope
+  specs_dir : String
+  index_dir : String
+  config_path : String
+  review_results_path : String
+  threshold_seconds : Int
+  max_candidates : Int
+  allow_file_fallback : Bool
+  git_preferred : Bool
+  mtime_fallback : Bool
+  logical_review_mode : String
+  parallel : Bool
+  vocabulary_divergence_threshold : Double
+} derive(Eq, Show)
+pub fn ReconcileConfig::default() -> Self
+
+pub(all) struct ReconcileManifest {
+  version : String
+  updated_at : Int
+  config_hash : String
+  source_fingerprint : String
+  review_state_hash : String
+  report_path : String
+  vector_id_counter : Int64
+  files : Map[String, @tracking.FileState]
+  records : Map[String, IndexedRecordEntry]
+  logical_reviews : Map[String, LogicalReviewEntry]
+} derive(Eq, Show, ToJson, @json.FromJson)
+pub fn ReconcileManifest::allocate_vector_id(Self) -> (Self, Int64)
+pub fn ReconcileManifest::empty() -> Self
+
+pub(all) struct ReconcileReport {
+  version : String
+  generated_at : Int
+  config : ReconcileReportConfig
+  summary : ReconcileSummary
+  aggregate_suggestions : Array[ReconcileAggregateSuggestion]
+  candidates : Array[ReconcileCandidate]
+  logical_reviews : Array[LogicalReviewTask]
+  vocabulary_divergences : Array[VocabularyDivergence]
+  skipped : Array[String]
+  used_specs : Array[String]
+  cache_state : CacheState
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct ReconcileReportConfig {
+  target_dir : String
+  specs_dir : String
+  index_dir : String
+  review_results_path : String
+  doc_scope : String
+  doc_paths : Array[String]
+  doc_specs : Array[String]
+  threshold_seconds : Int
+  max_candidates : Int
+  allow_file_fallback : Bool
+  git_preferred : Bool
+  mtime_fallback : Bool
+  logical_review_mode : String
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct ReconcileSummary {
+  total_symbols : Int
+  symbols_with_inline_doc : Int
+  module_covered_symbols : Int
+  total_doc_fragments : Int
+  total_candidates : Int
+  total_aggregate_suggestions : Int
+  module_suggestions : Int
+  project_suggestions : Int
+  missing_doc : Int
+  stale_doc : Int
+  review_mapping : Int
+  review_both : Int
+  pending_logical_reviews : Int
+  new_logical_reviews : Int
+  reused_logical_reviews : Int
+  completed_logical_reviews : Int
+  vocabulary_divergence_count : Int
+  max_vocabulary_divergence : Double
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct ReviewDecisionInput {
+  review_key : String
+  status : String
+  verdict : String?
+} derive(Eq, Show, @json.FromJson)
+
+pub(all) struct UnitMatchTerms {
+  lowered_name : String
+  lowered_qualified_dot : String
+  lowered_qualified_colon : String
+  lowered_inline : String
+  lowered_base : String
+  has_ns : Bool
+}
+
+pub(all) struct VocabularyDivergence {
+  module_path : String
+  doc_path : String
+  cosine_distance : Double
+  gap_terms : Array[String]
+  source_term_count : Int
+  doc_term_count : Int
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+// Type aliases
+pub using @tracking {type FileState}
+
+pub using @tracking {type TimestampInfo}
+
+// Traits
+

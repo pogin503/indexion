@@ -21,28 +21,51 @@ pub const DEFAULT_INDEX_DIR : String = ".indexion/digest"
 
 pub const DEFAULT_TFIDF_DIM : Int = 256
 
+pub const DEFAULT_TFIDF_KEY : String = "tfidf"
+
+pub const INDEX_GRAPH_FILE : String = "graph.json"
+
+pub const INDEX_LOCK_FILE : String = "build.lock"
+
+pub const INDEX_MANIFEST_FILE : String = "manifest.json"
+
 pub const OPENAI_EMBEDDING_DIM : Int = 1536
 
+pub fn compute_index_file_names(Array[String]) -> Array[String]
+
 pub fn default_exclude_kinds() -> Array[String]
+
+pub fn graph_path(String) -> String
+
+pub fn index_path(String, String) -> String
+
+pub fn lock_path(String) -> String
+
+pub fn manifest_path(String) -> String
+
+pub fn vectors_db_path(String, String) -> String
+
+pub fn vocabulary_json_path(String, String) -> String
 
 // Errors
 
 // Types and methods
 pub(all) struct DigestConfig {
-  embedding_source : EmbeddingSource
-  embedding_provider : EmbeddingProvider
-  vcdb_strategy : VcdbStrategy
+  embedding_source : @trkbt10/indexion/src/embedding/config.EmbeddingSource
+  providers : Array[@trkbt10/indexion/src/embedding/config.ProviderConfig]
+  vcdb_strategy : @trkbt10/indexion/src/embedding/config.VcdbStrategy
   include_external : Bool
   exclude_kinds : Array[String]
   index_dir : String
   llm_config : LlmConfig?
 } derive(Eq, Show)
 pub fn DigestConfig::default() -> Self
-pub fn DigestConfig::embedding_dim(Self) -> Int
+pub fn DigestConfig::first_of_kind(Self, String) -> @trkbt10/indexion/src/embedding/config.ProviderConfig?
+pub fn DigestConfig::from_provider(@trkbt10/indexion/src/embedding/config.EmbeddingProvider) -> Self
 pub fn DigestConfig::get_embedding_text(Self, @types.FunctionUnit) -> String
-pub fn DigestConfig::is_remote(Self) -> Bool
+pub fn DigestConfig::get_provider(Self, String) -> @trkbt10/indexion/src/embedding/config.ProviderConfig?
 pub fn DigestConfig::openai(String) -> Self
-pub fn DigestConfig::precomputed(String) -> Self
+pub fn DigestConfig::provider_keys(Self) -> Array[String]
 pub fn DigestConfig::to_extract_config(Self) -> @extract.ExtractConfig
 pub fn DigestConfig::uses_impressions(Self) -> Bool
 pub fn DigestConfig::with_exclude_kinds(Self, Array[String]) -> Self
@@ -51,28 +74,6 @@ pub fn DigestConfig::with_impress_prompt(Self, String) -> Self
 pub fn DigestConfig::with_impressions(String) -> Self
 pub fn DigestConfig::with_index_dir(Self, String) -> Self
 pub fn DigestConfig::with_llm(Self, LlmConfig) -> Self
-pub fn DigestConfig::with_provider(Self, EmbeddingProvider) -> Self
-
-pub(all) struct EmbeddingApiConfig {
-  api_key : String
-  api_key_env : String
-  base_url : String
-  model : String
-  dim : Int
-} derive(Eq, Show)
-pub fn EmbeddingApiConfig::new(String) -> Self
-
-pub(all) enum EmbeddingProvider {
-  TfIdf(Int)
-  OpenAI(EmbeddingApiConfig)
-  Precomputed(String)
-} derive(Eq, Show)
-
-pub(all) enum EmbeddingSource {
-  Raw
-  Impression
-  RawWithContext
-} derive(Eq, Show)
 
 pub(all) struct LlmConfig {
   api_key : String
@@ -85,13 +86,16 @@ pub fn LlmConfig::openai(String) -> Self
 pub fn LlmConfig::with_model(String, String) -> Self
 pub fn LlmConfig::with_prompt(String, String) -> Self
 
-pub(all) enum VcdbStrategy {
-  BruteForce
-  Hnsw
-  Ivf
-} derive(Eq, Show)
-
 // Type aliases
+pub using @trkbt10/indexion/src/embedding/config {type EmbeddingApiConfig}
+
+pub using @trkbt10/indexion/src/embedding/config {type EmbeddingProvider}
+
+pub using @trkbt10/indexion/src/embedding/config {type EmbeddingSource}
+
+pub using @trkbt10/indexion/src/embedding/config {type ProviderConfig}
+
+pub using @trkbt10/indexion/src/embedding/config {type VcdbStrategy}
 
 // Traits
 

@@ -1,4 +1,23 @@
 ///|
+async fn fixture_collect_document_fragments(
+  discovered_paths : Array[String],
+  config : ReconcileConfig,
+  registry : @registry.KGFRegistry,
+) -> (Array[DocFragment], Array[FileState], Array[String]) {
+  @reconcile_plan.collect_document_fragments(discovered_paths, config, registry)
+}
+
+///|
+async fn fixture_build_candidates(
+  units : Array[CodeUnit],
+  fragments : Array[DocFragment],
+  config : ReconcileConfig,
+  registry : @registry.KGFRegistry,
+) -> @reconcile_plan.CandidateBuildResult {
+  @reconcile_plan.build_candidates(units, fragments, config, registry)
+}
+
+///|
 fn build_code_graph(
   target_dir : String,
   specs_dir : String,
@@ -10,7 +29,7 @@ fn build_code_graph(
   // (which excludes fixtures/) would filter out the test target itself.
   let discover_opts = @pipeline.DiscoverOptions::new(kgf_ignore~)
   let discovered_paths = @pipeline.discover_files(
-    discovery_roots(target_dir),
+    @reconcile_plan.discovery_roots(target_dir),
     discover_opts,
   )
   let files = @pipeline.collect_supported_files(discovered_paths, registry)
@@ -64,13 +83,13 @@ async test "reconcile: fixture typescript project validates cross-package drift 
   assert_true(units.iter().any(fn(unit) { unit.name == "normalizePath" }))
   assert_false(units.iter().any(fn(unit) { unit.name == "defaultFormat" }))
 
-  let (fragments, _states, used_specs) = collect_document_fragments(
+  let (fragments, _states, used_specs) = fixture_collect_document_fragments(
     discovered_paths, config, registry,
   )
   assert_eq(used_specs, ["markdown"])
   assert_eq(fragments.length(), 3)
 
-  let result = build_candidates(units, fragments, config, registry)
+  let result = fixture_build_candidates(units, fragments, config, registry)
   assert_eq(result.candidates.length(), 1)
   assert_eq(result.candidates[0].code_anchor.name, "normalizePath")
   assert_eq(result.candidates[0].status, "missing_doc")

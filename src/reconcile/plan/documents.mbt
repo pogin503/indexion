@@ -13,7 +13,7 @@ fn document_path_scope(config : ReconcileConfig) -> @scope.PathScope {
 }
 
 ///|
-fn is_document_path(
+pub fn is_document_path(
   path : String,
   config : ReconcileConfig,
   registry : @registry.KGFRegistry,
@@ -27,7 +27,7 @@ fn is_document_path(
 }
 
 ///|
-fn select_document_spec(
+pub fn select_document_spec(
   path : String,
   config : ReconcileConfig,
   registry : @registry.KGFRegistry,
@@ -91,7 +91,7 @@ fn select_document_spec(
 }
 
 ///|
-fn extract_document_fragments(
+pub fn extract_document_fragments(
   path : String,
   spec : String,
   content : String,
@@ -105,7 +105,7 @@ fn extract_document_fragments(
 }
 
 ///|
-fn make_fragment(
+pub fn make_fragment(
   path : String,
   spec : String,
   kind : String,
@@ -148,7 +148,7 @@ fn markdown_heading_text(line : String) -> String {
 }
 
 ///|
-fn extract_markdown_fragments(
+pub fn extract_markdown_fragments(
   path : String,
   spec : String,
   content : String,
@@ -242,7 +242,7 @@ fn extract_plaintext_fragments(
 }
 
 ///|
-fn extract_toml_fragments(
+pub fn extract_toml_fragments(
   path : String,
   spec : String,
   content : String,

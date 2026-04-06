@@ -2,7 +2,7 @@
 package "trkbt10/indexion/src/search"
 
 import {
-  "trkbt10/indexion/src/digest/config",
+  "trkbt10/indexion/src/embedding/config",
   "trkbt10/vcdb",
   "trkbt10/vcdb/core/filter",
   "trkbt10/vcdb/core/types",
@@ -36,7 +36,7 @@ pub struct SearchEngine {
 pub fn SearchEngine::add(Self, SearchDocument, Array[Double], Int64) -> Unit
 pub fn SearchEngine::add_raw(Self, Int64, Array[Double], @types.Attrs) -> Unit
 pub async fn SearchEngine::build(Array[SearchDocument], provider? : @config.EmbeddingProvider) -> Self raise @trkbt10/indexion/src/digest/embed.EmbedError
-pub fn SearchEngine::create(dim? : Int, strategy? : VcdbStrategy) -> Self
+pub fn SearchEngine::create(dim? : Int, strategy? : @config.VcdbStrategy) -> Self
 pub fn SearchEngine::dim(Self) -> Int
 pub fn SearchEngine::from_bytes(Bytes) -> Self
 pub fn SearchEngine::remove(Self, Int64) -> Bool
@@ -51,12 +51,6 @@ pub(all) struct SearchHit {
   document : SearchDocument
   score : Double
 } derive(ToJson)
-
-pub(all) enum VcdbStrategy {
-  Hnsw
-  Ivf
-  BruteForce
-}
 
 // Type aliases
 

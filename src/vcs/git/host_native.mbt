@@ -84,6 +84,98 @@ async fn git_last_commit_seconds_native(root : String, path : String) -> Int? {
 }
 
 ///|
+async fn git_repo_root_native(anchor : String) -> String? {
+  try {
+    let (exit_code, stdout) = @async_process.collect_stdout(
+      "git",
+      ["-C", anchor, "rev-parse", "--show-toplevel"][:],
+      stderr=@async_process.redirect_to_file(null_device()),
+    )
+    if exit_code != 0 {
+      return None
+    }
+    Some(stdout.text().trim().to_string())
+  } catch {
+    _ => None
+  }
+}
+
+///|
+async fn git_head_commit_native(
+  root : String,
+  short? : Bool = false,
+) -> String? {
+  try {
+    let args = if short {
+      ["-C", root, "rev-parse", "--short", "HEAD"][:]
+    } else {
+      ["-C", root, "rev-parse", "HEAD"][:]
+    }
+    let (exit_code, stdout) = @async_process.collect_stdout(
+      "git",
+      args,
+      stderr=@async_process.redirect_to_file(null_device()),
+    )
+    if exit_code != 0 {
+      return None
+    }
+    Some(stdout.text().trim().to_string())
+  } catch {
+    _ => None
+  }
+}
+
+///|
+async fn git_head_commit_seconds_native(root : String) -> Int? {
+  try {
+    let (exit_code, stdout) = @async_process.collect_stdout(
+      "git",
+      ["-C", root, "log", "-1", "--format=%ct", "HEAD"][:],
+      stderr=@async_process.redirect_to_file(null_device()),
+    )
+    if exit_code != 0 {
+      return None
+    }
+    parse_epoch_seconds(stdout.text())
+  } catch {
+    _ => None
+  }
+}
+
+///|
+async fn git_changed_files_native(
+  root : String,
+  base : String,
+  paths : Array[String],
+) -> Array[String]? {
+  try {
+    let args : Array[String] = ["-C", root, "diff", "--name-only", base, "--"]
+    for path in paths {
+      args.push(path)
+    }
+    let (exit_code, stdout) = @async_process.collect_stdout(
+      "git",
+      args[:],
+      stderr=@async_process.redirect_to_file(null_device()),
+    )
+    if exit_code != 0 {
+      return None
+    }
+    let files : Array[String] = []
+    for line in stdout.text().split("\n") {
+      let trimmed = line.trim().to_string()
+      if trimmed.length() > 0 {
+        files.push(trimmed)
+      }
+    }
+    files.sort()
+    Some(files)
+  } catch {
+    _ => None
+  }
+}
+
+///|
 /// Return the file modification time in seconds, or None if unavailable.
 pub async fn file_mtime_seconds(path : String) -> Int? {
   try {

@@ -1,0 +1,61 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/embedding/config"
+
+// Values
+pub const DEFAULT_API_BASE_URL : String = "https://api.openai.com/v1/embeddings"
+
+pub const DEFAULT_API_KEY_ENV : String = "OPENAI_API_KEY"
+
+pub const DEFAULT_EMBEDDING_MODEL : String = "text-embedding-3-small"
+
+pub const DEFAULT_TFIDF_DIM : Int = 256
+
+pub const DEFAULT_TFIDF_KEY : String = "tfidf"
+
+pub const OPENAI_EMBEDDING_DIM : Int = 1536
+
+pub fn sanitize_provider_key(String) -> String
+
+// Errors
+
+// Types and methods
+pub(all) struct EmbeddingApiConfig {
+  api_key : String
+  api_key_env : String
+  base_url : String
+  model : String
+  dim : Int
+} derive(Eq, Show)
+pub fn EmbeddingApiConfig::new(String) -> Self
+
+pub(all) enum EmbeddingProvider {
+  TfIdf(Int)
+  OpenAI(EmbeddingApiConfig)
+  Precomputed(String)
+} derive(Eq, Show)
+
+pub(all) enum EmbeddingSource {
+  Raw
+  Impression
+  RawWithContext
+} derive(Eq, Show)
+
+pub(all) struct ProviderConfig {
+  key : String
+  kind : String
+  dim : Int
+  api_config : EmbeddingApiConfig?
+} derive(Eq, Show)
+pub fn ProviderConfig::remote(EmbeddingApiConfig) -> Self
+pub fn ProviderConfig::tfidf(dim? : Int) -> Self
+
+pub(all) enum VcdbStrategy {
+  BruteForce
+  Hnsw
+  Ivf
+} derive(Eq, Show)
+
+// Type aliases
+
+// Traits
+

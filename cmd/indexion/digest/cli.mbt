@@ -448,7 +448,7 @@ pub fn is_provider_available(config : CliConfig) -> Bool {
 /// Build DigestConfig from CLI config and optional file-level providers.
 pub fn build_digest_config(
   config : CliConfig,
-  file_providers~ : Array[@config.ProviderFileEntry] = [],
+  file_providers? : Array[@config.ProviderFileEntry] = [],
 ) -> @dconfig.DigestConfig {
   let vcdb_strategy = match config.strategy {
     "bruteforce" => @embed_config.BruteForce
@@ -541,14 +541,9 @@ fn resolve_file_providers(
         model,
         dim,
       }
-      providers.push({
-        key,
-        kind: "remote",
-        dim,
-        api_config: Some(api_config),
-      })
+      providers.push({ key, kind: "remote", dim, api_config: Some(api_config) })
     }
-  } else {
+  } nobreak {
     providers
   }
 }
@@ -587,9 +582,7 @@ async fn query_with_cascade(
     if p.kind == "remote" && index.has_provider(p.key) {
       match p.api_config {
         Some(api_config) => {
-          let hits = try {
-            index.query_api(purpose, top_k, p.key, api_config)
-          } catch {
+          let hits = index.query_api(purpose, top_k, p.key, api_config) catch {
             _ => {
               log_error(
                 "Query failed for provider '" + p.key + "', trying next",
@@ -753,10 +746,7 @@ async fn run_rebuild_async(config : CliConfig) -> Unit {
     config,
     file_providers=config.file_providers,
   )
-  @index.delete_index_files(
-    config.index_dir,
-    digest_config.provider_keys(),
-  )
+  @index.delete_index_files(config.index_dir, digest_config.provider_keys())
   log_progress("Starting full rebuild...")
   run_build_inner(config)
   @index.release_build_lock(config.index_dir)
@@ -776,9 +766,10 @@ async fn run_build_inner(config : CliConfig) -> Unit {
   // When building from source directory, file content hashes are computed at
   // collection time (the only point where file content is in memory) and passed
   // through to enable accurate file-level change detection.
-  let (graph, file_hashes) : (@graph.CodeGraph, Map[String, @cas_types.ContentHash]?) = if @common.is_directory(
-    config.input_path,
-  ) {
+  let (graph, file_hashes) : (
+    @graph.CodeGraph,
+    Map[String, @cas_types.ContentHash]?,
+  ) = if @common.is_directory(config.input_path) {
     match build_graph_from_source(config.input_path, config.specs_dir) {
       Some(r) => (r.graph, Some(r.file_hashes))
       None => return
@@ -790,7 +781,10 @@ async fn run_build_inner(config : CliConfig) -> Unit {
     }
   }
   log_progress("Loaded graph: " + graph.symbol_count().to_string() + " symbols")
-  let index = @index.DigestIndex::load_or_create(config.index_dir, digest_config)
+  let index = @index.DigestIndex::load_or_create(
+    config.index_dir,
+    digest_config,
+  )
   // Build with file-level change detection when file hashes are available
   let result = index.build_with_config(graph, digest_config, file_hashes~) catch {
     @embed.ParseError(msg) => {
@@ -887,7 +881,10 @@ async fn run_query_async(config : CliConfig) -> Unit {
     }
   }
   // Load the (potentially just-updated) index
-  let index = @index.DigestIndex::load_or_create(config.index_dir, digest_config)
+  let index = @index.DigestIndex::load_or_create(
+    config.index_dir,
+    digest_config,
+  )
   if index.manifest.functions.length() == 0 {
     log_error("No index found at " + config.index_dir)
     println("Run 'indexion digest build <path>' first.")
@@ -913,7 +910,12 @@ async fn run_query_async(config : CliConfig) -> Unit {
   // Query: cascade through providers (remote first, then local)
   println("Query: " + config.purpose)
   println("")
-  let hits = query_with_cascade(index, digest_config, config.purpose, config.top_k)
+  let hits = query_with_cascade(
+    index,
+    digest_config,
+    config.purpose,
+    config.top_k,
+  )
   println(@query.format_results(hits))
 }
 
@@ -1054,20 +1056,24 @@ fn run_status(config : CliConfig) -> Unit {
       println("")
       println("Changes detected:")
       println(
-        "  Modified files: " + modified_files.to_string() + " / " + manifest.files.length().to_string(),
+        "  Modified files: " +
+        modified_files.to_string() +
+        " / " +
+        manifest.files.length().to_string(),
       )
       for path in modified_list {
         println("    " + path)
       }
       if modified_files > 10 {
-        println(
-          "    ... and " + (modified_files - 10).to_string() + " more",
-        )
+        println("    ... and " + (modified_files - 10).to_string() + " more")
       }
       println("  New files:      " + new_files.to_string())
       println("  Deleted files:  " + deleted_files.to_string())
       println(
-        "  Affected functions: ~" + affected_functions.to_string() + " / " + manifest.functions.length().to_string(),
+        "  Affected functions: ~" +
+        affected_functions.to_string() +
+        " / " +
+        manifest.functions.length().to_string(),
       )
       if modified_files > 0 || new_files > 0 || deleted_files > 0 {
         println("")
