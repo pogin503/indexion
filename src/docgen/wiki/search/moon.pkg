@@ -1,7 +1,7 @@
 import {
   "moonbitlang/x/fs" @fs,
   "trkbt10/indexion/src/docgen/wiki/types" @types,
-  "trkbt10/indexion/src/digest/config" @dconfig,
+  "trkbt10/indexion/src/embedding/config" @embed_config,
   "trkbt10/indexion/src/digest/embed" @embed,
   "trkbt10/indexion/src/search" @search_engine,
   "trkbt10/indexion/src/kgf/features" @kgf_features,

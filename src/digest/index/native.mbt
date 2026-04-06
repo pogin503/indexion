@@ -515,11 +515,7 @@ pub fn DigestIndex::with_config(config : @config.DigestConfig) -> DigestIndex {
     })
   }
   let manifest = @manifest.DigestManifest::new(spec_hash, provider_metas)
-  let strategy : @search.VcdbStrategy = match config.vcdb_strategy {
-    @config.Hnsw => @search.Hnsw
-    @config.Ivf => @search.Ivf
-    @config.BruteForce => @search.BruteForce
-  }
+  let strategy = config.vcdb_strategy
   let engines : Map[String, @search.SearchEngine] = {}
   let tfidf_providers : Map[String, TfidfEmbeddingProvider] = {}
   let vid_to_fid : Map[String, Map[Int64, String]] = {}

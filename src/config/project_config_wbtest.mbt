@@ -130,15 +130,15 @@ test "project_config: parse_project_toml_config parses digest section" {
     #|api_base_url = "https://example.com/v1/embeddings"
     #|model = "nomic-embed-text"
   let config = parse_project_toml_config(input)
-  assert_eq(config.digest.provider, Some("openai"))
-  assert_eq(config.digest.strategy, Some("hnsw"))
-  assert_eq(config.digest.dim, Some(1536))
-  assert_eq(config.digest.api_key_env, Some("MY_API_KEY"))
+  assert_eq(config.embedding.provider, Some("openai"))
+  assert_eq(config.embedding.strategy, Some("hnsw"))
+  assert_eq(config.embedding.dim, Some(1536))
+  assert_eq(config.embedding.api_key_env, Some("MY_API_KEY"))
   assert_eq(
-    config.digest.api_base_url,
+    config.embedding.api_base_url,
     Some("https://example.com/v1/embeddings"),
   )
-  assert_eq(config.digest.model, Some("nomic-embed-text"))
+  assert_eq(config.embedding.model, Some("nomic-embed-text"))
 }
 
 ///|
@@ -162,24 +162,24 @@ test "project_config: parse_project_json_config parses digest section" {
     #|  }
     #|}
   let config = parse_project_json_config(input)
-  assert_eq(config.digest.provider, Some("openai"))
-  assert_eq(config.digest.strategy, Some("hnsw"))
-  assert_eq(config.digest.dim, Some(1536))
-  assert_eq(config.digest.api_key_env, Some("MY_KEY"))
+  assert_eq(config.embedding.provider, Some("openai"))
+  assert_eq(config.embedding.strategy, Some("hnsw"))
+  assert_eq(config.embedding.dim, Some(1536))
+  assert_eq(config.embedding.api_key_env, Some("MY_KEY"))
 }
 
 ///|
-test "project_config: merge_digest_configs primary takes precedence" {
-  let primary : DigestFileConfig = {
-    ..DigestFileConfig::empty(),
+test "project_config: merge_embedding_configs primary takes precedence" {
+  let primary : EmbeddingFileConfig = {
+    ..EmbeddingFileConfig::empty(),
     provider: Some("openai"),
   }
-  let fallback : DigestFileConfig = {
-    ..DigestFileConfig::empty(),
+  let fallback : EmbeddingFileConfig = {
+    ..EmbeddingFileConfig::empty(),
     provider: Some("tfidf"),
     strategy: Some("ivf"),
   }
-  let merged = merge_digest_configs(primary, fallback)
+  let merged = merge_embedding_configs(primary, fallback)
   assert_eq(merged.provider, Some("openai"))
   assert_eq(merged.strategy, Some("ivf"))
 }

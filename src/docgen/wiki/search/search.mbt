@@ -38,7 +38,7 @@ pub struct WikiSearchIndex {
 /// Uses the shared SearchEngine with the specified EmbeddingProvider.
 pub async fn build_search_index(
   pages : Map[String, @types.WikiPage],
-  provider : @dconfig.EmbeddingProvider,
+  provider : @embed_config.EmbeddingProvider,
   registry? : @kgf_registry.KGFRegistry? = None,
 ) -> WikiSearchIndex raise @embed.EmbedError {
   let sections : Map[String, WikiSection] = {}

@@ -8,6 +8,7 @@ pub struct GlobalConfig {
   kgfs_dir : String?
   reconcile : ReconcileFileConfig
   digest : DigestFileConfig
+  embedding : EmbeddingFileConfig
   mcp : McpFileConfig
   doc : DocFileConfig
 } derive(Eq, Show)
@@ -19,6 +20,7 @@ pub fn GlobalConfig::empty() -> GlobalConfig {
     kgfs_dir: None,
     reconcile: ReconcileFileConfig::empty(),
     digest: DigestFileConfig::empty(),
+    embedding: EmbeddingFileConfig::empty(),
     mcp: McpFileConfig::empty(),
     doc: DocFileConfig::empty(),
   }
@@ -78,6 +80,11 @@ pub fn parse_global_toml_config(content : String) -> GlobalConfig {
         if parsed.length() > 0 {
           config = { ..config, kgfs_dir: Some(expand_tilde(parsed)) }
         }
+      }
+    } else if section == "embedding" {
+      config = {
+        ..config,
+        embedding: parse_embedding_section_key(config.embedding, key, value),
       }
     } else if section == "mcp" {
       config = { ..config, mcp: parse_mcp_section_key(config.mcp, key, value) }

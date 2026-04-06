@@ -89,8 +89,10 @@ fn resolve_static_dir(matches : @argparse.Matches) -> String? {
 ///|
 pub async fn run_export(matches : @argparse.Matches) -> Unit {
   // Parse serve config for digest build
-  let serve_config = ServeConfig::from_matches(matches).apply_file_config(
-    @digest_cli.load_digest_file_config(),
+  let serve_config = ServeConfig::from_matches(
+    matches,
+  ).apply_embedding_file_config(
+    @digest_cli.load_embedding_file_config(),
   )
   let output_dir = match matches.values.get("output") {
     Some(vals) => if vals.length() > 0 { vals[0] } else { "dist/pages" }

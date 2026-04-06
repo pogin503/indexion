@@ -22,6 +22,8 @@ pub(all) struct CliConfig {
   model : String
   source_dir : String
   no_update : Bool
+  /// Provider entries from config file ([[digest.providers]]).
+  file_providers : Array[@config.ProviderFileEntry]
 }
 
 ///|
@@ -43,6 +45,7 @@ pub fn CliConfig::default() -> CliConfig {
     model: @dconfig.DEFAULT_EMBEDDING_MODEL,
     source_dir: "",
     no_update: false,
+    file_providers: [],
   }
 }
 
@@ -266,9 +269,9 @@ pub fn command() -> @argparse.Command {
 ///|
 /// Apply DigestFileConfig from .indexion.toml as defaults.
 /// CLI-explicit values (non-default) take precedence over file config.
-pub fn CliConfig::apply_file_config(
+pub fn CliConfig::apply_embedding_file_config(
   self : CliConfig,
-  file : @config.DigestFileConfig,
+  file : @config.EmbeddingFileConfig,
 ) -> CliConfig {
   let defaults = CliConfig::default()
   let mut config = self
@@ -311,6 +314,10 @@ pub fn CliConfig::apply_file_config(
       }
     None => ()
   }
+  // Preserve file-level provider entries for build_digest_config
+  if file.providers.length() > 0 {
+    config = { ..config, file_providers: file.providers }
+  }
   config
 }
 
@@ -322,10 +329,18 @@ pub fn load_digest_file_config() -> @config.DigestFileConfig {
 }
 
 ///|
+/// Load EmbeddingFileConfig from .indexion.toml in the current directory.
+pub fn load_embedding_file_config() -> @config.EmbeddingFileConfig {
+  let config_path = @config.find_indexion_config_path(".")
+  @config.load_effective_embedding_config(config_path)
+}
+
+///|
 /// Entry point for the digest subcommand using argparse Matches.
 pub async fn run_matches(matches : @argparse.Matches) -> Unit {
-  let merged = CliConfig::from_matches(matches).apply_file_config(
-    load_digest_file_config(),
+  let embed_file_config = load_embedding_file_config()
+  let merged = CliConfig::from_matches(matches).apply_embedding_file_config(
+    embed_file_config,
   )
   let config = {
     ..merged,
@@ -396,25 +411,25 @@ pub fn resolve_provider(config : CliConfig) -> @dconfig.EmbeddingProvider {
   match config.provider {
     "openai" =>
       match @sys.get_env_var(env_name) {
-        Some(key) => @dconfig.OpenAI(build_api_config(config, key))
+        Some(key) => @embed_config.OpenAI(build_api_config(config, key))
         None => {
           log_error(
             env_name +
             " environment variable not set. Semantic search requires an API key when provider=openai.",
           )
-          @dconfig.TfIdf(config.dim)
+          @embed_config.TfIdf(config.dim)
         }
       }
-    "tfidf" => @dconfig.TfIdf(config.dim)
+    "tfidf" => @embed_config.TfIdf(config.dim)
     "auto" | "" =>
       // Auto-detect: use embedding API if key present, otherwise tfidf
       match @sys.get_env_var(env_name) {
-        Some(key) => @dconfig.OpenAI(build_api_config(config, key))
-        None => @dconfig.TfIdf(config.dim)
+        Some(key) => @embed_config.OpenAI(build_api_config(config, key))
+        None => @embed_config.TfIdf(config.dim)
       }
     _ => {
       log_error("Unknown provider: " + config.provider + ", using tfidf")
-      @dconfig.TfIdf(config.dim)
+      @embed_config.TfIdf(config.dim)
     }
   }
 }
@@ -430,17 +445,112 @@ pub fn is_provider_available(config : CliConfig) -> Bool {
 }
 
 ///|
-/// Build DigestConfig from CLI config.
-/// Converts EmbeddingProvider enum into providers array.
-pub fn build_digest_config(config : CliConfig) -> @dconfig.DigestConfig {
-  let provider = resolve_provider(config)
+/// Build DigestConfig from CLI config and optional file-level providers.
+pub fn build_digest_config(
+  config : CliConfig,
+  file_providers~ : Array[@config.ProviderFileEntry] = [],
+) -> @dconfig.DigestConfig {
   let vcdb_strategy = match config.strategy {
-    "bruteforce" => @dconfig.BruteForce
-    "ivf" => @dconfig.Ivf
-    _ => @dconfig.Hnsw
+    "bruteforce" => @embed_config.BruteForce
+    "ivf" => @embed_config.Ivf
+    _ => @embed_config.Hnsw
   }
-  let base = @dconfig.DigestConfig::from_provider(provider)
-  { ..base, vcdb_strategy, index_dir: config.index_dir }
+  // If file config has explicit providers, use those
+  let providers = if file_providers.length() > 0 {
+    resolve_file_providers(file_providers, config)
+  } else {
+    // Fall back to CLI --provider flag
+    let provider = resolve_provider(config)
+    @dconfig.DigestConfig::from_provider(provider).providers
+  }
+  {
+    embedding_source: @embed_config.Raw,
+    providers,
+    vcdb_strategy,
+    include_external: false,
+    exclude_kinds: @dconfig.default_exclude_kinds(),
+    index_dir: config.index_dir,
+    llm_config: None,
+  }
+}
+
+///|
+/// Convert file-level provider entries into ProviderConfig array.
+fn resolve_file_providers(
+  entries : Array[@config.ProviderFileEntry],
+  cli_config : CliConfig,
+) -> Array[@dconfig.ProviderConfig] {
+  let providers : Array[@dconfig.ProviderConfig] = []
+  for entry in entries {
+    let kind = match entry.kind {
+      Some(k) => k
+      None => "tfidf"
+    }
+    if kind == "tfidf" {
+      let dim = match entry.dim {
+        Some(d) => d
+        None => @dconfig.DEFAULT_TFIDF_DIM
+      }
+      let key = match entry.key {
+        Some(k) => k
+        None => @dconfig.DEFAULT_TFIDF_KEY
+      }
+      providers.push({ key, kind: "tfidf", dim, api_config: None })
+    } else {
+      // Remote provider — resolve API key from env
+      let api_key_env = match entry.api_key_env {
+        Some(e) => e
+        None => cli_config.api_key_env
+      }
+      let entry_key_display = match entry.key {
+        Some(k) => k
+        None => "remote"
+      }
+      let api_key = match @sys.get_env_var(api_key_env) {
+        Some(k) => k
+        None => {
+          log_error(
+            api_key_env +
+            " not set, skipping provider '" +
+            entry_key_display +
+            "'",
+          )
+          continue
+        }
+      }
+      let model = match entry.model {
+        Some(m) => m
+        None => @dconfig.DEFAULT_EMBEDDING_MODEL
+      }
+      let base_url = match entry.api_base_url {
+        Some(u) => u
+        None => @dconfig.DEFAULT_API_BASE_URL
+      }
+      let dim = match entry.dim {
+        Some(d) => d
+        None => @dconfig.OPENAI_EMBEDDING_DIM
+      }
+      let key = match entry.key {
+        Some(k) => k
+        None => @embed_config.sanitize_provider_key(model)
+      }
+      let api_config : @dconfig.EmbeddingApiConfig = {
+        api_key,
+        api_key_env,
+        base_url,
+        model,
+        dim,
+      }
+      providers.push({
+        key,
+        kind: "remote",
+        dim,
+        api_config: Some(api_config),
+      })
+    }
+  } else {
+    providers
+  }
 }
 
 ///|
@@ -639,7 +749,10 @@ async fn run_rebuild_async(config : CliConfig) -> Unit {
     return
   }
   log_progress("Deleting existing index for full rebuild...")
-  let digest_config = build_digest_config(config)
+  let digest_config = build_digest_config(
+    config,
+    file_providers=config.file_providers,
+  )
   @index.delete_index_files(
     config.index_dir,
     digest_config.provider_keys(),
@@ -653,7 +766,10 @@ async fn run_rebuild_async(config : CliConfig) -> Unit {
 /// Inner build logic. Separated so that run_build_async can guarantee
 /// lock release regardless of how this function exits.
 async fn run_build_inner(config : CliConfig) -> Unit {
-  let digest_config = build_digest_config(config)
+  let digest_config = build_digest_config(
+    config,
+    file_providers=config.file_providers,
+  )
   log_progress("Building digest index from: " + config.input_path)
   log_progress("Provider: " + config_provider_name(digest_config))
   // Detect input type and build graph.
@@ -730,7 +846,10 @@ async fn run_query_async(config : CliConfig) -> Unit {
     println("Usage: indexion digest query \"<purpose>\"")
     return
   }
-  let digest_config = build_digest_config(config)
+  let digest_config = build_digest_config(
+    config,
+    file_providers=config.file_providers,
+  )
   // Auto-update: rebuild index if source has changed, unless --no-update
   if !config.no_update {
     let source_dir = detect_source_dir(config)

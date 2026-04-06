@@ -4,20 +4,14 @@
 /// Single source of truth for vcdb construction, document storage, and search.
 /// All consumers (search CLI, digest, wiki, grep) obtain vcdb through this module.
 
-///|
-/// vcdb construction strategy.
-pub(all) enum VcdbStrategy {
-  Hnsw
-  Ivf
-  BruteForce
-}
+// VcdbStrategy is defined in @embed_config (SoT).
 
 ///|
 /// Search engine — the sole vcdb owner and accessor.
 pub struct SearchEngine {
   db : @vcdb.VectorDB
   tfidf_provider : @text_embed.TfidfEmbeddingProvider?
-  openai_config : @dconfig.EmbeddingApiConfig?
+  openai_config : @embed_config.EmbeddingApiConfig?
   documents : Map[String, SearchDocument]
   id_map : Map[Int, String]
 }
@@ -27,12 +21,12 @@ pub struct SearchEngine {
 /// All consumers must use this function to obtain a vcdb instance.
 pub fn SearchEngine::create(
   dim? : Int = 256,
-  strategy? : VcdbStrategy = Hnsw,
+  strategy? : @embed_config.VcdbStrategy = @embed_config.Hnsw,
 ) -> SearchEngine {
   let db = match strategy {
-    Hnsw => @vcdb.VectorDB::with_hnsw(dim)
-    Ivf => @vcdb.VectorDB::with_ivf(dim)
-    BruteForce => @vcdb.VectorDB::with_dim(dim)
+    @embed_config.Hnsw => @vcdb.VectorDB::with_hnsw(dim)
+    @embed_config.Ivf => @vcdb.VectorDB::with_ivf(dim)
+    @embed_config.BruteForce => @vcdb.VectorDB::with_dim(dim)
   }
   { db, tfidf_provider: None, openai_config: None, documents: {}, id_map: {} }
 }
@@ -57,7 +51,7 @@ pub fn SearchEngine::with_tfidf(
 /// Set the OpenAI embedding config.
 pub fn SearchEngine::with_openai(
   self : SearchEngine,
-  config : @dconfig.EmbeddingApiConfig,
+  config : @embed_config.EmbeddingApiConfig,
 ) -> SearchEngine {
   { ..self, openai_config: Some(config) }
 }
@@ -118,19 +112,19 @@ pub fn SearchEngine::serialize(self : SearchEngine) -> Bytes {
 /// Convenience function for ad-hoc search (search CLI, wiki search).
 pub async fn SearchEngine::build(
   documents : Array[SearchDocument],
-  provider? : @dconfig.EmbeddingProvider = @dconfig.TfIdf(256),
+  provider? : @embed_config.EmbeddingProvider = @embed_config.TfIdf(256),
 ) -> SearchEngine raise @embed.EmbedError {
   let texts : Array[String] = []
   for doc in documents {
     texts.push(doc.text)
   }
   let dim : Int = match provider {
-    @dconfig.TfIdf(d) => d
-    @dconfig.OpenAI(cfg) => cfg.dim
-    @dconfig.Precomputed(_) => 256
+    @embed_config.TfIdf(d) => d
+    @embed_config.OpenAI(cfg) => cfg.dim
+    @embed_config.Precomputed(_) => 256
   }
   let (embeddings, tfidf_prov, openai_cfg) = match provider {
-    @dconfig.TfIdf(_) => {
+    @embed_config.TfIdf(_) => {
       let prov = @text_embed.TfidfEmbeddingProvider::new(dim)
       prov.build_vocabulary(texts)
       let embs : Array[Array[Double]] = []
@@ -139,13 +133,13 @@ pub async fn SearchEngine::build(
       }
       (embs, Some(prov), None)
     }
-    @dconfig.OpenAI(api_config) => {
+    @embed_config.OpenAI(api_config) => {
       let embs = embed_openai_batched(api_config, texts)
       let prov = @text_embed.TfidfEmbeddingProvider::new(dim)
       prov.build_vocabulary(texts)
       (embs, Some(prov), Some(api_config))
     }
-    @dconfig.Precomputed(_) => {
+    @embed_config.Precomputed(_) => {
       let prov = @text_embed.TfidfEmbeddingProvider::new(dim)
       prov.build_vocabulary(texts)
       let embs : Array[Array[Double]] = []
@@ -289,7 +283,7 @@ fn build_vcdb_attrs(doc : SearchDocument) -> @vcdb_core.Attrs {
 ///|
 /// Embed texts in batches using OpenAI API.
 async fn embed_openai_batched(
-  api_config : @dconfig.EmbeddingApiConfig,
+  api_config : @embed_config.EmbeddingApiConfig,
   texts : Array[String],
 ) -> Array[Array[Double]] raise @embed.EmbedError {
   let cfg : @embed.OpenAIConfig = {

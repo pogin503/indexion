@@ -7,7 +7,7 @@
 ///|
 async fn load_wiki_pages(
   config : ServeConfig,
-  provider : @dconfig.EmbeddingProvider,
+  provider : @embed_config.EmbeddingProvider,
 ) -> (@wiki_types.WikiData, @wiki_search.WikiSearchIndex?) {
   let wiki_dir = match
     @config.resolve_project_indexion_dir(config.workspace_dir, "wiki") {
@@ -37,7 +37,7 @@ async fn load_wiki_pages(
           )
           @wiki_search.build_search_index(
             data.pages,
-            @dconfig.TfIdf(256),
+            @embed_config.TfIdf(256),
             registry~,
           ) catch {
             _ => {

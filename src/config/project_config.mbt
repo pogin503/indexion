@@ -8,6 +8,7 @@ pub struct ProjectFileConfig {
   inherit_global : Bool
   reconcile : ReconcileFileConfig
   digest : DigestFileConfig
+  embedding : EmbeddingFileConfig
   mcp : McpFileConfig
   doc : DocFileConfig
 } derive(Eq, Show)
@@ -28,6 +29,7 @@ pub fn ProjectFileConfig::default() -> ProjectFileConfig {
     inherit_global: true,
     reconcile: ReconcileFileConfig::empty(),
     digest: DigestFileConfig::empty(),
+    embedding: EmbeddingFileConfig::empty(),
     mcp: McpFileConfig::empty(),
     doc: DocFileConfig::empty(),
   }
@@ -53,16 +55,33 @@ pub fn load_project_config(path : String) -> ProjectFileConfig {
 
 ///|
 /// Parse project TOML configuration.
+/// Supports both [section] headers and [[array.of.tables]] headers.
 pub fn parse_project_toml_config(content : String) -> ProjectFileConfig {
   let mut config = ProjectFileConfig::default()
   let mut section = ""
+  let mut is_array_section = false
   for raw_line in split_lines(content) {
     let line = trim_toml_comment(raw_line)
     if line.length() == 0 {
       continue
     }
+    // Detect [[array.of.tables]] (double bracket)
+    if line.has_prefix("[[") && line.has_suffix("]]") {
+      section = trim_quotes(substring(line, 2, line.length() - 2))
+      is_array_section = true
+      // Handle array-of-tables entry creation
+      if section == "embedding.providers" {
+        config = {
+          ..config,
+          embedding: start_embedding_provider_entry(config.embedding),
+        }
+      }
+      continue
+    }
+    // Detect [section] (single bracket)
     if line.has_prefix("[") && line.has_suffix("]") {
       section = trim_quotes(substring(line, 1, line.length() - 1))
+      is_array_section = false
       continue
     }
     let eq_idx = find_last_char(line, '=')
@@ -71,7 +90,24 @@ pub fn parse_project_toml_config(content : String) -> ProjectFileConfig {
     }
     let key = trim_string(substring(line, 0, eq_idx))
     let value = trim_string(substring(line, eq_idx + 1, line.length()))
-    if section == "indexion" {
+    // Dispatch based on section
+    if is_array_section && section == "embedding.providers" {
+      config = {
+        ..config,
+        embedding: parse_embedding_provider_key(config.embedding, key, value),
+      }
+    } else if section == "embedding" {
+      config = {
+        ..config,
+        embedding: parse_embedding_section_key(config.embedding, key, value),
+      }
+    } else if section == "digest" {
+      // Backward compat: [digest] provider/strategy/dim fields → [embedding]
+      config = {
+        ..config,
+        embedding: parse_embedding_section_key(config.embedding, key, value),
+      }
+    } else if section == "indexion" {
       if key == "inherit" {
         match parse_bool_like(value) {
           Some(v) => config = { ..config, inherit_global: v }
@@ -125,13 +161,15 @@ fn parse_project_json_config(content : String) -> ProjectFileConfig {
   }
   // Parse [reconcile] section (reuse existing logic)
   let reconcile = load_reconcile_from_json_root(root)
-  // Parse [digest] section
-  let digest = load_digest_from_json_root(root)
+  // Parse [digest] section (currently empty)
+  let digest = DigestFileConfig::empty()
+  // Parse [embedding] section
+  let embedding = load_embedding_from_json_root(root)
   // Parse [mcp] section
   let mcp = load_mcp_from_json_root(root)
   // Parse [doc] section
   let doc = load_doc_from_json_root(root)
-  { ..config, reconcile, digest, mcp, doc }
+  { ..config, reconcile, digest, embedding, mcp, doc }
 }
 
 ///|
@@ -319,5 +357,19 @@ pub fn load_effective_digest_config(
     merge_digest_configs(project.digest, global.digest)
   } else {
     project.digest
+  }
+}
+
+///|
+/// Load merged embedding config from project + global config files.
+pub fn load_effective_embedding_config(
+  project_config_path : String,
+) -> EmbeddingFileConfig {
+  let project = load_project_config(project_config_path)
+  if project.inherit_global {
+    let global = load_global_config()
+    merge_embedding_configs(project.embedding, global.embedding)
+  } else {
+    project.embedding
   }
 }

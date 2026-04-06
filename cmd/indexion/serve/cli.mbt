@@ -209,9 +209,9 @@ priv struct ServerState {
 ///|
 /// Apply DigestFileConfig from .indexion.toml as defaults for serve.
 /// CLI-explicit values (non-default) take precedence over file config.
-pub fn ServeConfig::apply_file_config(
+pub fn ServeConfig::apply_embedding_file_config(
   self : ServeConfig,
-  file : @config.DigestFileConfig,
+  file : @config.EmbeddingFileConfig,
 ) -> ServeConfig {
   let defaults = ServeConfig::default()
   let mut config = self
@@ -267,8 +267,9 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     }
     _ => ()
   }
-  let merged = ServeConfig::from_matches(matches).apply_file_config(
-    @digest_cli.load_digest_file_config(),
+  let embed_file_config = @digest_cli.load_embedding_file_config()
+  let merged = ServeConfig::from_matches(matches).apply_embedding_file_config(
+    embed_file_config,
   )
   let resolved_index_dir : String? = if merged.index_dir ==
     @dconfig.DEFAULT_INDEX_DIR {
@@ -283,8 +284,14 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       None => "" // no project root — skip index loading
     },
   }
-  let digest_cli_config = make_digest_cli_config(config)
-  let digest_config = @digest_cli.build_digest_config(digest_cli_config)
+  let digest_cli_config = {
+    ..make_digest_cli_config(config),
+    file_providers: embed_file_config.providers,
+  }
+  let digest_config = @digest_cli.build_digest_config(
+    digest_cli_config,
+    file_providers=digest_cli_config.file_providers,
+  )
   // Try to load existing index if project root was found.
   // Users can explicitly build via POST /api/digest/rebuild.
   let state = if resolved_index_dir is None {
@@ -498,6 +505,7 @@ fn make_digest_cli_config(config : ServeConfig) -> @digest_cli.CliConfig {
     model: config.model,
     source_dir: config.workspace_dir,
     no_update: false,
+    file_providers: [],
   }
 }
 
