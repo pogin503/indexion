@@ -194,19 +194,23 @@ fn extract_document_sections(
     Some(toks) => toks
     None => return
   }
-  let raw_sections = @kgf_features.extract_sections_from_tokens(
-    tokens,
-    content,
-    file_id,
-    file_title,
-    spec~,
-  )
   let lang = match reg.detect_from_path(path) {
     Some(l) => l
     None => ""
   }
-  for section in raw_sections {
-    let (id, title, section_content, level) = section
+  let raw_sections = @doc_structure.extract_document_sections(
+    tokens,
+    content,
+    spec~,
+    path~,
+  )
+  for idx, section in raw_sections {
+    let id = if idx == 0 {
+      file_id
+    } else {
+      file_id + "#section-" + (idx + 1).to_string()
+    }
+    let level = section.level.unwrap_or(if idx == 0 { 1 } else { 2 })
     let kind_str = if level == 1 { "page" } else { "section" }
     let doc_attrs : Map[String, String] = {}
     doc_attrs["node_type"] = @kgf_features.node_type_document
@@ -217,8 +221,12 @@ fn extract_document_sections(
     doc_attrs["parent"] = file_id
     out.push({
       id,
-      text: title + " " + section_content,
-      title,
+      text: section.title + " " + section.content,
+      title: if idx == 0 {
+        file_title
+      } else {
+        section.title
+      },
       source: path,
       line: 0,
       kind: kind_str,

@@ -11,6 +11,13 @@ pub fn cpu_count() -> Int {
 }
 
 ///|
+/// Exit the current process immediately with the given status code.
+pub fn exit(code : Int) -> Unit {
+  flush_stdio_native()
+  exit_now(code)
+}
+
+///|
 /// Run multiple tasks in parallel using fork.
 /// Each task returns a String (typically serialized JSON).
 /// Falls back to sequential execution if fork is unavailable.

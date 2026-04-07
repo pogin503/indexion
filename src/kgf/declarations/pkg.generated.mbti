@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/kgf/declarations"
+
+import {
+  "trkbt10/indexion/src/kgf/registry",
+  "trkbt10/indexion/src/kgf/types",
+}
+
+// Values
+pub fn count_pub_declarations(String, String, @registry.KGFRegistry?) -> Int
+
+pub fn extract_doc_map(Array[@types.Tok]) -> Map[Int, String]
+
+pub fn extract_doc_map_from_source(String, String, @registry.KGFRegistry?) -> Map[Int, String]
+
+pub fn extract_pub_declarations_and_doc_map(String, String, @registry.KGFRegistry?) -> (Array[PubDeclaration], Map[Int, String])
+
+pub fn tokenize_source(String, String, @registry.KGFRegistry?) -> Array[@types.Tok]?
+
+// Errors
+
+// Types and methods
+pub struct PubDeclaration {
+  kind : String
+  name : String
+  line : Int
+  category : String
+}
+
+// Type aliases
+
+// Traits
+

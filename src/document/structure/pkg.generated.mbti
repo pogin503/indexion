@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/document/structure"
+
+import {
+  "trkbt10/indexion/src/kgf/registry",
+  "trkbt10/indexion/src/kgf/types",
+}
+
+// Values
+pub fn extract_document_sections(Array[@types.Tok], String, spec? : @types.KGFSpec?, path? : String) -> Array[DocumentSection]
+
+pub fn extract_headings(Array[@types.Tok], spec? : @types.KGFSpec?, source? : String, path? : String) -> Array[Heading]
+
+pub fn interpret_document(String, String, @types.KGFSpec) -> InterpretedDocument
+
+pub fn load_document_sections(String, String, @registry.KGFRegistry?) -> Array[DocumentSection]
+
+// Errors
+
+// Types and methods
+pub struct DocumentFact {
+  kind : String
+  payload : Map[String, Json]
+}
+
+pub struct DocumentSection {
+  marker : String
+  title : String
+  line : Int
+  end_line : Int
+  content : String
+  level : Int?
+}
+
+pub(all) struct Heading {
+  marker : String
+  text : String
+  line : Int
+  level : Int?
+}
+
+pub struct InterpretedDocument {
+  facts : Array[DocumentFact]
+}
+
+// Type aliases
+
+// Traits
+

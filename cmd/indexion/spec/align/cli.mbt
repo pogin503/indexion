@@ -434,7 +434,7 @@ async fn run_watch(matches : @argparse.Matches) -> Unit {
           emitted += 1
           if config.watch_limit > 0 && emitted >= config.watch_limit {
             if should_fail {
-              panic()
+              @parallel.exit(1)
             }
             return
           }
@@ -471,7 +471,7 @@ async fn run_subcommand(
           label="Spec align report",
         )
         if report.should_fail {
-          panic()
+          @parallel.exit(1)
         }
       }
       None => println("No alignment data found.")

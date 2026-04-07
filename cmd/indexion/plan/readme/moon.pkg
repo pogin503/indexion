@@ -6,6 +6,7 @@ import {
   "trkbt10/indexion/src/filter" @filter,
   "trkbt10/indexion/src/pipeline" @pipeline,
   "trkbt10/indexion/src/vcs/git" @vcs_git,
+  "trkbt10/indexion/src/kgf/declarations" @kgf_declarations,
   "trkbt10/indexion/src/kgf/features" @kgf_features,
   "trkbt10/indexion/src/kgf/registry" @kgf_registry,
   "trkbt10/indexion/src/kgf/types" @kgf_types,

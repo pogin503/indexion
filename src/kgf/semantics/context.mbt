@@ -259,3 +259,11 @@ pub fn SemEvalCtx::collect_refs(self : SemEvalCtx) -> Array[Map[String, Json]] {
   }
   refs
 }
+
+///|
+/// Returns a copy of all recorded events.
+pub fn SemEvalCtx::get_events(
+  self : SemEvalCtx,
+) -> Array[(String, Map[String, Json])] {
+  self.events.copy()
+}

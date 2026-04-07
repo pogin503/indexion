@@ -42,11 +42,98 @@ fn apply_one(
       Some(fst) => run_fst(fst, input)
       None => raise Failure::Failure("Unknown preprocess FST: \{fst_name}")
     }
+  } else if step.has_prefix("blankLineIfContainsCodepoint:") {
+    let codepoint = parse_hex_codepoint(
+      step["blankLineIfContainsCodepoint:".length():].to_string(),
+    )
+    blank_line_if_contains_codepoint(input, codepoint)
+  } else if step.has_prefix("blankLineIfContains:") {
+    let needle = step["blankLineIfContains:".length():].to_string()
+    blank_line_if_contains(input, needle)
+  } else if step.has_prefix("blankLineIfTrimHasPrefix:") {
+    let prefix = step["blankLineIfTrimHasPrefix:".length():].to_string()
+    blank_line_if_trim_has_prefix(input, prefix)
   } else if step == "base64ToHex" {
     base64_to_hex(input)
   } else {
     raise Failure::Failure("Unknown preprocess step: \{step}")
   }
+}
+
+///|
+fn blank_matching_lines(
+  input : String,
+  predicate : (String, String) -> Bool,
+) -> String {
+  let buf = StringBuilder::new()
+  let line = StringBuilder::new()
+  let flush = fn(text : String, has_newline : Bool) {
+    let trimmed = text.trim().to_string()
+    if predicate(text, trimmed) {
+      if has_newline {
+        buf.write_string("\n")
+      }
+    } else {
+      buf.write_string(text)
+      if has_newline {
+        buf.write_string("\n")
+      }
+    }
+  }
+  for ch in input {
+    if ch == '\n' {
+      flush(line.to_string(), true)
+      line.reset()
+    } else if ch == '\r' {
+      continue
+    } else {
+      line.write_char(ch)
+    }
+  }
+  let trailing = line.to_string()
+  if trailing.length() > 0 {
+    flush(trailing, false)
+  }
+  buf.to_string()
+}
+
+///|
+fn blank_line_if_contains(input : String, needle : String) -> String {
+  blank_matching_lines(input, fn(raw, _trimmed) { raw.contains(needle) })
+}
+
+///|
+fn blank_line_if_trim_has_prefix(input : String, prefix : String) -> String {
+  blank_matching_lines(input, fn(_raw, trimmed) { trimmed.has_prefix(prefix) })
+}
+
+///|
+fn blank_line_if_contains_codepoint(input : String, codepoint : Int) -> String {
+  blank_matching_lines(input, fn(raw, _trimmed) {
+    let ch = Int::unsafe_to_char(codepoint)
+    raw.contains(ch.to_string())
+  })
+}
+
+///|
+fn parse_hex_codepoint(text : String) -> Int raise Error {
+  if text.length() == 0 {
+    raise Failure::Failure("Expected hexadecimal codepoint")
+  }
+  let mut result = 0
+  for ch in text {
+    let digit = if ch >= '0' && ch <= '9' {
+      ch.to_int() - '0'.to_int()
+    } else if ch >= 'a' && ch <= 'f' {
+      ch.to_int() - 'a'.to_int() + 10
+    } else if ch >= 'A' && ch <= 'F' {
+      ch.to_int() - 'A'.to_int() + 10
+    } else {
+      raise Failure::Failure("Invalid hexadecimal codepoint: \{text}")
+    }
+    result = result * 16 + digit
+  }
+  result
 }
 
 // starts_with: use String::has_prefix (builtin)

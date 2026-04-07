@@ -1,0 +1,17 @@
+import {
+  "moonbitlang/core/json" @json,
+  "moonbitlang/core/env" @env,
+  "moonbitlang/x/fs" @fs,
+  "trkbt10/indexion/cmd/indexion/common" @common,
+  "trkbt10/indexion/src/config" @config,
+  "trkbt10/indexion/src/document/structure" @doc_structure,
+  "trkbt10/indexion/src/kgf/features" @kgf_features,
+  "trkbt10/indexion/src/kgf/registry" @registry,
+  "trkbt10/indexion/src/pipeline" @pipeline,
+}
+
+import {
+  "moonbitlang/async",
+  "trkbt10/indexion/cmd/indexion/spec/align" @align_cli,
+  "trkbt10/indexion/src/spec/align" @spec_align,
+} for "wbtest"

@@ -6,6 +6,8 @@ pub fn available() -> Bool
 
 pub fn cpu_count() -> Int
 
+pub fn exit(Int) -> Unit
+
 pub fn run_parallel(Array[() -> String]) -> Array[String]
 
 // Errors

@@ -1,0 +1,399 @@
+///|
+pub(all) struct Heading {
+  marker : String
+  text : String
+  line : Int
+  level : Int?
+}
+
+///|
+pub struct DocumentSection {
+  marker : String
+  title : String
+  line : Int
+  end_line : Int
+  content : String
+  level : Int?
+}
+
+///|
+pub struct DocumentFact {
+  kind : String
+  payload : Map[String, Json]
+}
+
+///|
+pub struct InterpretedDocument {
+  facts : Array[DocumentFact]
+}
+
+///|
+fn preprocess_content(content : String, spec : @kgf_types.KGFSpec) -> String {
+  match spec.get_preprocess() {
+    Some(steps) =>
+      @kgf_preprocess.apply_preprocess(
+        content,
+        Some(steps),
+        spec.get_preprocess_fst(),
+      ) catch {
+        _ => panic()
+      }
+    None => content
+  }
+}
+
+///|
+pub fn load_document_sections(
+  content : String,
+  path : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[DocumentSection] {
+  let reg = match registry {
+    Some(value) => value
+    None => return []
+  }
+  let language = match reg.detect_from_path(path) {
+    Some(value) => value
+    None => return []
+  }
+  let spec = match reg.get_spec(language) {
+    Some(value) => value
+    None => return []
+  }
+  let prepared = preprocess_content(content, spec)
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(prepared)
+  extract_document_sections(tokens, prepared, spec=Some(spec), path~)
+}
+
+///|
+pub fn extract_headings(
+  tokens : Array[@kgf_types.Tok],
+  spec? : @kgf_types.KGFSpec? = None,
+  source? : String = "",
+  path? : String = "",
+) -> Array[Heading] {
+  let headings : Array[Heading] = []
+  let the_spec = match spec {
+    Some(value) => value
+    None => return headings
+  }
+  let section_token = match the_spec.get_feature("section_token") {
+    Some(values) =>
+      if values.length() > 0 {
+        values[0]
+      } else {
+        return headings
+      }
+    None => return headings
+  }
+  let text_token_set : Map[String, Bool] = {}
+  match the_spec.get_feature("heading_text_tokens") {
+    Some(kinds) =>
+      for kind in kinds {
+        text_token_set[kind] = true
+      }
+    None => ()
+  }
+  let section_is_text = text_token_set.contains(section_token)
+  let source_chars = source.to_array()
+  let has_source = source_chars.length() > 0
+  let mut line = 1
+  let mut i = 0
+  while i < tokens.length() {
+    let tok = tokens[i]
+    let kind = tok.get_kind()
+    if kind == "NL" {
+      line += 1
+      i += 1
+      continue
+    }
+    if kind != section_token {
+      i += 1
+      continue
+    }
+    let heading_line = if has_source {
+      line_from_position(tok.get_pos(), source_chars)
+    } else {
+      line
+    }
+    let buf = StringBuilder::new()
+    if section_is_text {
+      buf.write_string(tok.get_text())
+    }
+    i += 1
+    if !section_is_text {
+      while i < tokens.length() {
+        let current_kind = tokens[i].get_kind()
+        if current_kind == "SKIP" || current_kind == "WS" {
+          i += 1
+        } else {
+          break
+        }
+      }
+      let heading_pos = tok.get_pos()
+      let mut first = true
+      while i < tokens.length() {
+        let current_kind = tokens[i].get_kind()
+        if current_kind == "NL" || current_kind == section_token {
+          break
+        }
+        if has_source &&
+          crossed_newline(heading_pos, tokens[i].get_pos(), source_chars) {
+          break
+        }
+        if text_token_set.contains(current_kind) {
+          if !first {
+            buf.write_string(" ")
+          }
+          buf.write_string(tokens[i].get_text())
+          first = false
+        }
+        i += 1
+      }
+    }
+    let text = buf.to_string()
+    if text.length() > 0 {
+      headings.push({
+        marker: tok.get_text(),
+        text,
+        line: heading_line,
+        level: None,
+      })
+    }
+  }
+  merge_heading_levels(headings, source, path, the_spec)
+}
+
+///|
+fn line_from_position(pos : Int, source_chars : Array[Char]) -> Int {
+  let mut line = 1
+  for i = 0; i < pos && i < source_chars.length(); i = i + 1 {
+    if source_chars[i] == '\n' {
+      line += 1
+    }
+  }
+  line
+}
+
+///|
+fn crossed_newline(start : Int, end : Int, source_chars : Array[Char]) -> Bool {
+  for i = start; i < end && i < source_chars.length(); i = i + 1 {
+    if source_chars[i] == '\n' {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn split_by_newline(text : String) -> Array[String] {
+  let lines : Array[String] = []
+  let chars = text.to_array()
+  let buf : Array[Char] = []
+  for c in chars {
+    if c == '\n' {
+      lines.push(String::from_array(buf))
+      buf.clear()
+    } else if c == '\r' {
+      continue
+    } else {
+      buf.push(c)
+    }
+  }
+  if buf.length() > 0 {
+    lines.push(String::from_array(buf))
+  }
+  lines
+}
+
+///|
+pub fn extract_document_sections(
+  tokens : Array[@kgf_types.Tok],
+  content : String,
+  spec? : @kgf_types.KGFSpec? = None,
+  path? : String = "",
+) -> Array[DocumentSection] {
+  guard spec is Some(_) else { return [] }
+  let headings = extract_headings(tokens, spec~, source=content, path~)
+  let lines = split_by_newline(content)
+  let sections : Array[DocumentSection] = []
+  for idx, heading in headings {
+    let end_line = if idx + 1 < headings.length() {
+      headings[idx + 1].line - 1
+    } else {
+      lines.length()
+    }
+    let buf = StringBuilder::new()
+    for j = heading.line; j < end_line && j < lines.length(); j = j + 1 {
+      buf.write_string(lines[j])
+      buf.write_string("\n")
+    }
+    let section_content = buf.to_string()
+    if section_content.length() > 0 {
+      sections.push({
+        marker: heading.marker,
+        title: heading.text,
+        line: heading.line,
+        end_line,
+        content: section_content,
+        level: heading.level,
+      })
+    }
+  }
+  sections
+}
+
+///|
+pub fn interpret_document(
+  content : String,
+  path : String,
+  spec : @kgf_types.KGFSpec,
+) -> InterpretedDocument {
+  let prepared = preprocess_content(content, spec)
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(prepared)
+  let sections = extract_document_sections(
+    tokens,
+    prepared,
+    spec=Some(spec),
+    path~,
+  )
+  { facts: eval_document_facts(sections, path, spec) }
+}
+
+///|
+fn merge_heading_levels(
+  headings : Array[Heading],
+  content : String,
+  path : String,
+  spec : @kgf_types.KGFSpec,
+) -> Array[Heading] {
+  if headings.length() == 0 || path.length() == 0 {
+    return headings
+  }
+  let total_lines = split_by_newline(content).length()
+  let sections : Array[DocumentSection] = []
+  for idx, heading in headings {
+    let end_line = if idx + 1 < headings.length() {
+      headings[idx + 1].line - 1
+    } else {
+      total_lines
+    }
+    sections.push({
+      marker: heading.marker,
+      title: heading.text,
+      line: heading.line,
+      end_line,
+      content: "",
+      level: None,
+    })
+  }
+  let levels = heading_levels_by_line(eval_document_facts(sections, path, spec))
+  let result : Array[Heading] = []
+  for heading in headings {
+    let level = match levels.get(heading.line) {
+      Some(value) => Some(value)
+      None => heading.level
+    }
+    result.push({ ..heading, level, })
+  }
+  result
+}
+
+///|
+fn heading_levels_by_line(facts : Array[DocumentFact]) -> Map[Int, Int] {
+  let result : Map[Int, Int] = {}
+  for fact in facts {
+    if fact.kind != "document_heading" {
+      continue
+    }
+    let line = json_int_or_zero(fact.payload.get("line"))
+    let level = json_int_or_zero(fact.payload.get("level"))
+    if line > 0 && level > 0 {
+      result.set(line, level)
+    }
+  }
+  result
+}
+
+///|
+fn json_int_or_zero(value : Json?) -> Int {
+  match value {
+    Some(Number(n, ..)) => n.to_int()
+    Some(String(text)) => parse_int_or_zero(text)
+    _ => 0
+  }
+}
+
+///|
+fn parse_int_or_zero(text : String) -> Int {
+  let mut value = 0
+  let mut has_digit = false
+  for ch in text {
+    if ch >= '0' && ch <= '9' {
+      value = value * 10 + (ch.to_int() - '0'.to_int())
+      has_digit = true
+    } else {
+      return 0
+    }
+  }
+  if has_digit {
+    value
+  } else {
+    0
+  }
+}
+
+///|
+fn eval_document_facts(
+  sections : Array[DocumentSection],
+  path : String,
+  spec : @kgf_types.KGFSpec,
+) -> Array[DocumentFact] {
+  if sections.length() == 0 {
+    return []
+  }
+  let graph = @graph.CodeGraph::new()
+  let _ = graph.get_or_add_module(path, file=Some(path))
+  let ctx = @kgf_semantics.SemEvalCtx::new(
+    spec,
+    graph,
+    path,
+    "",
+    spec.get_language(),
+    fn(_) { false },
+  )
+  for section in sections {
+    let labels : Map[String, Json] = {}
+    labels.set("title", section.title.to_json())
+    labels.set("title_text", section.title.to_json())
+    labels.set("body", section.content.to_json())
+    labels.set("body_text", section.content.to_json())
+    labels.set("content", section.content.to_json())
+    labels.set("content_text", section.content.to_json())
+    labels.set("marker", section.marker.to_json())
+    labels.set("line", section.line.to_json())
+    labels.set("end_line", section.end_line.to_json())
+    match section.level {
+      Some(level) => labels.set("level", level.to_json())
+      None => ()
+    }
+    @kgf_semantics.eval_rule_semantics("DocumentSection", labels, ctx)
+  }
+  let facts : Array[DocumentFact] = []
+  for event in ctx.get_events() {
+    if event.0 != "Note" {
+      continue
+    }
+    match event.1.get("type") {
+      Some(String(kind)) =>
+        match event.1.get("payload") {
+          Some(Object(payload)) => facts.push({ kind, payload })
+          _ => ()
+        }
+      _ => ()
+    }
+  }
+  facts
+}

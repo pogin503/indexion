@@ -138,7 +138,11 @@ pub fn extract_sections(
   let tokens = @kgf_features.tokenize_source(content, effective_path, registry)
   match tokens {
     Some(toks) =>
-      extract_sections_from_tokens(toks, content, page_id, page_title, spec~)
+      extract_sections_from_document(
+        @doc_structure.extract_document_sections(toks, content, spec~),
+        page_id,
+        page_title,
+      )
     None =>
       // If no KGF spec matches, return full page as single section
       [
@@ -154,28 +158,32 @@ pub fn extract_sections(
 }
 
 ///|
-/// Extract sections from KGF tokens using the shared extract_sections_from_tokens.
-fn extract_sections_from_tokens(
-  tokens : Array[@kgf_types.Tok],
-  content : String,
+/// Extract sections from generic document sections.
+fn extract_sections_from_document(
+  raw_sections : Array[@doc_structure.DocumentSection],
   page_id : String,
   page_title : String,
-  spec? : @kgf_types.KGFSpec? = None,
 ) -> Array[WikiSection] {
-  let raw_sections = @kgf_features.extract_sections_from_tokens(
-    tokens,
-    content,
-    page_id,
-    page_title,
-    spec~,
-  )
   let sections : Array[WikiSection] = []
-  for section in raw_sections {
-    let (id, title, section_content, level) = section
+  for idx, section in raw_sections {
+    let level = section.level.unwrap_or(if idx == 0 { 1 } else { 2 })
+    let id = if idx == 0 {
+      page_id
+    } else {
+      page_id +
+      "#" +
+      @common.make_anchor(section.title) +
+      "-" +
+      (idx + 1).to_string()
+    }
     sections.push(WikiSection::{
       id,
-      title,
-      content: section_content,
+      title: if idx == 0 {
+        page_title
+      } else {
+        section.title
+      },
+      content: section.content,
       page_id,
       level,
     })

@@ -385,7 +385,7 @@ fn discover_packages_recursive(
       let file_path = current_dir + "/" + entry
       let content = @fs.read_file_to_string(file_path) catch { _ => continue }
       pub_count = pub_count +
-        @kgf_features.count_pub_declarations(content, file_path, registry)
+        @kgf_declarations.count_pub_declarations(content, file_path, registry)
     }
   }
   if has_mbt_files && pub_count > 0 {

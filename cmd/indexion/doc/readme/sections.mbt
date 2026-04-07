@@ -53,7 +53,7 @@ pub fn extract_overview(content : String) -> String {
   // Find line of first level-2 heading
   let mut first_h2_line = lines.length() + 1
   for h in headings {
-    if h.level == 2 {
+    if h.level.unwrap_or(1) == 2 {
       first_h2_line = h.line
       break
     }
@@ -61,7 +61,7 @@ pub fn extract_overview(content : String) -> String {
   // Find title heading (level 1)
   let mut title_line = -1
   for h in headings {
-    if h.level == 1 {
+    if h.level.unwrap_or(1) == 1 {
       title_line = h.line
       break
     }
@@ -170,8 +170,9 @@ pub fn parse_markdown_to_sections(
   // Find minimum heading level
   let mut min_level = 99
   for h in headings {
-    if h.level < min_level {
-      min_level = h.level
+    let level = h.level.unwrap_or(1)
+    if level < min_level {
+      min_level = level
     }
   }
   // Build flat section list: (level, heading_text, content_lines)
@@ -187,7 +188,7 @@ pub fn parse_markdown_to_sections(
           flat.push((current_level, current_heading, current_lines))
         }
         current_heading = heading.text
-        current_level = heading.level
+        current_level = heading.level.unwrap_or(1)
         current_lines = []
       }
       None => current_lines.push(line)
@@ -311,7 +312,7 @@ pub fn filter_parsed_sections(
 /// Tokenize content and extract headings using KGF.
 fn tokenize_and_extract_headings(
   content : String,
-) -> Array[@kgf_features.Heading] {
+) -> Array[@doc_structure.Heading] {
   let registry = @kgf_features.load_registry(specs_dir="kgfs", target_dir=".")
   let reg = match registry {
     Some(r) => r
@@ -323,7 +324,13 @@ fn tokenize_and_extract_headings(
   }
   let tokens = @kgf_features.tokenize_source(content, "doc.md", registry)
   match tokens {
-    Some(toks) => @kgf_features.extract_headings(toks, spec~, source=content)
+    Some(toks) =>
+      @doc_structure.extract_headings(
+        toks,
+        spec~,
+        source=content,
+        path="doc.md",
+      )
     None => []
   }
 }
@@ -331,9 +338,9 @@ fn tokenize_and_extract_headings(
 ///|
 /// Build a map from line number to Heading for fast lookup.
 fn build_heading_line_map(
-  headings : Array[@kgf_features.Heading],
-) -> Map[Int, @kgf_features.Heading] {
-  let map : Map[Int, @kgf_features.Heading] = {}
+  headings : Array[@doc_structure.Heading],
+) -> Map[Int, @doc_structure.Heading] {
+  let map : Map[Int, @doc_structure.Heading] = {}
   for h in headings {
     map[h.line] = h
   }

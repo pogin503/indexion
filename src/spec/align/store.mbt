@@ -148,6 +148,49 @@ fn load_snapshot(cache_dir : String) -> AlignSnapshot? {
 }
 
 ///|
+fn has_cache_artifacts(cache_dir : String) -> Bool {
+  @fs.path_exists(cache_file_path(cache_dir, align_manifest_file)) ||
+  @fs.path_exists(cache_file_path(cache_dir, align_trace_file)) ||
+  @fs.path_exists(cache_file_path(cache_dir, align_report_file)) ||
+  @fs.path_exists(cache_file_path(cache_dir, align_history_file)) ||
+  @fs.path_exists(cache_file_path(cache_dir, "snapshot.json"))
+}
+
+///|
+fn purge_cache_file(cache_dir : String, file_name : String) -> Bool {
+  let path = cache_file_path(cache_dir, file_name)
+  if !@fs.path_exists(path) {
+    return true
+  }
+  @fs.remove_file(path) catch {
+    err => {
+      println(
+        "Error: failed to remove align cache file `" +
+        path +
+        "`: " +
+        err.to_string(),
+      )
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn purge_corrupt_snapshot_cache(cache_dir : String) -> Bool {
+  println(
+    "Warning: removing invalid spec align cache from `" +
+    cache_dir +
+    "` and rebuilding.",
+  )
+  purge_cache_file(cache_dir, align_manifest_file) &&
+  purge_cache_file(cache_dir, align_trace_file) &&
+  purge_cache_file(cache_dir, align_report_file) &&
+  purge_cache_file(cache_dir, align_history_file) &&
+  purge_cache_file(cache_dir, "snapshot.json")
+}
+
+///|
 fn append_history_entry(
   existing : Array[AlignHistoryEntry],
   snapshot : AlignSnapshot,

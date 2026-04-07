@@ -277,6 +277,15 @@ fn eval_func(
     "last" => eval_func_last(evaluated_args)
     "toUpper" => eval_func_to_upper(evaluated_args)
     "toLower" => eval_func_to_lower(evaluated_args)
+    "trim" => eval_func_trim(evaluated_args)
+    "containsStr" => eval_func_contains_str(evaluated_args)
+    "startsWith" => eval_func_starts_with(evaluated_args)
+    "beforeFirst" => eval_func_before_first(evaluated_args)
+    "afterFirst" => eval_func_after_first(evaluated_args)
+    "digits" => eval_func_digits(evaluated_args)
+    "countOccurrences" => eval_func_count_occurrences(evaluated_args)
+    "collectLinesAfterPrefixes" =>
+      eval_func_collect_lines_after_prefixes(evaluated_args)
     "cond" => eval_func_cond(evaluated_args)
     "children" =>
       // Fallback for children() when not a simple var
@@ -531,6 +540,165 @@ fn eval_func_to_lower(args : Array[Json]) -> Json {
     }
   }
   sb.to_string().to_json()
+}
+
+///|
+fn eval_func_trim(args : Array[Json]) -> Json {
+  if args.length() == 0 {
+    return "".to_json()
+  }
+  trim_string(json_to_string(args[0])).to_json()
+}
+
+///|
+fn eval_func_contains_str(args : Array[Json]) -> Json {
+  if args.length() < 2 {
+    return false.to_json()
+  }
+  json_to_string(args[0]).contains(json_to_string(args[1])).to_json()
+}
+
+///|
+fn eval_func_starts_with(args : Array[Json]) -> Json {
+  if args.length() < 2 {
+    return false.to_json()
+  }
+  json_to_string(args[0]).has_prefix(json_to_string(args[1])).to_json()
+}
+
+///|
+fn eval_func_before_first(args : Array[Json]) -> Json {
+  if args.length() < 2 {
+    return "".to_json()
+  }
+  let text = json_to_string(args[0])
+  let delimiter = json_to_string(args[1])
+  if delimiter.length() == 0 {
+    return text.to_json()
+  }
+  let index = find_substring(text, delimiter)
+  if index < 0 {
+    text.to_json()
+  } else {
+    text[:index].to_string().to_json()
+  }
+}
+
+///|
+fn eval_func_after_first(args : Array[Json]) -> Json {
+  if args.length() < 2 {
+    return "".to_json()
+  }
+  let text = json_to_string(args[0])
+  let delimiter = json_to_string(args[1])
+  if delimiter.length() == 0 {
+    return text.to_json()
+  }
+  let index = find_substring(text, delimiter)
+  if index < 0 {
+    "".to_json()
+  } else {
+    text[index + delimiter.length():text.length()].to_string().to_json()
+  }
+}
+
+///|
+fn eval_func_digits(args : Array[Json]) -> Json {
+  if args.length() == 0 {
+    return "".to_json()
+  }
+  let buf = StringBuilder::new()
+  for ch in json_to_string(args[0]) {
+    if ch >= '0' && ch <= '9' {
+      buf.write_char(ch)
+    }
+  }
+  buf.to_string().to_json()
+}
+
+///|
+fn eval_func_count_occurrences(args : Array[Json]) -> Json {
+  if args.length() < 2 {
+    return 0.0.to_json()
+  }
+  let text = json_to_string(args[0])
+  let needle = json_to_string(args[1])
+  if needle.length() == 0 {
+    return 0.0.to_json()
+  }
+  let text_chars = text.to_array()
+  let needle_chars = needle.to_array()
+  if needle_chars.length() > text_chars.length() {
+    return 0.0.to_json()
+  }
+  let mut count = 0
+  let mut i = 0
+  while i <= text_chars.length() - needle_chars.length() {
+    let mut matched = true
+    for j = 0; j < needle_chars.length(); j = j + 1 {
+      if text_chars[i + j] != needle_chars[j] {
+        matched = false
+        break
+      }
+    }
+    if matched {
+      count += 1
+      i += needle_chars.length()
+    } else {
+      i += 1
+    }
+  }
+  count.to_double().to_json()
+}
+
+///|
+fn eval_func_collect_lines_after_prefixes(args : Array[Json]) -> Json {
+  if args.length() < 2 {
+    return Json::array([])
+  }
+  let text = json_to_string(args[0])
+  let prefixes : Array[String] = []
+  for i = 1; i < args.length(); i = i + 1 {
+    prefixes.push(json_to_string(args[i]))
+  }
+  let result : Array[Json] = []
+  for line in text.split("\n") {
+    let trimmed = trim_string(line.to_string())
+    for prefix in prefixes {
+      if trimmed.has_prefix(prefix) {
+        result.push(
+          trim_string(trimmed[prefix.length():trimmed.length()].to_string()).to_json(),
+        )
+        break
+      }
+    }
+  }
+  Json::array(result)
+}
+
+///|
+fn find_substring(text : String, needle : String) -> Int {
+  let text_arr = text.to_array()
+  let needle_arr = needle.to_array()
+  if needle_arr.length() == 0 {
+    return 0
+  }
+  if needle_arr.length() > text_arr.length() {
+    return -1
+  }
+  for i = 0; i <= text_arr.length() - needle_arr.length(); i = i + 1 {
+    let mut ok = true
+    for j = 0; j < needle_arr.length(); j = j + 1 {
+      if text_arr[i + j] != needle_arr[j] {
+        ok = false
+        break
+      }
+    }
+    if ok {
+      return i
+    }
+  }
+  -1
 }
 
 ///|

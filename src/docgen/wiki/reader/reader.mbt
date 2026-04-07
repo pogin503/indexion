@@ -70,12 +70,22 @@ pub fn extract_headings(
   let tokens = @kgf_features.tokenize_source(content, path, registry)
   match tokens {
     Some(toks) => {
-      let kgf_headings = @kgf_features.extract_headings(toks, spec~)
+      let kgf_headings = @doc_structure.extract_headings(
+        toks,
+        spec~,
+        source=content,
+        path~,
+      )
       let results : Array[@types.WikiHeading] = []
       for h in kgf_headings {
-        if h.level >= 2 && h.level <= 4 {
+        let level = h.level.unwrap_or(1)
+        if level >= 2 && level <= 4 {
           results.push(
-            @types.WikiHeading::new(level=h.level, text=h.text, anchor=h.anchor),
+            @types.WikiHeading::new(
+              level~,
+              text=h.text,
+              anchor=@common.make_anchor(h.text),
+            ),
           )
         }
       }

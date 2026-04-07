@@ -248,7 +248,7 @@ fn query_undocumented(
   path : String,
   registry : @kgf_registry.KGFRegistry?,
 ) -> Array[SemanticMatch] {
-  let (declarations, doc_map) = @kgf_features.extract_pub_declarations_and_doc_map(
+  let (declarations, doc_map) = @kgf_declarations.extract_pub_declarations_and_doc_map(
     content, path, registry,
   )
   let results : Array[SemanticMatch] = []

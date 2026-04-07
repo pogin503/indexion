@@ -1,5 +1,6 @@
 ///|
 /// Stub for non-native targets.
+#warnings("-unused_async")
 pub async fn install_kgfs_from_dir(
   _src_kgfs : String,
 ) -> Unit raise KgfManageError {
@@ -10,6 +11,7 @@ pub async fn install_kgfs_from_dir(
 
 ///|
 /// Stub for non-native targets.
+#warnings("-unused_async")
 pub async fn install_single_kgf(
   _relative_path : String,
   _content : Bytes,
@@ -21,6 +23,7 @@ pub async fn install_single_kgf(
 
 ///|
 /// Stub for non-native targets.
+#warnings("-unused_async")
 pub async fn update_kgfs() -> Unit raise KgfManageError {
   raise KgfManageError::InstallError(
     "kgf update is only supported on native target",
@@ -29,6 +32,7 @@ pub async fn update_kgfs() -> Unit raise KgfManageError {
 
 ///|
 /// Stub for non-native targets.
+#warnings("-unused_async")
 pub async fn add_kgf(_spec_name : String) -> Unit raise KgfManageError {
   raise KgfManageError::InstallError(
     "kgf add is only supported on native target",

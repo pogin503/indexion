@@ -2,7 +2,7 @@
 async fn fixture_collect_document_fragments(
   discovered_paths : Array[String],
   config : ReconcileConfig,
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> (Array[DocFragment], Array[FileState], Array[String]) {
   @reconcile_plan.collect_document_fragments(discovered_paths, config, registry)
 }
@@ -12,7 +12,7 @@ async fn fixture_build_candidates(
   units : Array[CodeUnit],
   fragments : Array[DocFragment],
   config : ReconcileConfig,
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> @reconcile_plan.CandidateBuildResult {
   @reconcile_plan.build_candidates(units, fragments, config, registry)
 }
@@ -21,7 +21,7 @@ async fn fixture_build_candidates(
 fn build_code_graph(
   target_dir : String,
   specs_dir : String,
-) -> (@registry.KGFRegistry, Array[String], @graph.CodeGraph) {
+) -> (@kgf_registry.KGFRegistry, Array[String], @graph.CodeGraph) {
   let registry = @kgf_features.load_registry_or_empty(specs_dir~, target_dir~)
   let kgf_ignore = registry.collect_ignore_patterns()
   // root_dir is intentionally empty: fixture directories live inside

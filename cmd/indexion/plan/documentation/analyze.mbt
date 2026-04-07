@@ -221,7 +221,7 @@ fn analyze_source_file(
   try {
     let content = @fs.read_file_to_string(path)
     // Extract both declarations and doc map in a single tokenization pass
-    let (declarations, doc_map) = @kgf_features.extract_pub_declarations_and_doc_map(
+    let (declarations, doc_map) = @kgf_declarations.extract_pub_declarations_and_doc_map(
       content, path, registry,
     )
     if declarations.length() == 0 {
@@ -242,7 +242,7 @@ fn analyze_source_file(
 
 ///|
 fn make_pub_item(
-  decl : @kgf_features.PubDeclaration,
+  decl : @kgf_declarations.PubDeclaration,
   file : String,
   doc_lines : Array[String],
 ) -> PubItem {

@@ -51,7 +51,7 @@ pub fn build_code_units_fast(
     }
     let content = @fs.read_file_to_string(path) catch { _ => continue }
     // Full KGF pipeline: tokenize → parse → eval_semantics → declares edges
-    let (pub_decls, doc_map) = @kgf_features.extract_pub_declarations_and_doc_map(
+    let (pub_decls, doc_map) = @kgf_declarations.extract_pub_declarations_and_doc_map(
       content,
       path,
       Some(registry),

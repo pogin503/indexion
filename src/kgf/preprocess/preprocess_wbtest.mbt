@@ -208,6 +208,19 @@ test "apply_preprocess with base64ToHex" {
 }
 
 ///|
+test "apply_preprocess with generic line blanking steps" {
+  let input = "RFC 3492\nbody [Page 1]\nkeep\n\u{000c}footer\n"
+  let result = apply_preprocess(
+    input,
+    Some([
+      "blankLineIfTrimHasPrefix:RFC ", "blankLineIfContains:[Page ", "blankLineIfContainsCodepoint:000c",
+    ]),
+    None,
+  )
+  assert_eq(result, "\n\nkeep\n\n")
+}
+
+///|
 test "apply_preprocess with FST" {
   let classes : Map[String, String] = {}
   classes.set("any", "[A-Za-z ]")

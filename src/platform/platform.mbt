@@ -94,15 +94,3 @@ pub fn detect_arch() -> Arch {
     _ => UnknownArch
   }
 }
-
-///|
-/// Join two path segments with forward slash.
-fn path_join(base : String, child : String) -> String {
-  if base.length() == 0 {
-    child
-  } else if child.length() == 0 {
-    base
-  } else {
-    base + "/" + child
-  }
-}

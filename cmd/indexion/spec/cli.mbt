@@ -1,6 +1,7 @@
 ///|
 /// Spec CLI - Specification-driven analysis.
 /// Subcommands:
+///   draft  - Generate an SDD draft from usage/readme documents
 ///   verify - Check spec-to-implementation conformance
 ///   align  - Align SDD-style specs and implementation
 
@@ -11,7 +12,7 @@ pub fn command() -> @argparse.Command {
     "spec",
     about="Specification-driven analysis (verify conformance, etc.)",
     subcommand_required=true,
-    subcommands=[@verify.command(), @align.command()],
+    subcommands=[@draft.command(), @verify.command(), @align.command()],
   )
 }
 
@@ -20,6 +21,7 @@ pub fn command() -> @argparse.Command {
 pub async fn dispatch(matches : @argparse.Matches) -> Unit {
   guard matches.subcommand is Some((name, sub)) else { return }
   match name {
+    "draft" => @draft.run_matches(sub)
     "align" => @align.run_matches(sub)
     "verify" => @verify.run_matches(sub)
     _ => ()

@@ -3,6 +3,16 @@
 /// Platform-independent; no detect_platform() branching.
 
 ///|
+fn path_join(base : String, child : StringView) -> String {
+  let suffix = child.to_string()
+  if base.has_suffix("/") {
+    base + suffix
+  } else {
+    base + "/" + suffix
+  }
+}
+
+///|
 /// Copy a single file (async read + write).
 pub async fn copy_file(src : String, dst : String) -> Unit {
   let data = @async_fs.read_file(src)

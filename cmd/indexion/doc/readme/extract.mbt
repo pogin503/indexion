@@ -207,7 +207,7 @@ fn first_doc_line(doc : String) -> String {
 fn extract_title_from_content(content : String) -> String? {
   let headings = tokenize_and_extract_headings(content)
   for h in headings {
-    if h.level == 1 {
+    if h.level.unwrap_or(1) == 1 {
       return Some(h.text)
     }
   }
@@ -225,10 +225,11 @@ pub fn extract_summary(content : String) -> String {
   let mut h2_count = 0
   let mut second_h2_line = lines.length() + 1
   for h in headings {
-    if h.level == 1 && title_line < 0 {
+    let level = h.level.unwrap_or(1)
+    if level == 1 && title_line < 0 {
       title_line = h.line
     }
-    if h.level == 2 {
+    if level == 2 {
       h2_count += 1
       if h2_count > 1 {
         second_h2_line = h.line

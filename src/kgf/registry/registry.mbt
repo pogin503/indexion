@@ -73,7 +73,12 @@ pub fn KGFRegistry::register_spec(
   // When multiple specs claim the same extension, prefer the more general spec.
   // A spec with `special_files` feature is domain-specific (e.g., wiki specs)
   // and should not override a general-purpose spec for the same extension.
-  let is_domain_specific = spec.get_feature("special_files") is Some(_)
+  let has_overlay_scope = match spec.get_feature("detection_scope") {
+    Some(values) => values.length() > 0 && values[0] == "overlay"
+    None => false
+  }
+  let is_domain_specific = spec.get_feature("special_files") is Some(_) ||
+    has_overlay_scope
   let resolver = spec.get_resolver()
   let sources = resolver.get_sources()
   for ext in sources {
@@ -108,6 +113,30 @@ pub fn KGFRegistry::get_lang_from_ext(
 ) -> String? {
   let normalized = if ext.has_prefix(".") { ext } else { "." + ext }
   self.ext_to_lang.get(normalized)
+}
+
+///|
+fn match_extension_pattern_for_path(
+  registry : KGFRegistry,
+  path : String,
+) -> (String, String)? {
+  let mut best : (String, String)? = None
+  let mut best_len = -1
+  for entry in registry.ext_to_lang {
+    let pattern = entry.0
+    let lang = entry.1
+    if !pattern.has_prefix(".") {
+      continue
+    }
+    if !path.has_suffix(pattern) {
+      continue
+    }
+    if pattern.length() > best_len {
+      best = Some((pattern, lang))
+      best_len = pattern.length()
+    }
+  }
+  best
 }
 
 ///|
@@ -171,7 +200,7 @@ pub fn KGFRegistry::is_file_supported(
       return true
     }
   }
-  false
+  match_extension_pattern_for_path(self, path) is Some(_)
 }
 
 ///|
@@ -194,12 +223,11 @@ pub fn KGFRegistry::detect_from_path(
       }
     }
   }
-  // Then try extension-based patterns
-  let ext = @config.extension(path)
-  if ext.length() == 0 {
-    return None
+  // Then try extension-based patterns, preferring the longest matching suffix.
+  match match_extension_pattern_for_path(self, path) {
+    Some((_pattern, lang)) => Some(lang)
+    None => None
   }
-  self.get_lang_from_ext(ext)
 }
 
 ///|

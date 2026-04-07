@@ -183,9 +183,7 @@ fn apply_doc_scope(config : ReconcileConfig) -> ReconcileConfig {
     specs_dir=config.specs_dir,
     target_dir=config.target_dir,
   )
-  let (index_patterns, wildcard_patterns) = @kgf_features.get_document_patterns(
-    registry,
-  )
+  let (index_patterns, wildcard_patterns) = collect_document_patterns(registry)
   let resolved = @config_paths.resolve_reconcile_document_scope(
     config.documents.scope_name,
     doc_paths=config.documents.doc_paths,
@@ -194,6 +192,55 @@ fn apply_doc_scope(config : ReconcileConfig) -> ReconcileConfig {
     wildcard_patterns~,
   )
   { ..config, documents: resolved }
+}
+
+///|
+fn collect_document_patterns(
+  registry : @kgf_registry.KGFRegistry?,
+) -> (Array[String], Array[String]) {
+  let reg = match registry {
+    Some(r) => r
+    None => return ([], [])
+  }
+  let index_patterns : Array[String] = []
+  let wild_patterns : Array[String] = []
+  let seen : Map[String, Bool] = {}
+  let languages = reg.get_languages()
+  for language in languages {
+    let spec = match reg.get_spec(language) {
+      Some(value) => value
+      None => continue
+    }
+    if !@kgf_features.is_document_spec(spec) {
+      continue
+    }
+    let resolver = spec.get_resolver()
+    for idx in resolver.get_indexes() {
+      let clean = if idx.has_prefix("/") {
+        let chars = idx.to_array()
+        let buf = StringBuilder::new()
+        for i = 1; i < chars.length(); i = i + 1 {
+          buf.write_char(chars[i])
+        }
+        buf.to_string()
+      } else {
+        idx
+      }
+      if clean.length() > 0 && !seen.contains(clean) {
+        index_patterns.push(clean)
+        seen[clean] = true
+      }
+    }
+    for src in resolver.get_sources() {
+      let ext = if src.has_prefix(".") { src } else { "." + src }
+      let pattern = "*" + ext
+      if !seen.contains(pattern) {
+        wild_patterns.push(pattern)
+        seen[pattern] = true
+      }
+    }
+  }
+  (index_patterns, wild_patterns)
 }
 
 ///|

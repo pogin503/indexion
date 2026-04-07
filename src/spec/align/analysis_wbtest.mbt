@@ -295,6 +295,29 @@ async test "spec-align/moonbit: diff writes manifest trace and report stores" {
 }
 
 ///|
+async test "spec-align/moonbit: corrupt cache is purged and rebuilt" {
+  let root = temp_test_dir("moonbit-corrupt-cache")
+  let config = fixture_config("moonbit", root)
+  let _ = match diff_report_async(config) {
+    Some(value) => value
+    None => fail("expected initial diff report")
+  }
+  @fs.write_string_to_file(config.cache_dir + "/manifest.json", "{\n}\n}") catch {
+    _ => panic()
+  }
+  let report = match diff_report_async(config) {
+    Some(value) => value
+    None => fail("expected rebuilt diff report")
+  }
+  assert_eq(report.summary.matched, 1)
+  assert_eq(report.summary.drifted, 1)
+  let manifest = @fs.read_file_to_string(config.cache_dir + "/manifest.json") catch {
+    _ => panic()
+  }
+  assert_true(!manifest.contains("\n}\n}"))
+}
+
+///|
 async test "spec-align/moonbit: unsupported current spec does not fall back to stale cache" {
   let root = temp_test_dir("moonbit-no-stale-cache")
   let config = fixture_config("moonbit", root)

@@ -134,6 +134,11 @@ test "registry: comprehensive validation" {
   assert_eq(registry.get_lang_from_ext(".md"), Some("markdown"))
   assert_eq(registry.detect_from_path("docs/spec.md"), Some("markdown"))
   assert_eq(registry.detect_from_path("README.md"), Some("markdown"))
+  assert_eq(
+    registry.detect_from_path("fixtures/spec/rfc2795.rfc.txt"),
+    Some("rfc-plaintext"),
+  )
+  assert_true(registry.is_file_supported("fixtures/spec/rfc2795.rfc.txt"))
 
   // Test 9: project marker patterns come from KGF, not hardcoded caller lists
   let project_markers = registry.get_project_markers()

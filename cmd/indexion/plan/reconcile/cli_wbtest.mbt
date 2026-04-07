@@ -37,7 +37,7 @@ fn unit_match_terms(unit : CodeUnit) -> @reconcile_plan.UnitMatchTerms {
 fn is_document_path(
   path : String,
   config : ReconcileConfig,
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> Bool {
   @reconcile_plan.is_document_path(path, config, registry)
 }
@@ -76,7 +76,7 @@ async fn build_candidates(
   units : Array[CodeUnit],
   fragments : Array[DocFragment],
   config : ReconcileConfig,
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> @reconcile_plan.CandidateBuildResult {
   @reconcile_plan.build_candidates(units, fragments, config, registry)
 }
@@ -84,7 +84,7 @@ async fn build_candidates(
 ///|
 fn build_fragment_match_signals(
   fragments : Array[DocFragment],
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> Map[String, FragmentMatchSignals] {
   @reconcile_plan.build_fragment_match_signals(fragments, registry)
 }
@@ -178,7 +178,7 @@ fn build_summary(
 ///|
 fn document_symbol_kinds_for_path(
   path : String,
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> Map[String, Bool]? {
   match registry.detect_from_path(path) {
     Some(lang) =>
@@ -194,7 +194,7 @@ fn document_symbol_kinds_for_path(
 fn should_include_symbol(
   kind : String,
   module_path : String,
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> Bool {
   match document_symbol_kinds_for_path(module_path, registry) {
     Some(filter) => filter.contains(lower_string(kind))
@@ -205,7 +205,7 @@ fn should_include_symbol(
 ///|
 fn extract_code_units(
   graph : @graph.CodeGraph,
-  registry : @registry.KGFRegistry,
+  registry : @kgf_registry.KGFRegistry,
 ) -> Array[CodeUnit] {
   let units : Array[CodeUnit] = []
   for entry in graph.get_symbols() {
@@ -275,7 +275,7 @@ fn temp_reconcile_dir(prefix : String) -> String {
 }
 
 ///|
-fn load_test_registry() -> @registry.KGFRegistry {
+fn load_test_registry() -> @kgf_registry.KGFRegistry {
   @kgf_features.load_registry_or_empty(target_dir=".")
 }
 

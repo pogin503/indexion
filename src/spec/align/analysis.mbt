@@ -14,11 +14,6 @@ fn lower_ascii(text : String) -> String {
 }
 
 ///|
-fn is_blank(text : String) -> Bool {
-  trim(text).length() == 0
-}
-
-///|
 fn config_hash(config : SpecAlignConfig) -> String {
   let joined = [
     config.spec_path,
@@ -187,7 +182,7 @@ async fn collect_spec_data(
         return ([], [], [], {}, [])
       }
     }
-    let (reqs, scns, used_spec) = parse_spec_document(
+    let (reqs, scns, used_spec) = load_spec_nodes(
       path,
       content,
       config.spec_format,
@@ -266,6 +261,9 @@ fn append_implementation_node(
   line : Int,
   doc_map : Map[Int, String],
 ) -> Unit {
+  if trim(name).length() == 0 {
+    return
+  }
   let signature = safe_line(content, line)
   let declaration_text = context_excerpt(content, line, 2, 3)
   implementations.push({
@@ -336,7 +334,7 @@ async fn collect_impl_data(
         ts.is_dirty,
       ),
     )
-    let (kgf_declarations, doc_map) = @kgf_features.extract_pub_declarations_and_doc_map(
+    let (kgf_declarations, doc_map) = @kgf_declarations.extract_pub_declarations_and_doc_map(
       content,
       path,
       Some(registry),
@@ -936,11 +934,11 @@ fn build_trace_report(snapshot : AlignSnapshot) -> AlignTraceReport {
 }
 
 ///|
-fn first_numeric(text : String?) -> String? {
+fn single_numeric(text : String?) -> String? {
   match text {
     Some(value) => {
       let literals = literals_from_text(value)
-      if literals.length() > 0 {
+      if literals.length() == 1 {
         Some(literals[0])
       } else {
         None
@@ -1003,11 +1001,13 @@ fn build_suggestions(
   direction : String,
 ) -> Array[AlignSuggestion] {
   let suggestions : Array[AlignSuggestion] = []
+  let emitted : Map[String, Bool] = {}
   for item in snapshot.diff_items {
+    let mut current : AlignSuggestion? = None
     match item.category {
       "SPEC_ONLY" =>
         if direction != "impl-wins" {
-          suggestions.push({
+          current = Some({
             category: item.category,
             direction: "spec-wins",
             title: "Implement " +
@@ -1029,7 +1029,7 @@ fn build_suggestions(
           let implementation_name = item.implementation_name.unwrap_or(
             "implementation",
           )
-          suggestions.push({
+          current = Some({
             category: item.category,
             direction: "impl-wins",
             title: "Document " + implementation_name,
@@ -1055,8 +1055,8 @@ fn build_suggestions(
           (Some(path), Some(spec_excerpt), Some(impl_excerpt)) =>
             match
               (
-                first_numeric(Some(spec_excerpt)),
-                first_numeric(Some(impl_excerpt)),
+                single_numeric(Some(spec_excerpt)),
+                single_numeric(Some(impl_excerpt)),
               ) {
               (Some(spec_value), Some(impl_value)) =>
                 Some(
@@ -1071,8 +1071,8 @@ fn build_suggestions(
           (Some(path), Some(impl_excerpt), Some(spec_excerpt)) =>
             match
               (
-                first_numeric(Some(impl_excerpt)),
-                first_numeric(Some(spec_excerpt)),
+                single_numeric(Some(impl_excerpt)),
+                single_numeric(Some(spec_excerpt)),
               ) {
               (Some(impl_value), Some(spec_value)) =>
                 Some(
@@ -1083,7 +1083,7 @@ fn build_suggestions(
           _ => None
         }
         if direction != "impl-wins" {
-          suggestions.push({
+          current = Some({
             category: item.category,
             direction: "spec-wins",
             title: "Align implementation with " +
@@ -1101,7 +1101,7 @@ fn build_suggestions(
           })
         }
         if direction != "spec-wins" {
-          suggestions.push({
+          let suggestion = {
             category: item.category,
             direction: "impl-wins",
             title: "Update spec for " +
@@ -1114,13 +1114,46 @@ fn build_suggestions(
               "Revise the requirement or scenario text to reflect the implemented behavior.",
             ),
             reasons: item.reasons.copy(),
-          })
+          }
+          let key = suggestion_dedupe_key(suggestion)
+          if !emitted.contains(key) {
+            emitted.set(key, true)
+            suggestions.push(suggestion)
+          }
         }
       }
       _ => ()
     }
+    match current {
+      Some(suggestion) => {
+        let key = suggestion_dedupe_key(suggestion)
+        if !emitted.contains(key) {
+          emitted.set(key, true)
+          suggestions.push(suggestion)
+        }
+      }
+      None => ()
+    }
   }
   suggestions
+}
+
+///|
+fn suggestion_dedupe_key(suggestion : AlignSuggestion) -> String {
+  match suggestion.category {
+    "IMPL_ONLY" | "SPEC_ONLY" =>
+      [suggestion.category, suggestion.direction, suggestion.title].join(
+        "\u0001",
+      )
+    _ =>
+      [
+        suggestion.category,
+        suggestion.direction,
+        suggestion.title,
+        suggestion.spec_file.unwrap_or(""),
+        suggestion.impl_file.unwrap_or(""),
+      ].join("\u0001")
+  }
 }
 
 ///|
@@ -1383,7 +1416,18 @@ async fn snapshot_for_config_async(config : SpecAlignConfig) -> AlignSnapshot? {
     None => return None
   }
   let effective_config = { ..config, cache_dir, }
-  let previous = load_snapshot(cache_dir)
+  let previous = match load_snapshot(cache_dir) {
+    Some(value) => Some(value)
+    None =>
+      if has_cache_artifacts(cache_dir) {
+        if !purge_corrupt_snapshot_cache(cache_dir) {
+          return None
+        }
+        None
+      } else {
+        None
+      }
+  }
   let snapshot = match build_snapshot(effective_config, previous) {
     Some(value) => value
     None => return None
