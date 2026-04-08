@@ -2,6 +2,7 @@
 package "trkbt10/indexion/src/document/structure"
 
 import {
+  "moonbitlang/core/json",
   "trkbt10/indexion/src/kgf/registry",
   "trkbt10/indexion/src/kgf/types",
 }
@@ -13,7 +14,13 @@ pub fn extract_headings(Array[@types.Tok], spec? : @types.KGFSpec?, source? : St
 
 pub fn interpret_document(String, String, @types.KGFSpec) -> InterpretedDocument
 
+pub fn literals_for_line(InterpretedDocument, Int) -> Array[String]
+
 pub fn load_document_sections(String, String, @registry.KGFRegistry?) -> Array[DocumentSection]
+
+pub fn section_refs_for_line(InterpretedDocument, Int) -> Array[String]
+
+pub fn table_pairs_for_line(InterpretedDocument, Int) -> Array[DocumentTablePair]
 
 // Errors
 
@@ -31,6 +38,11 @@ pub struct DocumentSection {
   content : String
   level : Int?
 }
+
+pub struct DocumentTablePair {
+  label : String
+  literal : String
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) struct Heading {
   marker : String

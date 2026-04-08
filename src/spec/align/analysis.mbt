@@ -225,33 +225,6 @@ fn safe_line(content : String, line_no : Int) -> String {
 }
 
 ///|
-fn context_excerpt(
-  content : String,
-  line_no : Int,
-  before : Int,
-  after : Int,
-) -> String {
-  let lines = @common.split_lines(content)
-  if lines.length() == 0 {
-    return ""
-  }
-  let start = if line_no - before < 1 { 1 } else { line_no - before }
-  let end_ = if line_no + after > lines.length() {
-    lines.length()
-  } else {
-    line_no + after
-  }
-  let excerpt : Array[String] = []
-  for i = start; i <= end_; i = i + 1 {
-    let value = trim(lines[i - 1])
-    if value.length() > 0 {
-      excerpt.push(value)
-    }
-  }
-  excerpt.join("\n")
-}
-
-///|
 fn append_implementation_node(
   implementations : Array[ImplementationNode],
   content : String,
@@ -259,23 +232,46 @@ fn append_implementation_node(
   kind : String,
   name : String,
   line : Int,
+  start_pos : Int,
+  source_end_pos : Int,
+  end_line : Int,
   doc_map : Map[Int, String],
 ) -> Unit {
   if trim(name).length() == 0 {
     return
   }
-  let signature = safe_line(content, line)
-  let declaration_text = context_excerpt(content, line, 2, 3)
+  let declaration_line = line
+  let signature = safe_line(content, declaration_line)
+  let span_text = if start_pos >= 0 &&
+    source_end_pos > start_pos &&
+    source_end_pos <= content.length() {
+    trim(content[start_pos:source_end_pos].to_string())
+  } else {
+    ""
+  }
+  let declaration_text = if span_text.length() > 0 {
+    span_text
+  } else {
+    signature
+  }
+  let doc_comment = match doc_map.get(declaration_line) {
+    Some(value) => Some(value)
+    None => doc_map.get(line)
+  }
   implementations.push({
     id: path + "::" + name,
     name,
     kind,
     file: path,
-    start_line: line,
-    end_line: line,
+    start_line: declaration_line,
+    end_line: if end_line >= declaration_line {
+      end_line
+    } else {
+      declaration_line
+    },
     signature,
     declaration_text,
-    doc_comment: doc_map.get(line),
+    doc_comment,
   })
 }
 
@@ -353,6 +349,9 @@ async fn collect_impl_data(
         declaration.kind,
         declaration.name,
         declaration.line,
+        declaration.start_pos,
+        declaration.end_pos,
+        declaration.end_line,
         doc_map,
       )
     }
@@ -395,7 +394,429 @@ fn requirement_text(
 }
 
 ///|
-fn implementation_text(implementation : ImplementationNode) -> String {
+fn merge_unique_strings(target : Array[String], values : Array[String]) -> Unit {
+  for value in values {
+    if value.length() > 0 && !target.contains(value) {
+      target.push(value)
+    }
+  }
+}
+
+///|
+fn requirement_section_refs(
+  requirement : RequirementNode,
+  scenarios : Array[ScenarioNode],
+) -> Array[String] {
+  let refs = requirement.section_refs.copy()
+  for scenario in scenarios {
+    if scenario.parent_req != requirement.id {
+      continue
+    }
+    merge_unique_strings(refs, scenario.section_refs)
+  }
+  refs
+}
+
+///|
+fn requirement_literals(
+  requirement : RequirementNode,
+  scenarios : Array[ScenarioNode],
+) -> Array[String] {
+  let values = requirement.literals.copy()
+  for scenario in scenarios {
+    if scenario.parent_req != requirement.id {
+      continue
+    }
+    merge_unique_strings(values, scenario.literals)
+  }
+  values
+}
+
+///|
+fn requirement_table_pairs(
+  requirement : RequirementNode,
+  scenarios : Array[ScenarioNode],
+) -> Array[String] {
+  let pairs = requirement.table_pairs.copy()
+  for scenario in scenarios {
+    if scenario.parent_req != requirement.id {
+      continue
+    }
+    merge_unique_strings(pairs, scenario.table_pairs)
+  }
+  pairs
+}
+
+///|
+fn is_section_ref_char(ch : Char) -> Bool {
+  (ch >= '0' && ch <= '9') || ch == '.'
+}
+
+///|
+fn normalize_section_ref(token : String) -> String {
+  let chars = token.to_array()
+  if chars.length() == 0 {
+    return ""
+  }
+  let end_ = if chars[chars.length() - 1] == '.' {
+    chars.length() - 1
+  } else {
+    chars.length()
+  }
+  if end_ <= 0 {
+    return ""
+  }
+  String::from_array(chars[:end_])
+}
+
+///|
+fn is_section_ref_token(token : String) -> Bool {
+  let normalized = normalize_section_ref(token)
+  let chars = normalized.to_array()
+  if chars.length() == 0 {
+    return false
+  }
+  let mut has_digit = false
+  for ch in chars {
+    if ch >= '0' && ch <= '9' {
+      has_digit = true
+      continue
+    }
+    if ch != '.' {
+      return false
+    }
+  }
+  has_digit
+}
+
+///|
+fn tokenize_section_words(text : String) -> Array[String] {
+  let tokens : Array[String] = []
+  let current : Array[Char] = []
+
+  fn flush(tokens : Array[String], current : Array[Char]) -> Unit {
+    if current.length() == 0 {
+      return
+    }
+    tokens.push(String::from_array(current))
+    current.clear()
+  }
+
+  for ch in text.to_array() {
+    if is_section_ref_char(ch) ||
+      (ch >= 'a' && ch <= 'z') ||
+      (ch >= 'A' && ch <= 'Z') {
+      current.push(ch)
+    } else {
+      flush(tokens, current)
+    }
+  }
+  flush(tokens, current)
+  tokens
+}
+
+///|
+fn collect_section_refs(text : String) -> Array[String] {
+  let refs : Array[String] = []
+  let tokens = tokenize_section_words(lower_ascii(text))
+  let mut capture = false
+  for token in tokens {
+    if token == "section" || token == "sections" {
+      capture = true
+      continue
+    }
+    if !capture {
+      continue
+    }
+    let normalized = normalize_section_ref(token)
+    if is_section_ref_token(normalized) {
+      if !refs.contains(normalized) {
+        refs.push(normalized)
+      }
+      continue
+    }
+    if token == "and" || token == "or" {
+      continue
+    }
+    capture = false
+  }
+  refs
+}
+
+///|
+fn is_parent_section_ref(parent : String, child : String) -> Bool {
+  child.length() > parent.length() &&
+  child.has_prefix(parent) &&
+  child.to_array()[parent.length()] == '.'
+}
+
+///|
+fn section_reference_score(
+  required_refs : Array[String],
+  candidate_text : String,
+) -> Double {
+  let candidate_refs = collect_section_refs(candidate_text)
+  if required_refs.length() == 0 || candidate_refs.length() == 0 {
+    return 0.0
+  }
+  let mut has_exact = false
+  let mut has_related = false
+  for req_ref in required_refs {
+    for candidate_ref in candidate_refs {
+      if req_ref == candidate_ref {
+        has_exact = true
+      } else if is_parent_section_ref(req_ref, candidate_ref) ||
+        is_parent_section_ref(candidate_ref, req_ref) {
+        has_related = true
+      }
+    }
+  }
+  if has_exact {
+    0.45
+  } else if has_related {
+    0.24
+  } else {
+    0.0
+  }
+}
+
+///|
+fn decimal_to_hex(value : String) -> String? {
+  let n = @common.parse_int(value)
+  if n < 0 {
+    return None
+  }
+  if n == 0 {
+    return Some("0x0")
+  }
+  let digits = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+  ]
+  let chars : Array[Char] = []
+  let mut current = n
+  while current > 0 {
+    chars.push(digits[current % 16])
+    current = current / 16
+  }
+  let buf = StringBuilder::new()
+  for i = chars.length() - 1; i >= 0; i = i - 1 {
+    buf.write_char(chars[i])
+  }
+  Some("0x" + buf.to_string())
+}
+
+///|
+fn literals_from_text(text : String) -> Array[String] {
+  let values : Array[String] = []
+  let numeric : Array[Char] = []
+  let quoted : Array[Char] = []
+  let mut in_backtick = false
+
+  fn flush_numeric(values : Array[String], numeric : Array[Char]) -> Unit {
+    if numeric.length() >= 2 {
+      let value = String::from_array(numeric)
+      if !values.contains(value) {
+        values.push(value)
+      }
+    }
+    numeric.clear()
+  }
+
+  fn flush_quoted(values : Array[String], quoted : Array[Char]) -> Unit {
+    if quoted.length() > 0 {
+      let value = String::from_array(quoted)
+      if !values.contains(value) {
+        values.push(value)
+      }
+    }
+    quoted.clear()
+  }
+
+  for ch in text.to_array() {
+    if ch == '`' {
+      if in_backtick {
+        flush_quoted(values, quoted)
+      }
+      in_backtick = !in_backtick
+      flush_numeric(values, numeric)
+      continue
+    }
+    if in_backtick {
+      quoted.push(ch)
+      continue
+    }
+    if ch >= '0' && ch <= '9' {
+      numeric.push(ch)
+    } else {
+      flush_numeric(values, numeric)
+    }
+  }
+  flush_numeric(values, numeric)
+  flush_quoted(values, quoted)
+  values
+}
+
+///|
+fn literal_present(text : String, literal : String) -> Bool {
+  if text.contains(literal) {
+    return true
+  }
+  let lowered = lower_ascii(text)
+  if lowered.contains(lower_ascii(literal)) {
+    return true
+  }
+  match decimal_to_hex(literal) {
+    Some(hex) => lowered.contains(hex)
+    None => false
+  }
+}
+
+///|
+fn literal_overlap_score(
+  required_literals : Array[String],
+  candidate_text : String,
+) -> Double {
+  if required_literals.length() == 0 {
+    return 0.0
+  }
+  let mut matched = 0
+  for literal in required_literals {
+    if literal.length() > 0 && literal_present(candidate_text, literal) {
+      matched += 1
+    }
+  }
+  if matched < 2 {
+    0.0
+  } else {
+    clamp_similarity(
+      matched.to_double() / required_literals.length().to_double(),
+    )
+  }
+}
+
+///|
+fn decode_table_pair(pair : String) -> (String, String) {
+  match pair.split_once("\u0001") {
+    Some((label, literal)) => (label.to_string(), literal.to_string())
+    None => (pair, "")
+  }
+}
+
+///|
+fn identifier_tokens(text : String) -> Array[String] {
+  let result : Array[String] = []
+  let current : Array[Char] = []
+
+  fn flush(result : Array[String], current : Array[Char]) -> Unit {
+    if current.length() == 0 {
+      return
+    }
+    let token = String::from_array(current)
+    if token.length() > 1 && !result.contains(token) {
+      result.push(token)
+    }
+    current.clear()
+  }
+
+  for ch in text.to_array() {
+    let is_head = (ch >= 'A' && ch <= 'Z') ||
+      (ch >= 'a' && ch <= 'z') ||
+      ch == '_'
+    let is_tail = is_head || (ch >= '0' && ch <= '9')
+    if current.length() == 0 {
+      if is_head {
+        current.push(ch)
+      }
+    } else if is_tail {
+      current.push(ch)
+    } else {
+      flush(result, current)
+    }
+  }
+  flush(result, current)
+  result
+}
+
+///|
+fn identifier_candidates_from_line(
+  line : String,
+  label : String,
+) -> Array[String] {
+  let candidates : Array[String] = []
+  let upper_label = lower_ascii(label)
+  for token in identifier_tokens(line) {
+    let lowered = lower_ascii(token)
+    if lowered == upper_label ||
+      lowered.contains("_" + upper_label) ||
+      lowered.has_suffix(upper_label) {
+      candidates.push(token)
+    }
+  }
+  candidates
+}
+
+///|
+fn pair_present_in_text(
+  evidence : String,
+  label : String,
+  literal : String,
+) -> Bool {
+  let lines = @common.split_lines(evidence)
+  for line in lines {
+    let trimmed = trim(line)
+    if trimmed.contains(label) && literal_present(trimmed, literal) {
+      return true
+    }
+  }
+  let identifiers : Array[String] = []
+  for line in lines {
+    let trimmed = trim(line)
+    if !trimmed.contains(label) {
+      continue
+    }
+    for candidate in identifier_candidates_from_line(trimmed, label) {
+      if !identifiers.contains(candidate) {
+        identifiers.push(candidate)
+      }
+    }
+  }
+  for identifier in identifiers {
+    for line in lines {
+      let trimmed = trim(line)
+      if trimmed.contains(identifier) && literal_present(trimmed, literal) {
+        return true
+      }
+    }
+  }
+  false
+}
+
+///|
+fn table_pair_overlap_score(
+  required_pairs : Array[String],
+  candidate_text : String,
+) -> Double {
+  if required_pairs.length() == 0 {
+    return 0.0
+  }
+  let mut matched = 0
+  for encoded in required_pairs {
+    let (label, literal) = decode_table_pair(encoded)
+    if label.length() > 0 &&
+      literal.length() > 0 &&
+      pair_present_in_text(candidate_text, label, literal) {
+      matched += 1
+    }
+  }
+  if matched == 0 {
+    0.0
+  } else {
+    clamp_similarity(matched.to_double() / required_pairs.length().to_double())
+  }
+}
+
+///|
+fn implementation_evidence_text(implementation : ImplementationNode) -> String {
   let buf = StringBuilder::new()
   buf.write_string(implementation.name)
   buf.write_string("\n")
@@ -404,6 +825,13 @@ fn implementation_text(implementation : ImplementationNode) -> String {
   buf.write_string(implementation.signature)
   buf.write_string("\n")
   buf.write_string(implementation.declaration_text)
+  buf.to_string()
+}
+
+///|
+fn implementation_text(implementation : ImplementationNode) -> String {
+  let buf = StringBuilder::new()
+  buf.write_string(implementation_evidence_text(implementation))
   buf.write_string("\n")
   match implementation.doc_comment {
     Some(doc) => buf.write_string(doc)
@@ -476,54 +904,28 @@ fn score_texts(a : String, b : String, algorithm : String) -> Double {
 }
 
 ///|
-fn literals_from_text(text : String) -> Array[String] {
-  let values : Array[String] = []
-  let numeric : Array[Char] = []
-  let quoted : Array[Char] = []
-  let mut in_backtick = false
-
-  fn flush_numeric(values : Array[String], numeric : Array[Char]) -> Unit {
-    if numeric.length() >= 2 {
-      let value = String::from_array(numeric)
-      if !values.contains(value) {
-        values.push(value)
-      }
-    }
-    numeric.clear()
+fn adaptive_match_threshold(
+  scored : Array[(String, Double)],
+  config : SpecAlignConfig,
+) -> Double {
+  if scored.length() == 0 {
+    return config.threshold
   }
-
-  fn flush_quoted(values : Array[String], quoted : Array[Char]) -> Unit {
-    if quoted.length() > 0 {
-      let value = String::from_array(quoted)
-      if !values.contains(value) {
-        values.push(value)
-      }
-    }
-    quoted.clear()
+  let top1 = scored[0].1
+  let top2 = if scored.length() > 1 { scored[1].1 } else { 0.0 }
+  let gap = top1 - top2
+  let lowered = if config.threshold * 0.5 > 0.08 {
+    config.threshold * 0.5
+  } else {
+    0.08
   }
-
-  for ch in text.to_array() {
-    if ch == '`' {
-      if in_backtick {
-        flush_quoted(values, quoted)
-      }
-      in_backtick = !in_backtick
-      flush_numeric(values, numeric)
-      continue
-    }
-    if in_backtick {
-      quoted.push(ch)
-      continue
-    }
-    if ch >= '0' && ch <= '9' {
-      numeric.push(ch)
-    } else {
-      flush_numeric(values, numeric)
-    }
+  if top1 >= config.threshold {
+    config.threshold
+  } else if top1 >= lowered && gap >= 0.05 {
+    lowered
+  } else {
+    config.threshold
   }
-  flush_numeric(values, numeric)
-  flush_quoted(values, quoted)
-  values
 }
 
 ///|
@@ -537,25 +939,46 @@ fn build_trace_edges(
   for requirement in requirements {
     let scored : Array[(String, Double)] = []
     let req_text = requirement_text(requirement, scenarios)
+    let req_section_refs = requirement_section_refs(requirement, scenarios)
+    let req_literals = requirement_literals(requirement, scenarios)
+    let req_pairs = requirement_table_pairs(requirement, scenarios)
     for implementation in implementations {
-      let base_score = score_texts(
-        req_text,
-        implementation_text(implementation),
-        config.algorithm,
-      )
+      let impl_text = implementation_text(implementation)
+      let base_score = score_texts(req_text, impl_text, config.algorithm)
       let title_score = tfidf_similarity(
         requirement.title,
         normalize_identifier_words(implementation.name),
       )
-      let score = if title_score > base_score {
+      let section_score = section_reference_score(req_section_refs, impl_text)
+      let literal_score = literal_overlap_score(
+        req_literals,
+        implementation_evidence_text(implementation),
+      )
+      let table_score = table_pair_overlap_score(
+        req_pairs,
+        implementation_evidence_text(implementation),
+      )
+      let score = if title_score > base_score &&
+        title_score > section_score &&
+        title_score > literal_score &&
+        title_score > table_score {
         title_score
+      } else if section_score > base_score &&
+        section_score > literal_score &&
+        section_score > table_score {
+        section_score
+      } else if literal_score > base_score && literal_score > table_score {
+        literal_score
+      } else if table_score > base_score {
+        table_score
       } else {
         base_score
       }
       scored.push((implementation.id, score))
     }
     scored.sort_by(fn(a, b) { b.1.compare(a.1) })
-    let limit = if scored.length() < 3 { scored.length() } else { 3 }
+    let effective_threshold = adaptive_match_threshold(scored, config)
+    let limit = if scored.length() < 10 { scored.length() } else { 10 }
     for i = 0; i < limit; i = i + 1 {
       let (implementation_id, score) = scored[i]
       edges.push({
@@ -563,7 +986,7 @@ fn build_trace_edges(
         implementation_id,
         confidence: score,
         algorithm: config.algorithm,
-        status: if score >= config.threshold {
+        status: if score >= effective_threshold {
           "matched"
         } else {
           "unmatched"
@@ -589,6 +1012,20 @@ fn best_edge_for_requirement(
 }
 
 ///|
+fn candidate_edges_for_requirement(
+  edges : Array[TraceEdge],
+  requirement_id : String,
+) -> Array[TraceEdge] {
+  let result : Array[TraceEdge] = []
+  for edge in edges {
+    if edge.requirement_id == requirement_id {
+      result.push(edge)
+    }
+  }
+  result
+}
+
+///|
 fn implementation_by_id(
   implementations : Array[ImplementationNode],
   implementation_id : String,
@@ -599,6 +1036,147 @@ fn implementation_by_id(
     }
   }
   None
+}
+
+///|
+fn matched_implementations_for_requirement(
+  edges : Array[TraceEdge],
+  implementations : Array[ImplementationNode],
+  requirement_id : String,
+) -> Array[ImplementationNode] {
+  let result : Array[ImplementationNode] = []
+  let seen : Map[String, Bool] = {}
+  for edge in edges {
+    if edge.requirement_id != requirement_id || edge.status != "matched" {
+      continue
+    }
+    match implementation_by_id(implementations, edge.implementation_id) {
+      Some(implementation) => {
+        if seen.contains(implementation.id) {
+          continue
+        }
+        seen.set(implementation.id, true)
+        result.push(implementation)
+      }
+      None => ()
+    }
+  }
+  result
+}
+
+///|
+fn aggregate_requirement_evidence_text(
+  requirement_id : String,
+  edges : Array[TraceEdge],
+  implementations : Array[ImplementationNode],
+) -> String {
+  let buf = StringBuilder::new()
+  let matched = matched_implementations_for_requirement(
+    edges, implementations, requirement_id,
+  )
+  for implementation in matched {
+    if buf.to_string().length() > 0 {
+      buf.write_string("\n")
+    }
+    buf.write_string(implementation_evidence_text(implementation))
+  }
+  buf.to_string()
+}
+
+///|
+fn missing_literal_count(
+  required_literals : Array[String],
+  file_text : String,
+) -> Int {
+  let mut count = 0
+  for literal in required_literals {
+    if literal.length() > 0 && !literal_present(file_text, literal) {
+      count += 1
+    }
+  }
+  count
+}
+
+///|
+fn missing_pair_count(
+  required_pairs : Array[String],
+  file_text : String,
+) -> Int {
+  let mut count = 0
+  for encoded in required_pairs {
+    let (label, literal) = decode_table_pair(encoded)
+    if !pair_present_in_text(file_text, label, literal) {
+      count += 1
+    }
+  }
+  count
+}
+
+///|
+fn preferred_requirement_match(
+  requirement : RequirementNode,
+  scenarios : Array[ScenarioNode],
+  implementations : Array[ImplementationNode],
+  edges : Array[TraceEdge],
+) -> (TraceEdge?, ImplementationNode?) {
+  let candidates = candidate_edges_for_requirement(edges, requirement.id)
+  if candidates.length() == 0 {
+    return (None, None)
+  }
+  let required_literals = requirement_literals(requirement, scenarios)
+  let required_pairs = requirement_table_pairs(requirement, scenarios)
+  let mut best_edge : TraceEdge? = None
+  let mut best_implementation : ImplementationNode? = None
+  let mut best_missing_pairs = 1 << 30
+  let mut best_missing_literals = 1 << 30
+  let mut best_confidence = -1.0
+  let mut best_rank = 1 << 30
+  for edge in candidates {
+    let implementation = match
+      implementation_by_id(implementations, edge.implementation_id) {
+      Some(value) => value
+      None => continue
+    }
+    let file_text = implementation_evidence_text(implementation)
+    let missing_pairs = missing_pair_count(required_pairs, file_text)
+    let missing_literals = missing_literal_count(required_literals, file_text)
+    let better = missing_pairs < best_missing_pairs ||
+      (
+        missing_pairs == best_missing_pairs &&
+        missing_literals < best_missing_literals
+      ) ||
+      (
+        missing_pairs == best_missing_pairs &&
+        missing_literals == best_missing_literals &&
+        edge.confidence > best_confidence
+      ) ||
+      (
+        missing_pairs == best_missing_pairs &&
+        missing_literals == best_missing_literals &&
+        edge.confidence == best_confidence &&
+        edge.rank < best_rank
+      )
+    if better {
+      best_edge = Some(edge)
+      best_implementation = Some(implementation)
+      best_missing_pairs = missing_pairs
+      best_missing_literals = missing_literals
+      best_confidence = edge.confidence
+      best_rank = edge.rank
+    }
+  }
+  match (best_edge, best_implementation) {
+    (Some(edge), Some(implementation)) => (Some(edge), Some(implementation))
+    _ => {
+      let fallback_edge = best_edge_for_requirement(edges, requirement.id)
+      let fallback_impl = match fallback_edge {
+        Some(edge) =>
+          implementation_by_id(implementations, edge.implementation_id)
+        None => None
+      }
+      (fallback_edge, fallback_impl)
+    }
+  }
 }
 
 ///|
@@ -641,25 +1219,42 @@ fn diff_item_for_requirement(
   scenarios : Array[ScenarioNode],
   best_edge : TraceEdge?,
   matched_implementation : ImplementationNode?,
-  config : SpecAlignConfig,
+  edges : Array[TraceEdge],
+  implementations : Array[ImplementationNode],
   previous : AlignSnapshot?,
   file_hashes : Map[String, String],
-  file_contents : Map[String, String],
 ) -> AlignDiffItem {
   match (best_edge, matched_implementation) {
     (Some(edge), Some(implementation_node)) => {
       let reasons : Array[String] = []
+      let required_literals = requirement_literals(requirement, scenarios)
+      let required_pairs = requirement_table_pairs(requirement, scenarios)
       let previous_edge = find_previous_edge(previous, requirement.id)
       let previous_confidence = match previous_edge {
         Some(value) => Some(value.confidence)
         None => None
       }
-      let file_text = file_contents.get(implementation_node.file).unwrap_or("")
+      let aggregate_text = aggregate_requirement_evidence_text(
+        requirement.id,
+        edges,
+        implementations,
+      )
+      let file_text = if aggregate_text.length() > 0 {
+        aggregate_text
+      } else {
+        implementation_evidence_text(implementation_node)
+      }
       let missing_literals : Array[String] = []
-      for
-        literal in literals_from_text(requirement_text(requirement, scenarios)) {
-        if literal.length() > 0 && !file_text.contains(literal) {
+      for literal in required_literals {
+        if literal.length() > 0 && !literal_present(file_text, literal) {
           missing_literals.push(literal)
+        }
+      }
+      let missing_pairs : Array[String] = []
+      for encoded in required_pairs {
+        let (label, literal) = decode_table_pair(encoded)
+        if !pair_present_in_text(file_text, label, literal) {
+          missing_pairs.push(label + "=" + literal)
         }
       }
       let score_drop = match previous_edge {
@@ -672,7 +1267,7 @@ fn diff_item_for_requirement(
         None => 0.0
       }
       let mut category = "MATCHED"
-      if edge.confidence < config.threshold {
+      if edge.status != "matched" {
         category = "SPEC_ONLY"
         reasons.push(
           "No implementation matched above the similarity threshold.",
@@ -682,6 +1277,13 @@ fn diff_item_for_requirement(
         reasons.push(
           "Required literals not found in implementation: `" +
           missing_literals.join("`, `") +
+          "`.",
+        )
+      } else if missing_pairs.length() > 0 {
+        category = "DRIFTED"
+        reasons.push(
+          "Required table entries not found in implementation: `" +
+          missing_pairs.join("`, `") +
           "`.",
         )
       } else if score_drop >= 0.3 {
@@ -748,41 +1350,85 @@ fn diff_item_for_requirement(
 }
 
 ///|
+fn implementation_group_keys(
+  implementations : Array[ImplementationNode],
+) -> Map[String, String] {
+  let groups : Map[String, String] = {}
+  if implementations.length() == 0 {
+    return groups
+  }
+  let mut current_file = ""
+  let mut current_kind = ""
+  let mut current_start = 0
+  let mut current_end = 0
+  let mut current_key = ""
+  for implementation in implementations {
+    let extends_current = current_key != "" &&
+      implementation.file == current_file &&
+      implementation.kind == current_kind &&
+      implementation.start_line <= current_end + 1
+    if !extends_current {
+      current_file = implementation.file
+      current_kind = implementation.kind
+      current_start = implementation.start_line
+      current_end = implementation.end_line
+      current_key = implementation.file +
+        "\u0001" +
+        implementation.kind +
+        "\u0001" +
+        current_start.to_string()
+    } else if implementation.end_line > current_end {
+      current_end = implementation.end_line
+    }
+    groups.set(implementation.id, current_key)
+  }
+  groups
+}
+
+///|
 fn build_diff_items(
   requirements : Array[RequirementNode],
   scenarios : Array[ScenarioNode],
   implementations : Array[ImplementationNode],
   edges : Array[TraceEdge],
-  config : SpecAlignConfig,
   previous : AlignSnapshot?,
   file_hashes : Map[String, String],
-  file_contents : Map[String, String],
 ) -> Array[AlignDiffItem] {
   let items : Array[AlignDiffItem] = []
   let referenced : Map[String, Bool] = {}
-  for requirement in requirements {
-    let best_edge = best_edge_for_requirement(edges, requirement.id)
-    let matched_implementation = match best_edge {
-      Some(edge) =>
-        implementation_by_id(implementations, edge.implementation_id)
-      None => None
+  let referenced_groups : Map[String, Bool] = {}
+  let group_keys = implementation_group_keys(implementations)
+  for edge in edges {
+    if edge.status == "unmatched" || edge.status == "orphan" {
+      continue
     }
-    let item = diff_item_for_requirement(
-      requirement, scenarios, best_edge, matched_implementation, config, previous,
-      file_hashes, file_contents,
-    )
-    match item.implementation_id {
-      Some(implementation_id) =>
-        if item.category != "SPEC_ONLY" {
-          referenced.set(implementation_id, true)
+    referenced.set(edge.implementation_id, true)
+    match implementation_by_id(implementations, edge.implementation_id) {
+      Some(implementation) =>
+        match group_keys.get(implementation.id) {
+          Some(key) => referenced_groups.set(key, true)
+          None => ()
         }
       None => ()
     }
+  }
+  for requirement in requirements {
+    let (best_edge, matched_implementation) = preferred_requirement_match(
+      requirement, scenarios, implementations, edges,
+    )
+    let item = diff_item_for_requirement(
+      requirement, scenarios, best_edge, matched_implementation, edges, implementations,
+      previous, file_hashes,
+    )
     items.push(item)
   }
   for implementation in implementations {
     if referenced.contains(implementation.id) {
       continue
+    }
+    match group_keys.get(implementation.id) {
+      Some(key) => if referenced_groups.contains(key) { continue }
+      None => ()
     }
     items.push({
       category: "IMPL_ONLY",
@@ -853,7 +1499,7 @@ async fn build_snapshot(
     implementations,
     used_impl_specs,
     impl_hashes,
-    file_contents,
+    _file_contents,
     impl_file_states,
   ) = collect_impl_data(config, registry)
   if requirements.length() == 0 && implementations.length() == 0 {
@@ -870,8 +1516,7 @@ async fn build_snapshot(
     requirements, scenarios, implementations, config,
   )
   let diff_items = build_diff_items(
-    requirements, scenarios, implementations, edges, config, previous, file_hashes,
-    file_contents,
+    requirements, scenarios, implementations, edges, previous, file_hashes,
   )
   let summary = build_summary(requirements, implementations, edges, diff_items)
   let used_specs = used_spec_formats + used_impl_specs

@@ -23,8 +23,159 @@ pub struct DocumentFact {
 }
 
 ///|
+pub struct DocumentTablePair {
+  label : String
+  literal : String
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+///|
 pub struct InterpretedDocument {
   facts : Array[DocumentFact]
+}
+
+///|
+fn json_int_field(payload : Map[String, Json], key : String) -> Int {
+  match payload.get(key) {
+    Some(Number(value, ..)) => value.to_int()
+    Some(String(value)) => parse_int_or_zero(value)
+    _ => 0
+  }
+}
+
+///|
+fn json_string_array_field(
+  payload : Map[String, Json],
+  key : String,
+) -> Array[String] {
+  match payload.get(key) {
+    Some(Array(values)) => {
+      let result : Array[String] = []
+      for value in values {
+        match value {
+          String(text) => if !result.contains(text) { result.push(text) }
+          Number(n, ..) => {
+            let text = n.to_int().to_string()
+            if !result.contains(text) {
+              result.push(text)
+            }
+          }
+          _ => ()
+        }
+      }
+      result
+    }
+    _ => []
+  }
+}
+
+///|
+fn json_pair_array_field(
+  payload : Map[String, Json],
+  key : String,
+) -> Array[DocumentTablePair] {
+  match payload.get(key) {
+    Some(Array(values)) => {
+      let result : Array[DocumentTablePair] = []
+      for value in values {
+        match value {
+          Object(obj) => {
+            let label = match obj.get("label") {
+              Some(String(text)) => text
+              Some(Number(n, ..)) => n.to_int().to_string()
+              _ => ""
+            }
+            let literal = match obj.get("literal") {
+              Some(String(text)) => text
+              Some(Number(n, ..)) => n.to_int().to_string()
+              _ => ""
+            }
+            if label.length() == 0 || literal.length() == 0 {
+              continue
+            }
+            let pair = { label, literal }
+            if !result.contains(pair) {
+              result.push(pair)
+            }
+          }
+          _ => ()
+        }
+      }
+      result
+    }
+    _ => []
+  }
+}
+
+///|
+fn merge_unique_strings(target : Array[String], values : Array[String]) -> Unit {
+  for value in values {
+    if value.length() > 0 && !target.contains(value) {
+      target.push(value)
+    }
+  }
+}
+
+///|
+fn merge_unique_pairs(
+  target : Array[DocumentTablePair],
+  values : Array[DocumentTablePair],
+) -> Unit {
+  for value in values {
+    if !target.contains(value) {
+      target.push(value)
+    }
+  }
+}
+
+///|
+pub fn section_refs_for_line(
+  interpreted : InterpretedDocument,
+  line : Int,
+) -> Array[String] {
+  let result : Array[String] = []
+  for fact in interpreted.facts {
+    if fact.kind != "document_section_refs" ||
+      json_int_field(fact.payload, "line") != line {
+      continue
+    }
+    merge_unique_strings(result, json_string_array_field(fact.payload, "refs"))
+  }
+  result
+}
+
+///|
+pub fn literals_for_line(
+  interpreted : InterpretedDocument,
+  line : Int,
+) -> Array[String] {
+  let result : Array[String] = []
+  for fact in interpreted.facts {
+    if fact.kind != "document_literals" ||
+      json_int_field(fact.payload, "line") != line {
+      continue
+    }
+    merge_unique_strings(
+      result,
+      json_string_array_field(fact.payload, "values"),
+    )
+  }
+  result
+}
+
+///|
+pub fn table_pairs_for_line(
+  interpreted : InterpretedDocument,
+  line : Int,
+) -> Array[DocumentTablePair] {
+  let result : Array[DocumentTablePair] = []
+  for fact in interpreted.facts {
+    if fact.kind != "document_table_pairs" ||
+      json_int_field(fact.payload, "line") != line {
+      continue
+    }
+    merge_unique_pairs(result, json_pair_array_field(fact.payload, "pairs"))
+  }
+  result
 }
 
 ///|

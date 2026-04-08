@@ -89,6 +89,64 @@ fn json_string_array_field(
 }
 
 ///|
+fn encode_table_pair(pair : @doc_structure.DocumentTablePair) -> String {
+  pair.label + "\u0001" + pair.literal
+}
+
+///|
+fn note_strings_by_line(
+  interpreted : @doc_structure.InterpretedDocument,
+  kind : String,
+  key : String,
+) -> Map[Int, Array[String]] {
+  let result : Map[Int, Array[String]] = {}
+  for fact in interpreted.facts {
+    if fact.kind != kind {
+      continue
+    }
+    let line = json_int_field(fact.payload, "line")
+    if line <= 0 {
+      continue
+    }
+    let merged = match result.get(line) {
+      Some(items) => items.copy()
+      None => []
+    }
+    for item in json_string_array_field(fact.payload, key) {
+      if !merged.contains(item) {
+        merged.push(item)
+      }
+    }
+    result.set(line, merged)
+  }
+  result
+}
+
+///|
+fn note_pairs_by_line(
+  interpreted : @doc_structure.InterpretedDocument,
+) -> Map[Int, Array[String]] {
+  let result : Map[Int, Array[String]] = {}
+  let seen : Map[Int, Bool] = {}
+  for fact in interpreted.facts {
+    let line = json_int_field(fact.payload, "line")
+    if fact.kind != "document_table_pairs" || line <= 0 || seen.contains(line) {
+      continue
+    }
+    seen.set(line, true)
+    let items : Array[String] = []
+    for pair in @doc_structure.table_pairs_for_line(interpreted, line) {
+      let encoded = encode_table_pair(pair)
+      if !items.contains(encoded) {
+        items.push(encoded)
+      }
+    }
+    result.set(line, items)
+  }
+  result
+}
+
+///|
 fn load_spec_nodes(
   path : String,
   content : String,
@@ -104,6 +162,13 @@ fn load_spec_nodes(
     if interpreted.facts.length() == 0 {
       continue
     }
+    let refs_by_line = note_strings_by_line(
+      interpreted, "document_section_refs", "refs",
+    )
+    let literals_by_line = note_strings_by_line(
+      interpreted, "document_literals", "values",
+    )
+    let pairs_by_line = note_pairs_by_line(interpreted)
     let source_format = spec.get_language()
     let requirements : Array[RequirementNode] = []
     let scenarios : Array[ScenarioNode] = []
@@ -127,6 +192,15 @@ fn load_spec_nodes(
           source_start_line: json_int_field(payload, "line"),
           source_end_line: json_int_field(payload, "end_line"),
           criteria: [],
+          section_refs: refs_by_line
+          .get(json_int_field(payload, "line"))
+          .unwrap_or([]),
+          literals: literals_by_line
+          .get(json_int_field(payload, "line"))
+          .unwrap_or([]),
+          table_pairs: pairs_by_line
+          .get(json_int_field(payload, "line"))
+          .unwrap_or([]),
         })
       } else if ty == "document_scenario" {
         let parent_id = json_string_field(payload, "parent_id").unwrap_or("")
@@ -143,6 +217,15 @@ fn load_spec_nodes(
           source_file: path,
           source_start_line: json_int_field(payload, "line"),
           source_end_line: json_int_field(payload, "end_line"),
+          section_refs: refs_by_line
+          .get(json_int_field(payload, "line"))
+          .unwrap_or([]),
+          literals: literals_by_line
+          .get(json_int_field(payload, "line"))
+          .unwrap_or([]),
+          table_pairs: pairs_by_line
+          .get(json_int_field(payload, "line"))
+          .unwrap_or([]),
         })
       } else if ty == "document_requirement_criteria" {
         let parent_id = json_string_field(payload, "parent_id").unwrap_or("")

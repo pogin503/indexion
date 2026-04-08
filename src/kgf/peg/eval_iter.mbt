@@ -388,6 +388,8 @@ fn process_rule_ref_cont(
   if result.ok && !target_is_rule_ref && should_emit_rule_iter(ctx, rule_name) {
     // Materialize for callback
     let labels_map = materialize(result.labels, ctx.tokens)
+    labels_map.set("_start_tok", start_pos.to_json())
+    labels_map.set("_end_tok", result.end_pos.to_json())
     (ctx.on_rule_match)(rule_name, labels_map, start_pos, result.end_pos)
   }
   if result.ok {
@@ -466,6 +468,8 @@ fn run_parse_iter_internal(
         .unwrap_or({ ok: false, end_pos: 0, labels: empty_labels() })
       if result.ok && should_emit_rule_iter(ctx, start_rule) {
         let labels_map = materialize(result.labels, ctx.tokens)
+        labels_map.set("_start_tok", (0).to_json())
+        labels_map.set("_end_tok", result.end_pos.to_json())
         (ctx.on_rule_match)(start_rule, labels_map, 0, result.end_pos)
       }
       let final_labels = materialize(result.labels, ctx.tokens)

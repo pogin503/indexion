@@ -89,6 +89,8 @@ fn eval_node_rec(
       if result.ok && !target_is_rule_ref && should_emit_rule_rec(ctx, name) {
         // Materialize for callback
         let labels_map = materialize(result.labels, ctx.tokens)
+        labels_map.set("_start_tok", pos.to_json())
+        labels_map.set("_end_tok", result.end_pos.to_json())
         (ctx.on_rule_match)(name, labels_map, pos, result.end_pos)
       }
       if result.ok {
@@ -242,6 +244,8 @@ fn run_parse_rec_internal(
       let result = eval_rec(ctx, body_node_id, 0)
       if result.ok && should_emit_rule_rec(ctx, start_rule) {
         let labels_map = materialize(result.labels, ctx.tokens)
+        labels_map.set("_start_tok", (0).to_json())
+        labels_map.set("_end_tok", result.end_pos.to_json())
         (ctx.on_rule_match)(start_rule, labels_map, 0, result.end_pos)
       }
       let final_labels = materialize(result.labels, ctx.tokens)

@@ -72,6 +72,9 @@ pub struct RequirementNode {
   source_start_line : Int
   source_end_line : Int
   criteria : Array[String]
+  section_refs : Array[String]
+  literals : Array[String]
+  table_pairs : Array[String]
 } derive(Eq, Show, ToJson, @json.FromJson)
 
 ///|
@@ -85,6 +88,9 @@ pub struct ScenarioNode {
   source_file : String
   source_start_line : Int
   source_end_line : Int
+  section_refs : Array[String]
+  literals : Array[String]
+  table_pairs : Array[String]
 } derive(Eq, Show, ToJson, @json.FromJson)
 
 ///|

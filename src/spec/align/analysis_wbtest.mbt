@@ -381,6 +381,47 @@ async test "spec-align/user-story: diff parses user stories via KGF sections" {
 }
 
 ///|
+test "spec-align: required literals ignore citations and illustrative examples" {
+  let literals = ["30", "36", "128"]
+  assert_true(literals.contains("30"))
+  assert_true(literals.contains("36"))
+  assert_true(literals.contains("128"))
+  assert_false(literals.contains("437"))
+  assert_false(literals.contains("287"))
+  assert_false(literals.contains("1034"))
+  assert_false(literals.contains("512"))
+  assert_true(literal_present("export const initial_n = 0x80", "128"))
+}
+
+///|
+test "spec-align: section references match numbered headings generically" {
+  let requirement : RequirementNode = {
+    id: "REQ-10",
+    title: "6.1. SIMIAN Client Requests",
+    description: "The section defines CHIMP client requests.",
+    normative: None,
+    source_format: "test",
+    source_file: "test.md",
+    source_start_line: 1,
+    source_end_line: 2,
+    criteria: [],
+    section_refs: ["6.1"],
+    literals: [],
+    table_pairs: [],
+  }
+  let score = section_reference_score(
+    requirement.section_refs,
+    "RFC 2795 sections 6.1 and 6.2 CHIMP command encoding.",
+  )
+  assert_true(score >= 0.45)
+  let parent_score = section_reference_score(
+    ["6"],
+    "sections 6.1 and 6.2 command parsing",
+  )
+  assert_true(parent_score >= 0.24)
+}
+
+///|
 async test "spec-align/moonbit: suggest emits both directions for drift" {
   let root = temp_test_dir("moonbit-suggest")
   let config = fixture_config("moonbit", root)

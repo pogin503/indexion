@@ -3,7 +3,18 @@ pub struct PubDeclaration {
   kind : String
   name : String
   line : Int
+  start_pos : Int
+  end_pos : Int
   category : String
+  end_line : Int
+}
+
+///|
+priv struct DeclarationSpan {
+  line : Int
+  start_pos : Int
+  end_pos : Int
+  end_line : Int
 }
 
 ///|
@@ -67,14 +78,7 @@ fn is_doc_token_kind(kind : String) -> Bool {
 ///|
 pub fn extract_doc_map(tokens : Array[@kgf_types.Tok]) -> Map[Int, String] {
   let result : Map[Int, String] = {}
-  let token_lines : Array[Int] = Array::make(tokens.length(), 1)
-  let mut line = 1
-  for i, tok in tokens {
-    token_lines[i] = line
-    if tok.get_kind() == "NL" {
-      line += 1
-    }
-  }
+  let token_lines = build_token_lines(tokens)
   let mut i = 0
   while i < tokens.length() {
     let kind = tokens[i].get_kind()
@@ -104,7 +108,7 @@ pub fn extract_doc_map(tokens : Array[@kgf_types.Tok]) -> Map[Int, String] {
         let target_line = if i < token_lines.length() {
           token_lines[i]
         } else {
-          line
+          1
         }
         result.set(target_line, doc)
       }
@@ -113,6 +117,19 @@ pub fn extract_doc_map(tokens : Array[@kgf_types.Tok]) -> Map[Int, String] {
     }
   }
   result
+}
+
+///|
+fn build_token_lines(tokens : Array[@kgf_types.Tok]) -> Array[Int] {
+  let token_lines : Array[Int] = Array::make(tokens.length(), 1)
+  let mut line = 1
+  for i, tok in tokens {
+    token_lines[i] = line
+    if tok.get_kind() == "NL" {
+      line += 1
+    }
+  }
+  token_lines
 }
 
 ///|
@@ -175,6 +192,12 @@ pub fn extract_pub_declarations_and_doc_map(
     None => []
   }
   let line_offsets = build_line_offsets(prepared)
+  let declaration_spans = extract_declaration_spans(
+    parse_result.get_events(),
+    tokens,
+    prepared,
+    line_offsets,
+  )
   for edge in graph.get_edges() {
     if !(edge.kind is @graph.Declares) {
       continue
@@ -188,8 +211,35 @@ pub fn extract_pub_declarations_and_doc_map(
     } else {
       "type"
     }
-    let line = estimate_declaration_line(prepared, name, line_offsets)
-    declarations.push({ kind: normalized, name, line, category })
+    let approx_line = estimate_declaration_line(prepared, name, line_offsets)
+    let span = best_declaration_span(
+      declaration_spans, prepared, name, approx_line,
+    )
+    let line = match span {
+      Some(value) => value.line
+      None => approx_line
+    }
+    let start_pos = match span {
+      Some(value) => value.start_pos
+      None => 0
+    }
+    let end_pos = match span {
+      Some(value) => value.end_pos
+      None => 0
+    }
+    let end_line = match span {
+      Some(value) => value.end_line
+      None => line
+    }
+    declarations.push({
+      kind: normalized,
+      name,
+      line,
+      start_pos,
+      end_pos,
+      category,
+      end_line,
+    })
     if doc.length() > 0 {
       doc_map.set(line, doc)
     }
@@ -216,6 +266,110 @@ fn build_line_offsets(content : String) -> Array[Int] {
     }
   }
   offsets
+}
+
+///|
+fn line_for_char_offset(line_offsets : Array[Int], pos : Int) -> Int {
+  for line = line_offsets.length() - 1; line >= 0; line = line - 1 {
+    if pos >= line_offsets[line] {
+      return line + 1
+    }
+  }
+  1
+}
+
+///|
+fn parse_int_or_none(text : String) -> Int? {
+  if text.length() == 0 {
+    return None
+  }
+  let mut result = 0
+  for ch in text {
+    if ch < '0' || ch > '9' {
+      return None
+    }
+    result = result * 10 + (ch.to_int() - '0'.to_int())
+  }
+  Some(result)
+}
+
+///|
+fn event_token_index(labels : Map[String, Json], key : String) -> Int? {
+  match labels.get(key) {
+    Some(Number(value, ..)) => Some(value.to_int())
+    Some(String(value)) => parse_int_or_none(value)
+    _ => None
+  }
+}
+
+///|
+fn extract_declaration_spans(
+  events : Array[(String, Map[String, Json])],
+  tokens : Array[@kgf_types.Tok],
+  content : String,
+  line_offsets : Array[Int],
+) -> Array[DeclarationSpan] {
+  let spans : Array[DeclarationSpan] = []
+  for event in events {
+    let labels = event.1
+    let start_tok = match event_token_index(labels, "_start_tok") {
+      Some(value) => value
+      None => continue
+    }
+    let end_tok = match event_token_index(labels, "_end_tok") {
+      Some(value) => value
+      None => continue
+    }
+    if start_tok < 0 || end_tok <= start_tok || start_tok >= tokens.length() {
+      continue
+    }
+    let last_tok_index = if end_tok - 1 < tokens.length() {
+      end_tok - 1
+    } else {
+      tokens.length() - 1
+    }
+    if last_tok_index < start_tok {
+      continue
+    }
+    let start_pos = tokens[start_tok].get_pos()
+    let last_tok = tokens[last_tok_index]
+    let end_pos = last_tok.get_pos() + last_tok.get_text().length()
+    if start_pos < 0 || end_pos <= start_pos || end_pos > content.length() {
+      continue
+    }
+    let line = line_for_char_offset(line_offsets, start_pos)
+    let end_line = line_for_char_offset(line_offsets, end_pos - 1)
+    spans.push({ line, start_pos, end_pos, end_line })
+  }
+  spans
+}
+
+///|
+fn best_declaration_span(
+  spans : Array[DeclarationSpan],
+  content : String,
+  name : String,
+  approx_line : Int,
+) -> DeclarationSpan? {
+  let mut best : DeclarationSpan? = None
+  let mut best_distance = 1 << 30
+  let mut best_len = 1 << 30
+  for span in spans {
+    let span_text = content[span.start_pos:span.end_pos].to_string()
+    if !span_text.contains(name) {
+      continue
+    }
+    let distance = (span.line - approx_line).abs()
+    let length = span.end_pos - span.start_pos
+    let better = distance < best_distance ||
+      (distance == best_distance && length < best_len)
+    if better {
+      best = Some(span)
+      best_distance = distance
+      best_len = length
+    }
+  }
+  best
 }
 
 ///|

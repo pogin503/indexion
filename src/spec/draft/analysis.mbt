@@ -105,6 +105,51 @@ fn collect_section_requirement(
 }
 
 ///|
+fn section_roles_by_line(
+  path : String,
+  content : String,
+  registry : @registry.KGFRegistry,
+) -> Map[Int, String] {
+  let result : Map[Int, String] = {}
+  let language = match registry.detect_from_path(path) {
+    Some(value) => value
+    None => return result
+  }
+  let spec = match registry.get_spec(language) {
+    Some(value) => value
+    None => return result
+  }
+  let interpreted = @doc_structure.interpret_document(content, path, spec)
+  for fact in interpreted.facts {
+    if fact.kind != "document_section_role" {
+      continue
+    }
+    let line = match fact.payload.get("line") {
+      Some(Number(value, ..)) => value.to_int()
+      Some(String(value)) => @common.parse_int(value)
+      _ => 0
+    }
+    let role = match fact.payload.get("role") {
+      Some(String(value)) => value
+      _ => ""
+    }
+    if line > 0 && role.length() > 0 {
+      result[line] = role
+    }
+  }
+  result
+}
+
+///|
+fn should_include_section_role(role : String) -> Bool {
+  match role {
+    "" | "requirement" => true
+    "summary" => true
+    _ => false
+  }
+}
+
+///|
 fn collect_requirements_from_file(
   requirements : Array[DraftRequirement],
   path : String,
@@ -112,6 +157,7 @@ fn collect_requirements_from_file(
   registry : @registry.KGFRegistry,
   max_requirements : Int,
 ) -> Unit {
+  let roles = section_roles_by_line(path, content, registry)
   let sections = @doc_structure.load_document_sections(
     content,
     path,
@@ -121,6 +167,10 @@ fn collect_requirements_from_file(
     return
   }
   for section in sections {
+    let role = roles.get(section.line).unwrap_or("")
+    if !should_include_section_role(role) {
+      continue
+    }
     collect_section_requirement(requirements, path, section, max_requirements)
     if requirements.length() >= max_requirements {
       return

@@ -24,7 +24,10 @@ pub struct PubDeclaration {
   kind : String
   name : String
   line : Int
+  start_pos : Int
+  end_pos : Int
   category : String
+  end_line : Int
 }
 
 // Type aliases
