@@ -1,3 +1,167 @@
+# v0.7.0
+
+## Highlights
+
+- **`indexion spec` Command Family** — New SDD-oriented specification analysis: `spec align` for traceability & drift detection, `spec draft` for auto-generating SDD drafts from READMEs, and `spec verify` for spec-to-implementation conformance checking
+- **MinHash + LSH** — Locality-sensitive hashing for sub-quadratic duplicate detection in large corpora
+- **BM25 & Jensen-Shannon Divergence** — Advanced TF-IDF scoring with term saturation and information-theoretic distribution comparison
+- **Reconcile Refactoring** — Core reconcile analysis extracted from `cmd/` to `src/reconcile/` with new tracking and store packages
+- **Git VCS Integration** — Native git timestamp and dirty-flag tracking for file-state awareness
+- **KGF Declarations & Tokenize Packages** — Feature string layer and public declaration extraction refactored into dedicated packages
+- **N-Provider Digest Support** — Multiple concurrent embedding providers (TF-IDF + remote) in digest index
+
+## New Commands
+
+### `indexion spec align` — Specification Traceability & Drift Detection
+
+Full alignment engine with five subcommands for mapping requirements to implementations:
+
+```bash
+# Detect drift between spec and code
+indexion spec align diff --spec='docs/spec/*.md' --threshold=0.6 src/
+
+# Generate requirement-to-implementation trace
+indexion spec align trace --spec='docs/spec/*.md' src/
+
+# Get reconciliation suggestions with agent-aware tasks
+indexion spec align suggest --agent=claude --spec='docs/spec/*.md' src/
+
+# CI-friendly status check
+indexion spec align status --fail-on=drifted --spec='docs/spec/*.md' src/
+
+# Real-time monitoring
+indexion spec align watch --interval=5 --spec='docs/spec/*.md' src/
+```
+
+**`diff`** classifies requirements into: matched, drifted, spec-only, impl-only, conflict. Supports `tfidf`, `ncd`, and `hybrid` similarity algorithms. Incremental mode (`--incremental --git-base <ref>`) restricts analysis to changed files.
+
+**`trace`** builds a requirement-implementation correlation graph with confidence scores. Outputs JSON, YAML, or Mermaid diagrams. Commit-aware history tracking in cache.
+
+**`suggest`** emits spec-wins/impl-wins/both guidance with reasoning. Agent-aware task rendering for claude, copilot, or generic agents.
+
+**`status`** returns a CI-friendly summary with configurable exit codes.
+
+**`watch`** continuously reruns alignment when inputs change.
+
+### `indexion spec draft` — SDD Generation from Documentation
+
+Auto-generates Software Design Document (SDD) draft requirements from README and usage documentation.
+
+```bash
+indexion spec draft --specs-dir=kgfs docs/
+```
+
+Parses sections and feature bullets via KGF document interpretation, outputting numbered requirement drafts (REQ-1, REQ-2, ...) in markdown or JSON.
+
+### `indexion spec verify` — Spec Conformance Checking
+
+Identifies spec terminology absent from implementation — the reverse direction of reconcile.
+
+```bash
+indexion spec verify --spec='docs/spec/*.md' src/
+```
+
+Tokenizes both spec and implementation via KGF, builds TF-IDF vectors, and reports gap terms (spec concepts missing from code). Filterable by kind: `ident`, `text`, `vocab`, or `all`. Outputs JSON, markdown, or GitHub issue format.
+
+## New Packages
+
+### `src/text/minhash/` — MinHash & LSH
+
+MinHash signature generation (128 hashes, FNV-1a) for Jaccard similarity estimation with ~8.8% error. LSH (Locality-Sensitive Hashing) for approximate nearest neighbor search with automatic band parameter selection for target threshold.
+
+### `src/text/tfidf/bm25` — Okapi BM25
+
+BM25 scoring (k1=1.2, b=0.75) with term frequency saturation and document length normalization. Batch precomputation with cached norms for cosine similarity.
+
+### `src/text/tfidf/jsd` — Jensen-Shannon Divergence
+
+Symmetric, bounded [0,1] information-theoretic distance for token distributions. Treats frequencies as probability distributions, unlike geometric cosine similarity.
+
+### `src/text/stats/` — Statistical Thresholding
+
+Kneedle algorithm for automatic elbow detection in sorted weight curves. Used by gap term extraction to separate signal from noise.
+
+### `src/document/structure/` — Document Structure Parsing
+
+KGF-based document section parsing: heading hierarchy, document facts, table pair extraction, and interpreted document representation.
+
+### `src/embedding/config/` — Embedding Configuration SoT
+
+Single Source of Truth for embedding provider types: TfIdf, OpenAI, Precomputed. Includes VcdbStrategy (BruteForce, Hnsw, Ivf) and EmbeddingSource (Raw, Impression, RawWithContext) enums.
+
+### `src/kgf/declarations/` — Public Declaration Extraction
+
+Extracted from `src/kgf/features/` into dedicated package. KGF-aware public declaration extraction with preprocessing support.
+
+### `src/kgf/tokenize/` — Feature String Layer
+
+Feature string conversion layer between KGF lexer and TF-IDF: "Kind:value" format for identifiers, "Kind" for syntax tokens, "vocab:word" for natural language. Enables vocabulary-level comparison.
+
+### `src/pipeline/vocabulary/` — Vocabulary Divergence Pipeline
+
+Gap term extraction with project-wide document frequency filtering. Used bidirectionally: spec→code in verify, code→docs in reconcile.
+
+### `src/reconcile/plan/` — Reconcile Analysis (refactored)
+
+Core reconcile analysis moved from `cmd/indexion/plan/reconcile/` to `src/reconcile/plan/` for reusability across spec commands.
+
+### `src/reconcile/tracking/` — File State Tracking
+
+File-state tracking with git+mtime fallback: timestamps, dirty flags, content hashes.
+
+### `src/reconcile/store/` — Reconcile Cache Store
+
+Serialization/deserialization of cache manifests with version tracking.
+
+### `src/vcs/git/` — Native Git Integration
+
+Git repository detection, last commit timestamp extraction, dirty status checking, and repo root resolution. Platform-aware with graceful fallback to mtime when git is unavailable.
+
+## Improvements
+
+### Digest: N-Provider Support
+
+Digest index now supports multiple concurrent embedding providers, each with independent dimension tracking. New `RemoteEmbeddingProvider` loads pre-computed embeddings from JSONL files.
+
+### KGF Submodule Updates
+
+- SDD and RFC profiles added for specification document parsing
+- Shell, YAML, and project file language specifications
+- Lexer pattern matcher improvements
+- Preprocessing and capture group enhancements
+- Expanded programming KGF declaration coverage
+
+### Regex Capture Functions
+
+New capture group extraction functions for enhanced document parsing.
+
+## Bug Fixes
+
+- Fix `cmd/kgf-tokenizer/moon.pkg` missing imports for JS target (removed in warning cleanup, undetected by native-only check)
+- Fix ModuleDoc consuming declaration doc blocks
+- Fix `doc readme --per-package` symbol extraction
+
+## Fixtures
+
+- New: `fixtures/project/spec-align-basic/` — Multi-language auth system (MoonBit, TypeScript)
+- New: `fixtures/project/spec-align-rfc2795/` — RFC 2795 conformance (Rust, TypeScript)
+- New: `fixtures/project/spec-align-rfc3492/` — RFC 3492 Punycode conformance (Python, TypeScript)
+- New: `fixtures/project/spec-verify-jsonrpc/` — JSON-RPC 2.0 + RFC 7396 Merge Patch (MoonBit, Python, TypeScript)
+
+## Internal
+
+- Version: 0.6.0 → 0.7.0
+- 0 errors, 1352 tests (was 1205)
+- +25,897 lines, −4,065 lines (net +21,832)
+- New packages: 15 (spec/align, spec/draft, document/structure, embedding/config, kgf/declarations, kgf/tokenize, pipeline/vocabulary, reconcile/plan, reconcile/store, reconcile/tracking, text/minhash, text/stats, text/tfidf/bm25, text/tfidf/jsd, vcs/git)
+- New CLI commands: 3 (spec align, spec draft, spec verify)
+- New spec align subcommands: 5 (diff, trace, suggest, status, watch)
+- Reconcile core analysis extracted from cmd/ to src/ for cross-command reuse
+- KGF features split: declarations and tokenize into dedicated packages
+- Embedding configuration consolidated into single SoT package
+
+---
+
 # v0.6.0
 
 ## Highlights
