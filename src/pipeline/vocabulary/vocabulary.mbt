@@ -95,13 +95,17 @@ fn extract_gap_terms(
   ubiquity_threshold : Int,
   config : GapConfig,
 ) -> Array[GapTerm] {
-  // Build cross-prefix value index from target tokens.
-  // Enables matching "Ident:jsonrpc" in source against "StringLit:jsonrpc" in target.
-  let target_values : Map[String, Bool] = {}
+  // Build per-kind value index from target tokens.
+  // A source term is only considered matched if the target contains the
+  // same value under the SAME token kind (e.g. Ident:status in source
+  // matches Ident:status in target, but NOT TEXT:status in target).
+  // This prevents specification prose terms from being silently matched
+  // by unrelated identifier names in the implementation.
+  let target_kind_values : Map[String, Bool] = {}
   for kv in target_tf {
-    let value = @kgf_tokenize.feature_value(kv.0)
-    if value.length() >= config.min_value_length {
-      target_values[value] = true
+    let term = kv.0
+    if @kgf_tokenize.feature_has_value(term) {
+      target_kind_values[term] = true
     }
   }
   let value_weights : Map[String, (Double, String)] = {}
@@ -116,12 +120,8 @@ fn extract_gap_terms(
     if value.length() < config.min_value_length {
       continue
     }
-    // Skip if value exists in target under any prefix
-    if target_values.contains(value) {
-      continue
-    }
-    // Skip if exact term exists in target
-    if target_tf.get(term).unwrap_or(0) > 0 {
+    // Skip if exact term (same kind + value) exists in target
+    if target_kind_values.contains(term) {
       continue
     }
     // Skip ubiquitous terms
@@ -159,7 +159,10 @@ fn extract_gap_terms(
   let cutoff = @stats.kneedle_threshold_index(weights)
   // If Kneedle would discard more than 90% of gaps, the weight curve is
   // too flat for meaningful thresholding — return all gaps instead.
-  let min_cutoff = gaps.length() / 10 + 1
+  // For spec verify, return ALL gaps — the consumer decides relevance.
+  // Kneedle is too aggressive for spec compliance checking where every
+  // gap term is potentially a missing requirement implementation.
+  let min_cutoff = gaps.length()
   let effective_cutoff = if cutoff < min_cutoff {
     gaps.length()
   } else {
