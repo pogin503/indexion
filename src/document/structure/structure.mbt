@@ -34,7 +34,7 @@ pub struct InterpretedDocument {
 }
 
 ///|
-fn json_int_field(payload : Map[String, Json], key : String) -> Int {
+pub fn json_int_field(payload : Map[String, Json], key : String) -> Int {
   match payload.get(key) {
     Some(Number(value, ..)) => value.to_int()
     Some(String(value)) => parse_int_or_zero(value)
@@ -43,7 +43,7 @@ fn json_int_field(payload : Map[String, Json], key : String) -> Int {
 }
 
 ///|
-fn json_string_array_field(
+pub fn json_string_array_field(
   payload : Map[String, Json],
   key : String,
 ) -> Array[String] {

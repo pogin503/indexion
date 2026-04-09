@@ -407,6 +407,9 @@ fn extract_code_documents_with_graph(
 
 ///|
 /// Extract code documents from CodeGraph with edge information.
+/// Produces both symbol-level documents (for precise matches) and
+/// file-level summary documents (so that file-scoped queries like
+/// "spec draft profile" can locate the containing file).
 fn extract_code_from_graph(
   graph : @graph.CodeGraph,
   code_files : Array[(String, String)],
@@ -426,6 +429,8 @@ fn extract_code_from_graph(
       None => ()
     }
   }
+  // Collect symbol names per file for file-level summary documents
+  let file_symbols : Map[String, Array[String]] = {}
   for entry in graph.get_symbols() {
     let symbol = entry.1
     let module_file = match module_files.get(symbol.module_id) {
@@ -481,6 +486,57 @@ fn extract_code_from_graph(
       line: 0,
       kind: symbol.kind,
       attrs: doc_attrs,
+    })
+    // Accumulate symbol names for the file-level summary
+    match file_symbols.get(module_file) {
+      Some(arr) => arr.push(symbol.name)
+      None => file_symbols[module_file] = [symbol.name]
+    }
+  }
+  // Emit one file-level summary document per source file.
+  // Its text aggregates the file path components and all symbol names so that
+  // broad queries ("spec draft profile") match the file itself.
+  for file in code_files {
+    let (path, _content) = file
+    let lang = match registry {
+      Some(reg) =>
+        match reg.detect_from_path(path) {
+          Some(l) => l
+          None => ""
+        }
+      None => ""
+    }
+    let buf = StringBuilder::new()
+    buf.write_string(path)
+    buf.write_string(" ")
+    // Include path components as separate tokens so queries like
+    // "spec draft profile" match path segments individually.
+    for segment in @common.split_by_slash(path) {
+      buf.write_string(segment)
+      buf.write_string(" ")
+    }
+    match file_symbols.get(path) {
+      Some(names) =>
+        for name in names {
+          buf.write_string(" ")
+          buf.write_string(name)
+        }
+      None => ()
+    }
+    let attrs : Map[String, String] = {}
+    attrs["node_type"] = @kgf_features.node_type_code
+    attrs["node_kind"] = "file"
+    if lang.length() > 0 {
+      attrs["language"] = lang
+    }
+    out.push({
+      id: path,
+      text: buf.to_string(),
+      title: @config.basename(path),
+      source: path,
+      line: 1,
+      kind: "file",
+      attrs,
     })
   }
 }

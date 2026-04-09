@@ -93,17 +93,49 @@ fn push_requirement(
 }
 
 ///|
+/// Extract criteria for a section from KGF `document_requirement_criteria` facts.
+/// The KGF spec (e.g. sdd-numbered-requirement) uses `collectLinesAfterPrefixes`
+/// to extract list items — no hardcoded list patterns here.
+fn criteria_for_section(
+  facts : Array[@doc_structure.DocumentFact],
+  section_line : Int,
+  section_end_line : Int,
+) -> Array[String] {
+  let result : Array[String] = []
+  for fact in facts {
+    if fact.kind != "document_requirement_criteria" {
+      continue
+    }
+    let line = @doc_structure.json_int_field(fact.payload, "line")
+    if line < section_line || line > section_end_line {
+      continue
+    }
+    let items = @doc_structure.json_string_array_field(fact.payload, "criteria")
+    for item in items {
+      let trimmed = trim(item)
+      if trimmed.length() > 0 && !result.contains(trimmed) {
+        result.push(trimmed)
+      }
+    }
+  }
+  result
+}
+
+///|
 fn collect_section_requirement(
   requirements : Array[DraftRequirement],
   path : String,
   section : @doc_structure.DocumentSection,
+  facts : Array[@doc_structure.DocumentFact],
   max_requirements : Int,
 ) -> Unit {
+  let content = trim(section.content)
+  let criteria = criteria_for_section(facts, section.line, section.end_line)
   push_requirement(
     requirements,
     section.title,
-    trim(section.content),
-    [],
+    content,
+    criteria,
     path,
     section.line,
     max_requirements,
@@ -161,6 +193,7 @@ fn collect_requirements_from_file(
   path : String,
   content : String,
   registry : @registry.KGFRegistry,
+  profile : String,
   max_requirements : Int,
 ) -> Unit {
   let roles = section_roles_by_line(path, content, registry)
@@ -172,16 +205,39 @@ fn collect_requirements_from_file(
   if sections.length() == 0 {
     return
   }
+  // When using the SDD profile, load the profile-specific KGF spec
+  // to extract structured facts (e.g. document_requirement_criteria).
+  let facts = load_profile_facts(path, content, profile, registry)
   for section in sections {
     let role = roles.get(section.line).unwrap_or("")
     if !should_include_section_role(role) {
       continue
     }
-    collect_section_requirement(requirements, path, section, max_requirements)
+    collect_section_requirement(
+      requirements, path, section, facts, max_requirements,
+    )
     if requirements.length() >= max_requirements {
       return
     }
   }
+}
+
+///|
+/// Load KGF facts using the draft profile's spec (e.g. sdd-numbered-requirement).
+/// Falls back to an empty fact list if the profile spec is not available.
+fn load_profile_facts(
+  path : String,
+  content : String,
+  profile : String,
+  registry : @registry.KGFRegistry,
+) -> Array[@doc_structure.DocumentFact] {
+  // Try to use the profile as a KGF language name
+  let spec = match registry.get_spec(profile) {
+    Some(s) => s
+    None => return []
+  }
+  let interpreted = @doc_structure.interpret_document(content, path, spec)
+  interpreted.facts
 }
 
 ///|
@@ -203,6 +259,7 @@ fn build_report(config : DraftConfig) -> DraftReport? {
       path,
       content,
       registry,
+      config.profile,
       config.max_requirements,
     )
     if requirements.length() >= config.max_requirements {
