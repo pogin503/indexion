@@ -75,20 +75,14 @@ pub fn command() -> @argparse.Command {
 ///|
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
   let parsed = WikiPlanConfig::from_matches(matches)
-  let config = {
-    ..parsed,
-    wiki_dir: if parsed.wiki_dir == ".indexion/wiki" {
-      match @config.resolve_project_indexion_dir(parsed.target_dir, "wiki") {
-        Some(dir) => dir
-        None => {
-          println("Error: Could not find project root directory.")
-          return
-        }
-      }
-    } else {
-      parsed.wiki_dir
-    },
+  let wiki_dir_resolved = match @common.resolve_wiki_dir(parsed.wiki_dir) {
+    Some(dir) => dir
+    None => {
+      println("Error: Could not find project root directory.")
+      return
+    }
   }
+  let config = { ..parsed, wiki_dir: wiki_dir_resolved }
   println("Analyzing project structure...")
   let graph = match
     @digest_cli.build_graph_from_source(config.target_dir, config.specs_dir) {

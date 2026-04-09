@@ -47,7 +47,12 @@ pub fn load_wiki(
     )
   }
   let nav = build_nav(manifest.pages)
-  Some(@types.WikiData::new(nav~, pages~))
+  let index_content : String? = (try Some(
+    @fs.read_file_to_string(wiki_dir + "/index.md"),
+  ) catch {
+    _ => None
+  })
+  Some(@types.WikiData::new(nav~, pages~, index_content~))
 }
 
 ///|

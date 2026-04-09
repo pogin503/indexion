@@ -28,15 +28,19 @@ flowchart TD
     PLAN --> PREC[reconcile]
     PLAN --> PREADME[readme]
 
-    WIKI --> WP[plan]
+    WIKI --> WPAGES[pages]
+    WIKI --> WINDEX[index]
     WIKI --> WL[lint]
-    WIKI --> WI[ingest]
-    WIKI --> WX[index]
-    WIKI --> WA[add-page]
-    WIKI --> WU[update-page]
     WIKI --> WE[export]
     WIKI --> WM[import]
     WIKI --> WO[log]
+
+    WPAGES --> WP[plan]
+    WPAGES --> WA[add]
+    WPAGES --> WU[update]
+    WPAGES --> WI[ingest]
+
+    WINDEX --> WIB[build]
 
     DOC --> DI[init]
     DOC --> DG[graph]
@@ -186,10 +190,10 @@ indexion plan readme [options] <directory>
 
 ### plan wiki
 
-Analyze project structure and generate a wiki writing plan. Proposes concept-based page structure based on CodeGraph analysis.
+Analyze project structure and generate a wiki writing plan. Proposes concept-based page structure based on CodeGraph analysis. This is an alias for `indexion wiki pages plan`.
 
 ```bash
-indexion wiki plan [options] <directory>
+indexion wiki pages plan [options] <directory>
 ```
 
 | Option | Description | Default |
@@ -210,12 +214,27 @@ Wiki management commands. All wiki operations are grouped under this top-level c
 indexion wiki <subcommand> [options]
 ```
 
-### wiki plan
+### wiki pages
+
+Manage wiki pages. All page lifecycle operations are grouped under this subcommand.
+
+```bash
+indexion wiki pages <subcommand> [options]
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `plan` | Propose page structure from CodeGraph |
+| `add` | Add a new page to the manifest |
+| `update` | Update an existing page |
+| `ingest` | Detect pages with stale source files |
+
+### wiki pages plan
 
 Analyze project structure and generate a wiki writing plan from CodeGraph analysis.
 
 ```bash
-indexion wiki plan [options] <directory>
+indexion wiki pages plan [options] <directory>
 ```
 
 | Option | Description | Default |
@@ -223,6 +242,88 @@ indexion wiki plan [options] <directory>
 | `--format=FORMAT` | `md`, `json`, `github-issue` | `md` |
 | `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
 | `-o=FILE` | Output to file | stdout |
+
+### wiki pages ingest
+
+Detect source file changes since the last run and generate wiki update tasks for affected pages.
+
+```bash
+indexion wiki pages ingest [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
+| `--format=FORMAT` | `md`, `json`, `github-issue` | `md` |
+| `--dry-run` | Detect changes but don't update the ingest manifest | false |
+| `-o=FILE` | Output to file | stdout |
+
+Hashes each source file listed in `wiki.json` using content-addressable storage (`@cas_hash`), compares against `.indexion/wiki/ingest-manifest.json`, and produces a task list of pages whose sources have changed. The tool generates tasks only -- actual page rewriting is the responsibility of the human or agent that receives the task list.
+
+### wiki pages add
+
+Add a new page to the wiki manifest and write the `.md` file.
+
+```bash
+indexion wiki pages add --id=<id> --title=<title> --content=<file.md> [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--id` | Page ID (slug, e.g. `my-page`) | required |
+| `--title` | Page title | required |
+| `--content` | Path to `.md` file with page content | required |
+| `--parent` | Parent page ID (adds this page as a child) | -- |
+| `--sources` | Comma-separated source file paths | -- |
+| `--provenance` | `extracted`, `synthesized`, or `manual` | -- |
+| `--actor` | Who is adding: `indexion`, `agent:<name>`, `user` | `user` |
+| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
+
+### wiki pages update
+
+Update an existing wiki page's content and metadata.
+
+```bash
+indexion wiki pages update --id=<id> --content=<file.md> [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--id` | Page ID to update | required |
+| `--content` | Path to `.md` file with new content | required |
+| `--sources` | Comma-separated source paths (replaces existing) | -- |
+| `--provenance` | `extracted`, `synthesized`, or `manual` | -- |
+| `--actor` | Who is updating: `indexion`, `agent:<name>`, `user` | `user` |
+| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
+
+### wiki index
+
+Manage the wiki index (navigation catalog and search vectors).
+
+```bash
+indexion wiki index <subcommand> [options]
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `build` | Build `index.md` and optionally `vectors.db` |
+
+### wiki index build
+
+Build the wiki navigation index and optionally the vector search index.
+
+```bash
+indexion wiki index build [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
+| `--output=FILE` | Output path for index.md | `<wiki-dir>/index.md` |
+| `--dry-run` | Print index.md to stdout instead of writing | false |
+| `--full` | Also build vector search index (`vectors.db` + `search-sections.json`) | false |
+
+The index groups pages by their top-level source directory (e.g., `src`, `cmd`, `kgfs`), identifies **hub pages** (most-linked via `wiki://` references), and lists recent changes from the operation log. With `--full`, `indexion search .indexion/wiki/` will use the pre-built vectors instead of rebuilding from scratch.
 
 ### wiki lint
 
@@ -248,77 +349,6 @@ indexion wiki lint [options]
 6. **Manifest-file mismatch** -- wiki.json entries with no corresponding .md file (or vice versa)
 
 **When to use:** After adding or updating wiki pages. Also exposed as an MCP tool (`wiki_lint`) for AI-driven workflows.
-
-### wiki ingest
-
-Detect source file changes since the last run and generate wiki update tasks for affected pages.
-
-```bash
-indexion wiki ingest [options]
-```
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
-| `--format=FORMAT` | `md`, `json`, `github-issue` | `md` |
-| `--dry-run` | Detect changes but don't update the ingest manifest | false |
-| `-o=FILE` | Output to file | stdout |
-
-Hashes each source file listed in `wiki.json` using content-addressable storage (`@cas_hash`), compares against `.indexion/wiki/ingest-manifest.json` (the previous state snapshot), and produces a task list of pages whose sources have changed. The tool generates tasks only -- actual page rewriting is the responsibility of the human or agent that receives the task list.
-
-**When to use:** After modifying source files, to identify which wiki pages need updating. Also exposed as `wiki_ingest` MCP tool.
-
-### wiki index
-
-Generate a navigational index page (`index.md`) for the wiki.
-
-```bash
-indexion wiki index [options]
-```
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
-| `--output=FILE` | Output path | `<wiki-dir>/index.md` |
-| `--dry-run` | Print to stdout instead of writing | false |
-
-The index groups pages by their top-level source directory (e.g., `src`, `cmd`, `kgfs`), identifies **hub pages** (most-linked via `wiki://` references), and lists recent changes from the operation log. LLM agents should consult `index.md` as the entry point for wiki navigation.
-
-### wiki add-page
-
-Add a new page to the wiki manifest and write the `.md` file.
-
-```bash
-indexion wiki add-page --id=<id> --title=<title> --content=<file.md> [options]
-```
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--id` | Page ID (slug, e.g. `my-page`) | required |
-| `--title` | Page title | required |
-| `--content` | Path to `.md` file with page content | required |
-| `--parent` | Parent page ID (adds this page as a child) | -- |
-| `--sources` | Comma-separated source file paths | -- |
-| `--provenance` | `extracted`, `synthesized`, or `manual` | -- |
-| `--actor` | Who is adding: `indexion`, `agent:<name>`, `user` | `user` |
-| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
-
-### wiki update-page
-
-Update an existing wiki page's content and metadata.
-
-```bash
-indexion wiki update-page --id=<id> --content=<file.md> [options]
-```
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--id` | Page ID to update | required |
-| `--content` | Path to `.md` file with new content | required |
-| `--sources` | Comma-separated source paths (replaces existing) | -- |
-| `--provenance` | `extracted`, `synthesized`, or `manual` | -- |
-| `--actor` | Who is updating: `indexion`, `agent:<name>`, `user` | `user` |
-| `--wiki-dir=DIR` | Wiki directory | `.indexion/wiki` |
 
 ### wiki export
 
@@ -367,7 +397,7 @@ indexion wiki log [options]
 | `--tail=N` | Show only the last N entries | all |
 | `--json` | Output as JSON instead of text | false |
 
-Every wiki-modifying command (add-page, update-page, lint, ingest, index) appends an entry to `.indexion/wiki/log.json`. Each entry records the timestamp, operation name, actor, summary, and affected page IDs.
+Every wiki-modifying command (`pages add`, `pages update`, `pages ingest`, `index build`, `lint`) appends an entry to `.indexion/wiki/log.json`. Each entry records the timestamp, operation name, actor, summary, and affected page IDs.
 
 ---
 

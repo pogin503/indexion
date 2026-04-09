@@ -10,6 +10,5 @@ import {
   "trkbt10/indexion/src/docgen/wiki/reader" @wiki_reader,
   "trkbt10/indexion/src/plan/types" @plan_types,
   "trkbt10/indexion/src/plan/render" @plan_render,
-  "trkbt10/indexion/src/config" @config,
   "trkbt10/indexion/src/kgf/features" @kgf_features,
 }

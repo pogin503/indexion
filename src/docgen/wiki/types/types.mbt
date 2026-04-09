@@ -62,6 +62,9 @@ pub struct WikiNav {
 pub struct WikiData {
   nav : WikiNav
   pages : Map[String, WikiPage]
+  /// Navigation index content (index.md), if present.
+  /// Used by export to populate the Home page equivalent.
+  index_content : String?
 }
 
 ///|
@@ -114,8 +117,9 @@ pub fn WikiNav::new(pages? : Array[WikiNavItem] = []) -> WikiNav {
 pub fn WikiData::new(
   nav~ : WikiNav,
   pages~ : Map[String, WikiPage],
+  index_content? : String? = None,
 ) -> WikiData {
-  { nav, pages }
+  { nav, pages, index_content }
 }
 
 ///|

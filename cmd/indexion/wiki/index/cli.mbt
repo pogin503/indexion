@@ -1,17 +1,44 @@
 ///|
 /// # indexion wiki index
 ///
-/// Generate a category-based index page for the wiki.
+/// Manage the wiki index: navigation catalog and vector search index.
+///
+/// ## Subcommands
+///
+/// - `build` - Build nav index (index.md) and optionally vector index (vectors.db)
 
 ///|
 pub fn command() -> @argparse.Command {
   @argparse.Command(
     "index",
-    about="Generate wiki index page (category catalog + hub pages)",
+    about="Manage wiki index (navigation catalog + search vectors)",
+    subcommand_required=true,
+    subcommands=[build_command()],
+  )
+}
+
+///|
+pub async fn dispatch(matches : @argparse.Matches) -> Unit {
+  guard matches.subcommand is Some((name, sub)) else { return }
+  match name {
+    "build" => run_build(sub)
+    _ => ()
+  }
+}
+
+///|
+fn build_command() -> @argparse.Command {
+  @argparse.Command(
+    "build",
+    about="Build wiki index (index.md + optionally vectors.db)",
     flags=[
       @argparse.FlagArg(
         "dry-run",
-        about="Output to stdout instead of writing to wiki",
+        about="Output index.md to stdout instead of writing to wiki",
+      ),
+      @argparse.FlagArg(
+        "full",
+        about="Also build vector search index (vectors.db + search-sections.json)",
       ),
     ],
     options=[
@@ -29,21 +56,18 @@ pub fn command() -> @argparse.Command {
 }
 
 ///|
-pub fn run_matches(matches : @argparse.Matches) -> Unit {
-  let wiki_dir = match matches.values.get("wiki-dir") {
-    Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
-    _ => ".indexion/wiki"
-  }
-  let wiki_dir_resolved = if wiki_dir == ".indexion/wiki" {
-    match @config.resolve_project_indexion_dir(".", "wiki") {
-      Some(dir) => dir
-      None => {
-        println("Error: Could not find project root directory.")
-        return
-      }
+async fn run_build(matches : @argparse.Matches) -> Unit {
+  let wiki_dir_resolved = match @common.resolve_wiki_dir(
+    match matches.values.get("wiki-dir") {
+      Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
+      _ => ".indexion/wiki"
+    },
+  ) {
+    Some(dir) => dir
+    None => {
+      println("Error: Could not find project root directory.")
+      return
     }
-  } else {
-    wiki_dir
   }
   let output = match matches.values.get("output") {
     Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
@@ -54,6 +78,10 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     _ => "kgfs"
   }
   let dry_run = match matches.flags.get("dry-run") {
+    Some(v) => v
+    _ => false
+  }
+  let full = match matches.flags.get("full") {
     Some(v) => v
     _ => false
   }
@@ -76,13 +104,12 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
   } else {
     None
   }
-  // Build index
+  // Build navigation index
   let index = @wiki_index.build_index(wiki, log_opt)
   let content = index.to_markdown()
   if dry_run || output.length() > 0 {
     @common.write_output(output, content, label="Wiki index")
   } else {
-    // Write index.md to wiki directory
     let index_path = wiki_dir_resolved + "/index.md"
     @fs.write_string_to_file(index_path, content) catch {
       e => {
@@ -91,11 +118,42 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
       }
     }
     println(
-      "Generated index.md with " +
+      "Built index.md: " +
       index.total_pages.to_string() +
-      " pages in " +
+      " pages, " +
       index.categories.length().to_string() +
       " categories",
+    )
+  }
+  // Build vector search index if --full
+  if full {
+    println("Building vector search index...")
+    let provider : @embed_config.EmbeddingProvider = @embed_config.TfIdf(256)
+    let search_index = @wiki_search.build_search_index(
+      wiki.pages,
+      provider,
+      registry~,
+    ) catch {
+      @embed.ParseError(msg) => {
+        println("Error building search index: " + msg)
+        return
+      }
+      @embed.ApiError(code, msg) => {
+        println(
+          "Error building search index (API " + code.to_string() + "): " + msg,
+        )
+        return
+      }
+      @embed.NoResult => {
+        println("Error building search index: no embedding result")
+        return
+      }
+    }
+    search_index.save(wiki_dir_resolved)
+    println(
+      "Built vectors.db: " +
+      search_index.sections.length().to_string() +
+      " sections",
     )
   }
   // Log the operation
@@ -103,13 +161,14 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
   op_log.append(
     @wiki_log.WikiLogEntry::new(
       timestamp=@env.now(),
-      operation="index",
+      operation="index build",
       actor="indexion",
-      summary="Generated index with " +
+      summary="Built index: " +
         index.categories.length().to_string() +
         " categories, " +
         index.hub_pages.length().to_string() +
-        " hub pages",
+        " hub pages" +
+        (if full { " + vectors" } else { "" }),
     ),
   )
   op_log.save(wiki_dir_resolved)

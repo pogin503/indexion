@@ -30,20 +30,17 @@ pub fn command() -> @argparse.Command {
 
 ///|
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
-  let wiki_dir = match matches.values.get("wiki-dir") {
-    Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
-    _ => ".indexion/wiki"
-  }
-  let wiki_dir_resolved = if wiki_dir == ".indexion/wiki" {
-    match @config.resolve_project_indexion_dir(".", "wiki") {
-      Some(dir) => dir
-      None => {
-        println("Error: Could not find project root directory.")
-        return
-      }
+  let wiki_dir_resolved = match @common.resolve_wiki_dir(
+    match matches.values.get("wiki-dir") {
+      Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
+      _ => ".indexion/wiki"
+    },
+  ) {
+    Some(dir) => dir
+    None => {
+      println("Error: Could not find project root directory.")
+      return
     }
-  } else {
-    wiki_dir
   }
   let format = match matches.values.get("format") {
     Some(arr) => if arr.length() > 0 { arr[0] } else { "md" }

@@ -174,6 +174,30 @@ fn is_wiki_dir(path : String) -> Bool {
 }
 
 ///|
+/// Try to load a pre-built wiki search engine from vectors.db.
+/// Returns Some(engine) when the path is a single wiki directory with a
+/// persisted index; None otherwise (caller should fall back to build_corpus).
+pub fn load_prebuilt_wiki_engine(
+  paths : Array[String],
+) -> @search_engine.SearchEngine? {
+  // Only applies when the sole target is a wiki directory
+  if paths.length() != 1 {
+    return None
+  }
+  let resolved = resolve_wiki_path(paths[0])
+  if !is_wiki_dir(resolved) {
+    return None
+  }
+  if !@wiki_search.exists(resolved) {
+    return None
+  }
+  match @wiki_search.load(resolved) {
+    Some(idx) => Some(idx.engine)
+    None => None
+  }
+}
+
+///|
 /// Resolve wiki path — if it's `.indexion/wiki`, resolve via config.
 fn resolve_wiki_path(path : String) -> String {
   if path.has_suffix(".indexion/wiki") || path.has_suffix(".indexion/wiki/") {

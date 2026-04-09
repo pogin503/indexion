@@ -1,12 +1,12 @@
 ///|
-/// # indexion wiki update-page
+/// # indexion wiki pages update
 ///
 /// Update an existing wiki page's content and metadata.
 
 ///|
 pub fn command() -> @argparse.Command {
   @argparse.Command(
-    "update-page",
+    "update",
     about="Update an existing wiki page",
     options=[
       @argparse.OptionArg("id", about="Page ID to update"),
@@ -48,25 +48,20 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
   }
   if id.length() == 0 || content_path.length() == 0 {
     println("Error: --id and --content are required.")
-    println(
-      "Usage: indexion wiki update-page --id=<id> --content=<file.md>",
-    )
+    println("Usage: indexion wiki pages update --id=<id> --content=<file.md>")
     return
   }
-  let wiki_dir = match matches.values.get("wiki-dir") {
-    Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
-    _ => ".indexion/wiki"
-  }
-  let wiki_dir_resolved = if wiki_dir == ".indexion/wiki" {
-    match @config.resolve_project_indexion_dir(".", "wiki") {
-      Some(dir) => dir
-      None => {
-        println("Error: Could not find project root directory.")
-        return
-      }
+  let wiki_dir_resolved = match @common.resolve_wiki_dir(
+    match matches.values.get("wiki-dir") {
+      Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
+      _ => ".indexion/wiki"
+    },
+  ) {
+    Some(dir) => dir
+    None => {
+      println("Error: Could not find project root directory.")
+      return
     }
-  } else {
-    wiki_dir
   }
   let sources_str = match matches.values.get("sources") {
     Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
@@ -80,46 +75,16 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     Some(arr) => if arr.length() > 0 { arr[0] } else { "user" }
     _ => "user"
   }
-  // Read new content
-  let content = try {
-    @fs.read_file_to_string(content_path)
-  } catch {
+  let content = @fs.read_file_to_string(content_path) catch {
     e => {
       println("Error reading content file: " + e.to_string())
       return
     }
   }
-  // Load existing manifest
-  let manifest_path = @wiki_types.wiki_manifest_path(wiki_dir_resolved)
-  if !@fs.path_exists(manifest_path) {
-    println("Error: No wiki manifest found at " + manifest_path)
-    return
+  let manifest = match @wiki_manifest.load_manifest(wiki_dir_resolved) {
+    Some(m) => m
+    None => return
   }
-  let manifest_content = try {
-    @fs.read_file_to_string(manifest_path)
-  } catch {
-    e => {
-      println("Error reading manifest: " + e.to_string())
-      return
-    }
-  }
-  let manifest_json = try {
-    @json.parse(manifest_content)
-  } catch {
-    e => {
-      println("Error parsing manifest: " + e.to_string())
-      return
-    }
-  }
-  let manifest : @wiki_types.WikiManifest = try {
-    @json.from_json!(manifest_json)
-  } catch {
-    e => {
-      println("Error decoding manifest: " + e.to_string())
-      return
-    }
-  }
-  // Find and update the page
   let mut found = false
   let new_pages : Array[@wiki_types.ManifestPage] = []
   for mp in manifest.pages {
@@ -136,15 +101,9 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
       }
       let updated = match (new_sources, new_provenance) {
         (Some(s), Some(p)) =>
-          mp.with_updates(
-            sources=s,
-            provenance=p,
-            last_actor=Some(actor),
-          )
-        (Some(s), None) =>
-          mp.with_updates(sources=s, last_actor=Some(actor))
-        (None, Some(p)) =>
-          mp.with_updates(provenance=p, last_actor=Some(actor))
+          mp.with_updates(sources=s, provenance=p, last_actor=Some(actor))
+        (Some(s), None) => mp.with_updates(sources=s, last_actor=Some(actor))
+        (None, Some(p)) => mp.with_updates(provenance=p, last_actor=Some(actor))
         (None, None) => mp.with_updates(last_actor=Some(actor))
       }
       new_pages.push(updated)
@@ -156,35 +115,19 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     println("Error: Page with ID '" + id + "' not found in manifest.")
     return
   }
-  // Write updated manifest
   let new_manifest = @wiki_types.WikiManifest::new(
     title=manifest.title,
     pages=new_pages,
   )
-  let new_manifest_json = new_manifest
-    .to_json()
-    .stringify(indent=2)
-  @fs.write_string_to_file(manifest_path, new_manifest_json) catch {
-    e => {
-      println("Error writing manifest: " + e.to_string())
-      return
-    }
-  }
-  // Write page content
-  let page_path = wiki_dir_resolved + "/" + id + ".md"
-  @fs.write_string_to_file(page_path, content) catch {
-    e => {
-      println("Error writing page file: " + e.to_string())
-      return
-    }
+  if !@wiki_manifest.write_page(wiki_dir_resolved, new_manifest, id, content) {
+    return
   }
   println("Updated page '" + id + "'")
-  // Log the operation
   let log = @wiki_log.WikiLog::load(wiki_dir_resolved)
   log.append(
     @wiki_log.WikiLogEntry::new(
       timestamp=@env.now(),
-      operation="update-page",
+      operation="pages update",
       actor=actor,
       summary="Updated page: " + id,
       affected_pages=[id],

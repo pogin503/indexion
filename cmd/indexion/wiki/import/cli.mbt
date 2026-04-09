@@ -32,29 +32,9 @@ pub fn command() -> @argparse.Command {
 }
 
 ///|
-fn get_option(
-  matches : @argparse.Matches,
-  key : String,
-  default : String,
-) -> String {
-  match matches.values.get(key) {
-    Some(arr) => if arr.length() > 0 { arr[0] } else { default }
-    _ => default
-  }
-}
-
-///|
-fn has_flag(matches : @argparse.Matches, key : String) -> Bool {
-  match matches.flags.get(key) {
-    Some(v) => v
-    _ => false
-  }
-}
-
-///|
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
-  let format = get_option(matches, "format", "auto")
-  let input_dir = get_option(matches, "input", "")
+  let format = @common.get_option(matches, "format", "auto")
+  let input_dir = @common.get_option(matches, "input", "")
   if input_dir.length() == 0 {
     println("Error: --input is required for import.")
     println(
@@ -62,20 +42,17 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     )
     return
   }
-  let output_dir = get_option(matches, "output", ".indexion/wiki")
-  let output_resolved = if output_dir == ".indexion/wiki" {
-    match @config.resolve_project_indexion_dir(".", "wiki") {
-      Some(dir) => dir
-      None => {
-        println("Error: Could not find project root directory.")
-        return
-      }
+  let output_resolved = match @common.resolve_wiki_dir(
+    @common.get_option(matches, "output", ".indexion/wiki"),
+  ) {
+    Some(dir) => dir
+    None => {
+      println("Error: Could not find project root directory.")
+      return
     }
-  } else {
-    output_dir
   }
-  let wiki_title = get_option(matches, "title", "Wiki")
-  let force = has_flag(matches, "force")
+  let wiki_title = @common.get_option(matches, "title", "Wiki")
+  let force = @common.get_flag(matches, "force")
   let data = match format {
     "github" => @wiki_interop.load_github_wiki(input_dir)
     "gitlab" => @wiki_interop.load_gitlab_wiki(input_dir)

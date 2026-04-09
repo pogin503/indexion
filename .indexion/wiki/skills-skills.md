@@ -56,7 +56,7 @@ Generate dependency graphs (`doc graph`) in mermaid, dot, d2, text, or json form
 
 ### indexion-wiki
 
-Build, maintain, and verify project wiki pages at `.indexion/wiki/`. Covers the full agent workflow: navigating via `index.md`, detecting stale pages with `ingest`, writing/updating pages with `add-page`/`update-page`, verifying structural integrity with `lint`, and regenerating the navigation index. Includes guidance on provenance fields (`extracted`/`synthesized`/`manual`), cross-reference management, and the three-layer model (sources → wiki → checks).
+Build, maintain, and verify project wiki pages at `.indexion/wiki/`. Covers the full agent workflow: navigating via `index.md`, detecting stale pages with `pages ingest`, writing/updating pages with `pages add`/`pages update`, verifying structural integrity with `lint`, and rebuilding the navigation index with `index build`. Includes guidance on provenance fields (`extracted`/`synthesized`/`manual`), cross-reference management, and the three-layer model (sources → wiki → checks).
 
 ### indexion-plan-refactor
 

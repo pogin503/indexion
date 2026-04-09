@@ -32,15 +32,19 @@ graph TD
     plan --> plan_reconcile["plan reconcile"]
     plan --> plan_unwrap["plan unwrap"]
 
-    wiki --> wiki_plan["wiki plan"]
-    wiki --> wiki_lint["wiki lint"]
-    wiki --> wiki_ingest["wiki ingest"]
+    wiki --> wiki_pages["wiki pages"]
     wiki --> wiki_index["wiki index"]
-    wiki --> wiki_add["wiki add-page"]
-    wiki --> wiki_update["wiki update-page"]
+    wiki --> wiki_lint["wiki lint"]
     wiki --> wiki_export["wiki export"]
     wiki --> wiki_import["wiki import"]
     wiki --> wiki_log["wiki log"]
+
+    wiki_pages --> wiki_plan["pages plan"]
+    wiki_pages --> wiki_add["pages add"]
+    wiki_pages --> wiki_update["pages update"]
+    wiki_pages --> wiki_ingest["pages ingest"]
+
+    wiki_index --> wiki_index_build["index build"]
 
     doc --> doc_init["doc init"]
     doc --> doc_graph["doc graph"]
@@ -73,7 +77,7 @@ Nested dispatchers (`plan`, `doc`, `perf`) follow the same pattern internally, w
 | `init` | `cmd/indexion/init` | Initialize project configuration |
 | `explore` | `cmd/indexion/explore` | Analyze file similarity in a directory |
 | `plan` | `cmd/indexion/plan` | Generate planning documents (6 sub-subcommands) |
-| `wiki` | `cmd/indexion/wiki` | Wiki management (9 sub-subcommands) |
+| `wiki` | `cmd/indexion/wiki` | Wiki management (pages/index/lint/export/import/log) |
 | `doc` | `cmd/indexion/doc` | Documentation generation (3 sub-subcommands) |
 | `kgf` | `cmd/indexion/kgf` | KGF spec management and inspection |
 | `digest` | `cmd/indexion/digest` | Purpose-based function index with embedding search |
@@ -86,16 +90,16 @@ Nested dispatchers (`plan`, `doc`, `perf`) follow the same pattern internally, w
 
 ### `wiki/` -- Wiki Management
 
-The `wiki` package (`cmd/indexion/wiki/cli.mbt`) provides nine subcommands for managing the `.indexion/wiki/` knowledge base. All wiki operations were previously split between `plan wiki` and `doc wiki`; they are now unified under a single `wiki` top-level command.
+The `wiki` package (`cmd/indexion/wiki/cli.mbt`) provides wiki management via two grouped subcommands (`pages`, `index`) and four direct subcommands. All wiki operations were previously split between `plan wiki` and `doc wiki`; they are now unified under a single `wiki` top-level command.
 
 | Subcommand | Package | Description |
 |------------|---------|-------------|
-| `plan` | `cmd/indexion/wiki/plan` | Generate wiki writing plan from CodeGraph analysis |
+| `pages plan` | `cmd/indexion/wiki/pages/plan` | Generate wiki writing plan from CodeGraph analysis |
+| `pages add` | `cmd/indexion/wiki/pages/add` | Add a new page to the manifest and write the `.md` file |
+| `pages update` | `cmd/indexion/wiki/pages/update` | Replace a page's content and update its metadata |
+| `pages ingest` | `cmd/indexion/wiki/pages/ingest` | Detect source changes; generate update tasks for affected pages |
+| `index build` | `cmd/indexion/wiki/index` | Build `index.md` (categories + hub pages + recent changes) and optionally `vectors.db` |
 | `lint` | `cmd/indexion/wiki/lint` | Check wiki structural integrity (6 deterministic checks) |
-| `ingest` | `cmd/indexion/wiki/ingest` | Detect source changes; generate update tasks for affected pages |
-| `index` | `cmd/indexion/wiki/index` | Generate `index.md` (categories + hub pages + recent changes) |
-| `add-page` | `cmd/indexion/wiki/add_page` | Add a new page to the manifest and write the `.md` file |
-| `update-page` | `cmd/indexion/wiki/update_page` | Replace a page's content and update its metadata |
 | `export` | `cmd/indexion/wiki/export` | Export wiki to GitHub/GitLab format |
 | `import` | `cmd/indexion/wiki/import` | Import GitHub/GitLab wiki into indexion format |
 | `log` | `cmd/indexion/wiki/log` | Display the wiki operation audit log |

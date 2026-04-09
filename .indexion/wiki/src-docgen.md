@@ -201,7 +201,7 @@ The wiki subsystem (`src/docgen/wiki/`) implements the full lifecycle for the `.
 - `provenance : String?` -- `"extracted"` (generated from source), `"synthesized"` (inferred by LLM), or `"manual"` (human-written)
 - `last_actor : String?` -- `"indexion"`, `"agent:<name>"`, or `"user"`
 
-These fields are optional (backward-compatible with older manifests) and are recorded automatically by `add-page` and `update-page`.
+These fields are optional (backward-compatible with older manifests) and are recorded automatically by `wiki pages add` and `wiki pages update`.
 
 ### Change Detection (`wiki/ingest`)
 

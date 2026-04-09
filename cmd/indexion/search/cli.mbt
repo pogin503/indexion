@@ -113,42 +113,49 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     return
   }
   let paths = if config.paths.is_empty() { ["."] } else { config.paths }
-  let documents = build_corpus(paths, config)
-  if documents.is_empty() {
-    println("No searchable content found.")
-    return
-  }
-  let engine = @search_engine.SearchEngine::build(documents) catch {
-    @embed.ParseError(msg) => {
-      println("Error: " + msg + ". Falling back to TF-IDF...")
-      @search_engine.SearchEngine::build(documents) catch {
-        _ => {
-          println("Error: Failed to build search index.")
-          return
-        }
+  // When targeting a single wiki directory with a pre-built vector index,
+  // hot-load the persisted engine instead of rebuilding from scratch.
+  let engine = match load_prebuilt_wiki_engine(paths) {
+    Some(prebuilt) => prebuilt
+    None => {
+      let documents = build_corpus(paths, config)
+      if documents.is_empty() {
+        println("No searchable content found.")
+        return
       }
-    }
-    @embed.ApiError(code, msg) => {
-      println(
-        "API error (" +
-        code.to_string() +
-        "): " +
-        msg +
-        ". Falling back to TF-IDF...",
-      )
       @search_engine.SearchEngine::build(documents) catch {
-        _ => {
-          println("Error: Failed to build search index.")
-          return
+        @embed.ParseError(msg) => {
+          println("Error: " + msg + ". Falling back to TF-IDF...")
+          @search_engine.SearchEngine::build(documents) catch {
+            _ => {
+              println("Error: Failed to build search index.")
+              return
+            }
+          }
         }
-      }
-    }
-    @embed.NoResult => {
-      println("No embedding result. Falling back to TF-IDF...")
-      @search_engine.SearchEngine::build(documents) catch {
-        _ => {
-          println("Error: Failed to build search index.")
-          return
+        @embed.ApiError(code, msg) => {
+          println(
+            "API error (" +
+            code.to_string() +
+            "): " +
+            msg +
+            ". Falling back to TF-IDF...",
+          )
+          @search_engine.SearchEngine::build(documents) catch {
+            _ => {
+              println("Error: Failed to build search index.")
+              return
+            }
+          }
+        }
+        @embed.NoResult => {
+          println("No embedding result. Falling back to TF-IDF...")
+          @search_engine.SearchEngine::build(documents) catch {
+            _ => {
+              println("Error: Failed to build search index.")
+              return
+            }
+          }
         }
       }
     }

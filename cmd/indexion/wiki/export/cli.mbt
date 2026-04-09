@@ -25,28 +25,8 @@ pub fn command() -> @argparse.Command {
 }
 
 ///|
-fn get_option(
-  matches : @argparse.Matches,
-  key : String,
-  default : String,
-) -> String {
-  match matches.values.get(key) {
-    Some(arr) => if arr.length() > 0 { arr[0] } else { default }
-    _ => default
-  }
-}
-
-///|
-fn has_flag(matches : @argparse.Matches, key : String) -> Bool {
-  match matches.flags.get(key) {
-    Some(v) => v
-    _ => false
-  }
-}
-
-///|
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
-  let format = get_option(matches, "format", "")
+  let format = @common.get_option(matches, "format", "")
   if format.length() == 0 {
     println("Error: --format is required for export.")
     println(
@@ -54,20 +34,17 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     )
     return
   }
-  let input_dir = get_option(matches, "input", ".indexion/wiki")
-  let input_resolved = if input_dir == ".indexion/wiki" {
-    match @config.resolve_project_indexion_dir(".", "wiki") {
-      Some(dir) => dir
-      None => {
-        println("Error: Could not find project root directory.")
-        return
-      }
+  let input_resolved = match @common.resolve_wiki_dir(
+    @common.get_option(matches, "input", ".indexion/wiki"),
+  ) {
+    Some(dir) => dir
+    None => {
+      println("Error: Could not find project root directory.")
+      return
     }
-  } else {
-    input_dir
   }
-  let output_dir = get_option(matches, "output", format + "-wiki-export")
-  let force = has_flag(matches, "force")
+  let output_dir = @common.get_option(matches, "output", format + "-wiki-export")
+  let force = @common.get_flag(matches, "force")
   // Load wiki (auto-detect input format)
   let data = match @wiki_interop.load_wiki_auto(input_resolved) {
     Some(d) => d

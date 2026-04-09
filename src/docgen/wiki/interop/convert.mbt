@@ -322,8 +322,17 @@ pub fn export_external_wiki(
     let id = entry.0
     let page = entry.1
     let name = id_to_name.get(id).unwrap_or(title_to_name(page.title))
+    // For the root page: use index_content as Home.md if present
+    let page_content = if id == root_id {
+      match data.index_content {
+        Some(idx) => idx
+        None => page.content
+      }
+    } else {
+      page.content
+    }
     let converted = convert_internal_to_wikilinks(
-      page.content,
+      page_content,
       id_to_name,
       id_to_title,
     )

@@ -73,7 +73,7 @@ flowchart LR
         UNW["plan unwrap<br/>(wrapper removal)"]
         PDOC["plan documentation<br/>(coverage audit)"]
         PREAD["plan readme<br/>(README plans)"]
-        WIKI["wiki plan/lint/ingest<br/>index/add-page/update-page<br/>export/import/log"]
+        WIKI["wiki pages(plan/add/update/ingest)<br/>index build/lint<br/>export/import/log"]
         DOC["doc graph/readme/init<br/>(doc generation)"]
         GRP["grep<br/>(token search)"]
         SRCH["search<br/>(semantic search)"]
@@ -154,12 +154,12 @@ as a subcommand of the `indexion` CLI:
 | `plan reconcile`     | Detects drift between code symbols and documentation             |
 | `plan documentation` | Audits documentation coverage across the codebase                |
 | `plan readme`        | Generates README writing plans for packages                      |
-| `wiki plan`          | Generates wiki writing/update plans from project analysis        |
+| `wiki pages plan`    | Generates wiki writing/update plans from project analysis        |
+| `wiki pages add`     | Adds a new page to the wiki manifest and writes the .md file     |
+| `wiki pages update`  | Updates an existing wiki page's content and metadata             |
+| `wiki pages ingest`  | Detects source file changes and generates wiki update tasks      |
+| `wiki index build`   | Builds wiki index page (category catalog + hub pages) + optional vectors.db |
 | `wiki lint`          | Checks wiki structural integrity (broken links, orphans, etc.)   |
-| `wiki ingest`        | Detects source file changes and generates wiki update tasks      |
-| `wiki index`         | Generates wiki index page (category catalog + hub pages)         |
-| `wiki add-page`      | Adds a new page to the wiki manifest and writes the .md file     |
-| `wiki update-page`   | Updates an existing wiki page's content and metadata             |
 | `wiki export`        | Converts wiki to GitHub/GitLab format                            |
 | `wiki import`        | Imports external wiki into indexion format                       |
 | `wiki log`           | Displays the wiki operation audit log                            |
@@ -358,10 +358,12 @@ indexion/
           unwrap,reconcile,   #     unwrap,reconcile,
           documentation,      #     documentation,
           readme}/            #     readme}
-    wiki/{plan,lint,ingest,  #   indexion wiki {plan,lint,ingest,
-          index,add_page,     #     index,add-page,update-page,
-          update_page,        #     export,import,log}
-          export,import,log}/
+    wiki/                    #   indexion wiki
+      pages/{plan,add,       #     pages {plan,add,
+             update,ingest}/ #       update,ingest}
+      index/                 #     index build
+      {lint,export,import,   #     lint,export,import,
+       log}/                 #       log
     doc/{graph,readme,init}/ #   indexion doc {graph,readme,init}
     digest/ similarity/       #   indexion digest, indexion sim
     grep/ perf/               #   indexion grep, indexion perf

@@ -17,7 +17,7 @@ pub struct WikiSection {
   page_id : String
   /// Heading level (2, 3, 4), or 1 for page-level
   level : Int
-} derive(ToJson)
+} derive(ToJson, @json.FromJson)
 
 ///|
 /// A search hit from the wiki index.
@@ -97,12 +97,16 @@ pub async fn WikiSearchIndex::search(
 }
 
 ///|
-/// Serialize the search index to disk.
+/// Persist the search index to wiki_dir (vectors.db + search-sections.json).
 pub fn WikiSearchIndex::save(self : WikiSearchIndex, wiki_dir : String) -> Unit {
-  let db_bytes = self.engine.serialize()
-  @fs.write_bytes_to_file(wiki_dir + "/vectors.db", db_bytes) catch {
-    _ => ()
-  }
+  save(self, wiki_dir)
+}
+
+///|
+/// Load a persisted search index from wiki_dir.
+/// Returns None if the index does not exist or cannot be loaded.
+pub fn WikiSearchIndex::load(wiki_dir : String) -> WikiSearchIndex? {
+  load(wiki_dir)
 }
 
 // --- Section extraction ---
