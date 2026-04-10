@@ -898,20 +898,32 @@ fn extract_inline_code_refs(criteria : Array[String]) -> Array[String] {
 /// implementation name contains any of the spec identifiers.
 fn identifier_match_score(
   spec_identifiers : Array[String],
-  impl_name : String,
+  implementation : ImplementationNode,
 ) -> Double {
   if spec_identifiers.length() == 0 {
     return 0.0
   }
-  let impl_lower = lower_ascii(impl_name)
-  let impl_normalized = lower_ascii(normalize_identifier_words(impl_name))
+  let impl_lower = lower_ascii(implementation.name)
+  let impl_normalized = lower_ascii(
+    normalize_identifier_words(implementation.name),
+  )
+  let impl_body = lower_ascii(implementation.declaration_text)
+  let mut matched = 0
   for ident in spec_identifiers {
     let ref_lower = lower_ascii(ident)
-    if impl_lower.contains(ref_lower) || impl_normalized.contains(ref_lower) {
-      return 0.5
+    if impl_lower.contains(ref_lower) ||
+      impl_normalized.contains(ref_lower) ||
+      impl_body.contains(ref_lower) {
+      matched += 1
     }
   }
-  0.0
+  if matched == 0 {
+    return 0.0
+  }
+  // Score proportional to the fraction of spec identifiers found,
+  // capped at 0.5. Even one match gives a meaningful boost.
+  let ratio = matched.to_double() / spec_identifiers.length().to_double()
+  0.3 + ratio * 0.2
 }
 
 ///|
@@ -1041,7 +1053,7 @@ fn build_trace_edges(
       }
       // Direct identifier match
       let ident_boost = identifier_match_score(
-        spec_identifiers, implementation.name,
+        spec_identifiers, implementation,
       )
       let candidate_score = if best_criterion_score > base_score {
         best_criterion_score
