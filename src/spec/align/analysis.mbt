@@ -907,13 +907,27 @@ fn identifier_match_score(
   let impl_normalized = lower_ascii(
     normalize_identifier_words(implementation.name),
   )
-  let impl_body = lower_ascii(implementation.declaration_text)
+  let impl_body_buf = StringBuilder::new()
+  impl_body_buf.write_string(implementation.declaration_text)
+  match implementation.doc_comment {
+    Some(doc) => {
+      impl_body_buf.write_string("\n")
+      impl_body_buf.write_string(doc)
+    }
+    None => ()
+  }
+  let impl_body = lower_ascii(impl_body_buf.to_string())
   let mut matched = 0
   for ident in spec_identifiers {
     let ref_lower = lower_ascii(ident)
+    // Also try the alphanumeric-only form of the identifier so that
+    // spec terms like `data:` match code containing "data" without
+    // hardcoding specific punctuation characters.
+    let ref_alnum = extract_alnum(ref_lower)
     if impl_lower.contains(ref_lower) ||
       impl_normalized.contains(ref_lower) ||
-      impl_body.contains(ref_lower) {
+      impl_body.contains(ref_lower) ||
+      (ref_alnum.length() > 1 && impl_body.contains(ref_alnum)) {
       matched += 1
     }
   }
@@ -924,6 +938,30 @@ fn identifier_match_score(
   // capped at 0.5. Even one match gives a meaningful boost.
   let ratio = matched.to_double() / spec_identifiers.length().to_double()
   0.3 + ratio * 0.2
+}
+
+///|
+/// Extract word characters from a string, stripping punctuation and symbols.
+/// Retains: letters (any script), digits, underscore, and spaces.
+/// Used to normalize spec identifiers (e.g. `data:` → `data`) for
+/// fuzzy matching against code.
+fn extract_alnum(s : String) -> String {
+  let buf = StringBuilder::new()
+  for c in s {
+    let code = c.to_int()
+    let is_ascii_alnum = (code >= 0x30 && code <= 0x39) ||
+      (code >= 0x41 && code <= 0x5A) ||
+      (code >= 0x61 && code <= 0x7A)
+    let is_underscore = code == 0x5F
+    let is_space = code == 0x20
+    // Non-ASCII characters above basic punctuation range are likely
+    // script letters (CJK, Cyrillic, etc.) — retain them.
+    let is_non_ascii_letter = code > 0x7F
+    if is_ascii_alnum || is_underscore || is_space || is_non_ascii_letter {
+      buf.write_char(c)
+    }
+  }
+  buf.to_string()
 }
 
 ///|
