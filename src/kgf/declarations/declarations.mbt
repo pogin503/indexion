@@ -361,8 +361,10 @@ fn best_declaration_span(
     }
     let distance = (span.line - approx_line).abs()
     let length = span.end_pos - span.start_pos
+    // Prefer the LONGEST span at the same distance: this captures the full
+    // declaration (signature + body) rather than just the body block.
     let better = distance < best_distance ||
-      (distance == best_distance && length < best_len)
+      (distance == best_distance && length > best_len)
     if better {
       best = Some(span)
       best_distance = distance
