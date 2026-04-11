@@ -1,16 +1,44 @@
-# kgf
+# indexion kgf
 
-## API
+KGF spec management and inspection.
 
-- **`command`** (Function) — Define the kgf command for argparse.
-- **`pad_right`** (Function) — Pad string to the right with spaces.
-- **`format_labels`** (Function) — Format labels map for display.
-- **`format_attrs`** (Function) — Format edge attrs for display.
-- **`run_tokens`** (Function) — Run tokens-only inspection.
-- **`run_events`** (Function) — Run events-only inspection.
-- **`run_edges`** (Function) — Run edges-only inspection.
-- **`escape_string`** (Function) — Escape string for display.
-- **`run_list`** (Function) — List installed KGF specs.
-- **`run_inspect`** (Function) — Run full inspection.
+## Usage
 
-And 17 more symbols.
+```bash
+indexion kgf [options] <command>
+```
+
+## Global Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--spec=NAME` | Specify KGF spec name (auto-detect if omitted) | auto |
+| `--kgf-dir=DIR` | KGF specs directory | `kgfs` |
+
+## Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `list` | List installed KGF specs |
+| `update` | Update all specs from GitHub |
+| `add` | Download and install a single spec |
+| `inspect` | Full inspection (tokens, events, edges) |
+| `tokens` | Show tokenization only |
+| `events` | Show parse events only |
+| `edges` | Show generated edges only |
+
+## Examples
+
+```bash
+# List installed specs
+indexion kgf list
+
+# Inspect a file (auto-detect language)
+indexion kgf inspect src/config/app.mbt
+
+# Show tokens only
+indexion kgf tokens --spec=moonbit src/config/app.mbt
+
+# Show dependency edges
+indexion kgf edges src/config/app.mbt
+```

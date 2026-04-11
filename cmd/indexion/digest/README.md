@@ -21,8 +21,10 @@ indexion digest <subcommand> [options] <directory>
 Build or incrementally update the vector index.
 
 ```bash
-indexion digest build [options] <directory>
+indexion digest build [options] [input]
 ```
+
+`input` is a source directory or `graph.json` path.
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -31,28 +33,44 @@ indexion digest build [options] <directory>
 | `--strategy=NAME` | vcdb strategy: `bruteforce`, `hnsw`, `ivf` | `hnsw` |
 | `--index-dir=DIR` | Where to store the index | `.indexion/digest` |
 | `--specs=DIR` | KGF specs directory | `kgfs` |
-| `--graph=FILE` | Load graph from JSON file instead of building | -- |
 
 ### digest query
 
-Search the index by purpose.
+Search the index by purpose. Auto-updates the index if source has changed.
 
 ```bash
-indexion digest query [options] <directory>
+indexion digest query [options] <purpose>
 ```
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--purpose=TEXT` | What the function does | required |
 | `--top-k=INT` | Number of results | `10` |
 | `--min-score=FLOAT` | Minimum similarity | `0.1` |
+| `--no-update` | Skip auto-update, use saved index only | false |
+| `--source=DIR` | Source directory for auto-update | auto-detect |
 
 ### digest stats
 
-Show index statistics and health information.
+Show index statistics.
 
 ```bash
-indexion digest stats <directory>
+indexion digest stats [options]
+```
+
+### digest status
+
+Show index status including pending changes.
+
+```bash
+indexion digest status [options] [input]
+```
+
+### digest rebuild
+
+Full rebuild: delete existing index and re-index from scratch.
+
+```bash
+indexion digest rebuild [options] [input]
 ```
 
 ## Configuration

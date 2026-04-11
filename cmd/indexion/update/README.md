@@ -1,9 +1,16 @@
-# update
+# indexion update
 
-## API
+Check for updates and install the latest version.
 
-- **`default`** (Function) — Create a default UpdateConfig with all options disabled.
-- **`command`** (Function) — Define the update command for argparse.
-- **`UpdateConfig`** (Struct) — Configuration for update command.
+## Usage
 
-And 8 more symbols.
+```bash
+indexion update [options]
+```
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--check` | Check for updates only (do not download) | false |
+| `--force` | Reinstall even if already on latest version | false |

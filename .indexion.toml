@@ -25,6 +25,7 @@
 
 [doc]
 config_path = "doc.json"
+per_package = true
 
 [digest]
 provider = "auto"

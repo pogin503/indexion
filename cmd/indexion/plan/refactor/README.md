@@ -20,13 +20,15 @@ indexion plan refactor [options] <directory>
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--threshold=FLOAT` | Similarity threshold (0.0-1.0) | 0.7 |
-| `--strategy=NAME` | Algorithm: `tfidf`, `ncd`, `hybrid` | tfidf |
+| `--strategy=NAME` | Algorithm: `hybrid`, `tfidf`, `bm25`, `jsd`, `ncd` | hybrid |
+| `--fdr=FLOAT` | FDR correction level (0=disabled, 0.05=5% false discovery rate) | 0 |
 | `--style=STYLE` | Output style: `raw`, `structured` | raw |
 | `--format=FORMAT` | Output format: `md`, `json`, `text`, `github-issue` | md |
 | `--name=NAME` | Project name (for structured style) | auto |
-| `--include=PATTERN` | Include files matching glob pattern | * |
-| `--exclude=PATTERN` | Exclude files matching glob pattern | - |
-| `--output=FILE`, `-o=` | Output file path | stdout |
+| `--include=PATTERN` | Include files matching glob pattern (repeatable) | * |
+| `--exclude=PATTERN` | Exclude files matching glob pattern (repeatable) | - |
+| `-o, --output=FILE` | Output file path | stdout |
+| `--specs-dir=DIR` | KGF specs directory | kgfs |
 
 ## Examples
 

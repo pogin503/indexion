@@ -1,11 +1,31 @@
-# graph
+# indexion doc graph
 
-## API
+Generate dependency graph in various formats.
 
-- **`generate_json_output`** (Function) — Generate JSON output with dependencies and circular references.
-- **`command`** (Function) — Define the graph command for argparse.
-- **`GraphConfig`** (Struct) — CLI configuration for graph command.
-- **`print_progress`** (Function) — Progress callback for file analysis.
-- **`default`** (Function) — Create default configuration.
+## Usage
 
-And 9 more symbols.
+```bash
+indexion doc graph [options] [files...]
+```
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--format=FORMAT` | Output format: `mermaid`, `json`, `dot`, `d2`, `text` | `mermaid` |
+| `--title=TEXT` | Diagram title | `Module Dependencies` |
+| `--output=FILE` | Output file path | stdout |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+
+## Examples
+
+```bash
+# Mermaid format (default)
+indexion doc graph src/
+
+# Graphviz DOT
+indexion doc graph --format=dot src/
+
+# D2 diagram
+indexion doc graph --format=d2 --output=deps.d2 src/
+```

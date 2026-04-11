@@ -12,19 +12,17 @@ skills/
 ├── .claude-plugin/
 │   ├── plugin.json          # Plugin manifest (name, version, description)
 │   └── marketplace.json     # Marketplace registry metadata
-├── skills/                  # Individual skill definitions (12 skills)
+├── skills/                  # Individual skill definitions (10 skills)
 │   ├── indexion-explore/
 │   ├── indexion-segment/
 │   ├── indexion-kgf/
 │   ├── indexion-grep/
-│   ├── indexion-doc/
+│   ├── indexion-documentation/ # Unified: doc + plan docs/readme/reconcile
 │   ├── indexion-wiki/
 │   ├── indexion-plan-refactor/
-│   ├── indexion-plan-docs/
-│   ├── indexion-plan-reconcile/
 │   ├── indexion-plan-solid/
-│   ├── indexion-plan-readme/
-│   └── indexion-plan-unwrap/
+│   ├── indexion-plan-unwrap/
+│   └── indexion-refactor/
 ├── LICENSE
 └── README.md
 ```
@@ -44,17 +42,14 @@ skills/
 - `indexion-grep` -- KGF-aware token pattern and semantic search
 
 **Documentation:**
-- `indexion-doc` -- Generate dependency graphs and READMEs
+- `indexion-documentation` -- Documentation lifecycle: generate graphs/READMEs, analyze coverage, plan writing tasks, detect doc drift
 
 **Wiki:**
 - `indexion-wiki` -- Build, maintain, and verify project wiki pages with indexion
 
 **Planning:**
 - `indexion-plan-refactor` -- Generate refactoring plans from similarity analysis
-- `indexion-plan-docs` -- Analyze documentation coverage
-- `indexion-plan-reconcile` -- Detect implementation/documentation drift
 - `indexion-plan-solid` -- Plan common code extraction across directories
-- `indexion-plan-readme` -- Generate README writing tasks
 - `indexion-plan-unwrap` -- Detect and remove unnecessary wrapper functions
 
 ## Usage

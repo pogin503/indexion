@@ -27,6 +27,7 @@ indexion serve [options] [workspace_dir]
 | `--specs=DIR` | KGF specs directory | `kgfs` |
 | `--index-dir=DIR` | Digest index directory | project-based |
 | `--cors` | Enable CORS headers | false |
+| `--watch-stdin` | Exit when stdin is closed (for IDE integration) | false |
 
 ## REST API Endpoints (POST)
 
@@ -50,18 +51,17 @@ indexion serve [options] [workspace_dir]
 
 ### serve export
 
-Export a self-contained static site for GitHub Pages or GitLab Pages.
+Export a self-contained static site for GitHub Pages.
 
 ```bash
-indexion serve export --format=github --output=dist/pages
+indexion serve export --output=dist/pages [workspace]
 ```
+
+Inherits parent options (`--port`, `--host`, `--specs`, etc.) plus:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--format` | Target format: `github`, `gitlab` | required |
-| `--input` | Input wiki directory | `.indexion/wiki` |
-| `--output` | Output directory | `dist/pages` |
-| `--force` | Overwrite existing files | false |
+| `--output=DIR` | Output directory | `dist/pages` |
 
 ## Configuration
 

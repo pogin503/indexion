@@ -8,7 +8,7 @@ description: Release process for indexion. Use when the user asks to release, de
 ## Prerequisites
 
 - `.gitmodules` has `pushRecurseSubmodules = on-demand` for all submodules
-- `scripts/sync-version.sh` exists and syncs `moon.mod.json` → `version.mbt` + `marketplace.json`
+- `scripts/sync-version.sh` exists and syncs `moon.mod.json` → `version.mbt` + `marketplace.json` + `plugin.json`
 - All tests pass: `moon test --target native`
 
 ## Version Convention
@@ -19,6 +19,7 @@ description: Release process for indexion. Use when the user asks to release, de
 - Propagation targets:
   - `src/update/version.mbt` → `current_version` constant
   - `skills/.claude-plugin/marketplace.json` → `"version"` field
+  - `skills/.claude-plugin/plugin.json` → `"version"` field
 
 ## Release Steps
 
@@ -112,6 +113,7 @@ git submodule status  # no + prefix = clean
 grep '"version"' moon.mod.json
 grep 'current_version' src/update/version.mbt
 grep '"version"' skills/.claude-plugin/marketplace.json
+grep '"version"' skills/.claude-plugin/plugin.json
 ```
 
 ## Rollback

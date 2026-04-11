@@ -78,7 +78,7 @@ Main CLI options:
 | `--format=json\|md\|github-issue` | Select report renderer | `json` |
 | `--output=FILE`, `-o=` | Write report to a file | stdout |
 | `--scope=custom\|package-docs\|tree-docs` | Apply common doc-audit presets | `custom` |
-| `--specs=DIR` | Override KGF spec directory | auto-detect |
+| `--specs-dir=DIR` | Override KGF spec directory | auto-detect |
 | `--index-dir=DIR` | Override reconcile cache directory | `.indexion/cache/reconcile` |
 | `--config=FILE` | Load explicit `.indexion.toml` or `.json` | auto-discover |
 | `--doc=GLOB` | Limit document paths, repeatable | all detectable docs |
@@ -86,8 +86,10 @@ Main CLI options:
 | `--threshold-seconds=N` | Tolerated time skew before drift | `60` |
 | `--max-candidates=N` | Max report candidates | `200` |
 | `--no-file-fallback` | Disable basename fallback matching | off |
+| `--git` | Prefer git timestamps over file mtimes | off |
 | `--mtime-only` | Ignore git timestamps and use mtimes only | off |
 | `--logical-review=queue\|off` | Enable or disable logical review queueing | `queue` |
+| `--vocab-threshold=FLOAT` | Vocabulary divergence threshold (cosine distance, 0.0-1.0) | `0.3` |
 
 Best practice is to start with JSON output, inspect candidate IDs and review keys, and then switch to Markdown or GitHub Issue rendering for human workflows.
 

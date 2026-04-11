@@ -39,6 +39,112 @@ indexion explore [options] <directory>
 
 [Full documentation](cmd/indexion/explore/README.md)
 
+### `indexion grep`
+
+KGF-aware token pattern search across source files.
+
+#### Overview
+
+Searches source files using KGF token patterns instead of raw text regex.
+Token-level matching enables structural searches like "pub fn without doc comment"
+or "nested for loops" that are impossible with text-based grep.
+
+#### Usage
+
+```bash
+indexion grep [options] <pattern> [paths...]
+```
+
+
+[Full documentation](cmd/indexion/grep/README.md)
+
+### `indexion search`
+
+Semantic search across code, wiki, and documentation.
+
+#### Overview
+
+Searches source files, wiki pages, and documentation using TF-IDF vector
+similarity. Automatically detects content type from KGF spec features.
+Results can be filtered by node attributes such as `node_type` and `language`.
+
+#### Usage
+
+```bash
+indexion search [options] <query> [paths...]
+```
+
+
+[Full documentation](cmd/indexion/search/README.md)
+
+### `indexion sim`
+
+Calculate text similarity and distance between two texts.
+
+#### Overview
+
+Computes similarity/distance metrics between two text inputs using
+various algorithms (TF-IDF cosine similarity, NCD compression distance,
+or a weighted hybrid).
+
+#### Usage
+
+```bash
+indexion sim [options] <text1> <text2>
+```
+
+
+[Full documentation](cmd/indexion/similarity/README.md)
+
+### `indexion segment`
+
+Split text into contextual segments.
+
+#### Overview
+
+Splits a text file into segments using divergence-based, TF-IDF, or punctuation strategies. Designed for RAG/embedding pipelines and sub-document similarity analysis.
+
+#### Usage
+
+```bash
+indexion segment [options] <input-file> <output-dir>
+```
+
+
+[Full documentation](cmd/indexion/segment/README.md)
+
+### `indexion doc graph`
+
+Generate dependency graph in various formats.
+
+#### Usage
+
+```bash
+indexion doc graph [options] [files...]
+```
+
+
+[Full documentation](cmd/indexion/doc/graph/README.md)
+
+### `indexion doc readme`
+
+Extract documentation from source files and generate README files.
+
+#### Overview
+
+Extracts `///` documentation comments from MoonBit source files and
+outputs them in various formats. Supports flexible package discovery
+with include/exclude patterns.
+
+#### Usage
+
+```bash
+indexion doc readme [options] [paths...]
+```
+
+
+[Full documentation](cmd/indexion/doc/readme/README.md)
+
 ### `indexion plan refactor`
 
 Generate refactoring plan based on file similarity analysis.
@@ -59,67 +165,39 @@ indexion plan refactor [options] <directory>
 
 [Full documentation](cmd/indexion/plan/refactor/README.md)
 
-### `indexion plan unwrap`
+### `indexion plan documentation`
 
-Detect unnecessary wrapper functions and plan their removal.
+Generate documentation coverage analysis.
 
 #### Overview
 
-Scans source files for wrapper functions whose body is a single delegation
-call with no added logic. Callers should use the delegate directly.
-Supports report, dry-run preview, and auto-fix modes.
+Analyzes public declarations across packages and determines what percentage have doc comments. Uses KGF tokenization for language-agnostic detection.
 
 #### Usage
 
 ```bash
-indexion plan unwrap [options] <directory>
-indexion plan unwrap --dry-run --include='*.mbt' src/
-indexion plan unwrap --fix --include='*.mbt' --exclude='*_wbtest.mbt' src/
+indexion plan documentation [options] [directory]
 ```
 
 
-[Full documentation](cmd/indexion/plan/unwrap/README.md)
+[Full documentation](cmd/indexion/plan/documentation/README.md)
 
-### `indexion plan solid`
+### `indexion plan readme`
+
+Generate README documentation writing plans.
 
 #### Overview
 
-`indexion plan solid` builds a solidification plan for extracting duplicated code from multiple source directories into a shared target.
-
-The command parses `--from`, `--to`, `--rules`, `--rule`, `--threshold`, `--strategy`, `--include`, `--exclude`, `--output`, and `--format`, then:
-
-1. collects files from the source directories
-2. computes cross-package similarity
-3. applies extraction rules to matched files
-4. emits a `SolidPlanJSON` summary
-5. converts that summary into a `PlanDocument`
-
-The intermediate plan is organized around `ExtractionGroup`, `ExtractionFile`, `UnmatchedFile`, `SolidConfigJSON`, and `SolidSummaryJSON`.
+Analyzes templates with `{{include:...}}` placeholders and generates per-section writing tasks. Outputs plans to a directory for manual or LLM-assisted authoring.
 
 #### Usage
 
 ```bash
-indexion plan solid --from=pkg1/,pkg2/ --to=components/
-indexion plan solid --from=pkg1/,pkg2/ --rules=.solidrc
-indexion plan solid --from=pkg1/,pkg2/ --to=components/ --rule="auth/** -> auth/"
+indexion plan readme [options] [directory...]
 ```
 
-Important options:
 
-- `--from=DIRS`: comma-separated source directories
-- `--to=DIR`: target directory for extracted code
-- `--rules=FILE`: load rules from a rules file
-- `--rule=RULE`: add inline extraction rules
-- `--threshold=FLOAT`: minimum similarity score
-- `--strategy=NAME`: similarity strategy such as `tfidf`, `apted`, or `tsed`
-- `--include=PATTERN` / `--exclude=PATTERN`: filter collected files
-- `--output=FILE`: write the rendered plan to a file
-- `--format=md|json|github-issue`: choose the final renderer
-
-Rule syntax is `pattern -> target`. Relative targets use `--to`, and absolute targets can use an `@pkg/...` prefix.
-
-
-[Full documentation](cmd/indexion/plan/solid/README.md)
+[Full documentation](cmd/indexion/plan/readme/README.md)
 
 ### `indexion plan reconcile`
 
@@ -164,106 +242,67 @@ Common examples:
 
 [Full documentation](cmd/indexion/plan/reconcile/README.md)
 
-### `indexion doc readme`
-
-Extract documentation from source files and generate README files.
+### `indexion plan solid`
 
 #### Overview
 
-Extracts `///` documentation comments from MoonBit source files and
-outputs them in various formats. Supports flexible package discovery
-with include/exclude patterns.
+`indexion plan solid` builds a solidification plan for extracting duplicated code from multiple source directories into a shared target.
+
+The command parses `--from`, `--to`, `--rules`, `--rule`, `--threshold`, `--strategy`, `--include`, `--exclude`, `--output`, and `--format`, then:
+
+1. collects files from the source directories
+2. computes cross-package similarity
+3. applies extraction rules to matched files
+4. emits a `SolidPlanJSON` summary
+5. converts that summary into a `PlanDocument`
+
+The intermediate plan is organized around `ExtractionGroup`, `ExtractionFile`, `UnmatchedFile`, `SolidConfigJSON`, and `SolidSummaryJSON`.
 
 #### Usage
 
 ```bash
-indexion doc readme [options] [paths...]
+indexion plan solid --from=pkg1/,pkg2/ --to=components/
+indexion plan solid --from=pkg1/,pkg2/ --rules=.solidrc
+indexion plan solid --from=pkg1/,pkg2/ --to=components/ --rule="auth/** -> auth/"
 ```
 
+Important options:
 
-[Full documentation](cmd/indexion/doc/readme/README.md)
+- `--from=DIRS`: comma-separated source directories
+- `--to=DIR`: target directory for extracted code
+- `--rules=FILE`: load rules from a rules file
+- `--rule=RULE`: add inline extraction rules
+- `--threshold=FLOAT`: minimum similarity score
+- `--strategy=NAME`: similarity strategy such as `tfidf`, `apted`, or `tsed`
+- `--include=PATTERN` / `--exclude=PATTERN`: filter collected files
+- `--output=FILE`: write the rendered plan to a file
+- `--format=md|json|github-issue`: choose the final renderer
 
-### `indexion sim`
+Rule syntax is `pattern -> target`. Relative targets use `--to`, and absolute targets can use an `@pkg/...` prefix.
 
-Calculate text similarity and distance between two texts.
+
+[Full documentation](cmd/indexion/plan/solid/README.md)
+
+### `indexion plan unwrap`
+
+Detect unnecessary wrapper functions and plan their removal.
 
 #### Overview
 
-Computes similarity/distance metrics between two text inputs using
-various algorithms (TF-IDF cosine similarity, NCD compression distance,
-or a weighted hybrid).
+Scans source files for wrapper functions whose body is a single delegation
+call with no added logic. Callers should use the delegate directly.
+Supports report, dry-run preview, and auto-fix modes.
 
 #### Usage
 
 ```bash
-indexion sim [options] <text1> <text2>
+indexion plan unwrap [options] <directory>
+indexion plan unwrap --dry-run --include='*.mbt' src/
+indexion plan unwrap --fix --include='*.mbt' --exclude='*_wbtest.mbt' src/
 ```
 
 
-[Full documentation](cmd/indexion/similarity/README.md)
-
-### `indexion plan documentation`
-
-
-[Full documentation](cmd/indexion/plan/documentation/README.md)
-
-### `indexion plan readme`
-
-
-[Full documentation](cmd/indexion/plan/readme/README.md)
-
-### `indexion plan wiki`
-
-
-[Full documentation](cmd/indexion/plan/wiki/README.md)
-
-### `indexion grep`
-
-KGF-aware token pattern search across source files.
-
-#### Overview
-
-Searches source files using KGF token patterns instead of raw text regex.
-Token-level matching enables structural searches like "pub fn without doc comment"
-or "nested for loops" that are impossible with text-based grep.
-
-#### Usage
-
-```bash
-indexion grep [options] <pattern> [paths...]
-```
-
-
-[Full documentation](cmd/indexion/grep/README.md)
-
-### `indexion search`
-
-Semantic search across code, wiki, and documentation.
-
-#### Overview
-
-Searches source files, wiki pages, and documentation using TF-IDF vector
-similarity. Automatically detects content type from KGF spec features.
-Results can be filtered by node attributes such as `node_type` and `language`.
-
-#### Usage
-
-```bash
-indexion search [options] <query> [paths...]
-```
-
-
-[Full documentation](cmd/indexion/search/README.md)
-
-### `indexion doc wiki`
-
-
-[Full documentation](cmd/indexion/doc/wiki/README.md)
-
-### `indexion doc graph`
-
-
-[Full documentation](cmd/indexion/doc/graph/README.md)
+[Full documentation](cmd/indexion/plan/unwrap/README.md)
 
 ### `indexion digest`
 
@@ -321,6 +360,31 @@ indexion mcp [options] [workspace_dir]
 
 
 [Full documentation](cmd/indexion/mcp/README.md)
+
+### `indexion kgf`
+
+KGF spec management and inspection.
+
+#### Usage
+
+```bash
+indexion kgf [options] <command>
+```
+
+
+[Full documentation](cmd/indexion/kgf/README.md)
+
+### `indexion wiki`
+
+
+[Full documentation](cmd/indexion/wiki/README.md)
+
+### `indexion spec`
+
+Specification-driven analysis: verify conformance, align specs with implementation, and draft SDDs.
+
+
+[Full documentation](cmd/indexion/spec/README.md)
 
 ## Binary: _build/native/release/build/cmd/indexion/indexion.exe
 

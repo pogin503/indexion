@@ -1,0 +1,5 @@
+# pages
+
+## API
+
+- **`command`** (Function) —

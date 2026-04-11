@@ -1,11 +1,20 @@
-# init
+# indexion doc init
 
-## API
+Initialize documentation template structure.
 
-- **`generate_template`** (Function) — Generate .indexion/state/templates/readme.md content.
-- **`parse_config_content`** (Function) — Parse config file content based on filename.
-- **`command`** (Function) — Define the init command for argparse.
-- **`InitConfig`** (Struct) — Configuration for doc init command.
-- **`default`** (Function) — Create default InitConfig.
+## Usage
 
-And 15 more symbols.
+```bash
+indexion doc init [options] [directory]
+```
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-f, --force` | Overwrite existing files | false |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+
+## What It Creates
+
+Creates `.indexion/state/templates/readme.md` with `{{include:...}}` placeholder directives for use with `indexion doc readme --template=...` and `indexion plan readme --template=...`.

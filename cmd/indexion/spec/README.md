@@ -1,11 +1,11 @@
-# spec
+# indexion spec
 
-## API
-
-- **`command`** (Function) — Build the argparse Command for the spec subcommand.
+Specification-driven analysis: verify conformance, align specs with implementation, and draft SDDs.
 
 ## Subcommands
 
-- `draft` generates an SDD draft from README/usage documents.
-- `verify` checks lightweight spec-to-implementation conformance.
-- `align` provides SDD-oriented diff, trace, suggest, and status workflows.
+| Command | Description |
+|---------|-------------|
+| `draft` | Generate an SDD draft from usage or README documents |
+| `verify` | Check spec-to-implementation conformance |
+| `align` | Align SDD-style specification documents with implementation |

@@ -1,0 +1,5 @@
+# update
+
+## API
+
+- **`command`** (Function) —

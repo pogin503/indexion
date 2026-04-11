@@ -1,10 +1,22 @@
-# init
+# indexion init
 
-## API
+Initialize indexion configuration.
 
-- **`default`** (Function) — Create a default InitConfig with current directory as target.
-- **`write_reconcile_sections`** (Function) — Write shared reconcile configuration sections to a buffer.
-- **`command`** (Function) — Define the init command for argparse.
-- **`InitConfig`** (Struct) — Configuration for init command.
+## Usage
 
-And 13 more symbols.
+```bash
+indexion init [options] [directory]
+```
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-g, --global` | Initialize global configuration | false |
+| `-f, --force` | Overwrite existing files | false |
+
+## What It Creates
+
+- `.indexion.toml` -- Project configuration file
+- `.indexionignore` -- Ignore patterns for file discovery
+- Global mode creates configuration in the OS-standard config directory

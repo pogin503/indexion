@@ -1,6 +1,6 @@
 # skills/skills -- Individual Skill Definitions
 
-The `skills/skills/` directory contains 12 individual skill definitions for the indexion Claude Code plugin. Each skill is a directory containing a single `SKILL.md` file that defines the skill's metadata (name, description, trigger conditions) and comprehensive usage documentation including CLI commands, options, workflows, and dogfooding lessons.
+The `skills/skills/` directory contains 10 individual skill definitions for the indexion Claude Code plugin. Each skill is a directory containing a single `SKILL.md` file that defines the skill's metadata (name, description, trigger conditions) and comprehensive usage documentation including CLI commands, options, workflows, and dogfooding lessons.
 
 ## Contents
 
@@ -14,19 +14,13 @@ skills/skills/
 │   └── SKILL.md
 ├── indexion-grep/          # KGF-aware pattern and semantic search
 │   └── SKILL.md
-├── indexion-doc/           # Dependency graphs and README generation
+├── indexion-documentation/ # Documentation lifecycle (doc + plan docs/readme/reconcile)
 │   └── SKILL.md
 ├── indexion-wiki/          # Wiki building, maintenance, and verification
 │   └── SKILL.md
 ├── indexion-plan-refactor/ # Refactoring plan generation
 │   └── SKILL.md
-├── indexion-plan-docs/     # Documentation coverage analysis
-│   └── SKILL.md
-├── indexion-plan-reconcile/# Implementation/documentation drift detection
-│   └── SKILL.md
 ├── indexion-plan-solid/    # Cross-directory common code extraction
-│   └── SKILL.md
-├── indexion-plan-readme/   # README writing task generation
 │   └── SKILL.md
 └── indexion-plan-unwrap/   # Unnecessary wrapper function detection
     └── SKILL.md
@@ -50,9 +44,9 @@ Split text into contextual segments using window divergence, TF-IDF, or punctuat
 
 Inspect and debug KGF language specs. Subcommands: `inspect` (full pipeline), `tokens` (tokenization), `events` (parse events), `edges` (dependency edges). Essential for debugging grep patterns that don't match expected tokens.
 
-### indexion-doc
+### indexion-documentation
 
-Generate dependency graphs (`doc graph`) in mermaid, dot, d2, text, or json formats. Generate READMEs (`doc readme`) from source doc comments using templates. Initialize templates (`doc init`). Supports `--per-package` mode that skips existing READMEs.
+Unified documentation lifecycle skill covering six commands: `doc init` (template setup), `doc graph` (dependency diagrams), `doc readme` (README generation), `plan documentation` (coverage analysis), `plan readme` (writing task generation), and `plan reconcile` (drift detection). Replaces the former `indexion-doc`, `indexion-plan-docs`, `indexion-plan-readme`, and `indexion-plan-reconcile` skills.
 
 ### indexion-wiki
 
@@ -62,21 +56,9 @@ Build, maintain, and verify project wiki pages at `.indexion/wiki/`. Covers the 
 
 Generate structured refactoring plans from file similarity analysis. Outputs duplicate code blocks, function-level duplicates, and same-file duplicates. Start with `--threshold=0.9` and work down. Combine with `grep` to trace references before consolidating.
 
-### indexion-plan-docs
-
-Analyze documentation coverage and generate prioritized action items. `--style=coverage` provides a quick per-package breakdown with percentages. Detects public items using KGF tokenization (language-agnostic) and associates doc comments with declarations.
-
-### indexion-plan-reconcile
-
-Detect implementation/documentation drift by comparing timestamps and content relationships. Uses inverted-index-accelerated matching and optional fork-based parallelism. Supports scoped checks (`package-docs`, `tree-docs`), document path/spec filtering, and logical review mode.
-
 ### indexion-plan-solid
 
 Generate solidification plans for extracting common code across directories. Unlike `plan refactor` (which finds internal duplication), `plan solid` identifies cross-directory overlap using `--from=dirA,dirB` and optionally `--to=targetDir`.
-
-### indexion-plan-readme
-
-Generate README writing plans based on templates and source analysis. Produces tasks for manual or LLM authoring. Requires a `--template` file and outputs to `--plans-dir`.
 
 ### indexion-plan-unwrap
 

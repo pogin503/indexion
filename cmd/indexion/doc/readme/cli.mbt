@@ -191,23 +191,33 @@ fn log_progress(msg : String) -> Unit {
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
   let config = ReadmeConfig::from_matches(matches)
   // If --config is specified, use doc.json-based generation.
-  // Otherwise, check .indexion.toml for [doc].config_path as fallback.
+  // Otherwise, check .indexion.toml for [doc].config_path and per_package.
+  let target_dir = if config.paths.length() > 0 {
+    config.paths[0]
+  } else {
+    "."
+  }
+  let toml_path = @doc_config.find_indexion_config_path(target_dir)
+  let doc_file_config = @doc_config.load_effective_doc_config(toml_path)
   let effective_config_path : String? = match config.config_path {
     Some(_) => config.config_path
-    None => {
-      let target_dir = if config.paths.length() > 0 {
-        config.paths[0]
-      } else {
-        "."
-      }
-      let toml_path = @doc_config.find_indexion_config_path(target_dir)
-      let doc_file_config = @doc_config.load_effective_doc_config(toml_path)
-      doc_file_config.config_path
-    }
+    None => doc_file_config.config_path
   }
-  // When --per-package is set, always use the KGF-based pipeline
-  // (doc.json drives root-level generation, not per-package READMEs)
-  if !config.per_package {
+  // Apply per_package from .indexion.toml if CLI flag was not set
+  let cli_per_package = matches.flags.get("per-package").unwrap_or(false)
+  let effective_per_package = if cli_per_package {
+    true
+  } else {
+    doc_file_config.per_package.unwrap_or(false)
+  }
+  let config = { ..config, per_package: effective_per_package }
+  // When --per-package is set, use KGF-based pipeline UNLESS --config was
+  // explicitly provided (explicit --config always takes priority for root-level generation).
+  let cli_config_explicit = match config.config_path {
+    Some(_) => true
+    None => false
+  }
+  if !config.per_package || cli_config_explicit {
     match effective_config_path {
       Some(config_path) => {
         run_with_doc_config(config_path, config)

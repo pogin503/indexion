@@ -1,19 +1,37 @@
-# documentation
+# indexion plan documentation
 
-## API
+Generate documentation coverage analysis.
 
-- **`default`** (Function) — Create default configuration for the documentation plan subcommand.
-- **`DocPlanConfig`** (Struct) — CLI configuration for the documentation plan subcommand.
-- **`PubItem`** (Struct) — A public item (function, type, etc.) found in the code.
-- **`to_plan_document`** (Function) — Convert documentation analysis to PlanDocument.
-- **`command`** (Function) — Define the documentation command for argparse.
-- **`analyze_documentation`** (Function) — Analyze documentation coverage in directory.
-- **`PackageAnalysis`** (Struct) — Package-level documentation analysis.
-- **`load_project_info`** (Function) — Load project info from moon.mod.json.
-- **`DocAnalysis`** (Struct) — Full documentation analysis result.
-- **`ProjectInfo`** (Struct) — Project info from moon.mod.json.
-- **`render_full`** (Function) — Render full documentation plan.
-- **`render_coverage`** (Function) — Render coverage analysis only.
-- **`render_readme_template`** (Function) — Render README template only.
+## Overview
 
-And 59 more symbols.
+Analyzes public declarations across packages and determines what percentage have doc comments. Uses KGF tokenization for language-agnostic detection.
+
+## Usage
+
+```bash
+indexion plan documentation [options] [directory]
+```
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--style=STYLE` | Output style: `coverage`, `full` | `full` |
+| `--format=FORMAT` | Output format: `md`, `json`, `github-issue` | `md` |
+| `--template=FILE` | GitHub Issue Form template (.yml) | -- |
+| `--name=NAME` | Project name (auto-detect from moon.mod.json) | auto |
+| `-o, --output=FILE` | Output file path | stdout |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+
+## Examples
+
+```bash
+# Quick coverage overview (~8s on large codebases)
+indexion plan documentation --style=coverage .
+
+# Full plan with action items
+indexion plan documentation .
+
+# GitHub Issue format
+indexion plan documentation --format=github-issue .
+```

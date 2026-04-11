@@ -1,0 +1,5 @@
+# export
+
+## API
+
+- **`command`** (Function) —

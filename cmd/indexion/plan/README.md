@@ -1,7 +1,14 @@
-# plan
+# indexion plan
 
-## API
+Generate planning documents for refactoring, documentation, and code organization.
 
-- **`command`** (Function) — Build the argparse Command for the plan subcommand.
+## Subcommands
 
-And 1 more symbols.
+| Command | Description |
+|---------|-------------|
+| `refactor` | Generate refactoring plan from similarity analysis |
+| `documentation` | Generate documentation coverage analysis |
+| `readme` | Generate README documentation writing plans |
+| `solid` | Generate solidification plan for common code extraction |
+| `reconcile` | Detect implementation/documentation drift |
+| `unwrap` | Detect and remove unnecessary wrapper functions |

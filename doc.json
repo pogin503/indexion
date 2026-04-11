@@ -14,26 +14,32 @@
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/plan/refactor",
-      "title": "plan refactor",
+      "path": "cmd/indexion/grep",
+      "title": "grep",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/plan/unwrap",
-      "title": "plan unwrap",
+      "path": "cmd/indexion/search",
+      "title": "search",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/plan/solid",
-      "title": "plan solid",
+      "path": "cmd/indexion/similarity",
+      "title": "sim",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/plan/reconcile",
-      "title": "plan reconcile",
+      "path": "cmd/indexion/segment",
+      "title": "segment",
+      "include_in_root": true,
+      "sections": ["overview", "usage"]
+    },
+    {
+      "path": "cmd/indexion/doc/graph",
+      "title": "doc graph",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
@@ -44,8 +50,8 @@
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/similarity",
-      "title": "sim",
+      "path": "cmd/indexion/plan/refactor",
+      "title": "plan refactor",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
@@ -62,32 +68,20 @@
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/plan/wiki",
-      "title": "plan wiki",
+      "path": "cmd/indexion/plan/reconcile",
+      "title": "plan reconcile",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/grep",
-      "title": "grep",
+      "path": "cmd/indexion/plan/solid",
+      "title": "plan solid",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
     {
-      "path": "cmd/indexion/search",
-      "title": "search",
-      "include_in_root": true,
-      "sections": ["overview", "usage"]
-    },
-    {
-      "path": "cmd/indexion/doc/wiki",
-      "title": "doc wiki",
-      "include_in_root": true,
-      "sections": ["overview", "usage"]
-    },
-    {
-      "path": "cmd/indexion/doc/graph",
-      "title": "doc graph",
+      "path": "cmd/indexion/plan/unwrap",
+      "title": "plan unwrap",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     },
@@ -106,6 +100,24 @@
     {
       "path": "cmd/indexion/mcp",
       "title": "mcp",
+      "include_in_root": true,
+      "sections": ["overview", "usage"]
+    },
+    {
+      "path": "cmd/indexion/kgf",
+      "title": "kgf",
+      "include_in_root": true,
+      "sections": ["overview", "usage"]
+    },
+    {
+      "path": "cmd/indexion/wiki",
+      "title": "wiki",
+      "include_in_root": true,
+      "sections": ["overview", "usage"]
+    },
+    {
+      "path": "cmd/indexion/spec",
+      "title": "spec",
       "include_in_root": true,
       "sections": ["overview", "usage"]
     }

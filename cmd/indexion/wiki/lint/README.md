@@ -1,0 +1,5 @@
+# lint
+
+## API
+
+- **`command`** (Function) —

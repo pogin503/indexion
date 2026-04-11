@@ -5,6 +5,7 @@
 # Targets:
 #   - src/update/version.mbt (binary version constant)
 #   - skills/.claude-plugin/marketplace.json (skills plugin version)
+#   - skills/.claude-plugin/plugin.json (skills plugin manifest version)
 
 set -e
 
@@ -14,6 +15,7 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MOD_JSON="$ROOT/moon.mod.json"
 VERSION_MBT="$ROOT/src/update/version.mbt"
 MARKETPLACE_JSON="$ROOT/skills/.claude-plugin/marketplace.json"
+PLUGIN_JSON="$ROOT/skills/.claude-plugin/plugin.json"
 
 # Extract version from moon.mod.json (SoT)
 VERSION=$(grep '"version"' "$MOD_JSON" | head -1 | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
@@ -42,6 +44,17 @@ if [ -f "$MARKETPLACE_JSON" ]; then
     echo "marketplace.json: $CURRENT_MKT -> $VERSION"
     sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/g" "$MARKETPLACE_JSON"
     rm -f "$MARKETPLACE_JSON.bak"
+    CHANGED=1
+  fi
+fi
+
+# --- Sync plugin.json ---
+if [ -f "$PLUGIN_JSON" ]; then
+  CURRENT_PLG=$(grep '"version"' "$PLUGIN_JSON" | head -1 | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  if [ "$VERSION" != "$CURRENT_PLG" ]; then
+    echo "plugin.json: $CURRENT_PLG -> $VERSION"
+    sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/g" "$PLUGIN_JSON"
+    rm -f "$PLUGIN_JSON.bak"
     CHANGED=1
   fi
 fi

@@ -1,0 +1,5 @@
+# import
+
+## API
+
+- **`command`** (Function) —

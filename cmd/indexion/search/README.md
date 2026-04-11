@@ -26,6 +26,11 @@ indexion search [options] <query> [paths...]
 | `--filter` | `-f` | Filter by attributes (e.g. `node_type:code`, `language:moonbit`). Comma-separated. | -- |
 | `--files` | | Show matching file paths only | false |
 | `--json` | | Output as JSON | false |
+| `--provider=TYPE` | | Embedding provider: `tfidf`, `openai`, `auto` | `auto` |
+| `--dim=INT` | | Embedding dimension | `256` |
+| `--api-key-env=VAR` | | Environment variable for OpenAI API key | `OPENAI_API_KEY` |
+| `--model=NAME` | | Embedding model name | `text-embedding-3-small` |
+| `--base-url=URL` | | Embedding API base URL | `https://api.openai.com/v1/embeddings` |
 
 ## Examples
 

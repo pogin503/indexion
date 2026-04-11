@@ -1,0 +1,5 @@
+# log
+
+## API
+
+- **`command`** (Function) —

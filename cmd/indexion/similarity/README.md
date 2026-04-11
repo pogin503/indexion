@@ -18,10 +18,10 @@ indexion sim [options] <text1> <text2>
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--strategy=NAME` | Algorithm: `tfidf`, `ncd`, `hybrid` | hybrid |
+| `--strategy=NAME` | Algorithm: `tfidf`, `ncd`, `hybrid`, `apted`, `tsed` | hybrid |
 | `--ncd-weight=FLOAT` | NCD weight in hybrid mode | 0.5 |
 | `--tfidf-weight=FLOAT` | TF-IDF weight in hybrid mode | 0.5 |
-| `--format=FORMAT` | Output: `both`, `similarity`, `distance` | both |
+| `--output=FORMAT` | Output: `both`, `similarity`, `distance` | both |
 
 ## Examples
 
@@ -41,3 +41,5 @@ indexion sim --ncd-weight=0.3 --tfidf-weight=0.7 "text1" "text2"
 - **tfidf**: TF-IDF cosine similarity (fast, token-based)
 - **ncd**: Normalized Compression Distance (compression-based)
 - **hybrid**: Weighted combination of both
+- **apted**: All-Path Tree Edit Distance (structural)
+- **tsed**: Tree Structure Edit Distance (structural)

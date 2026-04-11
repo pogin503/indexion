@@ -1,0 +1,5 @@
+# wiki
+
+## API
+
+- **`command`** (Function) —

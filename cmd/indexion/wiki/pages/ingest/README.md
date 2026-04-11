@@ -1,0 +1,5 @@
+# ingest
+
+## API
+
+- **`command`** (Function) —
