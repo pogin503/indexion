@@ -1,3 +1,171 @@
+# v0.8.0
+
+## Highlights
+
+- **`indexion wiki` Command Family** — Unified wiki management replaces scattered `doc wiki` and `plan wiki`. Full subcommand tree: `pages add/update/ingest`, `index`, `lint`, `log`, `hook`, `import`, `export`
+- **Office Document Inspection (VFS)** — DOCX, XLSX, PPTX archive inspection via virtual filesystem with SoT-enforced path safety
+- **ZIP Module** — Native ZIP entry extraction for Office document support
+- **BM25 Spec Align** — BM25 scoring for spec alignment, body-aware identifier matching, and KGF numbered criteria support
+- **Embedding SoT Unification** — Unified embedding configuration across wiki, digest, and search
+- **CI/Release Workflow Split** — Separate CI and release workflows with Windows build path shortening
+
+## New Commands
+
+### `indexion wiki` — Unified Wiki Management
+
+Complete redesign of wiki CLI into a coherent subcommand tree. Replaces `doc wiki` (deleted) and `plan wiki` (deleted) with DRY/SoT architecture.
+
+```bash
+# Page management
+indexion wiki pages add <title>           # Add a new wiki page
+indexion wiki pages update <page-id>      # Update an existing page
+indexion wiki pages ingest <path>         # Ingest external content into wiki
+
+# Index and search
+indexion wiki index                        # Rebuild wiki search index
+
+# Quality
+indexion wiki lint                          # Lint wiki pages for issues
+indexion wiki log                           # Show wiki change log
+
+# VCS integration
+indexion wiki hook install                 # Install git hooks for wiki
+indexion wiki hook uninstall               # Remove git hooks
+
+# Import/Export
+indexion wiki import <source>             # Import wiki from external source
+indexion wiki export <dest>               # Export wiki as static site
+```
+
+### `indexion wiki hook` — VCS Hook Management
+
+Git hook installation for automatic wiki index updates on commit. Hooks trigger `wiki index` to keep search data in sync with content changes.
+
+## New Packages
+
+### `src/vfs/` — Virtual Filesystem for Office Documents
+
+Archive-backed virtual filesystem for inspecting Office Open XML documents (DOCX, XLSX, PPTX). Reads internal XML structure through ZIP entries with SoT-enforced path traversal safety.
+
+### `src/zip/` — ZIP Archive Entry Extraction
+
+Native ZIP archive reader: local file header parsing, DEFLATE decompression, and entry enumeration. Used by VFS for Office document inspection.
+
+### `src/vcs/` — VCS Abstraction Layer
+
+VCS operations abstraction (currently git backend). Hook management for wiki integration.
+
+### `src/docgen/wiki/index/` — Wiki Index Builder
+
+Search index construction for wiki content: section-level TF-IDF vectorization and vocabulary extraction.
+
+### `src/docgen/wiki/ingest/` — Wiki Content Ingestion
+
+Content ingestion pipeline: parse external documents, extract structure, and merge into wiki manifest.
+
+### `src/docgen/wiki/lint/` — Wiki Linter
+
+Lint checks for wiki pages: broken links, missing metadata, structural issues.
+
+### `src/docgen/wiki/log/` — Wiki Change Log
+
+Change tracking and log generation for wiki page modifications.
+
+### `src/docgen/wiki/manifest/` — Wiki Manifest Management
+
+Wiki manifest serialization/deserialization: page registry, metadata, and configuration.
+
+### `src/docgen/wiki/search/` — Wiki Search Engine
+
+TF-IDF-based wiki search with section-level granularity and IO layer for index persistence.
+
+### `src/docgen/wiki/types/` — Wiki Type Definitions
+
+Shared types for wiki subsystem: page metadata, section structure, search result types.
+
+## Improvements
+
+### Spec Align: BM25 Scoring & Identifier Matching
+
+- BM25 scoring replaces raw TF-IDF cosine for spec-to-implementation alignment
+- Body-aware identifier matching: requirement bodies contribute to alignment scoring
+- Spec vocabulary presence in code used as additional signal
+- KGF numbered criteria parsing for structured requirement extraction
+- Criteria boost for direct identifier matches
+
+### Spec Verify: Gap Detection Fixes
+
+- Kneedle algorithm disabled in favor of strict kind matching for gap term detection
+- More reliable identification of spec concepts missing from implementation
+
+### Search: File-Level Scoring
+
+- File-level scoring for search results, improving ranking of whole-file matches
+
+### Digest: Auto Provider Fallback
+
+- `provider = "auto"` falls back to TF-IDF when no API key is configured, fixing CI failures
+
+### KGF Submodule Updates
+
+- MoonBit DocBlock ordering fix (`///` before `///|`)
+- Longest span selection for overlapping token matches
+- OCaml/Haskell token ordering and grammar fixes
+- PEG doc comment ordering fix for 8 languages
+- TypeScript/Python doc comment and PEG ordering fixes
+- DocBlock blank line handling fix
+- Natural language KGF specs now properly override markdown `.md` mapping
+
+### Embedding SoT Unification
+
+- Single embedding configuration shared across wiki incremental update, digest, and search
+- vcdb upgraded to 0.3.0
+
+### Wiki CLI Redesign
+
+- `doc wiki` and `plan wiki` merged into unified `wiki` command tree
+- DRY/SoT architecture: shared config resolution, consistent `@argparse` usage
+- `index_content` exported for reuse across wiki subcommands
+
+## Bug Fixes
+
+- Fix natural language KGF specs overriding markdown `.md` mapping (24 test failures)
+- Fix digest `provider = "auto"` failing when no API key configured
+- Fix identifier match to use unicode-safe alphanumeric extraction
+- Fix doc_comment search in spec alignment
+- Fix drift tests for BM25 and DocBlock changes with structural mutation
+- Fix spec align criteria boost and identifier direct match
+- Fix spec align + verify tuning for SDD compliance gate
+- Fix search file-level scoring
+- Fix spec draft KGF-based criteria extraction
+- Fix all 4 dogfooding issues (graph cache, CLAUDE.md strengthening)
+- Fix deploy-process skill to use annotated tags for `--follow-tags`
+- Split CI/release workflows to fix Windows build path issues
+
+## Breaking Changes
+
+- `doc wiki` removed — use `indexion wiki export` / `indexion wiki pages` instead
+- `plan wiki` removed — wiki planning integrated into `indexion wiki` subcommands
+
+## Skills
+
+- New: `indexion-sdd` skill with 4 RFC validation results
+- New: `indexion-wiki` skill
+- Updated: `deploy-process` skill (annotated tags)
+- Updated: SDD script documentation (env vars, thresholds, multi-language results)
+
+## Internal
+
+- Version: 0.7.0 → 0.8.0
+- 0 errors
+- +15,670 lines, −1,093 lines (net +14,577)
+- New packages: 11 (vfs, zip, vcs, docgen/wiki/index, docgen/wiki/ingest, docgen/wiki/lint, docgen/wiki/log, docgen/wiki/manifest, docgen/wiki/search, docgen/wiki/types, pipeline/archive tests)
+- New CLI commands: `wiki` family with 10 subcommands (pages add/update/ingest, index, lint, log, hook install/uninstall, import, export)
+- Deleted: `cmd/indexion/doc/wiki/`, `cmd/indexion/plan/wiki/` (merged into `cmd/indexion/wiki/`)
+- CI workflow split: `.github/workflows/ci.yml` separated from release workflow
+
+---
+
 # v0.7.0
 
 ## Highlights
