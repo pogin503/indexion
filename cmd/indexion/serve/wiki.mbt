@@ -46,7 +46,9 @@ async fn load_wiki_pages(
           @wiki_search.build_search_index(data.pages, provider, registry~) catch {
             @embed.ParseError(msg) => {
               @digest_cli.log_progress(
-                "Wiki search: embedding failed (" + msg + "). Index unavailable.",
+                "Wiki search: embedding failed (" +
+                msg +
+                "). Index unavailable.",
               )
               return (data, None)
             }
@@ -125,7 +127,9 @@ async fn handle_wiki_search(
           return
         }
         @embed.NoResult => {
-          send_json_error(conn, 500, "Search returned no embedding result", cors)
+          send_json_error(
+            conn, 500, "Search returned no embedding result", cors,
+          )
           return
         }
       }

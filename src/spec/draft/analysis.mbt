@@ -283,6 +283,7 @@ fn build_report(config : DraftConfig) -> DraftReport? {
 }
 
 ///|
+
 ///|
 /// Render requirements as cc-sdd compatible markdown.
 ///

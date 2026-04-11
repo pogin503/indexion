@@ -7,9 +7,7 @@
 ///|
 /// Load the wiki manifest from wiki_dir.
 /// Prints an error and returns None if loading or parsing fails.
-pub fn load_manifest(
-  wiki_dir : String,
-) -> @wiki_types.WikiManifest? {
+pub fn load_manifest(wiki_dir : String) -> @wiki_types.WikiManifest? {
   let manifest_path = @wiki_types.wiki_manifest_path(wiki_dir)
   if !@fs.path_exists(manifest_path) {
     println("Error: No wiki manifest found at " + manifest_path)

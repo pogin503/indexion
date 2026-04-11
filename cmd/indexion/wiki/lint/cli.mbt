@@ -6,36 +6,31 @@
 
 ///|
 pub fn command() -> @argparse.Command {
-  @argparse.Command(
-    "lint",
-    about="Check wiki structural integrity",
-    options=[
-      @argparse.OptionArg(
-        "wiki-dir",
-        about="Wiki directory",
-        default_values=[".indexion/wiki"],
-      ),
-      @argparse.OptionArg(
-        "format",
-        about="Output format: md, json, github-issue",
-        default_values=["md"],
-      ),
-      @argparse.OptionArg("output", short='o', about="Output file path"),
-      @argparse.OptionArg("specs-dir", about=@help.specs_dir, default_values=[
-        "kgfs",
-      ]),
-    ],
-  )
+  @argparse.Command("lint", about="Check wiki structural integrity", options=[
+    @argparse.OptionArg("wiki-dir", about="Wiki directory", default_values=[
+      ".indexion/wiki",
+    ]),
+    @argparse.OptionArg(
+      "format",
+      about="Output format: md, json, github-issue",
+      default_values=["md"],
+    ),
+    @argparse.OptionArg("output", short='o', about="Output file path"),
+    @argparse.OptionArg("specs-dir", about=@help.specs_dir, default_values=[
+      "kgfs",
+    ]),
+  ])
 }
 
 ///|
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
-  let wiki_dir_resolved = match @common.resolve_wiki_dir(
-    match matches.values.get("wiki-dir") {
-      Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
-      _ => ".indexion/wiki"
-    },
-  ) {
+  let wiki_dir_resolved = match
+    @common.resolve_wiki_dir(
+      match matches.values.get("wiki-dir") {
+        Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
+        _ => ".indexion/wiki"
+      },
+    ) {
     Some(dir) => dir
     None => {
       println("Error: Could not find project root directory.")
@@ -55,10 +50,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     _ => "kgfs"
   }
   // Load wiki
-  let registry = @kgf_features.load_registry(
-    specs_dir=specs_dir,
-    target_dir=".",
-  )
+  let registry = @kgf_features.load_registry(specs_dir~, target_dir=".")
   let wiki = match @wiki_reader.load_wiki(wiki_dir_resolved, registry~) {
     Some(w) => w
     None => {

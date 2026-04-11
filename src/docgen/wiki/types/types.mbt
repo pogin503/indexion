@@ -163,7 +163,9 @@ pub struct ManifestPage {
 ///|
 pub impl @json.FromJson for ManifestPage with from_json(json, path) {
   guard json is Object(obj) else {
-    raise @json.JsonDecodeError((path, "ManifestPage::from_json: expected object"))
+    raise @json.JsonDecodeError(
+      (path, "ManifestPage::from_json: expected object"),
+    )
   }
   let id = match obj.get("id") {
     Some(String(s)) => s
@@ -201,8 +203,7 @@ pub impl @json.FromJson for ManifestPage with from_json(json, path) {
       result
     }
     Some(Null) | None => []
-    _ =>
-      raise @json.JsonDecodeError((path, "ManifestPage: invalid 'children'"))
+    _ => raise @json.JsonDecodeError((path, "ManifestPage: invalid 'children'"))
   }
   let provenance : String? = match obj.get("provenance") {
     Some(String(s)) => Some(s)
@@ -274,7 +275,9 @@ pub struct WikiManifest {
 ///|
 pub impl @json.FromJson for WikiManifest with from_json(json, path) {
   guard json is Object(obj) else {
-    raise @json.JsonDecodeError((path, "WikiManifest::from_json: expected object"))
+    raise @json.JsonDecodeError(
+      (path, "WikiManifest::from_json: expected object"),
+    )
   }
   let title = match obj.get("title") {
     Some(String(s)) => s
@@ -288,7 +291,10 @@ pub impl @json.FromJson for WikiManifest with from_json(json, path) {
           @json.from_json(item) catch {
             e =>
               raise @json.JsonDecodeError(
-                (path.add_index(i), "WikiManifest: invalid page: " + e.to_string()),
+                (
+                  path.add_index(i),
+                  "WikiManifest: invalid page: " + e.to_string(),
+                ),
               )
           },
         )

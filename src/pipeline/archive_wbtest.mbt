@@ -24,10 +24,7 @@ fn build_test_pptx(path : String) -> Unit raise Error {
     ),
   )
   files.push(
-    (
-      "[Content_Types].xml",
-      @fzip.str_to_u8("<?xml version=\"1.0\"?><Types/>"),
-    ),
+    ("[Content_Types].xml", @fzip.str_to_u8("<?xml version=\"1.0\"?><Types/>")),
   )
   let zip_data = @fzip.zip_sync(files)
   let bytes_arr : Array[Byte] = Array::new(capacity=zip_data.length())
@@ -44,38 +41,39 @@ test "load_supported_file_info: archive path is always real, never virtual" {
   let test_dir = "/tmp/indexion-pipeline-archive-test-" + @env.now().to_string()
   @config.ensure_dir_recursive(test_dir)
   let pptx_path = test_dir + "/test.pptx"
-  build_test_pptx!(pptx_path)
+  build_test_pptx(pptx_path)
   let registry = @kgf_features.load_registry_or_empty(target_dir=test_dir)
   let results = load_supported_file_info([pptx_path], registry)
   // Must return exactly 1 entry (the archive itself, not inner XMLs)
-  assert_eq!(results.length(), 1)
+  assert_eq(results.length(), 1)
   let file = results[0]
   // Path must be the real archive path, not a virtual path
-  assert_eq!(file.path, pptx_path)
+  assert_eq(file.path, pptx_path)
   // Path must NOT contain the virtual path separator
-  assert_false!(file.path.contains("!/"))
+  assert_false(file.path.contains("!/"))
   // Content must contain text from inner XML files
-  assert_true!(file.content.contains("Test Content"))
-  assert_true!(file.content.contains("Test"))
+  assert_true(file.content.contains("Test Content"))
+  assert_true(file.content.contains("Test"))
   // Content type must be "document" (concatenated archive text)
-  assert_eq!(file.content_type, Some("document"))
+  assert_eq(file.content_type, Some("document"))
   // Path must be a real file that exists on disk
-  assert_true!(@fs.is_file(file.path))
+  assert_true(@fs.is_file(file.path))
 }
 
 ///|
 /// SoT: collect_supported_file_info inherits the same guarantee.
 test "collect_supported_file_info: archive paths are always real" {
-  let test_dir = "/tmp/indexion-pipeline-archive-test2-" + @env.now().to_string()
+  let test_dir = "/tmp/indexion-pipeline-archive-test2-" +
+    @env.now().to_string()
   @config.ensure_dir_recursive(test_dir)
   let pptx_path = test_dir + "/doc.pptx"
-  build_test_pptx!(pptx_path)
+  build_test_pptx(pptx_path)
   let registry = @kgf_features.load_registry_or_empty(target_dir=test_dir)
   let opts = DiscoverOptions::new(root_dir=test_dir)
   let results = collect_supported_file_info([test_dir], opts, registry)
   // Every returned SupportedFile.path must be a real path
   for file in results {
-    assert_false!(file.path.contains("!/"))
-    assert_true!(@fs.path_exists(file.path))
+    assert_false(file.path.contains("!/"))
+    assert_true(@fs.path_exists(file.path))
   }
 }

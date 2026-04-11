@@ -78,7 +78,10 @@ fn write_mutated_rfc3492_impl(root : String) -> String {
     .replace(old="const initial_bias = 72", new="")
     .replace(old="const initial_n = 0x80", new="")
     .replace(old="const delimiter = 0x2d", new="")
-    .replace(old="export const bootstringParameters", new="// REMOVED bootstringParameters")
+    .replace(
+      old="export const bootstringParameters",
+      new="// REMOVED bootstringParameters",
+    )
   @fs.write_string_to_file(src_dir + "/punycode.ts", mutated) catch {
     _ => panic()
   }

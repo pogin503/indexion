@@ -76,7 +76,7 @@ pub(all) enum EmbeddingProvider {
 pub fn EmbeddingProvider::to_json(self : EmbeddingProvider) -> Json {
   match self {
     TfIdf(dim) => { "kind": "tfidf", "dim": dim.to_json() }
-    OpenAI(cfg) => {
+    OpenAI(cfg) =>
       {
         "kind": "openai",
         "api_key": cfg.api_key.to_json(),
@@ -85,7 +85,6 @@ pub fn EmbeddingProvider::to_json(self : EmbeddingProvider) -> Json {
         "model": cfg.model.to_json(),
         "dim": cfg.dim.to_json(),
       }
-    }
     Precomputed(path) => { "kind": "precomputed", "path": path.to_json() }
   }
 }
@@ -124,14 +123,12 @@ pub fn resolve_provider(
     "tfidf" => TfIdf(dim)
     "openai" =>
       match @sys.get_env_var(api_key_env) {
-        Some(api_key) =>
-          OpenAI({ api_key, api_key_env, base_url, model, dim })
+        Some(api_key) => OpenAI({ api_key, api_key_env, base_url, model, dim })
         None => raise MissingApiKey(api_key_env)
       }
     "auto" | "" =>
       match @sys.get_env_var(api_key_env) {
-        Some(api_key) =>
-          OpenAI({ api_key, api_key_env, base_url, model, dim })
+        Some(api_key) => OpenAI({ api_key, api_key_env, base_url, model, dim })
         None => TfIdf(dim)
       }
     _ => raise UnknownProvider(provider_name)
@@ -143,8 +140,7 @@ pub fn resolve_provider(
 /// Returns TfIdf(DEFAULT_TFIDF_DIM) if the JSON is unrecognized.
 pub fn EmbeddingProvider::from_json(json : Json) -> EmbeddingProvider {
   match json {
-    { "kind": String("tfidf"), "dim": Number(d, ..), .. } =>
-      TfIdf(d.to_int())
+    { "kind": String("tfidf"), "dim": Number(d, ..), .. } => TfIdf(d.to_int())
     { "kind": String("tfidf"), .. } => TfIdf(DEFAULT_TFIDF_DIM)
     {
       "kind": String("openai"),

@@ -62,13 +62,21 @@ let rels_ns : String = "http://schemas.openxmlformats.org/package/2006/relations
 /// This is a structural part that should be EXCLUDED by the KGF spec.
 fn make_content_types_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<Types xmlns=\"")
   buf.write_string(ct_ns)
   buf.write_string("\">\n")
-  buf.write_string("  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n")
-  buf.write_string("  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n")
-  buf.write_string("  <Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>\n")
+  buf.write_string(
+    "  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n",
+  )
+  buf.write_string(
+    "  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n",
+  )
+  buf.write_string(
+    "  <Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>\n",
+  )
   buf.write_string("</Types>")
   buf.to_string()
 }
@@ -78,12 +86,18 @@ fn make_content_types_xml() -> String {
 /// Structural relationship part — should be EXCLUDED.
 fn make_root_rels() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<Relationships xmlns=\"")
   buf.write_string(rels_ns)
   buf.write_string("\">\n")
-  buf.write_string("  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/>\n")
-  buf.write_string("  <Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/>\n")
+  buf.write_string(
+    "  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/>\n",
+  )
+  buf.write_string(
+    "  <Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/>\n",
+  )
   buf.write_string("</Relationships>")
   buf.to_string()
 }
@@ -93,12 +107,18 @@ fn make_root_rels() -> String {
 /// Structural relationship part — should be EXCLUDED.
 fn make_document_rels() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<Relationships xmlns=\"")
   buf.write_string(rels_ns)
   buf.write_string("\">\n")
-  buf.write_string("  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>\n")
-  buf.write_string("  <Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/header\" Target=\"header1.xml\"/>\n")
+  buf.write_string(
+    "  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>\n",
+  )
+  buf.write_string(
+    "  <Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/header\" Target=\"header1.xml\"/>\n",
+  )
   buf.write_string("</Relationships>")
   buf.to_string()
 }
@@ -108,11 +128,15 @@ fn make_document_rels() -> String {
 /// Structural relationship part for glossary — should be EXCLUDED.
 fn make_glossary_rels() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<Relationships xmlns=\"")
   buf.write_string(rels_ns)
   buf.write_string("\">\n")
-  buf.write_string("  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>\n")
+  buf.write_string(
+    "  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>\n",
+  )
   buf.write_string("</Relationships>")
   buf.to_string()
 }
@@ -122,7 +146,9 @@ fn make_glossary_rels() -> String {
 /// Contains paragraphs with runs and text elements per ECMA-376 Section 17.3.
 fn make_document_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:document xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -147,7 +173,9 @@ fn make_document_xml() -> String {
 /// Headers use <w:hdr> root element per ECMA-376 Section 17.10.3.
 fn make_header_xml(number : Int, text : String) -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:hdr xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -169,7 +197,9 @@ fn make_header_xml(number : Int, text : String) -> String {
 /// Footers use <w:ftr> root element per ECMA-376 Section 17.10.2.
 fn make_footer_xml(number : Int, text : String) -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:ftr xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -191,7 +221,9 @@ fn make_footer_xml(number : Int, text : String) -> String {
 /// Contains footnote elements per ECMA-376 Section 17.11.8.
 fn make_footnotes_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:footnotes xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -201,7 +233,9 @@ fn make_footnotes_xml() -> String {
   buf.write_string("  <w:footnote w:id=\"1\">\n")
   buf.write_string("    <w:p>\n")
   buf.write_string("      <w:r>\n")
-  buf.write_string("        <w:t>This is a footnote with additional context.</w:t>\n")
+  buf.write_string(
+    "        <w:t>This is a footnote with additional context.</w:t>\n",
+  )
   buf.write_string("      </w:r>\n")
   buf.write_string("    </w:p>\n")
   buf.write_string("  </w:footnote>\n")
@@ -214,7 +248,9 @@ fn make_footnotes_xml() -> String {
 /// Contains endnote elements per ECMA-376 Section 17.11.4.
 fn make_endnotes_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:endnotes xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -237,11 +273,15 @@ fn make_endnotes_xml() -> String {
 /// Contains comment elements per ECMA-376 Section 17.13.4.2.
 fn make_comments_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:comments xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
-  buf.write_string("  <w:comment w:id=\"0\" w:author=\"Reviewer\" w:date=\"2024-01-15T10:30:00Z\">\n")
+  buf.write_string(
+    "  <w:comment w:id=\"0\" w:author=\"Reviewer\" w:date=\"2024-01-15T10:30:00Z\">\n",
+  )
   buf.write_string("    <w:p>\n")
   buf.write_string("      <w:r>\n")
   buf.write_string("        <w:t>Please review this section carefully.</w:t>\n")
@@ -257,9 +297,15 @@ fn make_comments_xml() -> String {
 /// Extended comments introduced in Office 2013 (ISO/IEC 29500:2012 amendment).
 fn make_comments_extended_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
-  buf.write_string("<w15:commentsEx xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\">\n")
-  buf.write_string("  <w15:commentEx w15:paraId=\"00000001\" w15:done=\"0\"/>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
+  buf.write_string(
+    "<w15:commentsEx xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\">\n",
+  )
+  buf.write_string(
+    "  <w15:commentEx w15:paraId=\"00000001\" w15:done=\"0\"/>\n",
+  )
   buf.write_string("</w15:commentsEx>")
   buf.to_string()
 }
@@ -269,7 +315,9 @@ fn make_comments_extended_xml() -> String {
 /// List numbering definitions per ECMA-376 Section 17.9.
 fn make_numbering_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:numbering xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -292,7 +340,9 @@ fn make_numbering_xml() -> String {
 /// Style definitions per ECMA-376 Section 17.7.
 fn make_styles_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:styles xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -314,7 +364,9 @@ fn make_styles_xml() -> String {
 /// Glossary document (building blocks) per ECMA-376 Section 17.12.
 fn make_glossary_document_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<w:glossaryDocument xmlns:w=\"")
   buf.write_string(wml_ns)
   buf.write_string("\">\n")
@@ -341,7 +393,9 @@ fn make_glossary_document_xml() -> String {
 /// Dublin Core metadata per ECMA-376 Part 2, Section 11.1.
 fn make_core_properties_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<cp:coreProperties xmlns:cp=\"")
   buf.write_string(cp_ns)
   buf.write_string("\" xmlns:dc=\"")
@@ -352,8 +406,12 @@ fn make_core_properties_xml() -> String {
   buf.write_string("  <dc:title>Test Document Title</dc:title>\n")
   buf.write_string("  <dc:creator>Test Author</dc:creator>\n")
   buf.write_string("  <dc:subject>ECMA-376 Conformance Test</dc:subject>\n")
-  buf.write_string("  <dcterms:created>2024-01-15T10:00:00Z</dcterms:created>\n")
-  buf.write_string("  <dcterms:modified>2024-01-15T12:00:00Z</dcterms:modified>\n")
+  buf.write_string(
+    "  <dcterms:created>2024-01-15T10:00:00Z</dcterms:created>\n",
+  )
+  buf.write_string(
+    "  <dcterms:modified>2024-01-15T12:00:00Z</dcterms:modified>\n",
+  )
   buf.write_string("</cp:coreProperties>")
   buf.to_string()
 }
@@ -363,7 +421,9 @@ fn make_core_properties_xml() -> String {
 /// Application metadata per ECMA-376 Part 2, Section 11.2.
 fn make_app_properties_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<Properties xmlns=\"")
   buf.write_string(ep_ns)
   buf.write_string("\">\n")
@@ -380,12 +440,18 @@ fn make_app_properties_xml() -> String {
 /// Custom properties per ECMA-376 Part 2, Section 11.3.
 fn make_custom_properties_xml() -> String {
   let buf = StringBuilder::new()
-  buf.write_string("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
+  buf.write_string(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n",
+  )
   buf.write_string("<Properties xmlns=\"")
   buf.write_string(custom_ns)
   buf.write_string("\">\n")
-  buf.write_string("  <property fmtid=\"{D5CDD505-2E9C-101B-9397-08002B2CF9AE}\" pid=\"2\" name=\"Project\">\n")
-  buf.write_string("    <vt:lpwstr xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\">indexion</vt:lpwstr>\n")
+  buf.write_string(
+    "  <property fmtid=\"{D5CDD505-2E9C-101B-9397-08002B2CF9AE}\" pid=\"2\" name=\"Project\">\n",
+  )
+  buf.write_string(
+    "    <vt:lpwstr xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\">indexion</vt:lpwstr>\n",
+  )
   buf.write_string("  </property>\n")
   buf.write_string("</Properties>")
   buf.to_string()
@@ -397,34 +463,96 @@ fn make_custom_properties_xml() -> String {
 fn build_docx_fixture() -> FixedArray[Byte] {
   let entries : Array[(String, FixedArray[Byte])] = []
   // Structural parts (should be EXCLUDED)
-  entries.push(("[Content_Types].xml", string_to_fixed_bytes(make_content_types_xml())))
+  entries.push(
+    ("[Content_Types].xml", string_to_fixed_bytes(make_content_types_xml())),
+  )
   entries.push(("_rels/.rels", string_to_fixed_bytes(make_root_rels())))
-  entries.push(("word/_rels/document.xml.rels", string_to_fixed_bytes(make_document_rels())))
-  entries.push(("word/glossary/_rels/document.xml.rels", string_to_fixed_bytes(make_glossary_rels())))
+  entries.push(
+    (
+      "word/_rels/document.xml.rels",
+      string_to_fixed_bytes(make_document_rels()),
+    ),
+  )
+  entries.push(
+    (
+      "word/glossary/_rels/document.xml.rels",
+      string_to_fixed_bytes(make_glossary_rels()),
+    ),
+  )
   // Main document body
-  entries.push(("word/document.xml", string_to_fixed_bytes(make_document_xml())))
+  entries.push(
+    ("word/document.xml", string_to_fixed_bytes(make_document_xml())),
+  )
   // Headers (first page, odd, even)
-  entries.push(("word/header1.xml", string_to_fixed_bytes(make_header_xml(1, "First Page"))))
-  entries.push(("word/header2.xml", string_to_fixed_bytes(make_header_xml(2, "Odd Pages"))))
-  entries.push(("word/header3.xml", string_to_fixed_bytes(make_header_xml(3, "Even Pages"))))
+  entries.push(
+    (
+      "word/header1.xml",
+      string_to_fixed_bytes(make_header_xml(1, "First Page")),
+    ),
+  )
+  entries.push(
+    ("word/header2.xml", string_to_fixed_bytes(make_header_xml(2, "Odd Pages"))),
+  )
+  entries.push(
+    (
+      "word/header3.xml",
+      string_to_fixed_bytes(make_header_xml(3, "Even Pages")),
+    ),
+  )
   // Footers
-  entries.push(("word/footer1.xml", string_to_fixed_bytes(make_footer_xml(1, "First Page"))))
-  entries.push(("word/footer2.xml", string_to_fixed_bytes(make_footer_xml(2, "Odd Pages"))))
-  entries.push(("word/footer3.xml", string_to_fixed_bytes(make_footer_xml(3, "Even Pages"))))
+  entries.push(
+    (
+      "word/footer1.xml",
+      string_to_fixed_bytes(make_footer_xml(1, "First Page")),
+    ),
+  )
+  entries.push(
+    ("word/footer2.xml", string_to_fixed_bytes(make_footer_xml(2, "Odd Pages"))),
+  )
+  entries.push(
+    (
+      "word/footer3.xml",
+      string_to_fixed_bytes(make_footer_xml(3, "Even Pages")),
+    ),
+  )
   // Notes and comments
-  entries.push(("word/footnotes.xml", string_to_fixed_bytes(make_footnotes_xml())))
-  entries.push(("word/endnotes.xml", string_to_fixed_bytes(make_endnotes_xml())))
-  entries.push(("word/comments.xml", string_to_fixed_bytes(make_comments_xml())))
-  entries.push(("word/commentsExtended.xml", string_to_fixed_bytes(make_comments_extended_xml())))
+  entries.push(
+    ("word/footnotes.xml", string_to_fixed_bytes(make_footnotes_xml())),
+  )
+  entries.push(
+    ("word/endnotes.xml", string_to_fixed_bytes(make_endnotes_xml())),
+  )
+  entries.push(
+    ("word/comments.xml", string_to_fixed_bytes(make_comments_xml())),
+  )
+  entries.push(
+    (
+      "word/commentsExtended.xml",
+      string_to_fixed_bytes(make_comments_extended_xml()),
+    ),
+  )
   // Definitions
-  entries.push(("word/numbering.xml", string_to_fixed_bytes(make_numbering_xml())))
+  entries.push(
+    ("word/numbering.xml", string_to_fixed_bytes(make_numbering_xml())),
+  )
   entries.push(("word/styles.xml", string_to_fixed_bytes(make_styles_xml())))
   // Glossary
-  entries.push(("word/glossary/document.xml", string_to_fixed_bytes(make_glossary_document_xml())))
+  entries.push(
+    (
+      "word/glossary/document.xml",
+      string_to_fixed_bytes(make_glossary_document_xml()),
+    ),
+  )
   // Properties
-  entries.push(("docProps/core.xml", string_to_fixed_bytes(make_core_properties_xml())))
-  entries.push(("docProps/app.xml", string_to_fixed_bytes(make_app_properties_xml())))
-  entries.push(("docProps/custom.xml", string_to_fixed_bytes(make_custom_properties_xml())))
+  entries.push(
+    ("docProps/core.xml", string_to_fixed_bytes(make_core_properties_xml())),
+  )
+  entries.push(
+    ("docProps/app.xml", string_to_fixed_bytes(make_app_properties_xml())),
+  )
+  entries.push(
+    ("docProps/custom.xml", string_to_fixed_bytes(make_custom_properties_xml())),
+  )
   // Binary media entry (should be excluded by inner_includes — not in the pattern list)
   let fake_image : FixedArray[Byte] = FixedArray::make(8, b'\x89')
   fake_image[1] = b'\x50'
@@ -449,18 +577,9 @@ fn write_fixture_to_disk(
 /// correctly select ECMA-376 document-relevant parts.
 fn docx_inner_includes() -> Array[String] {
   [
-    "word/document.xml",
-    "word/footnotes.xml",
-    "word/endnotes.xml",
-    "word/comments.xml",
-    "word/commentsExtended.xml",
-    "word/header*.xml",
-    "word/footer*.xml",
-    "word/numbering.xml",
-    "word/styles.xml",
-    "word/glossary/document.xml",
-    "docProps/core.xml",
-    "docProps/app.xml",
+    "word/document.xml", "word/footnotes.xml", "word/endnotes.xml", "word/comments.xml",
+    "word/commentsExtended.xml", "word/header*.xml", "word/footer*.xml", "word/numbering.xml",
+    "word/styles.xml", "word/glossary/document.xml", "docProps/core.xml", "docProps/app.xml",
     "docProps/custom.xml",
   ]
 }
@@ -474,29 +593,20 @@ fn docx_inner_excludes() -> Array[String] {
 ///|
 /// Build an ArchiveSpec matching the docx.kgf definition.
 fn docx_archive_spec() -> ArchiveSpec {
-  { inner_includes: docx_inner_includes(), inner_excludes: docx_inner_excludes() }
+  {
+    inner_includes: docx_inner_includes(),
+    inner_excludes: docx_inner_excludes(),
+  }
 }
 
 ///|
 /// All ECMA-376 part names that MUST be included in the VFS expansion.
 fn expected_included_parts() -> Array[String] {
   [
-    "word/document.xml",
-    "word/header1.xml",
-    "word/header2.xml",
-    "word/header3.xml",
-    "word/footer1.xml",
-    "word/footer2.xml",
-    "word/footer3.xml",
-    "word/footnotes.xml",
-    "word/endnotes.xml",
-    "word/comments.xml",
-    "word/commentsExtended.xml",
-    "word/numbering.xml",
-    "word/styles.xml",
-    "word/glossary/document.xml",
-    "docProps/core.xml",
-    "docProps/app.xml",
+    "word/document.xml", "word/header1.xml", "word/header2.xml", "word/header3.xml",
+    "word/footer1.xml", "word/footer2.xml", "word/footer3.xml", "word/footnotes.xml",
+    "word/endnotes.xml", "word/comments.xml", "word/commentsExtended.xml", "word/numbering.xml",
+    "word/styles.xml", "word/glossary/document.xml", "docProps/core.xml", "docProps/app.xml",
     "docProps/custom.xml",
   ]
 }
@@ -505,10 +615,7 @@ fn expected_included_parts() -> Array[String] {
 /// All part names that MUST be excluded from the VFS expansion.
 fn expected_excluded_parts() -> Array[String] {
   [
-    "[Content_Types].xml",
-    "_rels/.rels",
-    "word/_rels/document.xml.rels",
-    "word/glossary/_rels/document.xml.rels",
+    "[Content_Types].xml", "_rels/.rels", "word/_rels/document.xml.rels", "word/glossary/_rels/document.xml.rels",
     "word/media/image1.png",
   ]
 }
@@ -538,7 +645,9 @@ test "docx: expand_archive includes all document-relevant parts" {
     assert_true(found, msg="expected included part not found: " + part)
   }
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -563,7 +672,9 @@ test "docx: expand_archive excludes structural and binary parts" {
     }
   }
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -577,7 +688,9 @@ test "docx: expand_archive returns correct entry count" {
   let expected_count = expected_included_parts().length()
   assert_eq(entries.length(), expected_count)
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -606,7 +719,9 @@ test "docx: all text entries are UTF-8 decodable" {
     )
   }
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -629,7 +744,8 @@ test "docx: virtual paths use archive separator" {
       None =>
         assert_true(
           false,
-          msg="archive_source should be Some for archive entry: " + e.virtual_path,
+          msg="archive_source should be Some for archive entry: " +
+            e.virtual_path,
         )
     }
     // parse_virtual_path must correctly decompose
@@ -649,7 +765,9 @@ test "docx: virtual paths use archive separator" {
     }
   }
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -672,7 +790,9 @@ test "docx: document.xml contains expected paragraph text" {
   assert_true(doc_content.contains("<w:document"))
   assert_true(doc_content.contains(wml_ns))
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -701,7 +821,9 @@ test "docx: header and footer content is accessible" {
   assert_eq(header_count, 3)
   assert_eq(footer_count, 3)
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -741,7 +863,9 @@ test "docx: comments and notes are included with content" {
   assert_true(found_comments)
   assert_true(found_comments_ext)
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -770,7 +894,9 @@ test "docx: numbering and styles definitions are included" {
   assert_true(found_numbering)
   assert_true(found_styles)
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -789,9 +915,14 @@ test "docx: glossary document is included" {
       assert_true(e.content.contains("building block content"))
     }
   }
-  assert_true(found, msg="word/glossary/document.xml not found in expanded entries")
+  assert_true(
+    found,
+    msg="word/glossary/document.xml not found in expanded entries",
+  )
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -825,7 +956,9 @@ test "docx: all three docProps parts are included" {
   assert_true(found_app, msg="docProps/app.xml not found")
   assert_true(found_custom, msg="docProps/custom.xml not found")
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -848,5 +981,7 @@ test "docx: glossary _rels are excluded" {
     )
   }
   // Cleanup
-  @fs.remove_file(docx_path) catch { _ => () }
+  @fs.remove_file(docx_path) catch {
+    _ => ()
+  }
 }

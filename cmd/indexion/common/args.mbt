@@ -412,9 +412,7 @@ pub fn collect_files(
       }
       // Archive expansion: if registry is available and file is an archive,
       // expand it via VFS and emit inner entries instead.
-      if try_expand_archive(
-        path, dir, dirname, multi_dir, registry, files,
-      ) {
+      if try_expand_archive(path, dir, dirname, multi_dir, registry, files) {
         continue
       }
       try {
@@ -461,7 +459,9 @@ fn try_expand_archive(
   // Use @vfs SoT for archive text extraction
   let text_entries : Array[(String, String)]? = @vfs.try_extract_archive_entries(
     path, spec,
-  ) catch { _ => return true }
+  ) catch {
+    _ => return true
+  }
   let entries = match text_entries {
     Some(e) => e
     None => return false // Not an archive
@@ -756,10 +756,7 @@ pub fn count_lines(text : String) -> Int {
 /// If `wiki_dir` is the default ".indexion/wiki", walks up from `base_dir`
 /// to find the project root and returns `<root>/.indexion/wiki`.
 /// Returns None if the project root cannot be found.
-pub fn resolve_wiki_dir(
-  wiki_dir : String,
-  base_dir~ : String = ".",
-) -> String? {
+pub fn resolve_wiki_dir(wiki_dir : String, base_dir? : String = ".") -> String? {
   if wiki_dir == ".indexion/wiki" {
     @config_paths.resolve_project_indexion_dir(base_dir, "wiki")
   } else {

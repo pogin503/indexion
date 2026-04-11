@@ -16,11 +16,7 @@ pub fn command() -> @argparse.Command {
     "doc",
     about="Documentation commands (graph, readme, init)",
     subcommand_required=true,
-    subcommands=[
-      @init.command(),
-      @graph.command(),
-      @readme.command(),
-    ],
+    subcommands=[@init.command(), @graph.command(), @readme.command()],
   )
 }
 

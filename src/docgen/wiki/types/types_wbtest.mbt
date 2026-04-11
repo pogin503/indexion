@@ -58,11 +58,7 @@ test "ManifestPage from_json: optional fields null" {
 ///|
 test "ManifestPage from_json: sources and children absent" {
   // sources and children absent — must default to empty array.
-  let json : Json = {
-    "id": "qux",
-    "title": "Qux",
-    "file": "qux.md",
-  }
+  let json : Json = { "id": "qux", "title": "Qux", "file": "qux.md" }
   let page : ManifestPage = @json.from_json(json) catch { e => panic() }
   assert_eq(page.sources, [])
   assert_eq(page.children, [])
@@ -118,19 +114,16 @@ test "WikiManifest from_json: full" {
 
 ///|
 test "WikiManifest ToJson / FromJson round-trip" {
-  let original = WikiManifest::new(
-    title="Test Wiki",
-    pages=[
-      ManifestPage::new(
-        id="p1",
-        title="Page 1",
-        file="p1.md",
-        sources=["a.mbt"],
-        provenance=Some("extracted"),
-      ),
-      ManifestPage::new(id="p2", title="Page 2", file="p2.md"),
-    ],
-  )
+  let original = WikiManifest::new(title="Test Wiki", pages=[
+    ManifestPage::new(
+      id="p1",
+      title="Page 1",
+      file="p1.md",
+      sources=["a.mbt"],
+      provenance=Some("extracted"),
+    ),
+    ManifestPage::new(id="p2", title="Page 2", file="p2.md"),
+  ])
   let json = original.to_json()
   let decoded : WikiManifest = @json.from_json(json) catch { e => panic() }
   assert_eq(decoded, original)

@@ -86,10 +86,7 @@ pub fn LintReport::warning_count(self : LintReport) -> Int {
 ///|
 /// Run all lint checks on the given wiki data.
 /// `wiki_dir` is the directory containing the wiki files (for file-system checks).
-pub fn lint(
-  wiki : @wiki_types.WikiData,
-  wiki_dir~ : String,
-) -> LintReport {
+pub fn lint(wiki : @wiki_types.WikiData, wiki_dir~ : String) -> LintReport {
   let report = LintReport::new(total_pages=wiki.pages.length())
   check_broken_links(wiki, report)
   check_orphan_pages(wiki, report)
@@ -104,10 +101,7 @@ pub fn lint(
 /// Check 1: Broken internal links.
 /// Scan page content for wiki:// links where the target page ID does not exist.
 /// Links inside backtick code spans (e.g. `wiki://page-id`) are skipped.
-fn check_broken_links(
-  wiki : @wiki_types.WikiData,
-  report : LintReport,
-) -> Unit {
+fn check_broken_links(wiki : @wiki_types.WikiData, report : LintReport) -> Unit {
   let wiki_link_prefix = "wiki://"
   for entry in wiki.pages {
     let (page_id, page) = (entry.0, entry.1)
@@ -132,15 +126,13 @@ fn check_broken_links(
         None => target_id
       }
       if target_base.length() > 0 && !wiki.pages.contains(target_base) {
-        report.add(
-          {
-            severity: Error,
-            check: "broken-link",
-            page_id,
-            message: "Link to non-existent page: " + target_base,
-            suggestion: "Remove the link or create the target page",
-          },
-        )
+        report.add({
+          severity: Error,
+          check: "broken-link",
+          page_id,
+          message: "Link to non-existent page: " + target_base,
+          suggestion: "Remove the link or create the target page",
+        })
       }
       pos = end
     }
@@ -150,10 +142,7 @@ fn check_broken_links(
 ///|
 /// Check 2: Orphan pages.
 /// Pages not reachable from the navigation tree and not linked by any other page.
-fn check_orphan_pages(
-  wiki : @wiki_types.WikiData,
-  report : LintReport,
-) -> Unit {
+fn check_orphan_pages(wiki : @wiki_types.WikiData, report : LintReport) -> Unit {
   // Collect all page IDs reachable from nav tree
   let nav_reachable : Map[String, Bool] = {}
   for item in wiki.nav.pages {
@@ -197,15 +186,13 @@ fn check_orphan_pages(
   for entry in wiki.pages {
     let page_id = entry.0
     if !nav_reachable.contains(page_id) && !linked.contains(page_id) {
-      report.add(
-        {
-          severity: Warning,
-          check: "orphan",
-          page_id,
-          message: "Page is not reachable from navigation or any link",
-          suggestion: "Add to navigation tree or link from a related page",
-        },
-      )
+      report.add({
+        severity: Warning,
+        check: "orphan",
+        page_id,
+        message: "Page is not reachable from navigation or any link",
+        suggestion: "Add to navigation tree or link from a related page",
+      })
     }
   }
 }
@@ -247,19 +234,17 @@ fn check_missing_cross_references(
         let a_links_b = page_links_to(wiki, a, b)
         let b_links_a = page_links_to(wiki, b, a)
         if !a_links_b && !b_links_a {
-          report.add(
-            {
-              severity: Info,
-              check: "missing-xref",
-              page_id: a,
-              message: "Pages '" +
-                a +
-                "' and '" +
-                b +
-                "' share source files but don't link to each other",
-              suggestion: "Add cross-references between related pages",
-            },
-          )
+          report.add({
+            severity: Info,
+            check: "missing-xref",
+            page_id: a,
+            message: "Pages '" +
+            a +
+            "' and '" +
+            b +
+            "' share source files but don't link to each other",
+            suggestion: "Add cross-references between related pages",
+          })
         }
       }
     }
@@ -277,15 +262,13 @@ fn check_stale_sources(
     let (page_id, page) = (entry.0, entry.1)
     for src in page.sources {
       if src.file.length() > 0 && !@fs.path_exists(src.file) {
-        report.add(
-          {
-            severity: Warning,
-            check: "stale-source",
-            page_id,
-            message: "Source file not found: " + src.file,
-            suggestion: "Update or remove the source reference",
-          },
-        )
+        report.add({
+          severity: Warning,
+          check: "stale-source",
+          page_id,
+          message: "Source file not found: " + src.file,
+          suggestion: "Update or remove the source reference",
+        })
       }
     }
   }
@@ -294,26 +277,21 @@ fn check_stale_sources(
 ///|
 /// Check 5: Empty pages.
 /// Pages with no meaningful content.
-fn check_empty_pages(
-  wiki : @wiki_types.WikiData,
-  report : LintReport,
-) -> Unit {
+fn check_empty_pages(wiki : @wiki_types.WikiData, report : LintReport) -> Unit {
   let min_content_length = 50
   for entry in wiki.pages {
     let (page_id, page) = (entry.0, entry.1)
     let content_len = count_non_whitespace(page.content)
     if content_len < min_content_length {
-      report.add(
-        {
-          severity: Warning,
-          check: "empty",
-          page_id,
-          message: "Page has very little content (" +
-            content_len.to_string() +
-            " non-whitespace chars)",
-          suggestion: "Add content or remove the page",
-        },
-      )
+      report.add({
+        severity: Warning,
+        check: "empty",
+        page_id,
+        message: "Page has very little content (" +
+        content_len.to_string() +
+        " non-whitespace chars)",
+        suggestion: "Add content or remove the page",
+      })
     }
   }
 }
@@ -331,15 +309,13 @@ fn check_manifest_file_mismatch(
     let page_id = entry.0
     let md_path = wiki_dir + "/" + page_id + ".md"
     if !@fs.path_exists(md_path) {
-      report.add(
-        {
-          severity: Error,
-          check: "manifest-mismatch",
-          page_id,
-          message: "Page listed in manifest but .md file missing: " + md_path,
-          suggestion: "Create the .md file or remove the page from the manifest",
-        },
-      )
+      report.add({
+        severity: Error,
+        check: "manifest-mismatch",
+        page_id,
+        message: "Page listed in manifest but .md file missing: " + md_path,
+        suggestion: "Create the .md file or remove the page from the manifest",
+      })
     }
   }
   // Note: we don't check for .md files not in manifest here because
@@ -349,7 +325,9 @@ fn check_manifest_file_mismatch(
 
 ///|
 /// Convert a lint report to a PlanDocument for rendering.
-pub fn LintReport::to_plan_document(self : LintReport) -> @plan_types.PlanDocument {
+pub fn LintReport::to_plan_document(
+  self : LintReport,
+) -> @plan_types.PlanDocument {
   let doc = @plan_types.PlanDocument::new("Wiki Lint Report")
   doc.set_description(
     "Structural integrity analysis of wiki content. " +
@@ -360,9 +338,7 @@ pub fn LintReport::to_plan_document(self : LintReport) -> @plan_types.PlanDocume
   // Summary section
   let summary_items : Array[@plan_types.ListItem] = []
   summary_items.push(
-    @plan_types.ListItem::simple(
-      "Total pages: " + self.total_pages.to_string(),
-    ),
+    @plan_types.ListItem::simple("Total pages: " + self.total_pages.to_string()),
   )
   summary_items.push(
     @plan_types.ListItem::simple(
@@ -370,9 +346,7 @@ pub fn LintReport::to_plan_document(self : LintReport) -> @plan_types.PlanDocume
     ),
   )
   summary_items.push(
-    @plan_types.ListItem::simple(
-      "Errors: " + self.error_count().to_string(),
-    ),
+    @plan_types.ListItem::simple("Errors: " + self.error_count().to_string()),
   )
   summary_items.push(
     @plan_types.ListItem::simple(
@@ -388,12 +362,7 @@ pub fn LintReport::to_plan_document(self : LintReport) -> @plan_types.PlanDocume
   )
   // Group issues by check category
   let categories = [
-    "broken-link",
-    "orphan",
-    "missing-xref",
-    "stale-source",
-    "empty",
-    "manifest-mismatch",
+    "broken-link", "orphan", "missing-xref", "stale-source", "empty", "manifest-mismatch",
   ]
   for category in categories {
     let items : Array[@plan_types.ChecklistItem] = []
@@ -446,11 +415,7 @@ fn collect_nav_ids(
 // --- String helpers ---
 
 ///|
-fn find_substring(
-  haystack : String,
-  needle : String,
-  from~ : Int,
-) -> Int {
+fn find_substring(haystack : String, needle : String, from~ : Int) -> Int {
   let h_chars = haystack.to_array()
   let n_chars = needle.to_array()
   let h_len = h_chars.length()
@@ -458,7 +423,7 @@ fn find_substring(
   if n_len == 0 || from + n_len > h_len {
     return -1
   }
-  for i in from..=(h_len - n_len) {
+  for i in from..<=(h_len - n_len) {
     let mut matched = true
     for j in 0..<n_len {
       if h_chars[i + j] != n_chars[j] {

@@ -49,14 +49,12 @@ pub fn list_entries(path : String) -> Array[ZipEntry] raise Error {
   let infos = @fzip.unzip_list(data)
   let entries : Array[ZipEntry] = []
   for info in infos {
-    entries.push(
-      {
-        name: info.name,
-        compressed_size: info.size,
-        original_size: info.original_size,
-        compression: info.compression,
-      },
-    )
+    entries.push({
+      name: info.name,
+      compressed_size: info.size,
+      original_size: info.original_size,
+      compression: info.compression,
+    })
   }
   entries
 }
@@ -79,8 +77,8 @@ pub fn extract_all(path : String) -> Array[ZipFile] raise Error {
 /// Excludes are applied after includes.
 pub fn extract_filtered(
   path : String,
-  includes~ : Array[String] = [],
-  excludes~ : Array[String] = [],
+  includes? : Array[String] = [],
+  excludes? : Array[String] = [],
 ) -> Array[ZipFile] raise Error {
   let data = read_zip_bytes(path)
   let pairs = @fzip.unzip_sync(data)
@@ -98,22 +96,20 @@ pub fn extract_filtered(
 /// List entries matching the given glob include/exclude patterns.
 pub fn list_filtered(
   path : String,
-  includes~ : Array[String] = [],
-  excludes~ : Array[String] = [],
+  includes? : Array[String] = [],
+  excludes? : Array[String] = [],
 ) -> Array[ZipEntry] raise Error {
   let data = read_zip_bytes(path)
   let infos = @fzip.unzip_list(data)
   let entries : Array[ZipEntry] = []
   for info in infos {
     if should_include_entry(info.name, includes, excludes) {
-      entries.push(
-        {
-          name: info.name,
-          compressed_size: info.size,
-          original_size: info.original_size,
-          compression: info.compression,
-        },
-      )
+      entries.push({
+        name: info.name,
+        compressed_size: info.size,
+        original_size: info.original_size,
+        compression: info.compression,
+      })
     }
   }
   entries

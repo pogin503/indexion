@@ -77,17 +77,13 @@ pub async fn dispatch(matches : @argparse.Matches) -> Unit {
 
 ///|
 fn install_command() -> @argparse.Command {
-  @argparse.Command(
-    "install",
-    about="Install VCS hooks",
-    options=[
-      @argparse.OptionArg(
-        "vcs-dir",
-        about="Repository root (default: auto-detect from cwd)",
-        default_values=[],
-      ),
-    ],
-  )
+  @argparse.Command("install", about="Install VCS hooks", options=[
+    @argparse.OptionArg(
+      "vcs-dir",
+      about="Repository root (default: auto-detect from cwd)",
+      default_values=[],
+    ),
+  ])
 }
 
 ///|
@@ -260,7 +256,11 @@ fn hook_status(hooks_dir : String, hook_name : String) -> String {
   let content = @fs.read_file_to_string(hook_path) catch {
     _ => return "not installed"
   }
-  if section_installed(content) { "installed" } else { "not installed" }
+  if section_installed(content) {
+    "installed"
+  } else {
+    "not installed"
+  }
 }
 
 // --- KGF-based section detection and removal ---
@@ -288,8 +288,7 @@ fn remove_hook_section(content : String) -> String {
     None => return content
   }
   // Also absorb the leading newline separator that install_hook may have added.
-  let cut_start = if section_start > 0 &&
-    content[section_start - 1] == '\n' {
+  let cut_start = if section_start > 0 && content[section_start - 1] == '\n' {
     section_start - 1
   } else {
     section_start

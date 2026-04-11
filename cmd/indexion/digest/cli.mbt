@@ -387,8 +387,11 @@ pub fn log_error(msg : String) -> Unit {
 /// Delegates to @embed_config.resolve_provider (SoT for provider resolution).
 /// dim is adjusted: if still at TF-IDF default and provider=openai, use OPENAI_EMBEDDING_DIM.
 /// Raises String with an error message if the provider cannot be resolved.
-pub fn resolve_provider(config : CliConfig) -> @dconfig.EmbeddingProvider raise @embed_config.ProviderError {
-  let dim = if config.provider == "openai" && config.dim == @dconfig.DEFAULT_TFIDF_DIM {
+pub fn resolve_provider(
+  config : CliConfig,
+) -> @dconfig.EmbeddingProvider raise @embed_config.ProviderError {
+  let dim = if config.provider == "openai" &&
+    config.dim == @dconfig.DEFAULT_TFIDF_DIM {
     @dconfig.OPENAI_EMBEDDING_DIM
   } else {
     config.dim

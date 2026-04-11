@@ -83,23 +83,19 @@ pub fn expand_archive(
     let virtual_path = archive_path + archive_separator + zf.name
     match @zip.decode_utf8(zf.data) {
       Some(text) =>
-        entries.push(
-          {
-            virtual_path,
-            content: text,
-            archive_source: Some(archive_path),
-            is_binary: false,
-          },
-        )
+        entries.push({
+          virtual_path,
+          content: text,
+          archive_source: Some(archive_path),
+          is_binary: false,
+        })
       None =>
-        entries.push(
-          {
-            virtual_path,
-            content: @zip.encode_base64(zf.data),
-            archive_source: Some(archive_path),
-            is_binary: true,
-          },
-        )
+        entries.push({
+          virtual_path,
+          content: @zip.encode_base64(zf.data),
+          archive_source: Some(archive_path),
+          is_binary: true,
+        })
     }
   }
   entries
@@ -200,7 +196,7 @@ pub fn is_virtual_path(path : String) -> Bool {
 ///|
 /// Parse a virtual path into (archive_path, inner_path) if it contains the archive separator.
 /// Returns None for regular file paths.
-pub fn parse_virtual_path(virtual_path : String) -> (String, String?)  {
+pub fn parse_virtual_path(virtual_path : String) -> (String, String?) {
   // Search for "!/" in the path
   let len = virtual_path.length()
   let sep_len = archive_separator.length()

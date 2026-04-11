@@ -313,7 +313,9 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       }
       let provider = @digest_cli.resolve_provider(digest_cli_config) catch {
         @embed_config.MissingApiKey(env) => {
-          @digest_cli.log_error(env + " not set. provider=openai requires an API key.")
+          @digest_cli.log_error(
+            env + " not set. provider=openai requires an API key.",
+          )
           @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
         }
         @embed_config.UnknownProvider(name) => {

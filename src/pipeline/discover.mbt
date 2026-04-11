@@ -131,9 +131,7 @@ pub fn load_supported_file_info(
     }
     match archive_result {
       Some(Some(content)) => {
-        results.push(
-          { path, content, language, content_type: Some("document") },
-        )
+        results.push({ path, content, language, content_type: Some("document") })
         continue
       }
       Some(None) => continue // Archive but empty or failed

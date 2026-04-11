@@ -40,12 +40,7 @@ pub fn build_index(
     Some(l) => extract_recent_changes(l)
     None => []
   }
-  {
-    categories,
-    hub_pages,
-    recent_changes,
-    total_pages: wiki.pages.length(),
-  }
+  { categories, hub_pages, recent_changes, total_pages: wiki.pages.length() }
 }
 
 ///|
@@ -72,9 +67,7 @@ pub fn WikiIndex::to_markdown(self : WikiIndex) -> String {
   // Hub pages
   if self.hub_pages.length() > 0 {
     buf.write_string("## Hub Pages\n\n")
-    buf.write_string(
-      "Most-linked pages that serve as knowledge hubs:\n\n",
-    )
+    buf.write_string("Most-linked pages that serve as knowledge hubs:\n\n")
     for hub in self.hub_pages {
       buf.write_string(
         "- [" +
@@ -95,9 +88,7 @@ pub fn WikiIndex::to_markdown(self : WikiIndex) -> String {
       buf.write_string("### " + category.name + "\n\n")
       for pair in category.pages {
         let (page_id, title) = pair
-        buf.write_string(
-          "- [" + title + "](wiki://" + page_id + ")\n",
-        )
+        buf.write_string("- [" + title + "](wiki://" + page_id + ")\n")
       }
       buf.write_string("\n")
     }
@@ -206,8 +197,13 @@ fn find_hub_pages(wiki : @wiki_types.WikiData) -> Array[HubPage] {
       let mut end = start
       while end < content_len {
         let c = content_chars[end]
-        if c == ')' || c == ']' || c == ' ' || c == '\n' || c == '#' ||
-          c == '"' || c == '\'' {
+        if c == ')' ||
+          c == ']' ||
+          c == ' ' ||
+          c == '\n' ||
+          c == '#' ||
+          c == '"' ||
+          c == '\'' {
           break
         }
         end += 1
@@ -256,9 +252,7 @@ fn find_hub_pages(wiki : @wiki_types.WikiData) -> Array[HubPage] {
 
 ///|
 /// Extract recent changes from the log (last 20 entries that affected pages).
-fn extract_recent_changes(
-  log : @wiki_log.WikiLog,
-) -> Array[(String, String)] {
+fn extract_recent_changes(log : @wiki_log.WikiLog) -> Array[(String, String)] {
   let result : Array[(String, String)] = []
   let seen : Map[String, Bool] = {}
   let entries = log.tail(50)

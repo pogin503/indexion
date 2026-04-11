@@ -85,9 +85,7 @@ impl @json.FromJson for IngestManifest with from_json(json, path) {
   match obj.get("page_states") {
     Some(Object(d)) =>
       for entry in d {
-        let state : PageSourceState = try {
-          @json.from_json!(entry.1)
-        } catch {
+        let state : PageSourceState = @json.from_json(entry.1) catch {
           _ => continue
         }
         page_states[entry.0] = state
@@ -111,19 +109,13 @@ pub fn load_manifest(wiki_dir : String) -> IngestManifest {
   if !@fs.path_exists(path) {
     return { version: "1", page_states: {} }
   }
-  let content = try {
-    @fs.read_file_to_string(path)
-  } catch {
+  let content = @fs.read_file_to_string(path) catch {
     _ => return { version: "1", page_states: {} }
   }
-  let json = try {
-    @json.parse(content)
-  } catch {
+  let json = @json.parse(content) catch {
     _ => return { version: "1", page_states: {} }
   }
-  try {
-    @json.from_json!(json)
-  } catch {
+  @json.from_json(json) catch {
     _ => { version: "1", page_states: {} }
   }
 }
@@ -142,10 +134,7 @@ pub fn save_manifest(manifest : IngestManifest, wiki_dir : String) -> Unit {
 ///|
 /// Analyze wiki pages for source changes since the last ingest.
 /// Returns tasks for pages that need updating and a new manifest.
-pub fn analyze(
-  wiki : @wiki_types.WikiData,
-  wiki_dir : String,
-) -> IngestResult {
+pub fn analyze(wiki : @wiki_types.WikiData, wiki_dir : String) -> IngestResult {
   let prev = load_manifest(wiki_dir)
   let tasks : Array[IngestTask] = []
   let new_states : Map[String, PageSourceState] = {}
@@ -157,11 +146,7 @@ pub fn analyze(
     let current_hashes : Map[String, String] = {}
     for src in page.sources {
       if src.file.length() > 0 {
-        let content = try {
-          @fs.read_file_to_string(src.file)
-        } catch {
-          _ => ""
-        }
+        let content = @fs.read_file_to_string(src.file) catch { _ => "" }
         if content.length() > 0 {
           current_hashes[src.file] = @cas_hash.compute_hash(content).value
         }
@@ -179,33 +164,32 @@ pub fn analyze(
           match current_hashes.get(file) {
             Some(new_hash) =>
               if new_hash != old_hash {
-                changes.push(
-                  {
-                    file,
-                    change_type: "modified",
-                    old_hash,
-                    new_hash,
-                  },
-                )
+                changes.push({
+                  file,
+                  change_type: "modified",
+                  old_hash,
+                  new_hash,
+                })
               }
             None =>
-              changes.push(
-                { file, change_type: "deleted", old_hash, new_hash: "" },
-              )
+              changes.push({
+                file,
+                change_type: "deleted",
+                old_hash,
+                new_hash: "",
+              })
           }
         }
         // Check for added sources
         for cur_entry in current_hashes {
           let file = cur_entry.0
           if !prev_state.source_hashes.contains(file) {
-            changes.push(
-              {
-                file,
-                change_type: "added",
-                old_hash: "",
-                new_hash: cur_entry.1,
-              },
-            )
+            changes.push({
+              file,
+              change_type: "added",
+              old_hash: "",
+              new_hash: cur_entry.1,
+            })
           }
         }
       }
@@ -228,27 +212,28 @@ pub fn analyze(
         deleted_count.to_string() +
         " deleted"
       let priority = if deleted_count > 0 { 1 } else { 2 }
-      tasks.push(
-        {
-          page_id,
-          page_title: page.title,
-          action: if deleted_count > 0 { "review" } else { "update" },
-          reason,
-          changed_sources: changes,
-          priority,
+      tasks.push({
+        page_id,
+        page_title: page.title,
+        action: if deleted_count > 0 {
+          "review"
+        } else {
+          "update"
         },
-      )
+        reason,
+        changed_sources: changes,
+        priority,
+      })
     }
   }
-  {
-    tasks,
-    new_manifest: { version: "1", page_states: new_states },
-  }
+  { tasks, new_manifest: { version: "1", page_states: new_states } }
 }
 
 ///|
 /// Convert ingest tasks to a PlanDocument for rendering.
-pub fn tasks_to_plan_document(tasks : Array[IngestTask]) -> @plan_types.PlanDocument {
+pub fn tasks_to_plan_document(
+  tasks : Array[IngestTask],
+) -> @plan_types.PlanDocument {
   let doc = @plan_types.PlanDocument::new("Wiki Ingest Report")
   doc.set_description(
     "Source change analysis for wiki pages. " +
@@ -258,9 +243,7 @@ pub fn tasks_to_plan_document(tasks : Array[IngestTask]) -> @plan_types.PlanDocu
   doc.set_meta("labels", "wiki,ingest")
   if tasks.length() == 0 {
     let items : Array[@plan_types.ListItem] = []
-    items.push(
-      @plan_types.ListItem::simple("All wiki pages are up to date."),
-    )
+    items.push(@plan_types.ListItem::simple("All wiki pages are up to date."))
     doc.add_section(
       @plan_types.PlanSection::new(
         "status",

@@ -22,70 +22,80 @@ fn pptx_test_dir(suffix : String) -> String {
 ///|
 /// Minimal [Content_Types].xml — structural, should be EXCLUDED.
 fn content_types_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  #|  <Default Extension="xml" ContentType="application/xml"/>
-  #|  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  #|  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
-  #|  <Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
-  #|  <Override PartName="/ppt/slides/slide2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
-  #|  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-  #|</Types>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+    #|  <Default Extension="xml" ContentType="application/xml"/>
+    #|  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+    #|  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+    #|  <Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+    #|  <Override PartName="/ppt/slides/slide2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+    #|  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+    #|</Types>
+    #|
+  )
 }
 
 ///|
 /// Top-level .rels — structural, should be EXCLUDED.
 fn top_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
-  #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+    #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
 /// ppt/_rels/presentation.xml.rels — structural, should be EXCLUDED.
 fn presentation_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
-  #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide2.xml"/>
-  #|  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
+    #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide2.xml"/>
+    #|  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
 /// ppt/slides/_rels/slide1.xml.rels — structural, should be EXCLUDED.
 fn slide_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
-  #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide1.xml"/>
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+    #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide1.xml"/>
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
 /// ppt/presentation.xml — presentation metadata with slide order.
 fn presentation_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
-  #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-  #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-  #|  <p:sldMasterIdLst>
-  #|    <p:sldMasterId id="2147483648" r:id="rId3"/>
-  #|  </p:sldMasterIdLst>
-  #|  <p:sldIdLst>
-  #|    <p:sldId id="256" r:id="rId1"/>
-  #|    <p:sldId id="257" r:id="rId2"/>
-  #|  </p:sldIdLst>
-  #|  <p:sldSz cx="9144000" cy="6858000"/>
-  #|  <p:notesSz cx="6858000" cy="9144000"/>
-  #|</p:presentation>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+    #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+    #|  <p:sldMasterIdLst>
+    #|    <p:sldMasterId id="2147483648" r:id="rId3"/>
+    #|  </p:sldMasterIdLst>
+    #|  <p:sldIdLst>
+    #|    <p:sldId id="256" r:id="rId1"/>
+    #|    <p:sldId id="257" r:id="rId2"/>
+    #|  </p:sldIdLst>
+    #|  <p:sldSz cx="9144000" cy="6858000"/>
+    #|  <p:notesSz cx="6858000" cy="9144000"/>
+    #|</p:presentation>
+    #|
+  )
 }
 
 ///|
@@ -93,23 +103,27 @@ fn presentation_xml() -> String {
 fn slide_xml(title : String, body_text : String) -> String {
   let buf = StringBuilder::new()
   buf.write_string(
-    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-    ,
+    (
+      #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    ),
   )
   buf.write_string("\n")
   buf.write_string(
-    #|<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
-    ,
+    (
+      #|<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+    ),
   )
   buf.write_string("\n")
   buf.write_string(
-    #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-    ,
+    (
+      #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    ),
   )
   buf.write_string("\n")
   buf.write_string(
-    #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-    ,
+    (
+      #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+    ),
   )
   buf.write_string("\n")
   buf.write_string("  <p:cSld>\n")
@@ -147,18 +161,21 @@ fn slide_xml(title : String, body_text : String) -> String {
 fn notes_slide_xml(notes_text : String) -> String {
   let buf = StringBuilder::new()
   buf.write_string(
-    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-    ,
+    (
+      #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    ),
   )
   buf.write_string("\n")
   buf.write_string(
-    #|<p:notes xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
-    ,
+    (
+      #|<p:notes xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+    ),
   )
   buf.write_string("\n")
   buf.write_string(
-    #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-    ,
+    (
+      #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+    ),
   )
   buf.write_string("\n")
   buf.write_string("  <p:cSld>\n")
@@ -183,201 +200,229 @@ fn notes_slide_xml(notes_text : String) -> String {
 ///|
 /// Slide master XML with template text placeholders.
 fn slide_master_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
-  #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-  #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  #|  <p:cSld>
-  #|    <p:spTree>
-  #|      <p:sp>
-  #|        <p:txBody>
-  #|          <a:p>
-  #|            <a:r>
-  #|              <a:t>Click to edit Master title style</a:t>
-  #|            </a:r>
-  #|          </a:p>
-  #|        </p:txBody>
-  #|      </p:sp>
-  #|    </p:spTree>
-  #|  </p:cSld>
-  #|</p:sldMaster>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+    #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+    #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    #|  <p:cSld>
+    #|    <p:spTree>
+    #|      <p:sp>
+    #|        <p:txBody>
+    #|          <a:p>
+    #|            <a:r>
+    #|              <a:t>Click to edit Master title style</a:t>
+    #|            </a:r>
+    #|          </a:p>
+    #|        </p:txBody>
+    #|      </p:sp>
+    #|    </p:spTree>
+    #|  </p:cSld>
+    #|</p:sldMaster>
+    #|
+  )
 }
 
 ///|
 /// Slide layout XML with layout definition.
 fn slide_layout_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
-  #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-  #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-  #|    type="title" preserve="1">
-  #|  <p:cSld name="Title Slide">
-  #|    <p:spTree>
-  #|      <p:sp>
-  #|        <p:txBody>
-  #|          <a:p>
-  #|            <a:r>
-  #|              <a:t>Title Layout Placeholder</a:t>
-  #|            </a:r>
-  #|          </a:p>
-  #|        </p:txBody>
-  #|      </p:sp>
-  #|    </p:spTree>
-  #|  </p:cSld>
-  #|</p:sldLayout>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+    #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+    #|    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    #|    type="title" preserve="1">
+    #|  <p:cSld name="Title Slide">
+    #|    <p:spTree>
+    #|      <p:sp>
+    #|        <p:txBody>
+    #|          <a:p>
+    #|            <a:r>
+    #|              <a:t>Title Layout Placeholder</a:t>
+    #|            </a:r>
+    #|          </a:p>
+    #|        </p:txBody>
+    #|      </p:sp>
+    #|    </p:spTree>
+    #|  </p:cSld>
+    #|</p:sldLayout>
+    #|
+  )
 }
 
 ///|
 /// Comment XML following ECMA-376 comment schema.
 fn comment_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<p:cmLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  #|  <p:cm authorId="0" dt="2024-01-15T10:30:00Z" idx="1">
-  #|    <p:pos x="100" y="200"/>
-  #|    <p:text>This slide needs more detail on the architecture diagram.</p:text>
-  #|  </p:cm>
-  #|</p:cmLst>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<p:cmLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+    #|  <p:cm authorId="0" dt="2024-01-15T10:30:00Z" idx="1">
+    #|    <p:pos x="100" y="200"/>
+    #|    <p:text>This slide needs more detail on the architecture diagram.</p:text>
+    #|  </p:cm>
+    #|</p:cmLst>
+    #|
+  )
 }
 
 ///|
 /// Comment authors XML.
 fn comment_authors_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<p:cmAuthorLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  #|  <p:cmAuthor id="0" name="Reviewer" initials="R" lastIdx="1" clrIdx="0"/>
-  #|</p:cmAuthorLst>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<p:cmAuthorLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+    #|  <p:cmAuthor id="0" name="Reviewer" initials="R" lastIdx="1" clrIdx="0"/>
+    #|</p:cmAuthorLst>
+    #|
+  )
 }
 
 ///|
 /// Handout master XML.
 fn handout_master_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<p:handoutMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
-  #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-  #|  <p:cSld>
-  #|    <p:spTree>
-  #|      <p:sp>
-  #|        <p:txBody>
-  #|          <a:p>
-  #|            <a:r>
-  #|              <a:t>Handout Header Text</a:t>
-  #|            </a:r>
-  #|          </a:p>
-  #|        </p:txBody>
-  #|      </p:sp>
-  #|    </p:spTree>
-  #|  </p:cSld>
-  #|</p:handoutMaster>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<p:handoutMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+    #|    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+    #|  <p:cSld>
+    #|    <p:spTree>
+    #|      <p:sp>
+    #|        <p:txBody>
+    #|          <a:p>
+    #|            <a:r>
+    #|              <a:t>Handout Header Text</a:t>
+    #|            </a:r>
+    #|          </a:p>
+    #|        </p:txBody>
+    #|      </p:sp>
+    #|    </p:spTree>
+    #|  </p:cSld>
+    #|</p:handoutMaster>
+    #|
+  )
 }
 
 ///|
 /// Custom tag XML.
 fn tag_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<p:tagLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  #|  <p:tag name="DEPARTMENT" val="Engineering"/>
-  #|  <p:tag name="CONFIDENTIALITY" val="Internal"/>
-  #|</p:tagLst>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<p:tagLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+    #|  <p:tag name="DEPARTMENT" val="Engineering"/>
+    #|  <p:tag name="CONFIDENTIALITY" val="Internal"/>
+    #|</p:tagLst>
+    #|
+  )
 }
 
 ///|
 /// Dublin Core metadata (docProps/core.xml).
 fn doc_props_core_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
-  #|    xmlns:dc="http://purl.org/dc/elements/1.1/"
-  #|    xmlns:dcterms="http://purl.org/dc/terms/"
-  #|    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  #|  <dc:title>Quarterly Architecture Review</dc:title>
-  #|  <dc:creator>Test Author</dc:creator>
-  #|  <dc:subject>Software Architecture</dc:subject>
-  #|  <dc:description>A comprehensive review of system architecture decisions.</dc:description>
-  #|  <dcterms:created xsi:type="dcterms:W3CDTF">2024-01-01T00:00:00Z</dcterms:created>
-  #|  <dcterms:modified xsi:type="dcterms:W3CDTF">2024-06-15T14:30:00Z</dcterms:modified>
-  #|</cp:coreProperties>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+    #|    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    #|    xmlns:dcterms="http://purl.org/dc/terms/"
+    #|    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    #|  <dc:title>Quarterly Architecture Review</dc:title>
+    #|  <dc:creator>Test Author</dc:creator>
+    #|  <dc:subject>Software Architecture</dc:subject>
+    #|  <dc:description>A comprehensive review of system architecture decisions.</dc:description>
+    #|  <dcterms:created xsi:type="dcterms:W3CDTF">2024-01-01T00:00:00Z</dcterms:created>
+    #|  <dcterms:modified xsi:type="dcterms:W3CDTF">2024-06-15T14:30:00Z</dcterms:modified>
+    #|</cp:coreProperties>
+    #|
+  )
 }
 
 ///|
 /// Application metadata (docProps/app.xml).
 fn doc_props_app_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
-  #|  <Application>Microsoft Office PowerPoint</Application>
-  #|  <Slides>2</Slides>
-  #|  <HiddenSlides>0</HiddenSlides>
-  #|  <Notes>1</Notes>
-  #|  <TotalTime>45</TotalTime>
-  #|  <Company>Test Corp</Company>
-  #|</Properties>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+    #|  <Application>Microsoft Office PowerPoint</Application>
+    #|  <Slides>2</Slides>
+    #|  <HiddenSlides>0</HiddenSlides>
+    #|  <Notes>1</Notes>
+    #|  <TotalTime>45</TotalTime>
+    #|  <Company>Test Corp</Company>
+    #|</Properties>
+    #|
+  )
 }
 
 ///|
 /// Custom properties (docProps/custom.xml).
 fn doc_props_custom_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
-  #|    xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-  #|  <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="ReviewStatus">
-  #|    <vt:lpwstr>Draft</vt:lpwstr>
-  #|  </property>
-  #|</Properties>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
+    #|    xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+    #|  <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="ReviewStatus">
+    #|    <vt:lpwstr>Draft</vt:lpwstr>
+    #|  </property>
+    #|</Properties>
+    #|
+  )
 }
 
 ///|
 /// Notes slide rels — structural, should be EXCLUDED.
 fn notes_slide_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="../slides/slide1.xml"/>
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="../slides/slide1.xml"/>
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
 /// Slide master rels — structural, should be EXCLUDED.
 fn slide_master_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
 /// Slide layout rels — structural, should be EXCLUDED.
 fn slide_layout_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
 /// Comment rels — structural, should be EXCLUDED.
 fn comment_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
 /// Handout master rels — structural, should be EXCLUDED.
 fn handout_master_rels_xml() -> String {
-  #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-  #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  #|</Relationships>
-  #|
+  (
+    #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    #|</Relationships>
+    #|
+  )
 }
 
 ///|
@@ -397,16 +442,10 @@ fn build_pptx_fixture() -> FixedArray[Byte] {
     ),
   )
   files.push(
-    (
-      "ppt/slides/_rels/slide1.xml.rels",
-      string_to_bytes(slide_rels_xml()),
-    ),
+    ("ppt/slides/_rels/slide1.xml.rels", string_to_bytes(slide_rels_xml())),
   )
   files.push(
-    (
-      "ppt/slides/_rels/slide2.xml.rels",
-      string_to_bytes(slide_rels_xml()),
-    ),
+    ("ppt/slides/_rels/slide2.xml.rels", string_to_bytes(slide_rels_xml())),
   )
   files.push(
     (
@@ -445,8 +484,7 @@ fn build_pptx_fixture() -> FixedArray[Byte] {
       "ppt/slides/slide1.xml",
       string_to_bytes(
         slide_xml(
-          "Architecture Overview",
-          "This slide presents the high-level system architecture.",
+          "Architecture Overview", "This slide presents the high-level system architecture.",
         ),
       ),
     ),
@@ -456,8 +494,7 @@ fn build_pptx_fixture() -> FixedArray[Byte] {
       "ppt/slides/slide2.xml",
       string_to_bytes(
         slide_xml(
-          "Performance Metrics",
-          "Key performance indicators and benchmarks for Q4.",
+          "Performance Metrics", "Key performance indicators and benchmarks for Q4.",
         ),
       ),
     ),
@@ -473,23 +510,13 @@ fn build_pptx_fixture() -> FixedArray[Byte] {
     ),
   )
   files.push(
-    (
-      "ppt/slideMasters/slideMaster1.xml",
-      string_to_bytes(slide_master_xml()),
-    ),
+    ("ppt/slideMasters/slideMaster1.xml", string_to_bytes(slide_master_xml())),
   )
   files.push(
-    (
-      "ppt/slideLayouts/slideLayout1.xml",
-      string_to_bytes(slide_layout_xml()),
-    ),
+    ("ppt/slideLayouts/slideLayout1.xml", string_to_bytes(slide_layout_xml())),
   )
-  files.push(
-    ("ppt/comments/comment1.xml", string_to_bytes(comment_xml())),
-  )
-  files.push(
-    ("ppt/commentAuthors.xml", string_to_bytes(comment_authors_xml())),
-  )
+  files.push(("ppt/comments/comment1.xml", string_to_bytes(comment_xml())))
+  files.push(("ppt/commentAuthors.xml", string_to_bytes(comment_authors_xml())))
   files.push(
     (
       "ppt/handoutMasters/handoutMaster1.xml",
@@ -499,9 +526,7 @@ fn build_pptx_fixture() -> FixedArray[Byte] {
   files.push(("ppt/tags/tag1.xml", string_to_bytes(tag_xml())))
   files.push(("docProps/core.xml", string_to_bytes(doc_props_core_xml())))
   files.push(("docProps/app.xml", string_to_bytes(doc_props_app_xml())))
-  files.push(
-    ("docProps/custom.xml", string_to_bytes(doc_props_custom_xml())),
-  )
+  files.push(("docProps/custom.xml", string_to_bytes(doc_props_custom_xml())))
   @fzip.zip_sync(files)
 }
 
@@ -531,19 +556,10 @@ fn ensure_dir(path : String) -> Unit raise Error {
 /// The set of inner paths that the PPTX KGF spec should INCLUDE.
 fn expected_included_paths() -> Array[String] {
   [
-    "ppt/presentation.xml",
-    "ppt/slides/slide1.xml",
-    "ppt/slides/slide2.xml",
-    "ppt/notesSlides/notesSlide1.xml",
-    "ppt/slideMasters/slideMaster1.xml",
-    "ppt/slideLayouts/slideLayout1.xml",
-    "ppt/comments/comment1.xml",
-    "ppt/commentAuthors.xml",
-    "ppt/handoutMasters/handoutMaster1.xml",
-    "ppt/tags/tag1.xml",
-    "docProps/core.xml",
-    "docProps/app.xml",
-    "docProps/custom.xml",
+    "ppt/presentation.xml", "ppt/slides/slide1.xml", "ppt/slides/slide2.xml", "ppt/notesSlides/notesSlide1.xml",
+    "ppt/slideMasters/slideMaster1.xml", "ppt/slideLayouts/slideLayout1.xml", "ppt/comments/comment1.xml",
+    "ppt/commentAuthors.xml", "ppt/handoutMasters/handoutMaster1.xml", "ppt/tags/tag1.xml",
+    "docProps/core.xml", "docProps/app.xml", "docProps/custom.xml",
   ]
 }
 
@@ -551,16 +567,10 @@ fn expected_included_paths() -> Array[String] {
 /// The set of inner paths that the PPTX KGF spec should EXCLUDE.
 fn expected_excluded_paths() -> Array[String] {
   [
-    "[Content_Types].xml",
-    "_rels/.rels",
-    "ppt/_rels/presentation.xml.rels",
-    "ppt/slides/_rels/slide1.xml.rels",
-    "ppt/slides/_rels/slide2.xml.rels",
-    "ppt/notesSlides/_rels/notesSlide1.xml.rels",
-    "ppt/slideMasters/_rels/slideMaster1.xml.rels",
-    "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
-    "ppt/comments/_rels/comment1.xml.rels",
-    "ppt/handoutMasters/_rels/handoutMaster1.xml.rels",
+    "[Content_Types].xml", "_rels/.rels", "ppt/_rels/presentation.xml.rels", "ppt/slides/_rels/slide1.xml.rels",
+    "ppt/slides/_rels/slide2.xml.rels", "ppt/notesSlides/_rels/notesSlide1.xml.rels",
+    "ppt/slideMasters/_rels/slideMaster1.xml.rels", "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+    "ppt/comments/_rels/comment1.xml.rels", "ppt/handoutMasters/_rels/handoutMaster1.xml.rels",
   ]
 }
 
@@ -569,27 +579,14 @@ fn expected_excluded_paths() -> Array[String] {
 fn pptx_archive_spec() -> ArchiveSpec {
   {
     inner_includes: [
-      "ppt/slides/slide*.xml",
-      "ppt/notesSlides/notesSlide*.xml",
-      "ppt/slideMasters/slideMaster*.xml",
-      "ppt/slideLayouts/slideLayout*.xml",
-      "ppt/presentation.xml",
-      "ppt/comments/comment*.xml",
-      "ppt/commentAuthors.xml",
-      "ppt/handoutMasters/handoutMaster*.xml",
-      "ppt/tags/tag*.xml",
-      "docProps/core.xml",
-      "docProps/app.xml",
-      "docProps/custom.xml",
+      "ppt/slides/slide*.xml", "ppt/notesSlides/notesSlide*.xml", "ppt/slideMasters/slideMaster*.xml",
+      "ppt/slideLayouts/slideLayout*.xml", "ppt/presentation.xml", "ppt/comments/comment*.xml",
+      "ppt/commentAuthors.xml", "ppt/handoutMasters/handoutMaster*.xml", "ppt/tags/tag*.xml",
+      "docProps/core.xml", "docProps/app.xml", "docProps/custom.xml",
     ],
     inner_excludes: [
-      "ppt/_rels/*",
-      "ppt/slides/_rels/*",
-      "ppt/notesSlides/_rels/*",
-      "ppt/slideMasters/_rels/*",
-      "ppt/slideLayouts/_rels/*",
-      "ppt/comments/_rels/*",
-      "ppt/handoutMasters/_rels/*",
+      "ppt/_rels/*", "ppt/slides/_rels/*", "ppt/notesSlides/_rels/*", "ppt/slideMasters/_rels/*",
+      "ppt/slideLayouts/_rels/*", "ppt/comments/_rels/*", "ppt/handoutMasters/_rels/*",
     ],
   }
 }
@@ -598,12 +595,12 @@ fn pptx_archive_spec() -> ArchiveSpec {
 /// Verify expand_archive returns exactly the expected included entries.
 test "pptx: expand_archive includes all document-relevant parts" {
   let test_dir = pptx_test_dir("expand-includes")
-  ensure_dir!(test_dir)
+  ensure_dir(test_dir)
   let pptx_path = test_dir + "/fixture.pptx"
   let zip_data = build_pptx_fixture()
-  write_fixture_to_file!(pptx_path, zip_data)
+  write_fixture_to_file(pptx_path, zip_data)
   let spec = pptx_archive_spec()
-  let entries = expand_archive!(pptx_path, spec)
+  let entries = expand_archive(pptx_path, spec)
   let entry_inner_paths : Array[String] = []
   for e in entries {
     // Extract the inner path after the "!/" separator
@@ -611,7 +608,7 @@ test "pptx: expand_archive includes all document-relevant parts" {
   }
   let expected = expected_included_paths()
   // Verify count matches
-  assert_eq!(entries.length(), expected.length())
+  assert_eq(entries.length(), expected.length())
   // Verify every expected path is present
   for exp in expected {
     let mut found = false
@@ -621,7 +618,7 @@ test "pptx: expand_archive includes all document-relevant parts" {
         break
       }
     }
-    assert_true!(found)
+    assert_true(found)
   }
 }
 
@@ -629,18 +626,18 @@ test "pptx: expand_archive includes all document-relevant parts" {
 /// Verify expand_archive excludes all structural/relationship files.
 test "pptx: expand_archive excludes structural rels and content types" {
   let test_dir = pptx_test_dir("expand-excludes")
-  ensure_dir!(test_dir)
+  ensure_dir(test_dir)
   let pptx_path = test_dir + "/fixture.pptx"
   let zip_data = build_pptx_fixture()
-  write_fixture_to_file!(pptx_path, zip_data)
+  write_fixture_to_file(pptx_path, zip_data)
   let spec = pptx_archive_spec()
-  let entries = expand_archive!(pptx_path, spec)
+  let entries = expand_archive(pptx_path, spec)
   let excluded = expected_excluded_paths()
   for e in entries {
     let ip = inner_path(e.virtual_path)
     for ex in excluded {
       // No entry's inner path should match any excluded path
-      assert_true!(ip != ex)
+      assert_true(ip != ex)
     }
   }
 }
@@ -649,17 +646,17 @@ test "pptx: expand_archive excludes structural rels and content types" {
 /// Verify that all included entries are valid UTF-8 text (not binary).
 test "pptx: all document entries are UTF-8 text" {
   let test_dir = pptx_test_dir("utf8-check")
-  ensure_dir!(test_dir)
+  ensure_dir(test_dir)
   let pptx_path = test_dir + "/fixture.pptx"
   let zip_data = build_pptx_fixture()
-  write_fixture_to_file!(pptx_path, zip_data)
+  write_fixture_to_file(pptx_path, zip_data)
   let spec = pptx_archive_spec()
-  let entries = expand_archive!(pptx_path, spec)
+  let entries = expand_archive(pptx_path, spec)
   for e in entries {
     // All XML entries should be decoded as text, not binary
-    assert_false!(e.is_binary)
+    assert_false(e.is_binary)
     // Content should be non-empty
-    assert_true!(e.content.length() > 0)
+    assert_true(e.content.length() > 0)
   }
 }
 
@@ -667,28 +664,28 @@ test "pptx: all document entries are UTF-8 text" {
 /// Verify virtual paths use the "!/" separator correctly.
 test "pptx: virtual paths use archive separator" {
   let test_dir = pptx_test_dir("vpath-separator")
-  ensure_dir!(test_dir)
+  ensure_dir(test_dir)
   let pptx_path = test_dir + "/fixture.pptx"
   let zip_data = build_pptx_fixture()
-  write_fixture_to_file!(pptx_path, zip_data)
+  write_fixture_to_file(pptx_path, zip_data)
   let spec = pptx_archive_spec()
-  let entries = expand_archive!(pptx_path, spec)
+  let entries = expand_archive(pptx_path, spec)
   for e in entries {
     // Every virtual path must start with the archive path + "!/"
     let expected_prefix = pptx_path + "!/"
     let prefix_len = expected_prefix.length()
-    assert_true!(e.virtual_path.length() > prefix_len)
+    assert_true(e.virtual_path.length() > prefix_len)
     let actual_prefix = e.virtual_path[:prefix_len].to_string()
-    assert_eq!(actual_prefix, expected_prefix)
+    assert_eq(actual_prefix, expected_prefix)
     // parse_virtual_path should decompose correctly
     let (archive_part, inner_opt) = parse_virtual_path(e.virtual_path)
-    assert_eq!(archive_part, pptx_path)
+    assert_eq(archive_part, pptx_path)
     match inner_opt {
-      Some(ip) => assert_true!(ip.length() > 0)
-      None => assert_true!(false)
+      Some(ip) => assert_true(ip.length() > 0)
+      None => assert_true(false)
     }
     // archive_source should be set
-    assert_eq!(e.archive_source, Some(pptx_path))
+    assert_eq(e.archive_source, Some(pptx_path))
   }
 }
 
@@ -696,51 +693,51 @@ test "pptx: virtual paths use archive separator" {
 /// Verify slide content contains expected text runs.
 test "pptx: slide content contains expected text" {
   let test_dir = pptx_test_dir("slide-content")
-  ensure_dir!(test_dir)
+  ensure_dir(test_dir)
   let pptx_path = test_dir + "/fixture.pptx"
   let zip_data = build_pptx_fixture()
-  write_fixture_to_file!(pptx_path, zip_data)
+  write_fixture_to_file(pptx_path, zip_data)
   let spec = pptx_archive_spec()
-  let entries = expand_archive!(pptx_path, spec)
+  let entries = expand_archive(pptx_path, spec)
   // Find slide1 and verify its content
   for e in entries {
     let ip = inner_path(e.virtual_path)
     if ip == "ppt/slides/slide1.xml" {
-      assert_true!(e.content.contains("Architecture Overview"))
-      assert_true!(
+      assert_true(e.content.contains("Architecture Overview"))
+      assert_true(
         e.content.contains(
           "This slide presents the high-level system architecture.",
         ),
       )
-      assert_true!(e.content.contains("<a:t>"))
+      assert_true(e.content.contains("<a:t>"))
     }
     if ip == "ppt/slides/slide2.xml" {
-      assert_true!(e.content.contains("Performance Metrics"))
+      assert_true(e.content.contains("Performance Metrics"))
     }
     if ip == "ppt/notesSlides/notesSlide1.xml" {
-      assert_true!(
+      assert_true(
         e.content.contains(
           "Remember to discuss the migration timeline with the team.",
         ),
       )
     }
     if ip == "docProps/core.xml" {
-      assert_true!(e.content.contains("Quarterly Architecture Review"))
-      assert_true!(e.content.contains("Test Author"))
+      assert_true(e.content.contains("Quarterly Architecture Review"))
+      assert_true(e.content.contains("Test Author"))
     }
     if ip == "ppt/comments/comment1.xml" {
-      assert_true!(
+      assert_true(
         e.content.contains(
           "This slide needs more detail on the architecture diagram.",
         ),
       )
     }
     if ip == "ppt/tags/tag1.xml" {
-      assert_true!(e.content.contains("DEPARTMENT"))
-      assert_true!(e.content.contains("Engineering"))
+      assert_true(e.content.contains("DEPARTMENT"))
+      assert_true(e.content.contains("Engineering"))
     }
     if ip == "docProps/app.xml" {
-      assert_true!(e.content.contains("<Slides>2</Slides>"))
+      assert_true(e.content.contains("<Slides>2</Slides>"))
     }
   }
 }
@@ -762,9 +759,9 @@ test "pptx: kgf glob patterns match expected paths" {
         break
       }
     }
-    assert_true!(matches_include)
+    assert_true(matches_include)
     for pattern in spec.inner_excludes {
-      assert_false!(@glob.glob_match(path, pattern))
+      assert_false(@glob.glob_match(path, pattern))
     }
   }
   // Every excluded path must either not match any include pattern
@@ -786,7 +783,7 @@ test "pptx: kgf glob patterns match expected paths" {
           break
         }
       }
-      assert_true!(matches_exclude)
+      assert_true(matches_exclude)
     }
     // If it doesn't match any include, it's excluded by omission — fine
   }

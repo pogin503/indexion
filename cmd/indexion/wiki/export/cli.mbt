@@ -34,16 +34,21 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     )
     return
   }
-  let input_resolved = match @common.resolve_wiki_dir(
-    @common.get_option(matches, "input", ".indexion/wiki"),
-  ) {
+  let input_resolved = match
+    @common.resolve_wiki_dir(
+      @common.get_option(matches, "input", ".indexion/wiki"),
+    ) {
     Some(dir) => dir
     None => {
       println("Error: Could not find project root directory.")
       return
     }
   }
-  let output_dir = @common.get_option(matches, "output", format + "-wiki-export")
+  let output_dir = @common.get_option(
+    matches,
+    "output",
+    format + "-wiki-export",
+  )
   let force = @common.get_flag(matches, "force")
   // Load wiki (auto-detect input format)
   let data = match @wiki_interop.load_wiki_auto(input_resolved) {

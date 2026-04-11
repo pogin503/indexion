@@ -403,8 +403,7 @@ fn extract_code_documents_with_graph(
   )
   // Try cache
   match load_graph_cache(cache_dir, code_files) {
-    Some(graph) =>
-      extract_code_from_graph(graph, code_files, registry, out)
+    Some(graph) => extract_code_from_graph(graph, code_files, registry, out)
     None => {
       // Cache miss or drift — rebuild
       let build_result = @digest_cli.build_graph_from_source(
@@ -428,9 +427,7 @@ fn extract_code_documents_with_graph(
 
 ///|
 /// Compute a combined hash of all source file hashes for cache validation.
-fn compute_files_fingerprint(
-  code_files : Array[(String, String)],
-) -> String {
+fn compute_files_fingerprint(code_files : Array[(String, String)]) -> String {
   let buf = StringBuilder::new()
   for file in code_files {
     buf.write_string(file.0)
@@ -479,9 +476,13 @@ fn save_graph_cache(
     buf.write_char('\n')
   }
   let fp = @cas_hash.compute_hash(buf.to_string()).to_string()
-  @fs.write_string_to_file(fp_path, fp) catch { _ => () }
+  @fs.write_string_to_file(fp_path, fp) catch {
+    _ => ()
+  }
   let graph_json = graph.to_json().stringify()
-  @fs.write_string_to_file(graph_path, graph_json) catch { _ => () }
+  @fs.write_string_to_file(graph_path, graph_json) catch {
+    _ => ()
+  }
 }
 
 ///|

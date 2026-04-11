@@ -863,6 +863,7 @@ fn normalize_identifier_words(text : String) -> String {
 }
 
 ///|
+
 ///|
 /// Extract backtick-enclosed identifiers from criteria text.
 /// E.g. "include a `detail` message" → ["detail"]
@@ -1045,9 +1046,15 @@ fn build_trace_edges(
     impl_texts.push(implementation_text(implementation))
   }
   let all_texts : Array[String] = []
-  for t in req_texts { all_texts.push(t) }
-  for t in criteria_flat { all_texts.push(t) }
-  for t in impl_texts { all_texts.push(t) }
+  for t in req_texts {
+    all_texts.push(t)
+  }
+  for t in criteria_flat {
+    all_texts.push(t)
+  }
+  for t in impl_texts {
+    all_texts.push(t)
+  }
   let all_tokenized = all_texts.map(fn(t) { @tokenizer.tokenize_for_tfidf(t) })
   let bm25 = @tfidf.BM25Batch::from_tokens(all_tokenized)
   let r_count = requirements.length()
@@ -1062,9 +1069,7 @@ fn build_trace_edges(
     let spec_identifiers = extract_inline_code_refs(requirement.criteria)
     for ii, implementation in implementations {
       // BM25 similarity: requirement full text vs implementation
-      let bm25_score = clamp_similarity(
-        bm25.similarity(ri, impl_offset + ii),
-      )
+      let bm25_score = clamp_similarity(bm25.similarity(ri, impl_offset + ii))
       // NCD for hybrid algorithm
       let ncd_score = if config.algorithm == "tfidf" {
         0.0
@@ -1090,9 +1095,7 @@ fn build_trace_edges(
         }
       }
       // Direct identifier match
-      let ident_boost = identifier_match_score(
-        spec_identifiers, implementation,
-      )
+      let ident_boost = identifier_match_score(spec_identifiers, implementation)
       let candidate_score = if best_criterion_score > base_score {
         best_criterion_score
       } else {
@@ -1107,7 +1110,10 @@ fn build_trace_edges(
         requirement.title,
         normalize_identifier_words(implementation.name),
       )
-      let section_score = section_reference_score(req_section_refs, impl_texts[ii])
+      let section_score = section_reference_score(
+        req_section_refs,
+        impl_texts[ii],
+      )
       let literal_score = literal_overlap_score(
         req_literals,
         implementation_evidence_text(implementation),

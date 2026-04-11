@@ -10,7 +10,9 @@ fn temp_wiki_dir() -> String {
 }
 
 ///|
-fn make_pages(entries : Array[(String, String, String)]) -> Map[String, @types.WikiPage] {
+fn make_pages(
+  entries : Array[(String, String, String)],
+) -> Map[String, @types.WikiPage] {
   let pages : Map[String, @types.WikiPage] = {}
   for entry in entries {
     let (id, title, content) = entry
@@ -23,8 +25,12 @@ fn make_pages(entries : Array[(String, String, String)]) -> Map[String, @types.W
 async test "build_search_index: sections extracted and searchable" {
   let _unit = @async.with_task_group(_group => ())
   let pages = make_pages([
-    ("arch", "Architecture", "# Architecture\n\nThis describes the system architecture.\n"),
-    ("guide", "Getting Started", "# Getting Started\n\nInstall and configure the tool.\n"),
+    (
+      "arch", "Architecture", "# Architecture\n\nThis describes the system architecture.\n",
+    ),
+    (
+      "guide", "Getting Started", "# Getting Started\n\nInstall and configure the tool.\n",
+    ),
   ])
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let idx = build_search_index(pages, provider) catch { _ => panic() }
@@ -37,12 +43,16 @@ async test "build_search_index: sections extracted and searchable" {
 async test "WikiSearchIndex::search: returns relevant hit" {
   let _unit = @async.with_task_group(_group => ())
   let pages = make_pages([
-    ("arch", "Architecture", "# Architecture\n\nThe system uses a layered architecture with vcdb.\n"),
+    (
+      "arch", "Architecture", "# Architecture\n\nThe system uses a layered architecture with vcdb.\n",
+    ),
     ("guide", "Install", "# Install\n\nRun moon install to get started.\n"),
   ])
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let idx = build_search_index(pages, provider) catch { _ => panic() }
-  let hits = idx.search("system architecture vcdb", top_k=5, min_score=0.01) catch { _ => panic() }
+  let hits = idx.search("system architecture vcdb", top_k=5, min_score=0.01) catch {
+    _ => panic()
+  }
   assert_true(hits.length() > 0)
   let top = hits[0]
   assert_true(top.section.page_id == "arch")
@@ -77,14 +87,20 @@ async test "WikiSearchIndex save/load: search still works after load" {
   let _unit = @async.with_task_group(_group => ())
   let wiki_dir = temp_wiki_dir()
   let pages = make_pages([
-    ("concepts", "Core Concepts", "# Core Concepts\n\nEmbedding and TF-IDF are core concepts.\n"),
-    ("cli", "CLI Reference", "# CLI Reference\n\nCommand line interface documentation.\n"),
+    (
+      "concepts", "Core Concepts", "# Core Concepts\n\nEmbedding and TF-IDF are core concepts.\n",
+    ),
+    (
+      "cli", "CLI Reference", "# CLI Reference\n\nCommand line interface documentation.\n",
+    ),
   ])
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let original = build_search_index(pages, provider) catch { _ => panic() }
   original.save(wiki_dir)
   let loaded = WikiSearchIndex::load(wiki_dir).unwrap()
-  let hits = loaded.search("embedding TF-IDF", top_k=5, min_score=0.01) catch { _ => panic() }
+  let hits = loaded.search("embedding TF-IDF", top_k=5, min_score=0.01) catch {
+    _ => panic()
+  }
   assert_true(hits.length() > 0)
   assert_true(hits[0].section.page_id == "concepts")
 }
@@ -93,7 +109,9 @@ async test "WikiSearchIndex save/load: search still works after load" {
 async test "update_page: old sections removed, new sections added" {
   let _unit = @async.with_task_group(_group => ())
   let pages = make_pages([
-    ("target", "Target Page", "# Target Page\n\nOriginal content about alpha.\n"),
+    (
+      "target", "Target Page", "# Target Page\n\nOriginal content about alpha.\n",
+    ),
     ("other", "Other Page", "# Other Page\n\nUnrelated content.\n"),
   ])
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
@@ -108,7 +126,11 @@ async test "update_page: old sections removed, new sections added" {
     }
   }
   // Update with entirely new content
-  idx.update_page("target", "Target Page", "# Target Page\n\nNew content about beta and gamma.\n") catch { _ => panic() }
+  idx.update_page(
+    "target", "Target Page", "# Target Page\n\nNew content about beta and gamma.\n",
+  ) catch {
+    _ => panic()
+  }
   // Section count must stay the same (removed old, added new for same page)
   assert_eq(idx.sections.size(), sections_before)
   // Engine size must stay the same
@@ -127,13 +149,13 @@ async test "update_page: old sections removed, new sections added" {
 ///|
 async test "update_page: next_vid advances monotonically" {
   let _unit = @async.with_task_group(_group => ())
-  let pages = make_pages([
-    ("page", "Page", "# Page\n\nContent.\n"),
-  ])
+  let pages = make_pages([("page", "Page", "# Page\n\nContent.\n")])
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let idx = build_search_index(pages, provider) catch { _ => panic() }
   let vid_after_build = idx.next_vid
-  idx.update_page("page", "Page", "# Page\n\nNew content.\n") catch { _ => panic() }
+  idx.update_page("page", "Page", "# Page\n\nNew content.\n") catch {
+    _ => panic()
+  }
   assert_true(idx.next_vid > vid_after_build)
 }
 
@@ -146,8 +168,14 @@ async test "update_page: updated content is searchable in-memory" {
   ])
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let idx = build_search_index(pages, provider) catch { _ => panic() }
-  idx.update_page("doc", "Doc", "# Doc\n\nUpdated content: search and indexing improved.\n") catch { _ => panic() }
-  let hits = idx.search("search indexing", top_k=5, min_score=0.01) catch { _ => panic() }
+  idx.update_page(
+    "doc", "Doc", "# Doc\n\nUpdated content: search and indexing improved.\n",
+  ) catch {
+    _ => panic()
+  }
+  let hits = idx.search("search indexing", top_k=5, min_score=0.01) catch {
+    _ => panic()
+  }
   assert_true(hits.length() > 0)
   assert_true(hits[0].section.page_id == "doc")
 }
@@ -162,10 +190,14 @@ async test "update_page: updated content searchable after save and reload" {
   ])
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let idx = build_search_index(pages, provider) catch { _ => panic() }
-  idx.update_page("doc", "Doc", "# Doc\n\nUpdated: search indexing improved.\n") catch { _ => panic() }
+  idx.update_page("doc", "Doc", "# Doc\n\nUpdated: search indexing improved.\n") catch {
+    _ => panic()
+  }
   idx.save(wiki_dir)
   let loaded = WikiSearchIndex::load(wiki_dir).unwrap()
-  let hits = loaded.search("search indexing", top_k=5, min_score=0.01) catch { _ => panic() }
+  let hits = loaded.search("search indexing", top_k=5, min_score=0.01) catch {
+    _ => panic()
+  }
   assert_true(hits.length() > 0)
   assert_true(hits[0].section.page_id == "doc")
 }

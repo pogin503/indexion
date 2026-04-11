@@ -42,9 +42,10 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     )
     return
   }
-  let output_resolved = match @common.resolve_wiki_dir(
-    @common.get_option(matches, "output", ".indexion/wiki"),
-  ) {
+  let output_resolved = match
+    @common.resolve_wiki_dir(
+      @common.get_option(matches, "output", ".indexion/wiki"),
+    ) {
     Some(dir) => dir
     None => {
       println("Error: Could not find project root directory.")

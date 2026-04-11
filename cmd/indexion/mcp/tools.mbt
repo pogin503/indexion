@@ -834,10 +834,7 @@ fn register_wiki_lint(
         wiki_dir_raw
       }
       let format = json_string(params, "format", "md")
-      let registry = @kgf_features.load_registry(
-        specs_dir=specs_dir,
-        target_dir=".",
-      )
+      let registry = @kgf_features.load_registry(specs_dir~, target_dir=".")
       let wiki = match @wiki_reader.load_wiki(wiki_dir, registry~) {
         Some(w) => w
         None => return @mcp_types.error_result("No wiki found at " + wiki_dir)
@@ -893,10 +890,7 @@ fn register_wiki_ingest(
       }
       let format = json_string(params, "format", "md")
       let dry_run = json_bool(params, "dryRun", true)
-      let registry = @kgf_features.load_registry(
-        specs_dir=specs_dir,
-        target_dir=".",
-      )
+      let registry = @kgf_features.load_registry(specs_dir~, target_dir=".")
       let wiki = match @wiki_reader.load_wiki(wiki_dir, registry~) {
         Some(w) => w
         None => return @mcp_types.error_result("No wiki found at " + wiki_dir)

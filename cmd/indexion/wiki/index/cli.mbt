@@ -42,11 +42,9 @@ fn build_command() -> @argparse.Command {
       ),
     ],
     options=[
-      @argparse.OptionArg(
-        "wiki-dir",
-        about="Wiki directory",
-        default_values=[".indexion/wiki"],
-      ),
+      @argparse.OptionArg("wiki-dir", about="Wiki directory", default_values=[
+        ".indexion/wiki",
+      ]),
       @argparse.OptionArg("output", short='o', about="Output file path"),
       @argparse.OptionArg("specs-dir", about=@help.specs_dir, default_values=[
         "kgfs",
@@ -66,11 +64,9 @@ fn build_command() -> @argparse.Command {
         about="Embedding model name (default: text-embedding-3-small)",
         default_values=[@embed_config.DEFAULT_EMBEDDING_MODEL],
       ),
-      @argparse.OptionArg(
-        "base-url",
-        about="Embedding API base URL",
-        default_values=[@embed_config.DEFAULT_API_BASE_URL],
-      ),
+      @argparse.OptionArg("base-url", about="Embedding API base URL", default_values=[
+        @embed_config.DEFAULT_API_BASE_URL,
+      ]),
       @argparse.OptionArg(
         "dim",
         about="Embedding dimension (default: 256 for tfidf, 1536 for openai)",
@@ -82,12 +78,13 @@ fn build_command() -> @argparse.Command {
 
 ///|
 async fn run_build(matches : @argparse.Matches) -> Unit {
-  let wiki_dir_resolved = match @common.resolve_wiki_dir(
-    match matches.values.get("wiki-dir") {
-      Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
-      _ => ".indexion/wiki"
-    },
-  ) {
+  let wiki_dir_resolved = match
+    @common.resolve_wiki_dir(
+      match matches.values.get("wiki-dir") {
+        Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
+        _ => ".indexion/wiki"
+      },
+    ) {
     Some(dir) => dir
     None => {
       println("Error: Could not find project root directory.")
@@ -111,10 +108,7 @@ async fn run_build(matches : @argparse.Matches) -> Unit {
     _ => false
   }
   // Load wiki
-  let registry = @kgf_features.load_registry(
-    specs_dir=specs_dir,
-    target_dir=".",
-  )
+  let registry = @kgf_features.load_registry(specs_dir~, target_dir=".")
   let wiki = match @wiki_reader.load_wiki(wiki_dir_resolved, registry~) {
     Some(w) => w
     None => {
@@ -163,16 +157,16 @@ async fn run_build(matches : @argparse.Matches) -> Unit {
     let api_key_env = get_opt("api-key-env", @embed_config.DEFAULT_API_KEY_ENV)
     let model = get_opt("model", @embed_config.DEFAULT_EMBEDDING_MODEL)
     let base_url = get_opt("base-url", @embed_config.DEFAULT_API_BASE_URL)
-    let dim = @common.parse_int(get_opt("dim", @embed_config.DEFAULT_TFIDF_DIM.to_string()))
+    let dim = @common.parse_int(
+      get_opt("dim", @embed_config.DEFAULT_TFIDF_DIM.to_string()),
+    )
     let provider = @embed_config.resolve_provider(
-      provider_name,
-      api_key_env,
-      base_url,
-      model,
-      dim,
+      provider_name, api_key_env, base_url, model, dim,
     ) catch {
       @embed_config.MissingApiKey(env) => {
-        println("Error: " + env + " not set. provider=openai requires an API key.")
+        println(
+          "Error: " + env + " not set. provider=openai requires an API key.",
+        )
         return
       }
       @embed_config.UnknownProvider(name) => {

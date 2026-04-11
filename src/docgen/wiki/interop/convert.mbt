@@ -332,9 +332,7 @@ pub fn export_external_wiki(
       page.content
     }
     let converted = convert_internal_to_wikilinks(
-      page_content,
-      id_to_name,
-      id_to_title,
+      page_content, id_to_name, id_to_title,
     )
     let sources_comment = embed_sources_comment(page.sources)
     let full_content = if sources_comment.length() > 0 {

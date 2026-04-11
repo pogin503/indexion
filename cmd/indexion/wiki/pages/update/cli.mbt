@@ -9,35 +9,29 @@
 
 ///|
 pub fn command() -> @argparse.Command {
-  @argparse.Command(
-    "update",
-    about="Update an existing wiki page",
-    options=[
-      @argparse.OptionArg("id", about="Page ID to update"),
-      @argparse.OptionArg(
-        "content",
-        about="Path to .md file with new page content",
-      ),
-      @argparse.OptionArg(
-        "sources",
-        about="Comma-separated source file paths (replaces existing)",
-      ),
-      @argparse.OptionArg(
-        "provenance",
-        about="Content provenance: extracted, synthesized, manual",
-      ),
-      @argparse.OptionArg(
-        "actor",
-        about="Who is updating: indexion, agent:<name>, user",
-        default_values=["user"],
-      ),
-      @argparse.OptionArg(
-        "wiki-dir",
-        about="Wiki directory",
-        default_values=[".indexion/wiki"],
-      ),
-    ],
-  )
+  @argparse.Command("update", about="Update an existing wiki page", options=[
+    @argparse.OptionArg("id", about="Page ID to update"),
+    @argparse.OptionArg(
+      "content",
+      about="Path to .md file with new page content",
+    ),
+    @argparse.OptionArg(
+      "sources",
+      about="Comma-separated source file paths (replaces existing)",
+    ),
+    @argparse.OptionArg(
+      "provenance",
+      about="Content provenance: extracted, synthesized, manual",
+    ),
+    @argparse.OptionArg(
+      "actor",
+      about="Who is updating: indexion, agent:<name>, user",
+      default_values=["user"],
+    ),
+    @argparse.OptionArg("wiki-dir", about="Wiki directory", default_values=[
+      ".indexion/wiki",
+    ]),
+  ])
 }
 
 ///|
@@ -55,12 +49,13 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     println("Usage: indexion wiki pages update --id=<id> --content=<file.md>")
     return
   }
-  let wiki_dir_resolved = match @common.resolve_wiki_dir(
-    match matches.values.get("wiki-dir") {
-      Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
-      _ => ".indexion/wiki"
-    },
-  ) {
+  let wiki_dir_resolved = match
+    @common.resolve_wiki_dir(
+      match matches.values.get("wiki-dir") {
+        Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
+        _ => ".indexion/wiki"
+      },
+    ) {
     Some(dir) => dir
     None => {
       println("Error: Could not find project root directory.")
@@ -167,7 +162,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     @wiki_log.WikiLogEntry::new(
       timestamp=@env.now(),
       operation="pages update",
-      actor=actor,
+      actor~,
       summary="Updated page: " + id,
       affected_pages=[id],
     ),

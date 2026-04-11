@@ -68,7 +68,9 @@ pub fn SearchConfig::from_matches(matches : @argparse.Matches) -> SearchConfig {
     api_key_env: get_str("api-key-env", @embed_config.DEFAULT_API_KEY_ENV),
     model: get_str("model", @embed_config.DEFAULT_EMBEDDING_MODEL),
     base_url: get_str("base-url", @embed_config.DEFAULT_API_BASE_URL),
-    dim: @common.parse_int(get_str("dim", @embed_config.DEFAULT_TFIDF_DIM.to_string())),
+    dim: @common.parse_int(
+      get_str("dim", @embed_config.DEFAULT_TFIDF_DIM.to_string()),
+    ),
   }
 }
 
@@ -113,21 +115,15 @@ pub fn command() -> @argparse.Command {
         about="Environment variable name for OpenAI API key",
         default_values=[@embed_config.DEFAULT_API_KEY_ENV],
       ),
-      @argparse.OptionArg(
-        "model",
-        about="Embedding model name",
-        default_values=[@embed_config.DEFAULT_EMBEDDING_MODEL],
-      ),
-      @argparse.OptionArg(
-        "base-url",
-        about="Embedding API base URL",
-        default_values=[@embed_config.DEFAULT_API_BASE_URL],
-      ),
-      @argparse.OptionArg(
-        "dim",
-        about="Embedding dimension",
-        default_values=[@embed_config.DEFAULT_TFIDF_DIM.to_string()],
-      ),
+      @argparse.OptionArg("model", about="Embedding model name", default_values=[
+        @embed_config.DEFAULT_EMBEDDING_MODEL,
+      ]),
+      @argparse.OptionArg("base-url", about="Embedding API base URL", default_values=[
+        @embed_config.DEFAULT_API_BASE_URL,
+      ]),
+      @argparse.OptionArg("dim", about="Embedding dimension", default_values=[
+        @embed_config.DEFAULT_TFIDF_DIM.to_string(),
+      ]),
     ],
     positionals=[
       @argparse.PositionArg("query", about="Natural language search query"),
@@ -158,12 +154,20 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         top_k=config.top_k,
         min_score=config.min_score,
       ) catch {
-        @embed.ParseError(msg) => { println("Warning: wiki search error: " + msg); [] }
-        @embed.ApiError(code, msg) => {
-          println("Warning: wiki search API error (" + code.to_string() + "): " + msg)
+        @embed.ParseError(msg) => {
+          println("Warning: wiki search error: " + msg)
           []
         }
-        @embed.NoResult => { println("Warning: wiki search returned no embedding result"); [] }
+        @embed.ApiError(code, msg) => {
+          println(
+            "Warning: wiki search API error (" + code.to_string() + "): " + msg,
+          )
+          []
+        }
+        @embed.NoResult => {
+          println("Warning: wiki search returned no embedding result")
+          []
+        }
       }
       let hits = wiki_hits_to_search_hits(wiki_hits)
       if config.json_output {
@@ -188,7 +192,9 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     config.dim,
   ) catch {
     @embed_config.MissingApiKey(env) => {
-      println("Error: " + env + " not set. provider=openai requires an API key.")
+      println(
+        "Error: " + env + " not set. provider=openai requires an API key.",
+      )
       return
     }
     @embed_config.UnknownProvider(name) => {
@@ -197,12 +203,18 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     }
   }
   let engine = @search_engine.build_index(documents, provider) catch {
-    @embed.ParseError(msg) => { println("Error: Failed to build index: " + msg); return }
+    @embed.ParseError(msg) => {
+      println("Error: Failed to build index: " + msg)
+      return
+    }
     @embed.ApiError(code, msg) => {
       println("Error: API error (" + code.to_string() + "): " + msg)
       return
     }
-    @embed.NoResult => { println("Error: No embedding result."); return }
+    @embed.NoResult => {
+      println("Error: No embedding result.")
+      return
+    }
   }
   let filter = parse_filter(config.filter_str)
   let hits = @search_engine.search_index(
@@ -213,12 +225,18 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     config.min_score,
     filter~,
   ) catch {
-    @embed.ParseError(msg) => { println("Error: Search failed: " + msg); return }
+    @embed.ParseError(msg) => {
+      println("Error: Search failed: " + msg)
+      return
+    }
     @embed.ApiError(code, msg) => {
       println("Error: Search API error (" + code.to_string() + "): " + msg)
       return
     }
-    @embed.NoResult => { println("Error: No search embedding result."); return }
+    @embed.NoResult => {
+      println("Error: No search embedding result.")
+      return
+    }
   }
   if config.json_output {
     format_json(hits)

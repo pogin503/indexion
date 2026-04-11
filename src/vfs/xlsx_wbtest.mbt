@@ -33,28 +33,29 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/worksheets/sheet1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-        #|  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-        #|  <sheetData>
-        #|    <row r="1" spans="1:3">
-        #|      <c r="A1" t="s"><v>0</v></c>
-        #|      <c r="B1" t="s"><v>1</v></c>
-        #|      <c r="C1" t="s"><v>2</v></c>
-        #|    </row>
-        #|    <row r="2" spans="1:3">
-        #|      <c r="A2"><v>100</v></c>
-        #|      <c r="B2"><v>200</v></c>
-        #|      <c r="C2"><f>SUM(A2:B2)</f><v>300</v></c>
-        #|    </row>
-        #|    <row r="3" spans="1:3">
-        #|      <c r="A3"><v>150</v></c>
-        #|      <c r="B3"><v>250</v></c>
-        #|      <c r="C3"><f>SUM(A3:B3)</f><v>400</v></c>
-        #|    </row>
-        #|  </sheetData>
-        #|</worksheet>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          #|  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          #|  <sheetData>
+          #|    <row r="1" spans="1:3">
+          #|      <c r="A1" t="s"><v>0</v></c>
+          #|      <c r="B1" t="s"><v>1</v></c>
+          #|      <c r="C1" t="s"><v>2</v></c>
+          #|    </row>
+          #|    <row r="2" spans="1:3">
+          #|      <c r="A2"><v>100</v></c>
+          #|      <c r="B2"><v>200</v></c>
+          #|      <c r="C2"><f>SUM(A2:B2)</f><v>300</v></c>
+          #|    </row>
+          #|    <row r="3" spans="1:3">
+          #|      <c r="A3"><v>150</v></c>
+          #|      <c r="B3"><v>250</v></c>
+          #|      <c r="C3"><f>SUM(A3:B3)</f><v>400</v></c>
+          #|    </row>
+          #|  </sheetData>
+          #|</worksheet>
+        ),
       ),
     ),
   )
@@ -63,15 +64,16 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/worksheets/sheet2.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        #|  <sheetData>
-        #|    <row r="1" spans="1:1">
-        #|      <c r="A1" t="s"><v>3</v></c>
-        #|    </row>
-        #|  </sheetData>
-        #|</worksheet>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          #|  <sheetData>
+          #|    <row r="1" spans="1:1">
+          #|      <c r="A1" t="s"><v>3</v></c>
+          #|    </row>
+          #|  </sheetData>
+          #|</worksheet>
+        ),
       ),
     ),
   )
@@ -80,15 +82,16 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/sharedStrings.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-        #|  count="4" uniqueCount="4">
-        #|  <si><t>Revenue</t></si>
-        #|  <si><t>Cost</t></si>
-        #|  <si><t>Profit</t></si>
-        #|  <si><t>Summary Sheet</t></si>
-        #|</sst>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          #|  count="4" uniqueCount="4">
+          #|  <si><t>Revenue</t></si>
+          #|  <si><t>Cost</t></si>
+          #|  <si><t>Profit</t></si>
+          #|  <si><t>Summary Sheet</t></si>
+          #|</sst>
+        ),
       ),
     ),
   )
@@ -97,18 +100,19 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/workbook.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-        #|  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-        #|  <sheets>
-        #|    <sheet name="Financial Data" sheetId="1" r:id="rId1"/>
-        #|    <sheet name="Summary" sheetId="2" r:id="rId2"/>
-        #|  </sheets>
-        #|  <definedNames>
-        #|    <definedName name="TotalRevenue">'Financial Data'!$A$2:$A$3</definedName>
-        #|  </definedNames>
-        #|</workbook>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          #|  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          #|  <sheets>
+          #|    <sheet name="Financial Data" sheetId="1" r:id="rId1"/>
+          #|    <sheet name="Summary" sheetId="2" r:id="rId2"/>
+          #|  </sheets>
+          #|  <definedNames>
+          #|    <definedName name="TotalRevenue">'Financial Data'!$A$2:$A$3</definedName>
+          #|  </definedNames>
+          #|</workbook>
+        ),
       ),
     ),
   )
@@ -117,16 +121,17 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/comments1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        #|  <authors><author>Analyst</author></authors>
-        #|  <commentList>
-        #|    <comment ref="A1" authorId="0">
-        #|      <text><r><t>This column contains quarterly revenue figures.</t></r></text>
-        #|    </comment>
-        #|  </commentList>
-        #|</comments>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          #|  <authors><author>Analyst</author></authors>
+          #|  <commentList>
+          #|    <comment ref="A1" authorId="0">
+          #|      <text><r><t>This column contains quarterly revenue figures.</t></r></text>
+          #|    </comment>
+          #|  </commentList>
+          #|</comments>
+        ),
       ),
     ),
   )
@@ -135,13 +140,14 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/threadedComments/threadedComment1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<ThreadedComments xmlns="http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments">
-        #|  <threadedComment id="{A1B2C3}" ref="C2" personId="{D4E5F6}">
-        #|    <text>Verify this formula matches the budget model.</text>
-        #|  </threadedComment>
-        #|</ThreadedComments>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<ThreadedComments xmlns="http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments">
+          #|  <threadedComment id="{A1B2C3}" ref="C2" personId="{D4E5F6}">
+          #|    <text>Verify this formula matches the budget model.</text>
+          #|  </threadedComment>
+          #|</ThreadedComments>
+        ),
       ),
     ),
   )
@@ -150,16 +156,17 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/tables/table1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-        #|  id="1" name="FinancialSummary" displayName="FinancialSummary" ref="A1:C3">
-        #|  <tableColumns count="3">
-        #|    <tableColumn id="1" name="Revenue"/>
-        #|    <tableColumn id="2" name="Cost"/>
-        #|    <tableColumn id="3" name="Profit"/>
-        #|  </tableColumns>
-        #|</table>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          #|  id="1" name="FinancialSummary" displayName="FinancialSummary" ref="A1:C3">
+          #|  <tableColumns count="3">
+          #|    <tableColumn id="1" name="Revenue"/>
+          #|    <tableColumn id="2" name="Cost"/>
+          #|    <tableColumn id="3" name="Profit"/>
+          #|  </tableColumns>
+          #|</table>
+        ),
       ),
     ),
   )
@@ -168,15 +175,16 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/pivotTables/pivotTable1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-        #|  name="PivotTable1" dataCaption="Values">
-        #|  <location ref="E1:F5"/>
-        #|  <pivotFields count="1">
-        #|    <pivotField axis="axisRow" showAll="0"/>
-        #|  </pivotFields>
-        #|</pivotTableDefinition>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          #|  name="PivotTable1" dataCaption="Values">
+          #|  <location ref="E1:F5"/>
+          #|  <pivotFields count="1">
+          #|    <pivotField axis="axisRow" showAll="0"/>
+          #|  </pivotFields>
+          #|</pivotTableDefinition>
+        ),
       ),
     ),
   )
@@ -185,14 +193,15 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/pivotCache/pivotCacheDefinition1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<pivotCacheDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-        #|  r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-        #|  <cacheSource type="worksheet">
-        #|    <worksheetSource ref="A1:C3" sheet="Financial Data"/>
-        #|  </cacheSource>
-        #|</pivotCacheDefinition>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<pivotCacheDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          #|  r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          #|  <cacheSource type="worksheet">
+          #|    <worksheetSource ref="A1:C3" sheet="Financial Data"/>
+          #|  </cacheSource>
+          #|</pivotCacheDefinition>
+        ),
       ),
     ),
   )
@@ -201,17 +210,18 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/charts/chart1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
-        #|  <c:chart>
-        #|    <c:title><c:tx><c:rich>
-        #|      <a:p xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-        #|        <a:r><a:t>Revenue vs Cost</a:t></a:r>
-        #|      </a:p>
-        #|    </c:rich></c:tx></c:title>
-        #|  </c:chart>
-        #|</c:chartSpace>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+          #|  <c:chart>
+          #|    <c:title><c:tx><c:rich>
+          #|      <a:p xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+          #|        <a:r><a:t>Revenue vs Cost</a:t></a:r>
+          #|      </a:p>
+          #|    </c:rich></c:tx></c:title>
+          #|  </c:chart>
+          #|</c:chartSpace>
+        ),
       ),
     ),
   )
@@ -220,12 +230,13 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/calcChain.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        #|  <c r="C2" i="1"/>
-        #|  <c r="C3" i="1"/>
-        #|</calcChain>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          #|  <c r="C2" i="1"/>
+          #|  <c r="C3" i="1"/>
+          #|</calcChain>
+        ),
       ),
     ),
   )
@@ -234,12 +245,13 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/connections.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<connections xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        #|  <connection id="1" name="ExternalDB" type="1"
-        #|    description="Connection to reporting database"/>
-        #|</connections>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<connections xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          #|  <connection id="1" name="ExternalDB" type="1"
+          #|    description="Connection to reporting database"/>
+          #|</connections>
+        ),
       ),
     ),
   )
@@ -248,13 +260,14 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/metadata.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<metadata xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        #|  <metadataTypes count="1">
-        #|    <metadataType name="XLRICHVALUE" minSupportedVersion="120000"/>
-        #|  </metadataTypes>
-        #|</metadata>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<metadata xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          #|  <metadataTypes count="1">
+          #|    <metadataType name="XLRICHVALUE" minSupportedVersion="120000"/>
+          #|  </metadataTypes>
+          #|</metadata>
+        ),
       ),
     ),
   )
@@ -263,16 +276,17 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "docProps/core.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
-        #|  xmlns:dc="http://purl.org/dc/elements/1.1/"
-        #|  xmlns:dcterms="http://purl.org/dc/terms/">
-        #|  <dc:title>Q4 Financial Report</dc:title>
-        #|  <dc:creator>Finance Team</dc:creator>
-        #|  <dc:description>Quarterly financial summary with pivot analysis</dc:description>
-        #|  <dcterms:created>2025-12-01T00:00:00Z</dcterms:created>
-        #|</cp:coreProperties>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+          #|  xmlns:dc="http://purl.org/dc/elements/1.1/"
+          #|  xmlns:dcterms="http://purl.org/dc/terms/">
+          #|  <dc:title>Q4 Financial Report</dc:title>
+          #|  <dc:creator>Finance Team</dc:creator>
+          #|  <dc:description>Quarterly financial summary with pivot analysis</dc:description>
+          #|  <dcterms:created>2025-12-01T00:00:00Z</dcterms:created>
+          #|</cp:coreProperties>
+        ),
       ),
     ),
   )
@@ -281,13 +295,14 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "docProps/app.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
-        #|  <Application>Microsoft Excel</Application>
-        #|  <AppVersion>16.0</AppVersion>
-        #|  <Company>Acme Corp</Company>
-        #|</Properties>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+          #|  <Application>Microsoft Excel</Application>
+          #|  <AppVersion>16.0</AppVersion>
+          #|  <Company>Acme Corp</Company>
+          #|</Properties>
+        ),
       ),
     ),
   )
@@ -296,14 +311,15 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "docProps/custom.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
-        #|  xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-        #|  <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Department">
-        #|    <vt:lpwstr>Finance</vt:lpwstr>
-        #|  </property>
-        #|</Properties>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
+          #|  xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+          #|  <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Department">
+          #|    <vt:lpwstr>Finance</vt:lpwstr>
+          #|  </property>
+          #|</Properties>
+        ),
       ),
     ),
   )
@@ -313,14 +329,15 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "[Content_Types].xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-        #|  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-        #|  <Default Extension="xml" ContentType="application/xml"/>
-        #|  <Override PartName="/xl/workbook.xml"
-        #|    ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-        #|</Types>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+          #|  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+          #|  <Default Extension="xml" ContentType="application/xml"/>
+          #|  <Override PartName="/xl/workbook.xml"
+          #|    ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+          #|</Types>
+        ),
       ),
     ),
   )
@@ -329,12 +346,13 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "_rels/.rels",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-        #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
-        #|    Target="xl/workbook.xml"/>
-        #|</Relationships>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+          #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+          #|    Target="xl/workbook.xml"/>
+          #|</Relationships>
+        ),
       ),
     ),
   )
@@ -343,14 +361,15 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/_rels/workbook.xml.rels",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-        #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
-        #|    Target="worksheets/sheet1.xml"/>
-        #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
-        #|    Target="worksheets/sheet2.xml"/>
-        #|</Relationships>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+          #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+          #|    Target="worksheets/sheet1.xml"/>
+          #|  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+          #|    Target="worksheets/sheet2.xml"/>
+          #|</Relationships>
+        ),
       ),
     ),
   )
@@ -359,12 +378,13 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/worksheets/_rels/sheet1.xml.rels",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-        #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
-        #|    Target="../comments1.xml"/>
-        #|</Relationships>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+          #|  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
+          #|    Target="../comments1.xml"/>
+          #|</Relationships>
+        ),
       ),
     ),
   )
@@ -373,13 +393,14 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/styles.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        #|  <numFmts count="1">
-        #|    <numFmt numFmtId="164" formatCode="#,##0.00"/>
-        #|  </numFmts>
-        #|</styleSheet>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          #|  <numFmts count="1">
+          #|    <numFmt numFmtId="164" formatCode="#,##0.00"/>
+          #|  </numFmts>
+          #|</styleSheet>
+        ),
       ),
     ),
   )
@@ -388,11 +409,12 @@ fn build_xlsx_fixture() -> FixedArray[Byte] {
     (
       "xl/theme/theme1.xml",
       @fzip.str_to_u8(
-        #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        #|<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme">
-        #|  <a:themeElements/>
-        #|</a:theme>
-        ,
+        (
+          #|<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          #|<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme">
+          #|  <a:themeElements/>
+          #|</a:theme>
+        ),
       ),
     ),
   )
@@ -444,28 +466,14 @@ test "xlsx: document-relevant parts are included" {
   }
   let spec = ArchiveSpec::{
     inner_includes: [
-      "xl/worksheets/sheet*.xml",
-      "xl/sharedStrings.xml",
-      "xl/workbook.xml",
-      "xl/comments*.xml",
-      "xl/threadedComments/threadedComment*.xml",
-      "xl/tables/table*.xml",
-      "xl/pivotTables/pivotTable*.xml",
-      "xl/pivotCache/pivotCacheDefinition*.xml",
-      "xl/charts/chart*.xml",
-      "xl/calcChain.xml",
-      "xl/connections.xml",
-      "xl/metadata.xml",
-      "docProps/core.xml",
-      "docProps/app.xml",
+      "xl/worksheets/sheet*.xml", "xl/sharedStrings.xml", "xl/workbook.xml", "xl/comments*.xml",
+      "xl/threadedComments/threadedComment*.xml", "xl/tables/table*.xml", "xl/pivotTables/pivotTable*.xml",
+      "xl/pivotCache/pivotCacheDefinition*.xml", "xl/charts/chart*.xml", "xl/calcChain.xml",
+      "xl/connections.xml", "xl/metadata.xml", "docProps/core.xml", "docProps/app.xml",
       "docProps/custom.xml",
     ],
     inner_excludes: [
-      "_rels/*",
-      "xl/_rels/*",
-      "xl/worksheets/_rels/*",
-      "[Content_Types].xml",
-      "xl/styles.xml",
+      "_rels/*", "xl/_rels/*", "xl/worksheets/_rels/*", "[Content_Types].xml", "xl/styles.xml",
       "xl/theme/*",
     ],
   }
@@ -515,28 +523,14 @@ test "xlsx: structural parts are excluded" {
   }
   let spec = ArchiveSpec::{
     inner_includes: [
-      "xl/worksheets/sheet*.xml",
-      "xl/sharedStrings.xml",
-      "xl/workbook.xml",
-      "xl/comments*.xml",
-      "xl/threadedComments/threadedComment*.xml",
-      "xl/tables/table*.xml",
-      "xl/pivotTables/pivotTable*.xml",
-      "xl/pivotCache/pivotCacheDefinition*.xml",
-      "xl/charts/chart*.xml",
-      "xl/calcChain.xml",
-      "xl/connections.xml",
-      "xl/metadata.xml",
-      "docProps/core.xml",
-      "docProps/app.xml",
+      "xl/worksheets/sheet*.xml", "xl/sharedStrings.xml", "xl/workbook.xml", "xl/comments*.xml",
+      "xl/threadedComments/threadedComment*.xml", "xl/tables/table*.xml", "xl/pivotTables/pivotTable*.xml",
+      "xl/pivotCache/pivotCacheDefinition*.xml", "xl/charts/chart*.xml", "xl/calcChain.xml",
+      "xl/connections.xml", "xl/metadata.xml", "docProps/core.xml", "docProps/app.xml",
       "docProps/custom.xml",
     ],
     inner_excludes: [
-      "_rels/*",
-      "xl/_rels/*",
-      "xl/worksheets/_rels/*",
-      "[Content_Types].xml",
-      "xl/styles.xml",
+      "_rels/*", "xl/_rels/*", "xl/worksheets/_rels/*", "[Content_Types].xml", "xl/styles.xml",
       "xl/theme/*",
     ],
   }
@@ -567,28 +561,14 @@ test "xlsx: all included entries are UTF-8 text" {
   }
   let spec = ArchiveSpec::{
     inner_includes: [
-      "xl/worksheets/sheet*.xml",
-      "xl/sharedStrings.xml",
-      "xl/workbook.xml",
-      "xl/comments*.xml",
-      "xl/threadedComments/threadedComment*.xml",
-      "xl/tables/table*.xml",
-      "xl/pivotTables/pivotTable*.xml",
-      "xl/pivotCache/pivotCacheDefinition*.xml",
-      "xl/charts/chart*.xml",
-      "xl/calcChain.xml",
-      "xl/connections.xml",
-      "xl/metadata.xml",
-      "docProps/core.xml",
-      "docProps/app.xml",
+      "xl/worksheets/sheet*.xml", "xl/sharedStrings.xml", "xl/workbook.xml", "xl/comments*.xml",
+      "xl/threadedComments/threadedComment*.xml", "xl/tables/table*.xml", "xl/pivotTables/pivotTable*.xml",
+      "xl/pivotCache/pivotCacheDefinition*.xml", "xl/charts/chart*.xml", "xl/calcChain.xml",
+      "xl/connections.xml", "xl/metadata.xml", "docProps/core.xml", "docProps/app.xml",
       "docProps/custom.xml",
     ],
     inner_excludes: [
-      "_rels/*",
-      "xl/_rels/*",
-      "xl/worksheets/_rels/*",
-      "[Content_Types].xml",
-      "xl/styles.xml",
+      "_rels/*", "xl/_rels/*", "xl/worksheets/_rels/*", "[Content_Types].xml", "xl/styles.xml",
       "xl/theme/*",
     ],
   }
@@ -612,28 +592,14 @@ test "xlsx: virtual paths use archive separator" {
   }
   let spec = ArchiveSpec::{
     inner_includes: [
-      "xl/worksheets/sheet*.xml",
-      "xl/sharedStrings.xml",
-      "xl/workbook.xml",
-      "xl/comments*.xml",
-      "xl/threadedComments/threadedComment*.xml",
-      "xl/tables/table*.xml",
-      "xl/pivotTables/pivotTable*.xml",
-      "xl/pivotCache/pivotCacheDefinition*.xml",
-      "xl/charts/chart*.xml",
-      "xl/calcChain.xml",
-      "xl/connections.xml",
-      "xl/metadata.xml",
-      "docProps/core.xml",
-      "docProps/app.xml",
+      "xl/worksheets/sheet*.xml", "xl/sharedStrings.xml", "xl/workbook.xml", "xl/comments*.xml",
+      "xl/threadedComments/threadedComment*.xml", "xl/tables/table*.xml", "xl/pivotTables/pivotTable*.xml",
+      "xl/pivotCache/pivotCacheDefinition*.xml", "xl/charts/chart*.xml", "xl/calcChain.xml",
+      "xl/connections.xml", "xl/metadata.xml", "docProps/core.xml", "docProps/app.xml",
       "docProps/custom.xml",
     ],
     inner_excludes: [
-      "_rels/*",
-      "xl/_rels/*",
-      "xl/worksheets/_rels/*",
-      "[Content_Types].xml",
-      "xl/styles.xml",
+      "_rels/*", "xl/_rels/*", "xl/worksheets/_rels/*", "[Content_Types].xml", "xl/styles.xml",
       "xl/theme/*",
     ],
   }
@@ -661,28 +627,14 @@ test "xlsx: content contains expected text" {
   }
   let spec = ArchiveSpec::{
     inner_includes: [
-      "xl/worksheets/sheet*.xml",
-      "xl/sharedStrings.xml",
-      "xl/workbook.xml",
-      "xl/comments*.xml",
-      "xl/threadedComments/threadedComment*.xml",
-      "xl/tables/table*.xml",
-      "xl/pivotTables/pivotTable*.xml",
-      "xl/pivotCache/pivotCacheDefinition*.xml",
-      "xl/charts/chart*.xml",
-      "xl/calcChain.xml",
-      "xl/connections.xml",
-      "xl/metadata.xml",
-      "docProps/core.xml",
-      "docProps/app.xml",
+      "xl/worksheets/sheet*.xml", "xl/sharedStrings.xml", "xl/workbook.xml", "xl/comments*.xml",
+      "xl/threadedComments/threadedComment*.xml", "xl/tables/table*.xml", "xl/pivotTables/pivotTable*.xml",
+      "xl/pivotCache/pivotCacheDefinition*.xml", "xl/charts/chart*.xml", "xl/calcChain.xml",
+      "xl/connections.xml", "xl/metadata.xml", "docProps/core.xml", "docProps/app.xml",
       "docProps/custom.xml",
     ],
     inner_excludes: [
-      "_rels/*",
-      "xl/_rels/*",
-      "xl/worksheets/_rels/*",
-      "[Content_Types].xml",
-      "xl/styles.xml",
+      "_rels/*", "xl/_rels/*", "xl/worksheets/_rels/*", "[Content_Types].xml", "xl/styles.xml",
       "xl/theme/*",
     ],
   }
@@ -695,9 +647,7 @@ test "xlsx: content contains expected text" {
   assert_true(has_text_content(entries, "xl/comments1.xml"))
   // Threaded comments should contain comment text
   assert_true(
-    has_text_content(
-      entries, "xl/threadedComments/threadedComment1.xml",
-    ),
+    has_text_content(entries, "xl/threadedComments/threadedComment1.xml"),
   )
   // Chart should contain title
   assert_true(has_text_content(entries, "xl/charts/chart1.xml"))
@@ -718,9 +668,7 @@ test "xlsx: content contains expected text" {
       assert_true(entry.content.contains("TotalRevenue"))
     }
     if ip == "xl/comments1.xml" {
-      assert_true(
-        entry.content.contains("quarterly revenue figures"),
-      )
+      assert_true(entry.content.contains("quarterly revenue figures"))
     }
     if ip == "xl/threadedComments/threadedComment1.xml" {
       assert_true(entry.content.contains("budget model"))
@@ -760,28 +708,14 @@ test "xlsx: correct entry count" {
   }
   let spec = ArchiveSpec::{
     inner_includes: [
-      "xl/worksheets/sheet*.xml",
-      "xl/sharedStrings.xml",
-      "xl/workbook.xml",
-      "xl/comments*.xml",
-      "xl/threadedComments/threadedComment*.xml",
-      "xl/tables/table*.xml",
-      "xl/pivotTables/pivotTable*.xml",
-      "xl/pivotCache/pivotCacheDefinition*.xml",
-      "xl/charts/chart*.xml",
-      "xl/calcChain.xml",
-      "xl/connections.xml",
-      "xl/metadata.xml",
-      "docProps/core.xml",
-      "docProps/app.xml",
+      "xl/worksheets/sheet*.xml", "xl/sharedStrings.xml", "xl/workbook.xml", "xl/comments*.xml",
+      "xl/threadedComments/threadedComment*.xml", "xl/tables/table*.xml", "xl/pivotTables/pivotTable*.xml",
+      "xl/pivotCache/pivotCacheDefinition*.xml", "xl/charts/chart*.xml", "xl/calcChain.xml",
+      "xl/connections.xml", "xl/metadata.xml", "docProps/core.xml", "docProps/app.xml",
       "docProps/custom.xml",
     ],
     inner_excludes: [
-      "_rels/*",
-      "xl/_rels/*",
-      "xl/worksheets/_rels/*",
-      "[Content_Types].xml",
-      "xl/styles.xml",
+      "_rels/*", "xl/_rels/*", "xl/worksheets/_rels/*", "[Content_Types].xml", "xl/styles.xml",
       "xl/theme/*",
     ],
   }

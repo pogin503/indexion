@@ -25,7 +25,8 @@ pub fn save(index : WikiSearchIndex, wiki_dir : String) -> Unit {
   // vectors.db
   let vectors_path = @config.join_path(wiki_dir, VECTORS_FILE)
   @fs.write_bytes_to_file(vectors_path, index.engine.serialize()) catch {
-    e => println("Warning: failed to write " + VECTORS_FILE + ": " + e.to_string())
+    e =>
+      println("Warning: failed to write " + VECTORS_FILE + ": " + e.to_string())
   }
   // search-sections.json: provider + next_vid + entries
   let entries : Array[Json] = []
@@ -41,14 +42,20 @@ pub fn save(index : WikiSearchIndex, wiki_dir : String) -> Unit {
   }
   let sections_path = @config.join_path(wiki_dir, SECTIONS_FILE)
   @fs.write_string_to_file(sections_path, sections_json.stringify(indent=2)) catch {
-    e => println("Warning: failed to write " + SECTIONS_FILE + ": " + e.to_string())
+    e =>
+      println(
+        "Warning: failed to write " + SECTIONS_FILE + ": " + e.to_string(),
+      )
   }
   // tfidf-vocabulary.json
   match index.engine.tfidf_provider() {
     Some(prov) => {
       let vocab_path = @config.join_path(wiki_dir, VOCABULARY_FILE)
       @fs.write_string_to_file(vocab_path, prov.to_json_string()) catch {
-        e => println("Warning: failed to write " + VOCABULARY_FILE + ": " + e.to_string())
+        e =>
+          println(
+            "Warning: failed to write " + VOCABULARY_FILE + ": " + e.to_string(),
+          )
       }
     }
     None => ()
@@ -67,8 +74,12 @@ pub fn load(wiki_dir : String) -> WikiSearchIndex? {
   let bytes = @fs.read_file_to_bytes(vectors_path) catch { _ => return None }
   let base_engine = @search_engine.SearchEngine::from_bytes(bytes)
   let engine = restore_tfidf(base_engine, wiki_dir)
-  let sections_text = @fs.read_file_to_string(sections_path) catch { _ => return None }
-  let sections_json : Json = @json.parse(sections_text) catch { _ => return None }
+  let sections_text = @fs.read_file_to_string(sections_path) catch {
+    _ => return None
+  }
+  let sections_json : Json = @json.parse(sections_text) catch {
+    _ => return None
+  }
   // Parse provider (defaults to TfIdf if absent — backward compat with old indexes)
   let provider : @embed_config.EmbeddingProvider = match sections_json {
     { "provider": p, .. } => @embed_config.EmbeddingProvider::from_json(p)
@@ -76,8 +87,7 @@ pub fn load(wiki_dir : String) -> WikiSearchIndex? {
   }
   // Parse next_vid (Int64 serializes as JSON string in MoonBit)
   let next_vid : Int64 = match sections_json {
-    { "next_vid": String(s), .. } =>
-      @string.parse_int64(s) catch { _ => 1L }
+    { "next_vid": String(s), .. } => @string.parse_int64(s) catch { _ => 1L }
     { "next_vid": Number(n, ..), .. } => n.to_int64()
     _ => 1L
   }
@@ -85,23 +95,23 @@ pub fn load(wiki_dir : String) -> WikiSearchIndex? {
   let sections : Map[String, WikiSection] = {}
   let section_to_vid : Map[String, Int64] = {}
   match sections_json {
-    { "entries": Array(arr), .. } => {
+    { "entries": Array(arr), .. } =>
       for item in arr {
         let s : WikiSection = match item {
           { "section": s_json, .. } =>
-            @json.from_json(s_json) catch { _ => continue }
+            @json.from_json(s_json) catch {
+              _ => continue
+            }
           _ => continue
         }
         let vid : Int64 = match item {
-          { "vid": String(vs), .. } =>
-            @string.parse_int64(vs) catch { _ => 0L }
+          { "vid": String(vs), .. } => @string.parse_int64(vs) catch { _ => 0L }
           { "vid": Number(vn, ..), .. } => vn.to_int64()
           _ => 0L
         }
         sections[s.id] = s
         section_to_vid[s.id] = vid
       }
-    }
     _ => ()
   }
   Some(WikiSearchIndex::{ engine, provider, sections, section_to_vid, next_vid })
@@ -124,7 +134,9 @@ fn restore_tfidf(
   if !@fs.path_exists(vocab_path) {
     return engine
   }
-  let json_str = @fs.read_file_to_string(vocab_path) catch { _ => return engine }
+  let json_str = @fs.read_file_to_string(vocab_path) catch {
+    _ => return engine
+  }
   let dim = engine.dim()
   let prov = @text_embed.TfidfEmbeddingProvider::new(dim)
   if prov.load_from_json_string(json_str) {

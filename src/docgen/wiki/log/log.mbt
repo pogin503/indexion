@@ -102,25 +102,15 @@ pub fn WikiLog::load(wiki_dir : String) -> WikiLog {
   if !@fs.path_exists(path) {
     return WikiLog::new()
   }
-  let content = try {
-    @fs.read_file_to_string(path)
-  } catch {
+  let content = @fs.read_file_to_string(path) catch {
     _ => return WikiLog::new()
   }
-  let json = try {
-    @json.parse(content)
-  } catch {
-    _ => return WikiLog::new()
-  }
+  let json = @json.parse(content) catch { _ => return WikiLog::new() }
   match json {
     Array(arr) => {
       let entries : Array[WikiLogEntry] = []
       for item in arr {
-        let entry : WikiLogEntry = try {
-          @json.from_json!(item)
-        } catch {
-          _ => continue
-        }
+        let entry : WikiLogEntry = @json.from_json(item) catch { _ => continue }
         entries.push(entry)
       }
       { entries, }

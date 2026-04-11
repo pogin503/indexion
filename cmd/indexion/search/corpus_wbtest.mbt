@@ -166,7 +166,12 @@ async test "search self-host retrieval finds versioning metadata chain" {
   let docs = build_corpus([root], search_config())
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let engine = @search_engine.build_index(docs, provider) catch { _ => panic() }
-  let hits = @search_engine.search_index(engine, "project version release current_version sync version", provider, 12, 0.05) catch { _ => panic() }
+  let hits = @search_engine.search_index(
+    engine, "project version release current_version sync version", provider, 12,
+    0.05,
+  ) catch {
+    _ => panic()
+  }
   assert_true(has_hit_source(hits, root + "/scripts/sync-version.sh"))
   assert_true(has_hit_source(hits, root + "/.github/workflows/release.yml"))
   assert_true(has_hit_source(hits, root + "/moon.mod.json"))
@@ -179,7 +184,11 @@ async test "search retrieval follows code-side version SoT context" {
   let docs = build_corpus([root], search_config())
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let engine = @search_engine.build_index(docs, provider) catch { _ => panic() }
-  let hits = @search_engine.search_index(engine, "moon.mod.json version field auto synced", provider, 12, 0.05) catch { _ => panic() }
+  let hits = @search_engine.search_index(
+    engine, "moon.mod.json version field auto synced", provider, 12, 0.05,
+  ) catch {
+    _ => panic()
+  }
   assert_true(has_hit_source(hits, root + "/src/update/version.mbt"))
 }
 
@@ -198,7 +207,11 @@ async test "search retrieval keeps code-side version SoT with explicit file list
   )
   let provider = @embed_config.TfIdf(@embed_config.DEFAULT_TFIDF_DIM)
   let engine = @search_engine.build_index(docs, provider) catch { _ => panic() }
-  let hits = @search_engine.search_index(engine, "moon.mod.json version field auto synced", provider, 12, 0.05) catch { _ => panic() }
+  let hits = @search_engine.search_index(
+    engine, "moon.mod.json version field auto synced", provider, 12, 0.05,
+  ) catch {
+    _ => panic()
+  }
   assert_true(has_document_for_source(docs, root + "/moon.mod.json"))
   assert_true(has_hit_source(hits, root + "/src/update/version.mbt"))
 }

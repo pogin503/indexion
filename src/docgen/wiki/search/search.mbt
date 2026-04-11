@@ -76,18 +76,21 @@ pub async fn build_search_index(
     let page_id = entry.0
     let page = entry.1
     let page_file = if page.file.length() > 0 { page.file } else { page_id }
-    for s in extract_sections(
-      page_id,
-      page.title,
-      page.content,
-      path=page_file,
-      registry~,
-    ) {
+    for
+      s in extract_sections(
+        page_id,
+        page.title,
+        page.content,
+        path=page_file,
+        registry~,
+      ) {
       sections[s.id] = s
       section_order.push(s)
     }
   }
-  let texts : Array[String] = section_order.map(fn(s) { s.title + " " + s.content })
+  let texts : Array[String] = section_order.map(fn(s) {
+    s.title + " " + s.content
+  })
   let dim = @search_engine.provider_dim(provider)
   let tfidf = @text_embed.TfidfEmbeddingProvider::new(dim)
   tfidf.build_vocabulary(texts)
@@ -106,7 +109,10 @@ pub async fn build_search_index(
     let attrs = @search_engine.empty_attrs()
     attrs.set(section_id_attr, @vcdb_core.String(s.id))
     attrs.set("title", @vcdb_core.String(s.title))
-    attrs.set("node_kind", @vcdb_core.String(if s.level == 1 { "page" } else { "section" }))
+    attrs.set(
+      "node_kind",
+      @vcdb_core.String(if s.level == 1 { "page" } else { "section" }),
+    )
     engine.add_raw(vid, embeddings[i], attrs)
     section_to_vid[s.id] = vid
     vid += 1L
@@ -124,7 +130,10 @@ pub async fn WikiSearchIndex::search(
 ) -> Array[WikiSearchHit] raise @embed.EmbedError {
   let tfidf = match self.engine.tfidf_provider() {
     Some(p) => p
-    None => @text_embed.TfidfEmbeddingProvider::new(@search_engine.provider_dim(self.provider))
+    None =>
+      @text_embed.TfidfEmbeddingProvider::new(
+        @search_engine.provider_dim(self.provider),
+      )
   }
   let embs = @search_engine.embed_texts(self.provider, [query], tfidf)
   let vector = embs[0]
@@ -177,18 +186,32 @@ pub async fn WikiSearchIndex::update_page(
     self.sections.remove(section_id)
   }
   // Extract new sections and embed in one batch.
-  let new_sections = extract_sections(page_id, page_title, content, path~, registry~)
-  let texts : Array[String] = new_sections.map(fn(s) { s.title + " " + s.content })
+  let new_sections = extract_sections(
+    page_id,
+    page_title,
+    content,
+    path~,
+    registry~,
+  )
+  let texts : Array[String] = new_sections.map(fn(s) {
+    s.title + " " + s.content
+  })
   let tfidf = match self.engine.tfidf_provider() {
     Some(p) => p
-    None => @text_embed.TfidfEmbeddingProvider::new(@search_engine.provider_dim(self.provider))
+    None =>
+      @text_embed.TfidfEmbeddingProvider::new(
+        @search_engine.provider_dim(self.provider),
+      )
   }
   let embeddings = @search_engine.embed_texts(self.provider, texts, tfidf)
   for i, s in new_sections {
     let attrs = @search_engine.empty_attrs()
     attrs.set(section_id_attr, @vcdb_core.String(s.id))
     attrs.set("title", @vcdb_core.String(s.title))
-    attrs.set("node_kind", @vcdb_core.String(if s.level == 1 { "page" } else { "section" }))
+    attrs.set(
+      "node_kind",
+      @vcdb_core.String(if s.level == 1 { "page" } else { "section" }),
+    )
     let vid = self.next_vid
     self.engine.add_raw(vid, embeddings[i], attrs)
     self.section_to_vid[s.id] = vid
@@ -224,7 +247,15 @@ pub fn extract_sections(
   let effective_reg = match registry {
     Some(r) => r
     None =>
-      return [WikiSection::{ id: page_id, title: page_title, content, page_id, level: 1 }]
+      return [
+        WikiSection::{
+          id: page_id,
+          title: page_title,
+          content,
+          page_id,
+          level: 1,
+        },
+      ]
   }
   let spec = match effective_reg.detect_from_path(effective_path) {
     Some(lang) => effective_reg.get_spec(lang)
@@ -239,7 +270,15 @@ pub fn extract_sections(
         page_title,
       )
     None =>
-      [WikiSection::{ id: page_id, title: page_title, content, page_id, level: 1 }]
+      [
+        WikiSection::{
+          id: page_id,
+          title: page_title,
+          content,
+          page_id,
+          level: 1,
+        },
+      ]
   }
 }
 
@@ -255,11 +294,19 @@ fn extract_sections_from_document(
     let id = if idx == 0 {
       page_id
     } else {
-      page_id + "#" + @common.make_anchor(section.title) + "-" + (idx + 1).to_string()
+      page_id +
+      "#" +
+      @common.make_anchor(section.title) +
+      "-" +
+      (idx + 1).to_string()
     }
     sections.push(WikiSection::{
       id,
-      title: if idx == 0 { page_title } else { section.title },
+      title: if idx == 0 {
+        page_title
+      } else {
+        section.title
+      },
       content: section.content,
       page_id,
       level,

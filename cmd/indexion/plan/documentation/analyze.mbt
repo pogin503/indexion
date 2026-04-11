@@ -147,7 +147,13 @@ pub fn analyze_documentation(
     let pub_items : Array[PubItem] = []
     for file in files {
       let file_rel = @common.make_relative_path(file.path, normalized_dir)
-      analyze_source_file(file.path, file.content, file_rel, pub_items, registry)
+      analyze_source_file(
+        file.path,
+        file.content,
+        file_rel,
+        pub_items,
+        registry,
+      )
     }
     let documented = pub_items
       .iter()

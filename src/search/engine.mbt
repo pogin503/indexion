@@ -77,7 +77,7 @@ pub fn SearchEngine::with_id_map(
   self : SearchEngine,
   id_map : Map[Int, String],
 ) -> SearchEngine {
-  { ..self, id_map }
+  { ..self, id_map, }
 }
 
 ///|
@@ -86,7 +86,7 @@ pub fn SearchEngine::with_documents(
   self : SearchEngine,
   documents : Map[String, SearchDocument],
 ) -> SearchEngine {
-  { ..self, documents }
+  { ..self, documents, }
 }
 
 ///|
@@ -206,9 +206,8 @@ pub async fn embed_texts(
   tfidf : @text_embed.TfidfEmbeddingProvider,
 ) -> Array[Array[Double]] raise @embed.EmbedError {
   match provider {
-    @embed_config.TfIdf(_) | @embed_config.Precomputed(_) => {
+    @embed_config.TfIdf(_) | @embed_config.Precomputed(_) =>
       texts.map(fn(t) { tfidf.embed(t) })
-    }
     @embed_config.OpenAI(api_config) => {
       let cfg : @embed.OpenAIConfig = {
         api_key: api_config.api_key,
@@ -284,8 +283,7 @@ pub async fn search_index(
 ) -> Array[SearchHit] raise @embed.EmbedError {
   let tfidf = match engine.tfidf_provider() {
     Some(p) => p
-    None =>
-      @text_embed.TfidfEmbeddingProvider::new(provider_dim(provider))
+    None => @text_embed.TfidfEmbeddingProvider::new(provider_dim(provider))
   }
   let embs = embed_texts(provider, [query], tfidf)
   let vector = embs[0]

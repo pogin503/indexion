@@ -5,34 +5,25 @@
 
 ///|
 pub fn command() -> @argparse.Command {
-  @argparse.Command(
-    "add",
-    about="Add a new page to the wiki",
-    options=[
-      @argparse.OptionArg("id", about="Page ID (slug, e.g. 'my-page')"),
-      @argparse.OptionArg("title", about="Page title"),
-      @argparse.OptionArg(
-        "content",
-        about="Path to .md file with page content",
-      ),
-      @argparse.OptionArg("parent", about="Parent page ID"),
-      @argparse.OptionArg("sources", about="Comma-separated source file paths"),
-      @argparse.OptionArg(
-        "provenance",
-        about="Content provenance: extracted, synthesized, manual",
-      ),
-      @argparse.OptionArg(
-        "actor",
-        about="Who is adding: indexion, agent:<name>, user",
-        default_values=["user"],
-      ),
-      @argparse.OptionArg(
-        "wiki-dir",
-        about="Wiki directory",
-        default_values=[".indexion/wiki"],
-      ),
-    ],
-  )
+  @argparse.Command("add", about="Add a new page to the wiki", options=[
+    @argparse.OptionArg("id", about="Page ID (slug, e.g. 'my-page')"),
+    @argparse.OptionArg("title", about="Page title"),
+    @argparse.OptionArg("content", about="Path to .md file with page content"),
+    @argparse.OptionArg("parent", about="Parent page ID"),
+    @argparse.OptionArg("sources", about="Comma-separated source file paths"),
+    @argparse.OptionArg(
+      "provenance",
+      about="Content provenance: extracted, synthesized, manual",
+    ),
+    @argparse.OptionArg(
+      "actor",
+      about="Who is adding: indexion, agent:<name>, user",
+      default_values=["user"],
+    ),
+    @argparse.OptionArg("wiki-dir", about="Wiki directory", default_values=[
+      ".indexion/wiki",
+    ]),
+  ])
 }
 
 ///|
@@ -56,12 +47,13 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     )
     return
   }
-  let wiki_dir_resolved = match @common.resolve_wiki_dir(
-    match matches.values.get("wiki-dir") {
-      Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
-      _ => ".indexion/wiki"
-    },
-  ) {
+  let wiki_dir_resolved = match
+    @common.resolve_wiki_dir(
+      match matches.values.get("wiki-dir") {
+        Some(arr) => if arr.length() > 0 { arr[0] } else { ".indexion/wiki" }
+        _ => ".indexion/wiki"
+      },
+    ) {
     Some(dir) => dir
     None => {
       println("Error: Could not find project root directory.")
@@ -107,11 +99,11 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     []
   }
   let new_page = @wiki_types.ManifestPage::new(
-    id=id,
-    title=title,
+    id~,
+    title~,
     file=id + ".md",
-    sources=sources,
-    provenance=provenance,
+    sources~,
+    provenance~,
     last_actor=Some(actor),
   )
   // Build updated pages array, wiring parent → child link
@@ -139,7 +131,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
     @wiki_log.WikiLogEntry::new(
       timestamp=@env.now(),
       operation="pages add",
-      actor=actor,
+      actor~,
       summary="Added page: " + title,
       affected_pages=[id],
     ),
