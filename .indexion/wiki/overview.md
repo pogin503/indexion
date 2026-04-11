@@ -80,6 +80,7 @@ flowchart LR
         DIG["digest<br/>(semantic index)"]
         SRV["serve<br/>(HTTP API)"]
         MCPS["mcp<br/>(MCP server)"]
+        SPEC["spec<br/>(draft/verify/align)"]
     end
 
     subgraph Output
@@ -173,6 +174,13 @@ as a subcommand of the `indexion` CLI:
 | `digest`             | Builds a semantic index for purpose-based function lookup        |
 | `serve`              | HTTP server for CodeGraph, Digest, and wiki REST API             |
 | `mcp`                | MCP server exposing indexion tools to AI assistants              |
+| `spec draft`         | Generates an SDD draft from usage or README documents            |
+| `spec verify`        | Checks spec-to-implementation conformance via token analysis     |
+| `spec align diff`    | Detects drift between spec requirements and implementation       |
+| `spec align trace`   | Generates requirement-to-implementation traceability matrix      |
+| `spec align suggest` | Generates provenance-backed reconciliation suggestions           |
+| `spec align status`  | Summarizes alignment status for CI with exit code control        |
+| `spec align watch`   | Watches inputs and reruns alignment on changes                   |
 
 Output can be rendered as Markdown, JSON, or GitHub Issue format depending on
 the `--format` flag.

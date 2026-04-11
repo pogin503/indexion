@@ -20,6 +20,7 @@ flowchart TD
     INDEXION --> SERVE[serve]
     INDEXION --> SEARCH[search]
     INDEXION --> MCP[mcp]
+    INDEXION --> SPEC[spec]
 
     PLAN --> PR[refactor]
     PLAN --> PD[documentation]
@@ -50,6 +51,16 @@ flowchart TD
     DOC --> DI[init]
     DOC --> DG[graph]
     DOC --> DR[readme]
+
+    SPEC --> SD[draft]
+    SPEC --> SV[verify]
+    SPEC --> SA[align]
+
+    SA --> SAD[diff]
+    SA --> SAT[trace]
+    SA --> SAS[suggest]
+    SA --> SAST[status]
+    SA --> SAW[watch]
 ```
 
 ---
@@ -768,6 +779,145 @@ indexion mcp --transport=http --port=3741
 ```
 
 **When to use:** Integrating indexion's analysis capabilities into AI-powered development workflows. The MCP server exposes tools for code search, graph analysis, and documentation queries.
+
+## spec
+
+Specification-driven analysis commands. Verify conformance between spec documents and implementation code.
+
+```bash
+indexion spec <subcommand> [options]
+```
+
+### spec draft
+
+Generate an SDD (Software Design Document) draft from usage or README documents.
+
+```bash
+indexion spec draft [options] <source-path>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-o=FILE` | Output to file | stdout |
+| `--format=FORMAT` | `markdown`, `json` | `markdown` |
+| `--profile=NAME` | Draft profile | `sdd-numbered-requirement` |
+| `--max-requirements=INT` | Maximum drafted requirements | `64` |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+
+**When to use:** Bootstrap a formal SDD from an existing README or usage document. The generated draft contains numbered requirements with scenarios.
+
+### spec verify
+
+Check spec-to-implementation conformance. Tokenizes spec documents and implementation code via KGF/TF-IDF to identify spec terms absent from the implementation.
+
+```bash
+indexion spec verify [options] <directory>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--spec=PATTERN` | Spec document glob pattern (repeatable) | required |
+| `--format=FORMAT` | `json`, `md`, `github-issue` | `json` |
+| `--focus=KIND` | Filter by token kind: `ident`, `text`, `vocab`, `all` | `all` |
+| `--max-candidates=INT` | Maximum items in output | `200` |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+| `-o=FILE` | Output to file | stdout |
+
+**When to use:** Checking whether all terms and concepts from a specification document appear in the implementation. The reverse direction of `plan reconcile`.
+
+### spec align
+
+Align SDD-style specification documents with implementation code. Provides multiple views of the alignment relationship.
+
+```bash
+indexion spec align <subcommand> [options] <spec-path> <impl-path>
+```
+
+**Common options (all align subcommands):**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-o=FILE` | Output to file | stdout |
+| `--spec-format=NAME` | SDD KGF spec language or `auto` | `auto` |
+| `--algorithm=NAME` | Similarity algorithm: `tfidf`, `ncd`, `hybrid` | `hybrid` |
+| `--threshold=FLOAT` | Similarity threshold (0.0-1.0) | `0.6` |
+| `--git-base=REF` | Git base ref for incremental mode | `HEAD` |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+| `--cache-dir=DIR` | Cache directory | `.indexion/cache/spec/align` |
+
+| Flag | Description |
+|------|-------------|
+| `--incremental` | Restrict results to files changed from git base |
+
+#### spec align diff
+
+Detect spec and implementation drift. Classifies each requirement as MATCHED, DRIFTED, SPEC_ONLY, or IMPL_ONLY.
+
+```bash
+indexion spec align diff [options] <spec-path> <impl-path>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--format=FORMAT` | `json`, `markdown`, `summary` | `markdown` |
+
+#### spec align trace
+
+Generate requirement-to-implementation traceability matrix.
+
+```bash
+indexion spec align trace [options] <spec-path> <impl-path>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--format=FORMAT` | `json`, `yaml`, `mermaid` | `json` |
+
+#### spec align suggest
+
+Generate provenance-backed reconciliation suggestions.
+
+```bash
+indexion spec align suggest [options] <spec-path> <impl-path>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--format=FORMAT` | `markdown`, `tasks`, `delta-spec`, `json` | `markdown` |
+| `--direction=DIR` | `spec-wins`, `impl-wins`, `both` | `both` |
+| `--agent=NAME` | `generic`, `claude`, `copilot` | `generic` |
+
+#### spec align status
+
+Summarize alignment status for CI. Returns a non-zero exit code when the configured threshold is exceeded.
+
+```bash
+indexion spec align status [options] <spec-path> <impl-path>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--format=FORMAT` | `text`, `json`, `badge` | `text` |
+| `--fail-on=LEVEL` | `none`, `drifted`, `spec-only`, `any` | `none` |
+
+#### spec align watch
+
+Watch spec and implementation inputs and rerun alignment on changes.
+
+```bash
+indexion spec align watch [options] <spec-path> <impl-path>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--mode=MODE` | `diff`, `trace`, `suggest`, `status` | `diff` |
+| `--format=FORMAT` | Output format for the watched subcommand | `markdown` |
+| `--interval=INT` | Polling interval in seconds | `2` |
+| `--limit=INT` | Max emitted updates (0 = unlimited) | `0` |
+
+**When to use:** Continuous spec-implementation alignment monitoring during development. Useful for CI pipelines and real-time drift detection.
+
+---
 
 ## See Also
 

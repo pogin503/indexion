@@ -2,12 +2,13 @@
   "version": "1",
   "page_states": {
     "overview": {
-      "page_hash": "9bf7264c103e6ce3906f6ff721ef2ba3",
+      "page_hash": "9a6045bb65f305db9b09f0a0d9f62c7b",
       "source_hashes": {
         "README.md": "3fd31109f3aa7ca18dddbe49f8bd9a52",
-        "moon.mod.json": "fefd53716f16b91d6ff0ea53133b4cb2",
+        "moon.mod.json": "7f4bf182eb99ccca6ba4b5e26be059e5",
         "cmd/indexion/main.mbt": "e0f804d058a6a737adf5eb805b96c6ba",
-        "cmd/indexion/wiki/cli.mbt": "03003302e6a4ad691ef15c6071bcd82b"
+        "cmd/indexion/wiki/cli.mbt": "03003302e6a4ad691ef15c6071bcd82b",
+        "cmd/indexion/spec/cli.mbt": "678497b112dc0ea01c9e8ed27f259a0e"
       }
     },
     "getting-started": {
@@ -45,12 +46,16 @@
       "source_hashes": {}
     },
     "cli-commands": {
-      "page_hash": "1bf325fd0fed8b6be26b1882ef465628",
+      "page_hash": "9b775ee72e842ae1e4948d7df3600772",
       "source_hashes": {
         "cmd/indexion/main.mbt": "e0f804d058a6a737adf5eb805b96c6ba",
         "cmd/indexion/wiki/cli.mbt": "03003302e6a4ad691ef15c6071bcd82b",
         "cmd/indexion/plan/cli.mbt": "2877da72449681a6bb32d46785afdfbc",
-        "cmd/indexion/doc/cli.mbt": "e98b2096f4bdb7333260d9ee203d3981"
+        "cmd/indexion/doc/cli.mbt": "d67c5d9b3b2dd035d02417d1b02591d4",
+        "cmd/indexion/spec/cli.mbt": "678497b112dc0ea01c9e8ed27f259a0e",
+        "cmd/indexion/spec/align/cli.mbt": "5fb51836f5fd26b8c51ba847da8fb6e0",
+        "cmd/indexion/spec/draft/cli.mbt": "506e46dbe09ed214f7a3ddd3f1890e78",
+        "cmd/indexion/spec/verify/cli.mbt": "76bf947bfb8dc0c056f89019cd6baef0"
       }
     },
     "vscode-extension": {
@@ -62,12 +67,13 @@
       "source_hashes": {}
     },
     "cmd-indexion": {
-      "page_hash": "a41da72e515e780ff7aac242ff6e1d60",
+      "page_hash": "b00a9c1d3c95e6bc534b7c7472a06a6a",
       "source_hashes": {
         "cmd/indexion/main.mbt": "e0f804d058a6a737adf5eb805b96c6ba",
         "cmd/indexion/wiki/cli.mbt": "03003302e6a4ad691ef15c6071bcd82b",
         "cmd/indexion/plan/cli.mbt": "2877da72449681a6bb32d46785afdfbc",
-        "cmd/indexion/doc/cli.mbt": "e98b2096f4bdb7333260d9ee203d3981"
+        "cmd/indexion/doc/cli.mbt": "d67c5d9b3b2dd035d02417d1b02591d4",
+        "cmd/indexion/spec/cli.mbt": "678497b112dc0ea01c9e8ed27f259a0e"
       }
     },
     "cmd-kgf-tokenizer": {

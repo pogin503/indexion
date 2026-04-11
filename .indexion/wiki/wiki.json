@@ -9,7 +9,8 @@
         "README.md",
         "moon.mod.json",
         "cmd/indexion/main.mbt",
-        "cmd/indexion/wiki/cli.mbt"
+        "cmd/indexion/wiki/cli.mbt",
+        "cmd/indexion/spec/cli.mbt"
       ],
       "children": [
         "getting-started",
@@ -133,7 +134,11 @@
         "cmd/indexion/main.mbt",
         "cmd/indexion/wiki/cli.mbt",
         "cmd/indexion/plan/cli.mbt",
-        "cmd/indexion/doc/cli.mbt"
+        "cmd/indexion/doc/cli.mbt",
+        "cmd/indexion/spec/cli.mbt",
+        "cmd/indexion/spec/align/cli.mbt",
+        "cmd/indexion/spec/draft/cli.mbt",
+        "cmd/indexion/spec/verify/cli.mbt"
       ],
       "children": [],
       "provenance": "synthesized",
@@ -165,7 +170,8 @@
         "cmd/indexion/main.mbt",
         "cmd/indexion/wiki/cli.mbt",
         "cmd/indexion/plan/cli.mbt",
-        "cmd/indexion/doc/cli.mbt"
+        "cmd/indexion/doc/cli.mbt",
+        "cmd/indexion/spec/cli.mbt"
       ],
       "children": [],
       "provenance": "synthesized",

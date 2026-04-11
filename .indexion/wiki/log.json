@@ -430,7 +430,7 @@
     "affected_pages": []
   },
   {
-    "timestamp": "1775723676624",
+    "timestamp": "0",
     "operation": "pages update",
     "actor": "user",
     "summary": "Updated page: architecture",
@@ -438,5 +438,57 @@
     "affected_pages": [
       "architecture"
     ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 44 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 8 categories, 9 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "3 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "overview",
+      "cli-commands",
+      "cmd-indexion"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 44 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1775904523481",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 44 pages",
+    "details": {},
+    "affected_pages": []
   }
 ]

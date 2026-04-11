@@ -24,6 +24,7 @@ graph TD
     main --> update["update"]
     main --> serve["serve"]
     main --> grep["grep"]
+    main --> spec["spec"]
 
     plan --> plan_refactor["plan refactor"]
     plan --> plan_docs["plan documentation"]
@@ -59,6 +60,16 @@ graph TD
 
     serve --> serve_export["serve export"]
 
+    spec --> spec_draft["draft"]
+    spec --> spec_verify["verify"]
+    spec --> spec_align["align"]
+
+    spec_align --> spec_align_diff["align diff"]
+    spec_align --> spec_align_trace["align trace"]
+    spec_align --> spec_align_suggest["align suggest"]
+    spec_align --> spec_align_status["align status"]
+    spec_align --> spec_align_watch["align watch"]
+
     common["common/<br/>shared CLI utilities"]
     main -.-> common
 ```
@@ -92,6 +103,7 @@ Nested dispatchers (`plan`, `doc`, `perf`) follow the same pattern internally, w
 | `update` | `cmd/indexion/update` | Self-update mechanism |
 | `serve` | `cmd/indexion/serve` | HTTP server for all features via REST API |
 | `grep` | `cmd/indexion/grep` | Code search with KGF awareness |
+| `spec` | `cmd/indexion/spec` | Specification-driven analysis (3 sub-subcommands) |
 
 ### `wiki/` -- Wiki Management
 
@@ -113,6 +125,22 @@ The `wiki` package (`cmd/indexion/wiki/cli.mbt`) provides wiki management via tw
 | `hook status` | `cmd/indexion/wiki/hook` | Show whether hooks are installed |
 
 **VCS detection:** `hook` auto-detects the repository type (Git via `.git`, Jujutsu via `.jj`) using `src/vcs/vcs.mbt` and resolves the correct hooks directory per VCS. Hook file parsing uses the KGF shell lexer to locate marker comments, not hand-rolled string scanning.
+
+### `spec/` -- Specification-Driven Analysis
+
+The `spec` package (`cmd/indexion/spec/cli.mbt`) provides specification-driven analysis via three subcommands.
+
+| Subcommand | Package | Description |
+|------------|---------|-------------|
+| `draft` | `cmd/indexion/spec/draft` | Generate an SDD draft from usage or README documents |
+| `verify` | `cmd/indexion/spec/verify` | Check spec-to-implementation conformance via token analysis |
+| `align diff` | `cmd/indexion/spec/align` | Detect spec and implementation drift (MATCHED/DRIFTED/SPEC_ONLY/IMPL_ONLY) |
+| `align trace` | `cmd/indexion/spec/align` | Generate requirement-to-implementation traceability matrix |
+| `align suggest` | `cmd/indexion/spec/align` | Generate provenance-backed reconciliation suggestions |
+| `align status` | `cmd/indexion/spec/align` | Summarize alignment status for CI (with `--fail-on` exit code control) |
+| `align watch` | `cmd/indexion/spec/align` | Watch inputs and rerun alignment on changes |
+
+The underlying library modules live in `src/spec/align/` (alignment analysis, caching, history) and `src/spec/draft/` (SDD draft generation). The `align` subcommand supports incremental mode via `--incremental` and `--git-base`, and caches results for efficient re-analysis.
 
 The underlying library modules live in `src/docgen/wiki/`: `types` (data model), `reader` (page loading), `lint` (structural checks), `ingest` (change detection), `index` (index generation), `log` (audit trail), `search` (semantic search), and `interop` (format conversion).
 

@@ -147,4 +147,8 @@ Three Vite configurations:
 
 Packaged with `vsce package --no-dependencies`.
 
+## See Also
+
+- [[VS Code Extension]] -- user-facing guide to the extension features
+
 > Source: `packages/vscode-plugin/`

@@ -1,7 +1,7 @@
 <!-- indexion:sources skills/skills/ -->
 # skills/skills -- Individual Skill Definitions
 
-The `skills/skills/` directory contains 11 individual skill definitions for the indexion Claude Code plugin. Each skill is a directory containing a single `SKILL.md` file that defines the skill's metadata (name, description, trigger conditions) and comprehensive usage documentation including CLI commands, options, workflows, and dogfooding lessons.
+The `skills/skills/` directory contains 12 individual skill definitions for the indexion Claude Code plugin. Each skill is a directory containing a single `SKILL.md` file that defines the skill's metadata (name, description, trigger conditions) and comprehensive usage documentation including CLI commands, options, workflows, and dogfooding lessons.
 
 ## Contents
 
@@ -16,6 +16,8 @@ skills/skills/
 ├── indexion-grep/          # KGF-aware pattern and semantic search
 │   └── SKILL.md
 ├── indexion-doc/           # Dependency graphs and README generation
+│   └── SKILL.md
+├── indexion-wiki/          # Wiki building, maintenance, and verification
 │   └── SKILL.md
 ├── indexion-plan-refactor/ # Refactoring plan generation
 │   └── SKILL.md
@@ -53,6 +55,10 @@ Inspect and debug KGF language specs. Subcommands: `inspect` (full pipeline), `t
 
 Generate dependency graphs (`doc graph`) in mermaid, dot, d2, text, or json formats. Generate READMEs (`doc readme`) from source doc comments using templates. Initialize templates (`doc init`). Supports `--per-package` mode that skips existing READMEs.
 
+### indexion-wiki
+
+Build, maintain, and verify project wiki pages at `.indexion/wiki/`. Covers the full agent workflow: navigating via `index.md`, detecting stale pages with `pages ingest`, writing/updating pages with `pages add`/`pages update`, verifying structural integrity with `lint`, and rebuilding the navigation index with `index build`. Includes guidance on provenance fields (`extracted`/`synthesized`/`manual`), cross-reference management, and the three-layer model (sources → wiki → checks).
+
 ### indexion-plan-refactor
 
 Generate structured refactoring plans from file similarity analysis. Outputs duplicate code blocks, function-level duplicates, and same-file duplicates. Start with `--threshold=0.9` and work down. Combine with `grep` to trace references before consolidating.
@@ -86,6 +92,7 @@ Skills can also be invoked explicitly as slash commands:
 ```
 /indexion-explore
 /indexion-grep
+/indexion-wiki
 /indexion-plan-refactor
 ```
 
