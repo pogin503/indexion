@@ -6,9 +6,16 @@
 curl -fsSL https://raw.githubusercontent.com/trkbt10/indexion/main/install.sh | bash
 ```
 
-Installs to `~/.indexion/` with KGF language specs. Add to PATH:
+On Linux, installs binary and KGF specs to `~/.local/share/indexion/` with a symlink at `~/.local/bin/indexion`.
+On macOS, installs to `~/.indexion/` with KGF specs in `~/Library/Application Support/Indexion/`.
+
+If `~/.local/bin` (Linux) or `~/.indexion/bin` (macOS) is not in PATH, add to your shell profile:
 
 ```bash
+# Linux (usually already in PATH)
+export PATH="$HOME/.local/bin:$PATH"
+
+# macOS
 export PATH="$HOME/.indexion/bin:$PATH"
 ```
 

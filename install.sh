@@ -5,9 +5,8 @@ set -euo pipefail
 # Usage: curl -fsSL https://raw.githubusercontent.com/trkbt10/indexion/main/install.sh | bash
 
 REPO="trkbt10/indexion"
-INSTALL_DIR="${INDEXION_INSTALL_DIR:-$HOME/.indexion}"
 
-# OS-standard data directory for kgfs (matches platform.mbt SoT)
+# OS-standard data directory (matches platform.mbt SoT)
 get_data_dir() {
     case "$(uname -s)" in
         Darwin*)
@@ -21,6 +20,32 @@ get_data_dir() {
             ;;
         *)
             echo "${XDG_DATA_HOME:-$HOME/.local/share}/indexion"
+            ;;
+    esac
+}
+
+# Installation directory for the binary
+# Linux: binary lives in data_dir, symlinked from ~/.local/bin
+# macOS/Windows: dedicated install directory
+get_install_dir() {
+    case "$(uname -s)" in
+        Linux*)
+            get_data_dir
+            ;;
+        *)
+            echo "${INDEXION_INSTALL_DIR:-$HOME/.indexion}"
+            ;;
+    esac
+}
+
+# Directory where the user-facing binary/symlink goes
+get_bin_dir() {
+    case "$(uname -s)" in
+        Linux*)
+            echo "$HOME/.local/bin"
+            ;;
+        *)
+            echo "$(get_install_dir)/bin"
             ;;
     esac
 }
@@ -144,16 +169,32 @@ main() {
         tar -xzf "$tmp_dir/archive.tar.gz" -C "$tmp_dir"
     fi
 
-    info "Installing to $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR/bin"
-
-    cp "$tmp_dir/$asset/$bin_name" "$INSTALL_DIR/bin/$bin_name"
-    if [[ "$is_windows" != true ]]; then
-        chmod +x "$INSTALL_DIR/bin/$bin_name"
-    fi
-
+    local install_dir=$(get_install_dir)
+    local bin_dir=$(get_bin_dir)
     local data_dir=$(get_data_dir)
+
+    info "Installing to $install_dir"
+    mkdir -p "$install_dir"
+    mkdir -p "$bin_dir"
     mkdir -p "$data_dir"
+
+    # Linux: binary + kgfs colocated in data_dir, symlink from ~/.local/bin
+    # macOS/Windows: binary in install_dir/bin, data in separate data_dir
+    case "$(uname -s)" in
+        Linux*)
+            cp "$tmp_dir/$asset/$bin_name" "$install_dir/$bin_name"
+            chmod +x "$install_dir/$bin_name"
+            ln -sf "$install_dir/$bin_name" "$bin_dir/$bin_name"
+            info "Symlinked $bin_dir/$bin_name -> $install_dir/$bin_name"
+            ;;
+        *)
+            mkdir -p "$install_dir/bin"
+            cp "$tmp_dir/$asset/$bin_name" "$install_dir/bin/$bin_name"
+            if [[ "$is_windows" != true ]]; then
+                chmod +x "$install_dir/bin/$bin_name"
+            fi
+            ;;
+    esac
 
     if [[ -d "$tmp_dir/$asset/kgfs" ]]; then
         rm -rf "$data_dir/kgfs"
@@ -167,11 +208,12 @@ main() {
         info "Wiki frontend installed to $data_dir/wiki"
     fi
 
-    if [[ ":$PATH:" != *":$INSTALL_DIR/bin:"* ]]; then
-        warn "$INSTALL_DIR/bin is not in PATH"
+    # PATH guidance: only needed when bin_dir is not already in PATH
+    if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
+        warn "$bin_dir is not in PATH"
         echo ""
         echo "Add to your shell profile:"
-        echo "  export PATH=\"\$HOME/.indexion/bin:\$PATH\""
+        echo "  export PATH=\"$bin_dir:\$PATH\""
         echo ""
     fi
 
