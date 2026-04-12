@@ -96,4 +96,26 @@ describe("buildWebviewHtml", () => {
     });
     expect(html).toContain('<div id="root"></div>');
   });
+
+  it("uses type=module for ESM script loading", () => {
+    const html = buildWebviewHtml({
+      webview: mockWebview,
+      scriptUri: mockUri("/app.js"),
+      styleUri: mockUri("/style.css"),
+      title: "Test",
+    });
+    expect(html).toContain('type="module"');
+    expect(html).toMatch(/<script type="module" nonce="[^"]+" src="[^"]+"><\/script>/);
+  });
+
+  it("includes cspSource in script-src for ESM chunk loading", () => {
+    const html = buildWebviewHtml({
+      webview: mockWebview,
+      scriptUri: mockUri("/app.js"),
+      styleUri: mockUri("/style.css"),
+      title: "Test",
+    });
+    // script-src must include both nonce (for entry) and cspSource (for imported chunks)
+    expect(html).toMatch(/script-src 'nonce-[^']+' https:\/\/test\.csp/);
+  });
 });

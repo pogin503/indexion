@@ -1,30 +1,36 @@
 /**
- * @file WebviewViewProvider for the Wiki sidebar panel.
+ * @file WebviewViewProvider for the Wiki sidebar navigation.
  *
- * A self-contained wiki viewer in the sidebar that combines:
- * - Navigation tree (from fetchWikiNav)
- * - Search bar (searchWiki)
- * - Content viewer (fetchWikiPage)
- *
- * Registered under the "indexionWiki" activity bar container,
- * giving Wiki its own dedicated icon in the activity bar.
+ * Shows a nav tree + search input. Page clicks open content
+ * in an editor-area WebviewPanel via the onNavigate callback.
  *
  * Uses the WebviewBridge handshake to avoid losing messages before
  * the React app has mounted.
  */
 
 import * as vscode from "vscode";
-import { fetchWikiNav, fetchWikiPage, searchWiki, type HttpClient } from "@indexion/api-client";
-import type { WikiToWebview, WikiFromWebview, WikiSearchHit } from "./messages.ts";
+import { fetchWikiNav, searchWiki, type HttpClient } from "@indexion/api-client";
+import type { WikiToWebview, WikiFromWebview } from "./messages.ts";
+import { toWikiSearchHits } from "./messages.ts";
 import { buildWebviewHtml } from "../../extension-host/webview-html.ts";
 import { createWebviewBridge } from "../../extension-host/webview-bridge.ts";
 
-/** Create the wiki WebviewViewProvider. */
+/** Callback invoked when the user selects a page in the sidebar. */
+export type WikiNavigateHandler = (pageId: string) => void;
+
+/** Options for creating the wiki sidebar provider. */
+type WikiViewProviderOptions = {
+  readonly extensionUri: vscode.Uri;
+  readonly getClient: () => HttpClient | undefined;
+  readonly onNavigate: WikiNavigateHandler;
+  readonly log?: { readonly appendLine: (msg: string) => void };
+};
+
+/** Create the wiki sidebar WebviewViewProvider. */
 export const createWikiViewProvider = (
-  extensionUri: vscode.Uri,
-  getClient: () => HttpClient | undefined,
-  log?: { readonly appendLine: (msg: string) => void },
+  options: WikiViewProviderOptions,
 ): vscode.WebviewViewProvider & { readonly notifyServerStatus: (ready: boolean) => void } => {
+  const { extensionUri, getClient, onNavigate, log } = options;
   const bridge = createWebviewBridge<WikiToWebview>();
 
   const loadNav = async (): Promise<void> => {
@@ -46,21 +52,6 @@ export const createWikiViewProvider = (
     bridge.post({ type: "navLoaded", nav: result.data });
   };
 
-  const loadPage = async (pageId: string): Promise<void> => {
-    const client = getClient();
-    if (!client) {
-      bridge.post({ type: "error", message: "Server not ready", target: "page" });
-      return;
-    }
-    bridge.post({ type: "loading", target: "page" });
-    const result = await fetchWikiPage(client, pageId);
-    if (!result.ok) {
-      bridge.post({ type: "error", message: result.error, target: "page" });
-      return;
-    }
-    bridge.post({ type: "pageLoaded", page: result.data });
-  };
-
   const handleSearch = async (query: string): Promise<void> => {
     const client = getClient();
     if (!client) {
@@ -73,16 +64,15 @@ export const createWikiViewProvider = (
       bridge.post({ type: "error", message: result.error, target: "search" });
       return;
     }
-    const hits: ReadonlyArray<WikiSearchHit> = (result.data as ReadonlyArray<Record<string, unknown>>).map((hit) => ({
-      id: String(hit["id"] ?? ""),
-      title: String(hit["title"] ?? hit["id"] ?? ""),
-      snippet: hit["snippet"] ? String(hit["snippet"]) : undefined,
-    }));
+    const hits = toWikiSearchHits(result.data as ReadonlyArray<Record<string, unknown>>);
     bridge.post({ type: "searchResults", results: hits });
   };
 
   return {
     notifyServerStatus: (ready: boolean) => {
+      log?.appendLine(
+        `[wiki] notifyServerStatus: ready=${ready}, bridgeReady=${bridge.isReady()}, bridgeAttached=${bridge.isAttached()}`,
+      );
       bridge.post({ type: "serverStatus", ready });
       if (ready && bridge.isReady()) {
         loadNav();
@@ -90,6 +80,7 @@ export const createWikiViewProvider = (
     },
 
     resolveWebviewView: (view: vscode.WebviewView) => {
+      log?.appendLine("[wiki] resolveWebviewView called");
       view.webview.options = {
         enableScripts: true,
         localResourceRoots: [vscode.Uri.joinPath(extensionUri, "dist", "webview")],
@@ -107,9 +98,10 @@ export const createWikiViewProvider = (
       });
 
       bridge.attach(view, () => {
-        // React app is mounted — send initial state and load nav
-        bridge.post({ type: "serverStatus", ready: getClient() !== undefined });
-        if (getClient()) {
+        const hasClient = getClient() !== undefined;
+        log?.appendLine(`[wiki] bridge onReady: hasClient=${hasClient}`);
+        bridge.post({ type: "serverStatus", ready: hasClient });
+        if (hasClient) {
           loadNav();
         }
       });
@@ -119,21 +111,10 @@ export const createWikiViewProvider = (
           loadNav();
         }
         if (msg.type === "navigate") {
-          loadPage(msg.pageId);
+          onNavigate(msg.pageId);
         }
         if (msg.type === "search") {
           handleSearch(msg.query);
-        }
-        if (msg.type === "openFile") {
-          const uri = vscode.Uri.file(msg.filePath);
-          vscode.workspace.openTextDocument(uri).then((doc) => {
-            const options: vscode.TextDocumentShowOptions = {};
-            if (msg.line !== undefined) {
-              const pos = new vscode.Position(Math.max(0, msg.line - 1), 0);
-              options.selection = new vscode.Range(pos, pos);
-            }
-            vscode.window.showTextDocument(doc, options);
-          });
         }
       });
     },

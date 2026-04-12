@@ -4,10 +4,9 @@
 
 import { describe, it, expect } from "vitest";
 import { createPlansProvider } from "./provider.ts";
-import { PLAN_TYPES } from "./items.ts";
 import type { PlanTreeItem } from "./items.ts";
 
-/** Create a mock globalState Memento compatible with vscode.Memento interface. */
+/** Create a mock globalState Memento. */
 const createMockState = (): import("vscode").Memento => {
   const store = new Map<string, unknown>();
   return {
@@ -21,26 +20,37 @@ const createMockState = (): import("vscode").Memento => {
   } as import("vscode").Memento;
 };
 
-/** Synchronous getChildren returns Array directly, but TS types it as ProviderResult. */
 const getChildren = (provider: ReturnType<typeof createPlansProvider>, element?: PlanTreeItem): Array<PlanTreeItem> =>
   provider.getChildren(element) as Array<PlanTreeItem>;
 
 describe("createPlansProvider", () => {
-  it("returns plan types at root level", () => {
+  it("returns categories at root level", () => {
     const provider = createPlansProvider(createMockState());
-    const children = getChildren(provider);
-    expect(children).toHaveLength(PLAN_TYPES.length);
-    for (const child of children) {
-      expect(child.type).toBe("planType");
+    const roots = getChildren(provider);
+    expect(roots.length).toBeGreaterThanOrEqual(2);
+    for (const root of roots) {
+      expect(root.type).toBe("category");
+    }
+  });
+
+  it("returns plan types as children of category", () => {
+    const provider = createPlansProvider(createMockState());
+    const roots = getChildren(provider);
+    const codeCategory = roots.find((r) => r.type === "category" && r.categoryId === "code");
+    expect(codeCategory).toBeDefined();
+    const plans = getChildren(provider, codeCategory!);
+    expect(plans.length).toBeGreaterThan(0);
+    for (const plan of plans) {
+      expect(plan.type).toBe("planType");
     }
   });
 
   it("returns empty history for plan type with no runs", () => {
     const provider = createPlansProvider(createMockState());
-    const root = getChildren(provider);
-    const refactorType = root.find((item) => item.type === "planType" && item.planTypeId === "refactor");
-    expect(refactorType).toBeDefined();
-    const history = getChildren(provider, refactorType!);
+    const roots = getChildren(provider);
+    const category = roots[0]!;
+    const plans = getChildren(provider, category);
+    const history = getChildren(provider, plans[0]!);
     expect(history).toHaveLength(0);
   });
 
@@ -49,25 +59,23 @@ describe("createPlansProvider", () => {
     state.update("indexion.planHistory", [
       { planType: "refactor", timestamp: 1000, title: "run 1" },
       { planType: "refactor", timestamp: 2000, title: "run 2" },
-      { planType: "documentation", timestamp: 3000, title: "doc run" },
     ]);
 
     const provider = createPlansProvider(state);
-    const root = getChildren(provider);
-    const refactorType = root.find((item) => item.type === "planType" && item.planTypeId === "refactor")!;
-    const refactorHistory = getChildren(provider, refactorType);
-    expect(refactorHistory).toHaveLength(2);
-    expect(refactorHistory[0]!.type).toBe("historyEntry");
-
-    const docType = root.find((item) => item.type === "planType" && item.planTypeId === "documentation")!;
-    const docHistory = getChildren(provider, docType);
-    expect(docHistory).toHaveLength(1);
+    const roots = getChildren(provider);
+    const codeCategory = roots.find((r) => r.type === "category" && r.categoryId === "code")!;
+    const plans = getChildren(provider, codeCategory);
+    const refactor = plans.find((p) => p.type === "planType" && p.planTypeId === "refactor")!;
+    const history = getChildren(provider, refactor);
+    expect(history).toHaveLength(2);
+    expect(history[0]!.type).toBe("historyEntry");
   });
 
   it("returns empty for history entry children", () => {
     const provider = createPlansProvider(createMockState());
     const historyItem: PlanTreeItem = {
       type: "historyEntry",
+      parentPlanTypeId: "refactor",
       entry: { planType: "refactor", timestamp: 1000, title: "test" },
     };
     expect(getChildren(provider, historyItem)).toHaveLength(0);

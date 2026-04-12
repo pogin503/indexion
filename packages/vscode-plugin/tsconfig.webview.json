@@ -12,8 +12,12 @@
     "noEmit": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
-    "types": []
+    "paths": {
+      "@indexion/api-client": ["../api-client/src/index.ts"]
+    },
+    "types": ["vitest/globals"]
   },
   "include": ["src/webview/**/*"]
 }

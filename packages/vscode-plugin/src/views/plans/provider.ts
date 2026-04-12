@@ -1,13 +1,15 @@
 /**
  * @file TreeDataProvider for the plans sidebar view.
  *
- * Shows plan types as top-level items with execution history as children.
- * Each plan type has an inline run button via contextValue + menus.
+ * Three-level hierarchy:
+ *   Category (Code Quality / Documentation)
+ *     └─ Plan Type (Find Duplication, Coverage, ...)
+ *         └─ History Entry (timestamp + title)
  */
 
 import * as vscode from "vscode";
 import type { PlanTreeItem } from "./items.ts";
-import { PLAN_TYPES, planTypeItem, toTreeItem } from "./items.ts";
+import { buildRootItems, buildCategoryChildren, toTreeItem } from "./items.ts";
 import { getHistoryForType } from "./history.ts";
 
 /** Create the plans TreeDataProvider. */
@@ -27,12 +29,18 @@ export const createPlansProvider = (
 
     getChildren: (element?: PlanTreeItem): Array<PlanTreeItem> => {
       if (!element) {
-        return [...PLAN_TYPES.map(planTypeItem)];
+        return [...buildRootItems()];
+      }
+
+      if (element.type === "category") {
+        return [...buildCategoryChildren(element.categoryId)];
       }
 
       if (element.type === "planType") {
         const history = getHistoryForType(globalState, element.planTypeId);
-        return [...history.map((entry) => ({ type: "historyEntry" as const, entry }))];
+        return [
+          ...history.map((entry) => ({ type: "historyEntry" as const, entry, parentPlanTypeId: element.planTypeId })),
+        ];
       }
 
       return [];

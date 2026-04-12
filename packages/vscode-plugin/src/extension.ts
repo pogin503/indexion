@@ -11,6 +11,7 @@ import { createSearchViewProvider } from "./views/search/provider.ts";
 import { createExploreViewProvider } from "./views/explore/provider.ts";
 import { createPlansProvider } from "./views/plans/provider.ts";
 import { createWikiViewProvider } from "./views/wiki/provider.ts";
+import { createWikiPagePanelManager } from "./panels/wiki-page/panel.ts";
 import { openSettingsPanel } from "./panels/settings/panel.ts";
 import { createServerManager, type ServerManager } from "./server/server.ts";
 import { setClientGetter } from "./server/client-accessor.ts";
@@ -64,19 +65,39 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
 
   // --- Search WebviewView ---
   const searchProvider = createSearchViewProvider(context.extensionUri, getClient);
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider("indexion.search", searchProvider));
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("indexion.search", searchProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+  );
 
   // --- Explore WebviewView ---
   const exploreProvider = createExploreViewProvider(context.extensionUri, getClient);
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider("indexion.explore", exploreProvider));
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("indexion.explore", exploreProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+  );
 
   // --- Plans TreeView ---
   const plansProvider = createPlansProvider(context.globalState);
   vscode.window.registerTreeDataProvider("indexion.plans", plansProvider);
 
-  // --- Wiki WebviewView (own activity bar icon) ---
-  const wikiProvider = createWikiViewProvider(context.extensionUri, getClient, log);
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider("indexion.wiki", wikiProvider));
+  // --- Wiki page panel (editor area) ---
+  const wikiPanelManager = createWikiPagePanelManager(context, getClient, log);
+
+  // --- Wiki sidebar (activity bar) ---
+  const wikiProvider = createWikiViewProvider({
+    extensionUri: context.extensionUri,
+    getClient,
+    onNavigate: (pageId) => wikiPanelManager.openPage(pageId),
+    log,
+  });
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("indexion.wiki", wikiProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+  );
 
   // --- Server ready hook: auto-refresh all data-dependent views ---
   if (state.server) {

@@ -221,9 +221,19 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "indexion",
-          "title": "indexion",
+          "id": "indexionSearch",
+          "title": "Search",
+          "icon": "media/search-dark.svg"
+        },
+        {
+          "id": "indexionAnalysis",
+          "title": "Analysis",
           "icon": "media/icon.svg"
+        },
+        {
+          "id": "indexionKgf",
+          "title": "Language Specs",
+          "icon": "media/kgf-dark.svg"
         },
         {
           "id": "indexionWiki",
@@ -233,24 +243,28 @@
       ]
     },
     "views": {
-      "indexion": [
+      "indexionSearch": [
         {
           "id": "indexion.search",
           "name": "Search",
           "type": "webview"
-        },
-        {
-          "id": "indexion.kgfList",
-          "name": "KGF Specs"
-        },
+        }
+      ],
+      "indexionAnalysis": [
         {
           "id": "indexion.explore",
-          "name": "Explore",
+          "name": "Similarity",
           "type": "webview"
         },
         {
           "id": "indexion.plans",
           "name": "Plans"
+        }
+      ],
+      "indexionKgf": [
+        {
+          "id": "indexion.kgfList",
+          "name": "Specs"
         }
       ],
       "indexionWiki": [
@@ -284,12 +298,15 @@
   },
   "dependencies": {
     "@indexion/api-client": "workspace:*",
+    "@vscode-elements/elements": "^2.5.1",
+    "marked": "^18.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/marked": "^6.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",

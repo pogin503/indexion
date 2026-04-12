@@ -1,10 +1,19 @@
 /**
- * @file Explore sidebar React component.
+ * @file Explore sidebar — uses @vscode-elements/elements.
  *
- * Provides threshold slider, strategy selector, directory picker,
- * and results list with diff-open support.
+ * Threshold slider, strategy selector, directory picker,
+ * and results displayed in <vscode-tree>.
  */
 
+import "@vscode-elements/elements/dist/vscode-textfield/index.js";
+import "@vscode-elements/elements/dist/vscode-button/index.js";
+import "@vscode-elements/elements/dist/vscode-single-select/index.js";
+import "@vscode-elements/elements/dist/vscode-option/index.js";
+import "@vscode-elements/elements/dist/vscode-tree/index.js";
+import "@vscode-elements/elements/dist/vscode-tree-item/index.js";
+import "@vscode-elements/elements/dist/vscode-icon/index.js";
+import "@vscode-elements/elements/dist/vscode-badge/index.js";
+import "@vscode-elements/elements/dist/vscode-label/index.js";
 import React, { useCallback, useState } from "react";
 import type { SimilarityPair, ComparisonStrategy } from "@indexion/api-client";
 import type { ExploreToWebview, ExploreFromWebview } from "../../views/explore/messages.ts";
@@ -74,221 +83,95 @@ export const ExploreApp = (): React.JSX.Element => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.controls}>
-        <div style={styles.field}>
-          <label style={styles.label}>Directory</label>
-          <div style={styles.dirRow}>
-            <input
-              type="text"
-              value={targetDir}
-              onChange={(e) => setTargetDir(e.target.value)}
-              style={styles.dirInput}
-              placeholder="Select directory..."
-              readOnly
-            />
-            <button type="button" onClick={handlePickDir} style={styles.smallButton}>
-              ...
-            </button>
-          </div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "4px" }}>
+      {/* Controls */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px",
+          padding: "4px 0",
+          borderBottom: "1px solid var(--vscode-panel-border)",
+        }}
+      >
+        <div style={{ display: "flex", gap: "4px" }}>
+          <vscode-textfield placeholder="Select directory..." value={targetDir} readonly style={{ flex: 1 }} />
+          <vscode-button onClick={handlePickDir} style={{ flexShrink: 0 }}>
+            ...
+          </vscode-button>
         </div>
 
-        <div style={styles.field}>
-          <label style={styles.label}>Threshold: {Math.round(threshold * 100)}%</label>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "0 2px" }}>
+          <vscode-label style={{ fontSize: "11px", flexShrink: 0 }}>
+            Threshold: {Math.round(threshold * 100)}%
+          </vscode-label>
           <input
             type="range"
             min={0}
             max={100}
             value={Math.round(threshold * 100)}
             onChange={(e) => setThreshold(Number(e.target.value) / 100)}
-            style={styles.slider}
+            style={{ flex: 1, accentColor: "var(--vscode-button-background)" }}
           />
         </div>
 
-        <div style={styles.field}>
-          <label style={styles.label}>Strategy</label>
-          <select
-            value={strategy}
-            onChange={(e) => setStrategy(e.target.value as ComparisonStrategy)}
-            style={styles.select}
-          >
-            {STRATEGIES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleRun}
-          disabled={!serverReady || !targetDir || searching}
-          style={styles.runButton}
+        <vscode-single-select
+          value={strategy}
+          onChange={(e: React.FormEvent) => setStrategy((e.target as HTMLSelectElement).value as ComparisonStrategy)}
         >
+          {STRATEGIES.map((s) => (
+            <vscode-option key={s} value={s}>
+              {s}
+            </vscode-option>
+          ))}
+        </vscode-single-select>
+
+        <vscode-button onClick={handleRun} disabled={!serverReady || !targetDir || searching || undefined}>
           {searching ? "Analyzing..." : "Run Explore"}
-        </button>
+        </vscode-button>
       </div>
 
-      {!serverReady && <div style={styles.status}>Server not ready...</div>}
-      {error && <div style={styles.error}>{error}</div>}
-
+      {/* Status */}
+      {!serverReady && <StatusMsg>Server not ready</StatusMsg>}
+      {error && <StatusMsg error>{error}</StatusMsg>}
       {pairs.length > 0 && (
-        <div style={styles.resultCount}>
+        <div style={{ padding: "2px 8px", fontSize: "11px", color: "var(--vscode-descriptionForeground)" }}>
           {pairs.length} pairs in {fileCount} files
         </div>
       )}
 
-      <div style={styles.results}>
-        {pairs.map((pair, i) => (
-          <button key={i} type="button" style={styles.resultItem} onClick={() => handleOpenDiff(pair)}>
-            <div style={styles.resultHeader}>
-              <span style={styles.score}>{Math.round(pair.similarity * 100)}%</span>
-              <span style={styles.fileName}>{basename(pair.file1)}</span>
-              <span style={styles.arrow}>&harr;</span>
-              <span style={styles.fileName}>{basename(pair.file2)}</span>
-            </div>
-            <div style={styles.resultPaths}>{pair.file1}</div>
-            <div style={styles.resultPaths}>{pair.file2}</div>
-          </button>
-        ))}
-      </div>
+      {/* Results */}
+      {pairs.length > 0 && (
+        <vscode-tree style={{ flex: 1, overflow: "auto" }}>
+          {pairs.map((pair, i) => (
+            <vscode-tree-item key={i} onClick={() => handleOpenDiff(pair)}>
+              <vscode-icon slot="icon-leaf" name="diff" />
+              {basename(pair.file1)} ↔ {basename(pair.file2)}
+              <vscode-badge slot="decoration">{Math.round(pair.similarity * 100)}%</vscode-badge>
+              <span slot="description">{pair.file1}</span>
+            </vscode-tree-item>
+          ))}
+        </vscode-tree>
+      )}
     </div>
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: "flex",
-    flexDirection: "column",
-    height: "100%",
-    fontFamily: "var(--vscode-font-family)",
-    color: "var(--vscode-foreground)",
-    fontSize: "13px",
-  },
-  controls: {
-    padding: "8px",
-    borderBottom: "1px solid var(--vscode-panel-border, #333)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-  },
-  label: {
-    fontSize: "11px",
-    color: "var(--vscode-descriptionForeground, #888)",
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.3px",
-  },
-  dirRow: {
-    display: "flex",
-    gap: "4px",
-  },
-  dirInput: {
-    flex: 1,
-    padding: "3px 6px",
-    background: "var(--vscode-input-background, #3c3c3c)",
-    color: "var(--vscode-input-foreground, #ccc)",
-    border: "1px solid var(--vscode-input-border, #555)",
-    borderRadius: "2px",
-    fontSize: "12px",
-    fontFamily: "var(--vscode-editor-font-family)",
-  },
-  smallButton: {
-    padding: "3px 8px",
-    background: "var(--vscode-button-secondaryBackground, #3a3d41)",
-    color: "var(--vscode-button-secondaryForeground, #ccc)",
-    border: "none",
-    borderRadius: "2px",
-    cursor: "pointer",
-    fontSize: "12px",
-  },
-  slider: {
-    width: "100%",
-    accentColor: "var(--vscode-button-background, #007acc)",
-  },
-  select: {
-    padding: "3px 6px",
-    background: "var(--vscode-dropdown-background, #3c3c3c)",
-    color: "var(--vscode-dropdown-foreground, #ccc)",
-    border: "1px solid var(--vscode-dropdown-border, #555)",
-    borderRadius: "2px",
-    fontSize: "12px",
-  },
-  runButton: {
-    padding: "6px 12px",
-    background: "var(--vscode-button-background, #007acc)",
-    color: "var(--vscode-button-foreground, #fff)",
-    border: "none",
-    borderRadius: "2px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: 500,
-  },
-  status: {
-    padding: "12px 8px",
-    textAlign: "center" as const,
-    color: "var(--vscode-descriptionForeground, #888)",
-    fontSize: "12px",
-  },
-  error: {
-    padding: "8px",
-    color: "var(--vscode-errorForeground, #f44)",
-    fontSize: "12px",
-  },
-  resultCount: {
-    padding: "4px 8px",
-    fontSize: "11px",
-    color: "var(--vscode-descriptionForeground, #888)",
-    borderBottom: "1px solid var(--vscode-panel-border, #333)",
-  },
-  results: {
-    flex: 1,
-    overflow: "auto",
-  },
-  resultItem: {
-    display: "block",
-    width: "100%",
-    textAlign: "left" as const,
-    padding: "6px 8px",
-    border: "none",
-    borderBottom: "1px solid var(--vscode-panel-border, #222)",
-    background: "transparent",
-    color: "inherit",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    fontSize: "inherit",
-  },
-  resultHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    flexWrap: "wrap" as const,
-  },
-  score: {
-    fontSize: "11px",
-    padding: "1px 4px",
-    borderRadius: "2px",
-    background: "var(--vscode-badge-background, #4d4d4d)",
-    color: "var(--vscode-badge-foreground, #fff)",
-    flexShrink: 0,
-  },
-  fileName: {
-    fontWeight: 500,
-  },
-  arrow: {
-    color: "var(--vscode-descriptionForeground, #888)",
-    fontSize: "11px",
-  },
-  resultPaths: {
-    fontSize: "11px",
-    color: "var(--vscode-descriptionForeground, #888)",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
-  },
-};
+const StatusMsg = ({
+  children,
+  error: isError,
+}: {
+  readonly children: React.ReactNode;
+  readonly error?: boolean;
+}): React.JSX.Element => (
+  <div
+    style={{
+      padding: "8px",
+      textAlign: "center",
+      fontSize: "12px",
+      color: isError ? "var(--vscode-errorForeground)" : "var(--vscode-descriptionForeground)",
+    }}
+  >
+    {children}
+  </div>
+);

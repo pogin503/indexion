@@ -44,13 +44,14 @@ export const buildWebviewHtml = (options: WebviewHtmlOptions): string => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${styleSrc}; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${styleSrc}; script-src 'nonce-${nonce}' ${options.webview.cspSource};">
   <link rel="stylesheet" href="${options.styleUri}">
   <title>${options.title}</title>
+  <style nonce="${nonce}">body{margin:0;padding:0;overflow:hidden}html,body,#root{height:100%;width:100%}</style>
 </head>
 <body>
   <div id="root"></div>
-  <script nonce="${nonce}" src="${options.scriptUri}"></script>
+  <script type="module" nonce="${nonce}" src="${options.scriptUri}"></script>
 </body>
 </html>`;
 };

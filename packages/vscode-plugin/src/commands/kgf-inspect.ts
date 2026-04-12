@@ -1,17 +1,44 @@
 /**
  * @file Command handlers for KGF inspection.
  *
- * Note: kgf add/update are mutating operations without serve endpoints.
- * Use the CLI directly for those operations.
+ * - From tree view (with specName): opens the .kgf spec file in the editor.
+ * - From command palette (no specName): tokenizes the active editor file.
  */
 
 import * as vscode from "vscode";
 import { tokenizeFile } from "@indexion/api-client";
 import { runWithProgress } from "./progress.ts";
 import { requireConfig } from "./plan-common.ts";
+import { resolveConfig } from "../config/index.ts";
 
-/** Execute KGF inspect on the active file (shows tokens). */
-export const executeKgfInspect = async (): Promise<void> => {
+/** Open a KGF spec file by name. Searches the specsDir recursively. */
+const openSpecFile = async (specName: string): Promise<void> => {
+  const config = resolveConfig();
+  if (!config) {
+    return;
+  }
+
+  const pattern = new vscode.RelativePattern(config.workspaceDir, `${config.specsDir}/**/${specName}.kgf`);
+  const files = await vscode.workspace.findFiles(pattern, null, 1);
+
+  if (files.length === 0) {
+    vscode.window.showWarningMessage(`KGF spec file not found: ${specName}.kgf`);
+    return;
+  }
+
+  const doc = await vscode.workspace.openTextDocument(files[0]!);
+  await vscode.window.showTextDocument(doc, { preview: true });
+};
+
+/** Execute KGF inspect. */
+export const executeKgfInspect = async (specName?: string): Promise<void> => {
+  // From tree view: open the spec file itself
+  if (specName) {
+    await openSpecFile(specName);
+    return;
+  }
+
+  // From command palette: tokenize the active file
   const resolved = requireConfig();
   if (!resolved) {
     return;
@@ -19,7 +46,7 @@ export const executeKgfInspect = async (): Promise<void> => {
 
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    vscode.window.showErrorMessage("No active file to inspect.");
+    vscode.window.showWarningMessage("No active file to inspect. Open a file first.");
     return;
   }
 

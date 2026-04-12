@@ -52,10 +52,13 @@ describe("package.json integrity", () => {
     expect(pkg.contributes.commands.length).toBeGreaterThan(0);
   });
 
-  it("declares indexion and wiki activity bar containers", () => {
+  it("declares all activity bar containers", () => {
     const containers = pkg.contributes.viewsContainers?.activitybar ?? [];
-    expect(containers.find((c) => c.id === "indexion")).toBeDefined();
-    expect(containers.find((c) => c.id === "indexionWiki")).toBeDefined();
+    const ids = containers.map((c: { id: string }) => c.id);
+    expect(ids).toContain("indexionSearch");
+    expect(ids).toContain("indexionAnalysis");
+    expect(ids).toContain("indexionKgf");
+    expect(ids).toContain("indexionWiki");
   });
 
   it("declares all sidebar views", () => {
