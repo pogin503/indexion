@@ -288,9 +288,11 @@ fn token_label(tok : @kgf_types.Tok, id_set : Map[String, Bool]) -> String {
 pub fn extract_function_trees(
   tokens : Array[@kgf_types.Tok],
   file : String,
+  content? : String = "",
+  registry? : @kgf_registry.KGFRegistry? = None,
   spec~ : @kgf_types.KGFSpec,
 ) -> Array[(ExtractedFunction, @apted.TreeNode)] {
-  let functions = extract_functions(tokens, file, spec~)
+  let functions = extract_functions(tokens, file, content~, registry~, spec~)
   let result : Array[(ExtractedFunction, @apted.TreeNode)] = []
   for func in functions {
     let tree = tokens_to_tree_node(tokens, func.start, func.end, spec~)

@@ -172,11 +172,13 @@ fn has_substring(s : String, sub : String) -> Bool {
 pub fn detect_proxy_functions(
   tokens : Array[@kgf_types.Tok],
   file : String,
+  content? : String = "",
+  registry? : @kgf_registry.KGFRegistry? = None,
   include_self_delegation? : Bool = false,
   include_bare_constructors? : Bool = false,
   spec~ : @kgf_types.KGFSpec,
 ) -> Array[ProxyFunction] {
-  let functions = extract_functions(tokens, file, spec~)
+  let functions = extract_functions(tokens, file, content~, registry~, spec~)
   let id_set = build_identifier_set(spec~)
   let allowed_kw = build_allowed_keywords(spec)
   let qualifier_set = build_qualifier_separator_set(spec)
@@ -596,6 +598,8 @@ pub fn detect_proxy_functions_from_file(
   detect_proxy_functions(
     tokens,
     path,
+    content~,
+    registry~,
     include_self_delegation~,
     include_bare_constructors~,
     spec~,
