@@ -87,27 +87,33 @@ fn discover_impl_files(
   if impl_path.length() == 0 || !file_exists(impl_path) {
     return []
   }
-  let result : Array[String] = []
+  let code_files : Array[String] = []
+  let doc_files : Array[String] = []
   if !path_is_dir(impl_path) {
     for file in @pipeline.load_supported_file_info([impl_path], registry) {
       if file.content_type is None {
-        result.push(file.path)
+        code_files.push(file.path)
+      } else {
+        doc_files.push(file.path)
       }
     }
-    result.sort()
-    return result
-  }
-  let kgf_ignore = registry.collect_ignore_patterns()
-  let discovered = @pipeline.collect_supported_file_info(
-    [impl_path],
-    @pipeline.DiscoverOptions::new(kgf_ignore~),
-    registry,
-  )
-  for file in discovered {
-    if file.content_type is None {
-      result.push(file.path)
+  } else {
+    let kgf_ignore = registry.collect_ignore_patterns()
+    let discovered = @pipeline.collect_supported_file_info(
+      [impl_path],
+      @pipeline.DiscoverOptions::new(kgf_ignore~),
+      registry,
+    )
+    for file in discovered {
+      if file.content_type is None {
+        code_files.push(file.path)
+      } else {
+        doc_files.push(file.path)
+      }
     }
   }
+  // Prefer code files; fall back to document files when no code is found
+  let result = if code_files.length() > 0 { code_files } else { doc_files }
   result.sort()
   result
 }
@@ -329,25 +335,53 @@ async fn collect_impl_data(
       path,
       Some(registry),
     )
-    let seen : Map[String, Bool] = {}
-    for declaration in kgf_declarations {
-      let key = declaration.name + "@" + declaration.line.to_string()
-      if seen.contains(key) {
-        continue
+    if kgf_declarations.length() > 0 {
+      let seen : Map[String, Bool] = {}
+      for declaration in kgf_declarations {
+        let key = declaration.name + "@" + declaration.line.to_string()
+        if seen.contains(key) {
+          continue
+        }
+        seen.set(key, true)
+        append_implementation_node(
+          implementations,
+          content,
+          path,
+          declaration.kind,
+          declaration.name,
+          declaration.line,
+          declaration.start_pos,
+          declaration.end_pos,
+          declaration.end_line,
+          doc_map,
+        )
       }
-      seen.set(key, true)
-      append_implementation_node(
-        implementations,
+    } else {
+      // Fallback: document files with no declares edges.
+      // Extract DocumentSections and create ImplementationNodes from headings.
+      let sections = @doc_structure.load_document_sections(
         content,
         path,
-        declaration.kind,
-        declaration.name,
-        declaration.line,
-        declaration.start_pos,
-        declaration.end_pos,
-        declaration.end_line,
-        doc_map,
+        Some(registry),
       )
+      for section in sections {
+        let title = section.title.trim().to_string()
+        if title.length() == 0 {
+          continue
+        }
+        let id = path + "::" + title
+        implementations.push({
+          id,
+          name: title,
+          kind: "section",
+          file: path,
+          start_line: section.line,
+          end_line: section.end_line,
+          signature: title,
+          declaration_text: section.content,
+          doc_comment: None,
+        })
+      }
     }
   }
   // Note: file-level implementation nodes were considered but removed.
