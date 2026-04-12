@@ -1,7 +1,8 @@
 /**
- * @file Search sidebar — uses @vscode-elements/elements.
+ * @file Search sidebar — semantic code search via digest index.
  *
- * <vscode-textfield> for input, <vscode-tree> for results.
+ * Searches functions by purpose description.
+ * Example: "parse configuration" finds functions that parse config files.
  */
 
 import "@vscode-elements/elements/dist/vscode-textfield/index.js";
@@ -17,6 +18,7 @@ export const SearchApp = (): React.JSX.Element => {
   const postMessage = usePostMessage<SearchFromWebview>();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ReadonlyArray<SearchResultItem>>([]);
+  const [searched, setSearched] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [serverReady, setServerReady] = useState(false);
@@ -25,6 +27,7 @@ export const SearchApp = (): React.JSX.Element => {
     if (message.type === "results") {
       setResults(message.items);
       setSearching(false);
+      setSearched(true);
       setError(null);
     }
     if (message.type === "searching") {
@@ -34,6 +37,7 @@ export const SearchApp = (): React.JSX.Element => {
     if (message.type === "error") {
       setError(message.message);
       setSearching(false);
+      setSearched(true);
     }
     if (message.type === "serverStatus") {
       setServerReady(message.ready);
@@ -51,6 +55,7 @@ export const SearchApp = (): React.JSX.Element => {
       if (e.key === "Escape") {
         setQuery("");
         setResults([]);
+        setSearched(false);
       }
     },
     [query, postMessage],
@@ -72,7 +77,7 @@ export const SearchApp = (): React.JSX.Element => {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <vscode-textfield
-        placeholder="Search by purpose..."
+        placeholder="Describe what you're looking for..."
         value={query}
         disabled={!serverReady || undefined}
         onInput={handleInput}
@@ -80,23 +85,35 @@ export const SearchApp = (): React.JSX.Element => {
         style={{ margin: 0 }}
       />
 
-      {!serverReady && !searching && <StatusMsg>Server not ready</StatusMsg>}
+      {!serverReady && !searching && <StatusMsg>Waiting for indexion server...</StatusMsg>}
+
+      {serverReady && !searching && !searched && (
+        <StatusMsg>Search functions by purpose. Enter a description and press Enter.</StatusMsg>
+      )}
+
       {searching && <StatusMsg>Searching...</StatusMsg>}
       {error && <StatusMsg error>{error}</StatusMsg>}
 
+      {searched && !searching && !error && results.length === 0 && <StatusMsg>No matching functions found.</StatusMsg>}
+
       {results.length > 0 && (
-        <vscode-tree style={{ flex: 1, overflow: "auto" }}>
-          {results.map((item, i) => (
-            <vscode-tree-item key={i} onClick={() => handleResultClick(item)}>
-              <vscode-icon slot="icon-leaf" name="symbol-method" />
-              {item.label}
-              <span slot="description">{item.description}</span>
-              {item.score !== undefined && (
-                <vscode-badge slot="decoration">{Math.round(item.score * 100)}%</vscode-badge>
-              )}
-            </vscode-tree-item>
-          ))}
-        </vscode-tree>
+        <>
+          <div style={{ padding: "2px 8px", fontSize: "11px", color: "var(--vscode-descriptionForeground)" }}>
+            {results.length} results
+          </div>
+          <vscode-tree style={{ flex: 1, overflow: "auto" }}>
+            {results.map((item, i) => (
+              <vscode-tree-item key={i} onClick={() => handleResultClick(item)}>
+                <vscode-icon slot="icon-leaf" name="symbol-method" />
+                {item.label}
+                <span slot="description">{item.description}</span>
+                {item.score !== undefined && (
+                  <vscode-badge slot="decoration">{Math.round(item.score * 100)}%</vscode-badge>
+                )}
+              </vscode-tree-item>
+            ))}
+          </vscode-tree>
+        </>
       )}
     </div>
   );

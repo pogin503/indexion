@@ -9,7 +9,7 @@ import "@vscode-elements/elements/dist/vscode-textfield/index.js";
 import "@vscode-elements/elements/dist/vscode-tree/index.js";
 import "@vscode-elements/elements/dist/vscode-tree-item/index.js";
 import "@vscode-elements/elements/dist/vscode-icon/index.js";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { WikiNavItem } from "@indexion/api-client";
 import type { WikiToWebview, WikiFromWebview, WikiSearchHit } from "../../views/wiki/messages.ts";
 import { usePostMessage, useWebviewMessage } from "../bridge/context.tsx";
@@ -19,30 +19,22 @@ import { usePostMessage, useWebviewMessage } from "../bridge/context.tsx";
 const NavTreeItem = ({
   item,
   activePageId,
-  onNavigate,
 }: {
   readonly item: WikiNavItem;
   readonly activePageId: string | null;
-  readonly onNavigate: (pageId: string) => void;
 }): React.JSX.Element => {
   const hasBranch = item.children.length > 0;
-  const handleClick = (e: React.MouseEvent): void => {
-    e.stopPropagation();
-    onNavigate(item.id);
-  };
   return (
     <vscode-tree-item
       branch={hasBranch || undefined}
       open={hasBranch || undefined}
       active={item.id === activePageId || undefined}
-      onClick={handleClick}
+      data-page-id={item.id}
     >
       <vscode-icon slot={hasBranch ? "icon-branch" : "icon-leaf"} name={hasBranch ? "folder" : "file"} />
       {item.title}
       {hasBranch &&
-        item.children.map((child) => (
-          <NavTreeItem key={child.id} item={child} activePageId={activePageId} onNavigate={onNavigate} />
-        ))}
+        item.children.map((child) => <NavTreeItem key={child.id} item={child} activePageId={activePageId} />)}
     </vscode-tree-item>
   );
 };
@@ -59,6 +51,7 @@ export const WikiPageApp = (): React.JSX.Element => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [serverReady, setServerReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const treeRef = useRef<HTMLElement>(null);
 
   useWebviewMessage<WikiToWebview>((msg) => {
     if (msg.type === "navLoaded") {
@@ -98,6 +91,27 @@ export const WikiPageApp = (): React.JSX.Element => {
     },
     [postMessage],
   );
+
+  // Listen for vsc-tree-select on the tree element via ref
+  useEffect(() => {
+    const el = treeRef.current;
+    if (!el) {
+      return;
+    }
+    const handler = (e: Event): void => {
+      const detail = (e as CustomEvent).detail;
+      const items = detail?.selectedItems as ReadonlyArray<HTMLElement> | undefined;
+      if (!items || items.length === 0) {
+        return;
+      }
+      const pageId = items[0]?.getAttribute("data-page-id");
+      if (pageId) {
+        handleNavigate(pageId);
+      }
+    };
+    el.addEventListener("vsc-tree-select", handler);
+    return () => el.removeEventListener("vsc-tree-select", handler);
+  }, [handleNavigate]);
 
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -155,9 +169,9 @@ export const WikiPageApp = (): React.JSX.Element => {
       {searchResults === null && !navLoading && !error && nav.length === 0 && <StatusMsg>No wiki pages</StatusMsg>}
 
       {searchResults === null && !navLoading && !error && nav.length > 0 && (
-        <vscode-tree style={{ flex: 1, overflow: "auto" }}>
+        <vscode-tree ref={treeRef} style={{ flex: 1, overflow: "auto" }}>
           {nav.map((item) => (
-            <NavTreeItem key={item.id} item={item} activePageId={activePageId} onNavigate={handleNavigate} />
+            <NavTreeItem key={item.id} item={item} activePageId={activePageId} />
           ))}
         </vscode-tree>
       )}

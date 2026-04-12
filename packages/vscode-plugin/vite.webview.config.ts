@@ -13,7 +13,6 @@ export default defineConfig({
         "plan-results": "src/webview/plan-results/app.tsx",
         search: "src/webview/search/app.tsx",
         explore: "src/webview/explore/app.tsx",
-        "wiki-page": "src/webview/wiki-page/app.tsx",
         "wiki-viewer": "src/webview/wiki-viewer/app.tsx",
       },
       output: {

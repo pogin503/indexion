@@ -131,6 +131,17 @@
         "icon": "$(book)"
       },
       {
+        "command": "indexion.wikiOpenPage",
+        "title": "Wiki: Open Page",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.wikiRefresh",
+        "title": "Wiki: Refresh",
+        "category": "indexion",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "indexion.planRun",
         "title": "Plan: Run",
         "category": "indexion",
@@ -198,6 +209,11 @@
           "command": "indexion.planClearHistory",
           "when": "view == indexion.plans",
           "group": "navigation"
+        },
+        {
+          "command": "indexion.wikiRefresh",
+          "when": "view == indexion.wiki",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -226,9 +242,14 @@
           "icon": "media/search-dark.svg"
         },
         {
-          "id": "indexionAnalysis",
-          "title": "Analysis",
+          "id": "indexionExplore",
+          "title": "Explore",
           "icon": "media/icon.svg"
+        },
+        {
+          "id": "indexionPlans",
+          "title": "Plans",
+          "icon": "media/plan-dark.svg"
         },
         {
           "id": "indexionKgf",
@@ -250,12 +271,14 @@
           "type": "webview"
         }
       ],
-      "indexionAnalysis": [
+      "indexionExplore": [
         {
           "id": "indexion.explore",
-          "name": "Similarity",
+          "name": "Similar Code",
           "type": "webview"
-        },
+        }
+      ],
+      "indexionPlans": [
         {
           "id": "indexion.plans",
           "name": "Plans"
@@ -270,8 +293,7 @@
       "indexionWiki": [
         {
           "id": "indexion.wiki",
-          "name": "Wiki",
-          "type": "webview"
+          "name": "Pages"
         }
       ]
     }

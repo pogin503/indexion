@@ -10,7 +10,7 @@ import { createKgfListProvider } from "./views/kgf-list/provider.ts";
 import { createSearchViewProvider } from "./views/search/provider.ts";
 import { createExploreViewProvider } from "./views/explore/provider.ts";
 import { createPlansProvider } from "./views/plans/provider.ts";
-import { createWikiViewProvider } from "./views/wiki/provider.ts";
+import { createWikiTreeProvider } from "./views/wiki/provider.ts";
 import { createWikiPagePanelManager } from "./panels/wiki-page/panel.ts";
 import { openSettingsPanel } from "./panels/settings/panel.ts";
 import { createServerManager, type ServerManager } from "./server/server.ts";
@@ -59,10 +59,6 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
   registerCommands(context);
   registerProviders(context, getClient);
 
-  // --- KGF Specs TreeView ---
-  const kgfListProvider = createKgfListProvider(getClient, log);
-  vscode.window.registerTreeDataProvider("indexion.kgfList", kgfListProvider);
-
   // --- Search WebviewView ---
   const searchProvider = createSearchViewProvider(context.extensionUri, getClient);
   context.subscriptions.push(
@@ -83,30 +79,25 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
   const plansProvider = createPlansProvider(context.globalState);
   vscode.window.registerTreeDataProvider("indexion.plans", plansProvider);
 
+  // --- KGF Specs TreeView ---
+  const kgfListProvider = createKgfListProvider(getClient, log);
+  vscode.window.registerTreeDataProvider("indexion.kgfList", kgfListProvider);
+
+  // --- Wiki TreeView (same pattern as KGF) ---
+  const wikiTreeProvider = createWikiTreeProvider(getClient, log);
+  vscode.window.registerTreeDataProvider("indexion.wiki", wikiTreeProvider);
+
   // --- Wiki page panel (editor area) ---
   const wikiPanelManager = createWikiPagePanelManager(context, getClient, log);
 
-  // --- Wiki sidebar (activity bar) ---
-  const wikiProvider = createWikiViewProvider({
-    extensionUri: context.extensionUri,
-    getClient,
-    onNavigate: (pageId) => wikiPanelManager.openPage(pageId),
-    log,
-  });
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("indexion.wiki", wikiProvider, {
-      webviewOptions: { retainContextWhenHidden: true },
-    }),
-  );
-
-  // --- Server ready hook: auto-refresh all data-dependent views ---
+  // --- Server ready hook ---
   if (state.server) {
     const onReady = () => {
       log.appendLine("[activate] server became ready, refreshing views");
       kgfListProvider.refresh();
+      wikiTreeProvider.refresh();
       searchProvider.notifyServerStatus(true);
       exploreProvider.notifyServerStatus(true);
-      wikiProvider.notifyServerStatus(true);
     };
 
     if (state.server.isReady()) {
@@ -120,21 +111,31 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
     }
   }
 
-  // --- Commands: KGF list refresh ---
+  // --- Commands ---
   context.subscriptions.push(
     vscode.commands.registerCommand("indexion.kgfList", () => {
       kgfListProvider.refresh();
     }),
   );
 
-  // --- Commands: Wiki (focus the sidebar view) ---
   context.subscriptions.push(
     vscode.commands.registerCommand("indexion.wikiOpen", () => {
       vscode.commands.executeCommand("indexion.wiki.focus");
     }),
   );
 
-  // --- Commands: Plan run (inline button on plan type items) ---
+  context.subscriptions.push(
+    vscode.commands.registerCommand("indexion.wikiOpenPage", (pageId: string) => {
+      wikiPanelManager.openPage(pageId);
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("indexion.wikiRefresh", () => {
+      wikiTreeProvider.refresh();
+    }),
+  );
+
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "indexion.planRun",
@@ -160,7 +161,6 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
     }),
   );
 
-  // --- Commands: Settings ---
   context.subscriptions.push(
     vscode.commands.registerCommand("indexion.openSettings", () => {
       openSettingsPanel(context);

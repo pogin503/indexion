@@ -56,7 +56,8 @@ describe("package.json integrity", () => {
     const containers = pkg.contributes.viewsContainers?.activitybar ?? [];
     const ids = containers.map((c: { id: string }) => c.id);
     expect(ids).toContain("indexionSearch");
-    expect(ids).toContain("indexionAnalysis");
+    expect(ids).toContain("indexionExplore");
+    expect(ids).toContain("indexionPlans");
     expect(ids).toContain("indexionKgf");
     expect(ids).toContain("indexionWiki");
   });
@@ -102,11 +103,11 @@ describe("activate", () => {
     const registeredTreeIds = registerTreeSpy.mock.calls.map((call) => call[0]);
     expect(registeredTreeIds).toContain("indexion.kgfList");
     expect(registeredTreeIds).toContain("indexion.plans");
+    expect(registeredTreeIds).toContain("indexion.wiki");
 
     const registeredWebviewIds = registerWebviewSpy.mock.calls.map((call) => call[0]);
     expect(registeredWebviewIds).toContain("indexion.search");
     expect(registeredWebviewIds).toContain("indexion.explore");
-    expect(registeredWebviewIds).toContain("indexion.wiki");
 
     registerTreeSpy.mockRestore();
     registerWebviewSpy.mockRestore();

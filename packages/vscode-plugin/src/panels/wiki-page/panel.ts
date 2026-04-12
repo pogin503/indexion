@@ -148,6 +148,7 @@ export const createWikiPagePanelManager = (
 
   return {
     openPage: (pageId: string) => {
+      log?.appendLine(`[wiki-page] openPage: ${pageId}`);
       ensurePanel();
       loadPage(pageId);
     },
