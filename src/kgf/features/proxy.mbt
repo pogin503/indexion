@@ -170,15 +170,32 @@ fn has_substring(s : String, sub : String) -> Bool {
 /// constructors (no qualifier) as these are intentional API design patterns.
 /// Set `include_self_delegation` or `include_bare_constructors` to include them.
 pub fn detect_proxy_functions(
-  tokens : Array[@kgf_types.Tok],
+  content : String,
   file : String,
-  content? : String = "",
-  registry? : @kgf_registry.KGFRegistry? = None,
+  registry : @kgf_registry.KGFRegistry?,
   include_self_delegation? : Bool = false,
   include_bare_constructors? : Bool = false,
   spec~ : @kgf_types.KGFSpec,
 ) -> Array[ProxyFunction] {
-  let functions = extract_functions(tokens, file, content~, registry~, spec~)
+  // Get all declarations from parse events (visibility-independent)
+  let all_decls = @kgf_declarations.extract_all_declarations_from_events(
+    content, file, registry,
+  )
+  // Filter to function declarations
+  let functions : Array[ExtractedFunction] = []
+  for decl in all_decls {
+    if decl.category == "function" &&
+      decl.start_tok >= 0 &&
+      decl.end_tok > decl.start_tok {
+      functions.push(
+        ExtractedFunction::new(decl.name, decl.start_tok, decl.end_tok, file),
+      )
+    }
+  }
+  // Tokenize with the same preprocessed content that the parser used
+  let prepared = preprocess_content(content, spec)
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(prepared)
   let id_set = build_identifier_set(spec~)
   let allowed_kw = build_allowed_keywords(spec)
   let qualifier_set = build_qualifier_separator_set(spec)
@@ -593,13 +610,10 @@ pub fn detect_proxy_functions_from_file(
     Some(s) => s
     None => return []
   }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
   detect_proxy_functions(
-    tokens,
+    content,
     path,
-    content~,
-    registry~,
+    registry,
     include_self_delegation~,
     include_bare_constructors~,
     spec~,

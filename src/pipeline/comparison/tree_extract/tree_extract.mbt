@@ -27,8 +27,10 @@ pub fn extract(
   let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
   let kgf_tokens = lexer.tokenize(content)
   let funcs = @kgf_features.extract_function_trees(
-    kgf_tokens,
+    content,
     display_name,
+    kgf_tokens,
+    registry,
     spec~,
   )
   if funcs.is_empty() {

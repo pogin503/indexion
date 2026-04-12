@@ -15,19 +15,7 @@ pub fn extract_code_documents(
       Some(t) => t
       None => continue
     }
-    let spec = match registry {
-      Some(r) =>
-        match r.detect_from_path(path) {
-          Some(lang) => r.get_spec(lang)
-          None => None
-        }
-      None => None
-    }
-    let s = match spec {
-      Some(s) => s
-      None => continue
-    }
-    let functions = @kgf_features.extract_functions(tokens, path, spec=s)
+    let functions = @kgf_features.extract_functions(content, path, registry)
     let token_lines = build_token_lines(tokens)
     let lines = @common.split_lines(content)
     for func in functions {

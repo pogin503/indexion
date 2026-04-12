@@ -82,14 +82,14 @@ pub fn run_semantic_query_on_file(
       match spec {
         Some(s) =>
           match query {
-            Proxy => query_proxy(tokens, path, spec=s)
+            Proxy => query_proxy(content, path, registry, spec=s)
             Short(n) =>
-              query_by_length(tokens, path, content, max_lines=n, spec=s)
+              query_by_length(tokens, path, content, registry, max_lines=n)
             Long(n) =>
-              query_by_length(tokens, path, content, min_lines=n, spec=s)
-            ParamsGte(n) => query_by_params(tokens, path, min_params=n, spec=s)
+              query_by_length(tokens, path, content, registry, min_lines=n)
+            ParamsGte(n) => query_by_params(tokens, path, content, registry, min_params=n)
             NameContains(substr) =>
-              query_name_contains(tokens, path, substr, spec=s)
+              query_name_contains(tokens, path, content, registry, substr)
             _ => []
           }
         None => []
@@ -100,11 +100,12 @@ pub fn run_semantic_query_on_file(
 ///|
 /// Find proxy functions using the existing detect_proxy_functions API.
 fn query_proxy(
-  tokens : Array[@kgf_types.Tok],
+  content : String,
   path : String,
+  registry : @kgf_registry.KGFRegistry?,
   spec~ : @kgf_types.KGFSpec,
 ) -> Array[SemanticMatch] {
-  let proxies = @kgf_features.detect_proxy_functions(tokens, path, spec~)
+  let proxies = @kgf_features.detect_proxy_functions(content, path, registry, spec~)
   let results : Array[SemanticMatch] = []
   for p in proxies {
     results.push({
@@ -124,11 +125,11 @@ fn query_by_length(
   tokens : Array[@kgf_types.Tok],
   path : String,
   content : String,
+  registry : @kgf_registry.KGFRegistry?,
   max_lines? : Int = -1,
   min_lines? : Int = -1,
-  spec~ : @kgf_types.KGFSpec,
 ) -> Array[SemanticMatch] {
-  let functions = @kgf_features.extract_functions(tokens, path, spec~)
+  let functions = @kgf_features.extract_functions(content, path, registry)
   let token_lines = build_token_lines(tokens)
   let total_lines = @common.count_lines(content)
   let results : Array[SemanticMatch] = []
@@ -170,10 +171,11 @@ fn query_by_length(
 fn query_by_params(
   tokens : Array[@kgf_types.Tok],
   path : String,
+  content : String,
+  registry : @kgf_registry.KGFRegistry?,
   min_params? : Int = 0,
-  spec~ : @kgf_types.KGFSpec,
 ) -> Array[SemanticMatch] {
-  let functions = @kgf_features.extract_functions(tokens, path, spec~)
+  let functions = @kgf_features.extract_functions(content, path, registry)
   let token_lines = build_token_lines(tokens)
   let results : Array[SemanticMatch] = []
   for func in functions {
@@ -273,10 +275,11 @@ fn query_undocumented(
 fn query_name_contains(
   tokens : Array[@kgf_types.Tok],
   path : String,
+  content : String,
+  registry : @kgf_registry.KGFRegistry?,
   substr : String,
-  spec~ : @kgf_types.KGFSpec,
 ) -> Array[SemanticMatch] {
-  let functions = @kgf_features.extract_functions(tokens, path, spec~)
+  let functions = @kgf_features.extract_functions(content, path, registry)
   let token_lines = build_token_lines(tokens)
   let results : Array[SemanticMatch] = []
   for func in functions {

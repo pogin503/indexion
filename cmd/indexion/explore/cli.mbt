@@ -698,8 +698,10 @@ fn calculate_function_pairs(
             let tokens = lexer.tokenize(content)
             // Extract functions and convert to TreeNodes
             let func_trees = @kgf_features.extract_function_trees(
-              tokens,
+              content,
               path,
+              tokens,
+              registry,
               spec~,
             )
             for ft in func_trees {

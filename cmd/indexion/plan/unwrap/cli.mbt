@@ -219,24 +219,10 @@ fn build_report_plan(
     })
   }
   let mut total_functions = 0
-  match registry {
-    Some(reg) =>
-      for file in files {
-        let (path, content) = file
-        let lang = match reg.detect_from_path(path) {
-          Some(l) => l
-          None => continue
-        }
-        let spec = match reg.get_spec(lang) {
-          Some(s) => s
-          None => continue
-        }
-        let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-        let tokens = lexer.tokenize(content)
-        let funcs = @kgf_features.extract_functions(tokens, path, spec~)
-        total_functions += funcs.length()
-      }
-    None => ()
+  for file in files {
+    let (path, content) = file
+    let funcs = @kgf_features.extract_functions(content, path, registry)
+    total_functions += funcs.length()
   }
   build_plan(config, candidates, files.length(), total_functions)
 }

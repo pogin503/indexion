@@ -130,9 +130,10 @@ test "proxy: def_start_line includes doc comment" {
       "simple_proxy.mbt",
       Some(registry),
     )
-    // First function starts at line 2 (fn), but ///| is at line 1
+    // Grammar-based extraction: FnDecl span includes DocBlock,
+    // so line and def_start_line both point to the doc comment.
     assert_eq(proxies[0].def_start_line, 1)
-    assert_eq(proxies[0].line, 2)
+    assert_eq(proxies[0].line, 1)
     // Definition ends at line 4 (closing brace)
     assert_eq(proxies[0].def_end_line, 4)
   }

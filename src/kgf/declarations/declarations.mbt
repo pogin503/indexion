@@ -280,6 +280,136 @@ pub fn extract_pub_declarations_and_doc_map(
 }
 
 ///|
+/// Extract all declarations from parse events, regardless of visibility.
+/// Uses KGF attrs metadata + parse events only (no semantics evaluation).
+///
+/// The attrs section maps grammar rules to `def` actions with id and kind.
+/// Parse events provide the token ranges. This captures both public and
+/// private declarations — consumers filter by kind (e.g. function_kinds).
+pub fn extract_all_declarations_from_events(
+  content : String,
+  path : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[PubDeclaration] {
+  let reg = match registry {
+    Some(r) => r
+    None => return []
+  }
+  let lang = match reg.detect_from_path(path) {
+    Some(l) => l
+    None => return []
+  }
+  let spec = match reg.get_spec(lang) {
+    Some(s) => s
+    None => return []
+  }
+  // Build mapping from attrs: rule_name → (id_field_name, kind_value)
+  // for all rules with a `def` action
+  let def_rules : Map[String, (String, String)] = {}
+  for entry in spec.get_attrs() {
+    let rule_name = entry.0
+    let actions = entry.1
+    for action in actions {
+      if action.get_kind() == "def" {
+        let id_field = action.get_param("id").unwrap_or("")
+        let kind_value = action.get_param("kind").unwrap_or("")
+        if id_field.length() > 0 {
+          def_rules.set(rule_name, (id_field, kind_value))
+        }
+      }
+    }
+  }
+  if def_rules.is_empty() {
+    return []
+  }
+  // Determine function_kinds for category assignment
+  let function_kinds : Map[String, Bool] = {}
+  match spec.get_feature("function_kinds") {
+    Some(kinds) =>
+      for kind in kinds {
+        function_kinds.set(kind, true)
+      }
+    None => ()
+  }
+  // Tokenize and parse
+  let prepared = preprocess_content(content, spec)
+  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(prepared)
+  let peg = @kgf_peg.build_peg(spec) catch { _ => return [] }
+  let start_rule = spec.get_start_rule()
+  let parse_result = match @kgf_peg.run_parse(peg, spec, start_rule, tokens) {
+    Some(r) => r
+    None => return []
+  }
+  let line_offsets = build_line_offsets(prepared)
+  let result : Array[PubDeclaration] = []
+  // Scan parse events for rules with def actions
+  for event in parse_result.get_events() {
+    let rule_name = event.0
+    let labels = event.1
+    match def_rules.get(rule_name) {
+      None => continue
+      Some((id_field, kind_value)) => {
+        let name = match labels.get(id_field + "_text") {
+          Some(String(s)) => s
+          _ =>
+            match labels.get(id_field) {
+              Some(String(s)) => s
+              _ => continue
+            }
+        }
+        if name.length() == 0 {
+          continue
+        }
+        let start_tok = match event_token_index(labels, "_start_tok") {
+          Some(value) => value
+          None => continue
+        }
+        let end_tok = match event_token_index(labels, "_end_tok") {
+          Some(value) => value
+          None => continue
+        }
+        if start_tok < 0 || end_tok <= start_tok || start_tok >= tokens.length() {
+          continue
+        }
+        // Calculate line numbers from token positions
+        let start_pos = tokens[start_tok].get_pos()
+        let last_tok_index = if end_tok - 1 < tokens.length() {
+          end_tok - 1
+        } else {
+          tokens.length() - 1
+        }
+        let end_pos = tokens[last_tok_index].get_pos() +
+          tokens[last_tok_index].get_text().length()
+        let line = line_for_char_offset(line_offsets, start_pos)
+        let end_line = if end_pos > start_pos {
+          line_for_char_offset(line_offsets, end_pos - 1)
+        } else {
+          line
+        }
+        let category = if function_kinds.contains(kind_value) {
+          "function"
+        } else {
+          "type"
+        }
+        result.push({
+          kind: to_lower_str(kind_value),
+          name,
+          line,
+          start_pos,
+          end_pos,
+          category,
+          end_line,
+          start_tok,
+          end_tok,
+        })
+      }
+    }
+  }
+  result
+}
+
+///|
 pub fn count_pub_declarations(
   content : String,
   path : String,
