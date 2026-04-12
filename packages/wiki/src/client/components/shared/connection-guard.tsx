@@ -10,10 +10,12 @@ import {
 import { LoadingSpinner } from "./loading-spinner.tsx";
 import { ConnectionErrorState } from "./connection-error-state.tsx";
 import { OnboardingState } from "./onboarding-state.tsx";
+import { useDict } from "../../i18n/index.ts";
 
 type GuardStatus = "checking" | "no-connection" | "no-data" | "ready";
 
 export const ConnectionGuard = (): React.JSX.Element => {
+  const d = useDict();
   const [status, setStatus] = useState<GuardStatus>(
     isStaticMode ? "ready" : "checking",
   );
@@ -66,7 +68,7 @@ export const ConnectionGuard = (): React.JSX.Element => {
 
   switch (status) {
     case "checking":
-      return <LoadingSpinner message="Connecting to server..." />;
+      return <LoadingSpinner message={d.connecting} />;
     case "no-connection":
       return <ConnectionErrorState onRetry={handleRetry} retrying={retrying} />;
     case "no-data":

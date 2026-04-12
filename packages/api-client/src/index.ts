@@ -23,6 +23,8 @@ export type {
   KgfToken,
   KgfEdge,
   ServerConfig,
+  Branding,
+  BrandingColorSet,
   ComparisonStrategy,
   DocGraphFormat,
 } from "./types.ts";

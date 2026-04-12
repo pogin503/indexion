@@ -11,12 +11,14 @@ import { MermaidDiagram } from "../../../components/shared/mermaid-diagram.tsx";
 import { KgfCodeBlock } from "../../../components/shared/kgf-code-block.tsx";
 import { SourceBadge } from "./source-badge.tsx";
 import type { WikiPage } from "@indexion/api-client";
+import { useDict } from "../../../i18n/index.ts";
 
 type Props = {
   readonly page: WikiPage;
 };
 
 export const WikiContent = ({ page }: Props): React.JSX.Element => {
+  const d = useDict();
   const renderPre = useCallback(
     (
       props: React.HTMLAttributes<HTMLPreElement> & {
@@ -78,7 +80,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
       {page.sources.length > 0 && (
         <details className="mb-4">
           <summary className="cursor-pointer text-xs text-muted-foreground">
-            Relevant source files
+            {d.wiki_source_files}
           </summary>
           <div className="mt-2 flex flex-wrap gap-2">
             {page.sources.map((src) => (
@@ -88,7 +90,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
         </details>
       )}
 
-      <div className="prose prose-invert max-w-none prose-headings:scroll-mt-16 prose-pre:p-0 prose-pre:bg-transparent">
+      <div className="prose dark:prose-invert max-w-none prose-headings:scroll-mt-16 prose-pre:p-0 prose-pre:bg-transparent">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeSlug]}

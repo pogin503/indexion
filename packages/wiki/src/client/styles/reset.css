@@ -63,6 +63,48 @@ code, pre {
   font-family: var(--font-mono);
 }
 
+/* Inline SVG logos: inherit size from container and use currentColor */
+[role="img"] > svg {
+  height: 100%;
+  width: auto;
+}
+
+/*
+ * Light theme overrides — activated by BrandingProvider adding class="light"
+ * to <html>. The @theme block above provides dark defaults; these CSS
+ * variables are overridden at runtime by branding-context.tsx, but this
+ * block ensures a correct light appearance even before JS hydrates.
+ */
+html.light {
+  --color-background: oklch(0.985 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(0.985 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-popover: oklch(0.985 0 0);
+  --color-popover-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-secondary: oklch(0.93 0 0);
+  --color-secondary-foreground: oklch(0.145 0 0);
+  --color-muted: oklch(0.93 0 0);
+  --color-muted-foreground: oklch(0.45 0 0);
+  --color-accent: oklch(0.93 0 0);
+  --color-accent-foreground: oklch(0.145 0 0);
+  --color-destructive: oklch(0.396 0.141 25.723);
+  --color-destructive-foreground: oklch(0.985 0 0);
+  --color-border: oklch(0.88 0 0);
+  --color-input: oklch(0.88 0 0);
+  --color-ring: oklch(0.556 0 0);
+  --color-sidebar-background: oklch(0.97 0 0);
+  --color-sidebar-foreground: oklch(0.45 0 0);
+  --color-sidebar-primary: oklch(0.205 0 0);
+  --color-sidebar-primary-foreground: oklch(0.985 0 0);
+  --color-sidebar-accent: oklch(0.93 0 0);
+  --color-sidebar-accent-foreground: oklch(0.145 0 0);
+  --color-sidebar-border: oklch(0.88 0 0);
+  --color-sidebar-ring: oklch(0.556 0 0);
+}
+
 /* Ensure prose code blocks and tables don't overflow the viewport */
 .prose pre,
 .prose table {

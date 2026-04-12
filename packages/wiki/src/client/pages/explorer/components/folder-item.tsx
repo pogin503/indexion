@@ -9,6 +9,7 @@ import {
 import { cn } from "../../../lib/utils.ts";
 import type { FolderEntry, SymEntry } from "../explorer-types.ts";
 import { FileItem } from "./file-item.tsx";
+import { useDict } from "../../../i18n/index.ts";
 
 type Props = {
   readonly folder: FolderEntry;
@@ -21,6 +22,7 @@ export const FolderItem = ({
   depth,
   onSelectSym,
 }: Props): React.JSX.Element => {
+  const d = useDict();
   const [open, setOpen] = useState(depth < 1);
   const totalSyms = folder.files.reduce((s, f) => s + f.symbols.length, 0);
 
@@ -42,11 +44,11 @@ export const FolderItem = ({
           <div className="ml-auto flex items-center gap-1.5">
             {totalSyms > 0 && (
               <Badge variant="secondary" className="text-[10px]">
-                {totalSyms} sym
+                {d.badge_sym(totalSyms)}
               </Badge>
             )}
             <Badge variant="outline" className="text-[10px]">
-              {folder.files.length} files
+              {d.badge_files(folder.files.length)}
             </Badge>
           </div>
         </button>

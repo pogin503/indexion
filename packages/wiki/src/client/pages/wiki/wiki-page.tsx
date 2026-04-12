@@ -15,9 +15,11 @@ import { WikiContent } from "./components/wiki-content.tsx";
 import { WikiToc } from "./components/wiki-toc.tsx";
 import { useWikiNav, useWikiPage } from "./lib/wiki-hooks.ts";
 import { cn } from "../../lib/utils.ts";
+import { useDict } from "../../i18n/index.ts";
 
 export const WikiPage = (): React.JSX.Element => {
   const params = useParams();
+  const d = useDict();
   const pageId = params["*"] || "overview";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -25,13 +27,13 @@ export const WikiPage = (): React.JSX.Element => {
   const pageState = useWikiPage(pageId);
 
   if (navState.status === "loading") {
-    return <LoadingSpinner message="Loading wiki..." />;
+    return <LoadingSpinner message={d.loading_wiki} />;
   }
   if (navState.status === "error") {
     return <ErrorPanel message={navState.error} />;
   }
   if (navState.status !== "success") {
-    return <LoadingSpinner message="Loading wiki..." />;
+    return <LoadingSpinner message={d.loading_wiki} />;
   }
 
   return (
@@ -57,7 +59,7 @@ export const WikiPage = (): React.JSX.Element => {
               mobileNavOpen && "rotate-180",
             )}
           />
-          Pages
+          {d.wiki_pages_button}
         </button>
         {mobileNavOpen && (
           <div className="max-h-64 overflow-y-auto border-b md:hidden">
@@ -86,14 +88,15 @@ type PaneProps = {
 };
 
 const WikiContentPane = ({ pageState }: PaneProps): React.JSX.Element => {
+  const d = useDict();
   if (pageState.status === "loading") {
-    return <LoadingSpinner message="Loading page..." />;
+    return <LoadingSpinner message={d.loading_page} />;
   }
   if (pageState.status === "error") {
     return <ErrorPanel message={pageState.error} />;
   }
   if (pageState.status !== "success") {
-    return <LoadingSpinner message="Loading page..." />;
+    return <LoadingSpinner message={d.loading_page} />;
   }
   return <WikiContent page={pageState.data} />;
 };

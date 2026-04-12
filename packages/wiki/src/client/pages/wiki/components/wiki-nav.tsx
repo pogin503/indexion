@@ -8,6 +8,7 @@ import { ChevronRight } from "lucide-react";
 import { ScrollArea } from "../../../components/ui/scroll-area.tsx";
 import { cn } from "../../../lib/utils.ts";
 import type { WikiNavItem } from "@indexion/api-client";
+import { useDict } from "../../../i18n/index.ts";
 
 type Props = {
   readonly items: ReadonlyArray<WikiNavItem>;
@@ -16,13 +17,14 @@ type Props = {
 
 export const WikiNav = ({ items, onNavigate }: Props): React.JSX.Element => {
   const params = useParams();
+  const d = useDict();
   const activeId = params["*"] || "overview";
 
   return (
     <ScrollArea className="h-full border-r">
       <div className="p-3">
         <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Wiki
+          {d.wiki_nav_heading}
         </h2>
         <nav className="space-y-0.5">
           {items.map((item) => (

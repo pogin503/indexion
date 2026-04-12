@@ -34,3 +34,22 @@ strategy = "hnsw"
 # api_key_env = "OPENAI_API_KEY"  # env var name for API key
 # api_base_url = "https://api.openai.com/v1/embeddings"
 # model = "text-embedding-3-small"
+
+[wiki]
+title = "indexion DeepWiki"
+logo_url = "logo.svg"                 # resolved to /api/wiki/assets/logo.svg
+logo_alt = "indexion"
+default_color_scheme = "system"
+locale = "auto"
+
+# [wiki.colors.dark]
+# background = "oklch(0.145 0 0)"
+# foreground = "oklch(0.985 0 0)"
+# primary = "oklch(0.985 0 0)"
+# accent = "oklch(0.269 0 0)"
+
+# [wiki.colors.light]
+# background = "oklch(0.985 0 0)"
+# foreground = "oklch(0.145 0 0)"
+# primary = "oklch(0.205 0 0)"
+# accent = "oklch(0.93 0 0)"

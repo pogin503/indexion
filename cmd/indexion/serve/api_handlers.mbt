@@ -541,5 +541,6 @@ fn build_config_json(config : ServeConfig) -> String {
       None => Json::null()
     },
   )
+  obj.set("branding", config.wiki_config.to_branding_json())
   Json::object(obj).stringify()
 }

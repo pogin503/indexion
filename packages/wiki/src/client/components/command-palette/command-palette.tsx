@@ -15,6 +15,7 @@ import {
   type IndexedFunction,
   type WikiNav,
 } from "@indexion/api-client";
+import { useDict } from "../../i18n/index.ts";
 
 type Props = {
   readonly open: boolean;
@@ -46,6 +47,7 @@ export const CommandPalette = ({
 }: Props): React.JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
+  const d = useDict();
   const scope = detectScope(location.pathname);
 
   const [query, setQuery] = useState("");
@@ -246,28 +248,28 @@ export const CommandPalette = ({
             onValueChange={setQuery}
             placeholder={
               scope === "wiki"
-                ? "Search wiki pages..."
-                : "Search symbols or by purpose..."
+                ? d.search_wiki_placeholder
+                : d.search_code_placeholder
             }
             className="h-11 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
           <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            {scope === "wiki" ? "Wiki" : "Code"}
+            {scope === "wiki" ? d.nav_wiki : d.search_group_symbols}
           </span>
         </div>
 
         <Command.List className="max-h-80 overflow-y-auto p-1">
           {query.trim() && !hasResults && (
             <Command.Empty className="p-4 text-center text-sm text-muted-foreground">
-              No results found.
+              {d.search_no_results}
             </Command.Empty>
           )}
 
           {/* Wiki scope results */}
           {wikiResults.length > 0 && (
-            <Command.Group heading="Wiki Pages">
+            <Command.Group heading={d.search_group_wiki}>
               <div className="px-1 py-1 text-xs font-semibold text-muted-foreground">
-                Wiki Pages
+                {d.search_group_wiki}
               </div>
               {wikiResults.map((hit, i) => (
                 <Command.Item
@@ -295,9 +297,9 @@ export const CommandPalette = ({
 
           {/* Explorer scope: symbols */}
           {symbolResults.length > 0 && (
-            <Command.Group heading="Symbols">
+            <Command.Group heading={d.search_group_symbols}>
               <div className="px-1 py-1 text-xs font-semibold text-muted-foreground">
-                Symbols
+                {d.search_group_symbols}
               </div>
               {symbolResults.map((sym) => (
                 <Command.Item
@@ -320,9 +322,9 @@ export const CommandPalette = ({
 
           {/* Explorer scope: semantic */}
           {semanticResults.length > 0 && (
-            <Command.Group heading="By Purpose">
+            <Command.Group heading={d.search_group_purpose}>
               <div className="px-1 py-1 text-xs font-semibold text-muted-foreground">
-                By Purpose
+                {d.search_group_purpose}
               </div>
               {semanticResults.map((r, i) => (
                 <Command.Item
@@ -348,9 +350,9 @@ export const CommandPalette = ({
         </Command.List>
 
         <div className="flex items-center justify-between border-t px-3 py-1.5 text-xs text-muted-foreground">
-          <span>↑↓ Navigate</span>
-          <span>↵ Open</span>
-          <span>Esc Close</span>
+          <span>{d.search_hint_navigate}</span>
+          <span>{d.search_hint_open}</span>
+          <span>{d.search_hint_close}</span>
         </div>
       </div>
     </Command.Dialog>

@@ -13,8 +13,10 @@ import {
 import type { FolderNode } from "./graph-types.ts";
 import { buildTree } from "./graph-data.ts";
 import { buildScene } from "./graph-scene.ts";
+import { useDict } from "../../i18n/index.ts";
 
 export const GraphPage = (): React.JSX.Element => {
+  const d = useDict();
   const graphState = useApiCall((signal) => fetchGraph(client, signal));
   const indexState = useApiCall((signal) => fetchDigestIndex(client, signal));
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,35 +56,37 @@ export const GraphPage = (): React.JSX.Element => {
     null;
 
   if (loading) {
-    return <LoadingSpinner message="Loading graph data..." />;
+    return <LoadingSpinner message={d.loading_graph} />;
   }
   if (error) {
     return <ErrorPanel message={error} />;
   }
 
+  const active = hovered ?? focused;
+
   return (
     <div className="relative grid h-full grid-rows-[auto_1fr]">
       <div className="flex items-center border-b px-4 py-2">
         <span className="text-sm text-muted-foreground">
-          {tree
-            ? `${tree.nodes.size} folders \u00b7 ${tree.edges.length} dependencies`
-            : ""}
+          {tree ? d.graph_stats(tree.nodes.size, tree.edges.length) : ""}
         </span>
       </div>
-      {(hovered ?? focused) && (
+      {active && (
         <Card className="pointer-events-none absolute right-4 top-14 z-10 max-w-xs">
           <CardHeader className="p-3">
             <CardTitle className="font-mono text-sm">
-              {(hovered ?? focused)!.path}
+              {active.path}
             </CardTitle>
             <CardDescription className="font-mono">
-              {(hovered ?? focused)!.fileCount} files &middot;{" "}
-              {(hovered ?? focused)!.symbolCount} symbols &middot;{" "}
-              {(hovered ?? focused)!.functionCount} fn
+              {d.graph_detail(
+                active.fileCount,
+                active.symbolCount,
+                active.functionCount,
+              )}
             </CardDescription>
-            {(hovered ?? focused)!.children.length > 0 && (
+            {active.children.length > 0 && (
               <CardDescription>
-                {(hovered ?? focused)!.children.length} subdirectories
+                {d.graph_subdirs(active.children.length)}
               </CardDescription>
             )}
           </CardHeader>

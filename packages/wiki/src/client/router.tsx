@@ -30,7 +30,7 @@ const fullRoutes = [
   {
     index: true,
     element: (
-      <Suspense fallback={<LoadingSpinner message="Loading..." />}>
+      <Suspense fallback={<LoadingSpinner />}>
         <ExplorerPage />
       </Suspense>
     ),
@@ -38,7 +38,7 @@ const fullRoutes = [
   {
     path: "graph",
     element: (
-      <Suspense fallback={<LoadingSpinner message="Loading 3D graph..." />}>
+      <Suspense fallback={<LoadingSpinner />}>
         <GraphPage />
       </Suspense>
     ),
@@ -46,7 +46,7 @@ const fullRoutes = [
   {
     path: "wiki/*",
     element: (
-      <Suspense fallback={<LoadingSpinner message="Loading wiki..." />}>
+      <Suspense fallback={<LoadingSpinner />}>
         <WikiPage />
       </Suspense>
     ),
@@ -65,7 +65,7 @@ const staticRoutes = [
   {
     index: true,
     element: (
-      <Suspense fallback={<LoadingSpinner message="Loading..." />}>
+      <Suspense fallback={<LoadingSpinner />}>
         <ExplorerPage />
       </Suspense>
     ),
@@ -73,7 +73,7 @@ const staticRoutes = [
   {
     path: "wiki/*",
     element: (
-      <Suspense fallback={<LoadingSpinner message="Loading wiki..." />}>
+      <Suspense fallback={<LoadingSpinner />}>
         <WikiPage />
       </Suspense>
     ),

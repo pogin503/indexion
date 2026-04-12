@@ -11,6 +11,7 @@ pub struct GlobalConfig {
   embedding : EmbeddingFileConfig
   mcp : McpFileConfig
   doc : DocFileConfig
+  wiki : WikiFileConfig
 } derive(Eq, Show)
 
 ///|
@@ -23,6 +24,7 @@ pub fn GlobalConfig::empty() -> GlobalConfig {
     embedding: EmbeddingFileConfig::empty(),
     mcp: McpFileConfig::empty(),
     doc: DocFileConfig::empty(),
+    wiki: WikiFileConfig::empty(),
   }
 }
 
@@ -90,6 +92,31 @@ pub fn parse_global_toml_config(content : String) -> GlobalConfig {
       config = { ..config, mcp: parse_mcp_section_key(config.mcp, key, value) }
     } else if section == "doc" {
       config = { ..config, doc: parse_doc_section_key(config.doc, key, value) }
+    } else if section == "wiki" {
+      config = {
+        ..config,
+        wiki: parse_wiki_section_key(config.wiki, key, value),
+      }
+    } else if section == "wiki.colors.dark" {
+      config = {
+        ..config,
+        wiki: {
+          ..config.wiki,
+          colors_dark: parse_wiki_color_key(config.wiki.colors_dark, key, value),
+        },
+      }
+    } else if section == "wiki.colors.light" {
+      config = {
+        ..config,
+        wiki: {
+          ..config.wiki,
+          colors_light: parse_wiki_color_key(
+            config.wiki.colors_light,
+            key,
+            value,
+          ),
+        },
+      }
     } else {
       let (reconcile, digest) = parse_shared_toml_sections(
         config.reconcile,

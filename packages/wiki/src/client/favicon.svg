@@ -1,4 +1,4 @@
-<!-- SoT: components/shared/logo.tsx (IX_PATHS). Dark bg variant for favicon. -->
+<!-- Favicon: dark background variant of the ix glyph. -->
 <svg width="32" height="32" viewBox="0 0 208 290" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="208" height="290" rx="16" fill="#161b22"/>
 <path d="M71 289.28V0H207.96V289.28H71ZM150.872 234.752H201.048V220.16H186.712L150.104 176.896L185.688 135.424H199V120.832H153.432V135.424H167L140.632 167.68L115.032 135.424H130.392V120.832H78.424V135.424H93.784L129.88 177.92L94.04 220.16H78.424V234.752H125.784V220.16H112.216L139.096 187.392L165.72 220.16H150.872V234.752Z" fill="white"/>

@@ -12,6 +12,7 @@ import {
 } from "@indexion/api-client";
 import { LoadingSpinner } from "../../components/shared/loading-spinner.tsx";
 import { ErrorPanel } from "../../components/shared/error-panel.tsx";
+import { useDict } from "../../i18n/index.ts";
 import { ScrollArea } from "../../components/ui/scroll-area.tsx";
 import type { FolderEntry, SymEntry } from "./explorer-types.ts";
 import { buildFolderTree, filterTree } from "./explorer-tree-builder.ts";
@@ -22,6 +23,7 @@ import { ExplorerGraph2D } from "./explorer-graph-2d.tsx";
 import { FunctionDetail } from "./components/function-detail.tsx";
 
 export const ExplorerPage = (): React.JSX.Element => {
+  const d = useDict();
   const [searchParams] = useSearchParams();
   const graphState = useCachedApiCall<CodeGraph>(CacheKey.digest.graph, () =>
     fetchGraph(client),
@@ -78,7 +80,7 @@ export const ExplorerPage = (): React.JSX.Element => {
     null;
 
   if (loading) {
-    return <LoadingSpinner message="Loading..." />;
+    return <LoadingSpinner message={d.loading} />;
   }
   if (error) {
     return <ErrorPanel message={error} />;

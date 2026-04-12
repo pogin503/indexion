@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import type { IndexedFunction } from "@indexion/api-client";
 import { ScrollArea } from "../../components/ui/scroll-area.tsx";
 import { kindTextClass } from "../../lib/kind-colors.ts";
+import { useDict } from "../../i18n/index.ts";
 
 type SortKey = "name" | "kind" | "module" | "depth" | "callers" | "callees";
 type SortDir = "asc" | "desc";
@@ -17,6 +18,7 @@ export const ExplorerTableView = ({
   filter,
   onSelectFn,
 }: Props): React.JSX.Element => {
+  const d = useDict();
   const [sortKey, setSortKey] = useState<SortKey>("module");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -72,24 +74,24 @@ export const ExplorerTableView = ({
             <tr className="text-xs text-muted-foreground">
               {(
                 [
-                  ["name", "Name"],
-                  ["kind", "Kind"],
-                  ["module", "Module"],
-                  ["depth", "Depth"],
-                  ["callers", "In"],
-                  ["callees", "Out"],
+                  ["name", d.col_name],
+                  ["kind", d.col_kind],
+                  ["module", d.col_module],
+                  ["depth", d.col_depth],
+                  ["callers", d.col_in],
+                  ["callees", d.col_out],
                 ] as const
               ).map(([key, label]) => (
                 <th
                   key={key}
                   className="cursor-pointer select-none px-4 py-2 font-medium hover:text-foreground"
-                  onClick={() => handleSort(key)}
+                  onClick={() => handleSort(key as SortKey)}
                 >
                   {label}
-                  {arrow(key)}
+                  {arrow(key as SortKey)}
                 </th>
               ))}
-              <th className="px-4 py-2 font-medium">Doc</th>
+              <th className="px-4 py-2 font-medium">{d.col_doc}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">

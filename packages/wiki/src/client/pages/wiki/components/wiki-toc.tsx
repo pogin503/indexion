@@ -5,12 +5,15 @@
 import { ScrollArea } from "../../../components/ui/scroll-area.tsx";
 import { cn } from "../../../lib/utils.ts";
 import type { WikiHeading } from "@indexion/api-client";
+import { useDict } from "../../../i18n/index.ts";
 
 type Props = {
   readonly headings: ReadonlyArray<WikiHeading>;
 };
 
 export const WikiToc = ({ headings }: Props): React.JSX.Element | null => {
+  const d = useDict();
+
   if (headings.length === 0) {
     return null;
   }
@@ -19,7 +22,7 @@ export const WikiToc = ({ headings }: Props): React.JSX.Element | null => {
     <ScrollArea className="h-full border-l">
       <div className="p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          On this page
+          {d.wiki_toc_heading}
         </h3>
         <nav className="space-y-1">
           {headings.map((h, i) => (

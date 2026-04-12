@@ -125,6 +125,25 @@ export type KgfEdge = {
 
 // --- Config ---
 
+export type BrandingColorSet = {
+  readonly background: string | null;
+  readonly foreground: string | null;
+  readonly primary: string | null;
+  readonly accent: string | null;
+};
+
+export type Branding = {
+  readonly title: string | null;
+  readonly defaultColorScheme: string | null;
+  readonly locale: string | null;
+  readonly logoUrl: string | null;
+  readonly logoAlt: string | null;
+  readonly colors: {
+    readonly dark: BrandingColorSet;
+    readonly light: BrandingColorSet;
+  };
+};
+
 export type ServerConfig = {
   readonly workspaceDir: string;
   readonly specsDir: string;
@@ -132,6 +151,7 @@ export type ServerConfig = {
   readonly configDir: string | null;
   readonly dataDir: string | null;
   readonly cacheDir: string | null;
+  readonly branding: Branding;
 };
 
 // --- Enums (string literal unions for API parameters) ---

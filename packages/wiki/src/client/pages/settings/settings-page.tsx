@@ -27,6 +27,7 @@ import { Button } from "../../components/ui/button.tsx";
 import { Badge } from "../../components/ui/badge.tsx";
 import { ScrollArea } from "../../components/ui/scroll-area.tsx";
 import { cn } from "../../lib/utils.ts";
+import { useDict } from "../../i18n/index.ts";
 
 type DigestStats = {
   readonly indexDirectory: string;
@@ -38,6 +39,7 @@ type DigestStats = {
 };
 
 export const SettingsPage = (): React.JSX.Element => {
+  const d = useDict();
   const configState = useApiCall((signal) => fetchConfig(client, signal));
   const statsState = useApiCall((signal) =>
     fetchDigestStats<DigestStats>(client, signal),
@@ -62,7 +64,7 @@ export const SettingsPage = (): React.JSX.Element => {
       <div className="mx-auto max-w-2xl space-y-6 p-6">
         <div className="flex items-center gap-2">
           <Settings2 className="size-5 text-muted-foreground" />
-          <h1 className="text-lg font-semibold">Settings</h1>
+          <h1 className="text-lg font-semibold">{d.settings_heading}</h1>
         </div>
 
         {/* Server Config */}
@@ -70,7 +72,7 @@ export const SettingsPage = (): React.JSX.Element => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
               <Server className="size-4" />
-              Server Configuration
+              {d.settings_server_config}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -80,14 +82,16 @@ export const SettingsPage = (): React.JSX.Element => {
             )}
             {configState.status === "success" && (
               <dl className="space-y-2 text-sm">
-                {Object.entries(configState.data).map(([key, value]) => (
-                  <div key={key} className="flex items-baseline gap-2">
-                    <dt className="min-w-32 text-muted-foreground">{key}</dt>
-                    <dd className="break-all font-mono text-xs">
-                      {String(value ?? "—")}
-                    </dd>
-                  </div>
-                ))}
+                {Object.entries(configState.data)
+                  .filter(([key]) => key !== "branding")
+                  .map(([key, value]) => (
+                    <div key={key} className="flex items-baseline gap-2">
+                      <dt className="min-w-32 text-muted-foreground">{key}</dt>
+                      <dd className="break-all font-mono text-xs">
+                        {String(value ?? "\u2014")}
+                      </dd>
+                    </div>
+                  ))}
               </dl>
             )}
           </CardContent>
@@ -98,7 +102,7 @@ export const SettingsPage = (): React.JSX.Element => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
               <Database className="size-4" />
-              Index Statistics
+              {d.settings_index_stats}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -110,25 +114,27 @@ export const SettingsPage = (): React.JSX.Element => {
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">
-                    {statsState.data.totalSymbols} symbols
+                    {d.settings_symbols(statsState.data.totalSymbols)}
                   </Badge>
                   <Badge variant="outline">
-                    {statsState.data.totalModules} modules
+                    {d.settings_modules(statsState.data.totalModules)}
                   </Badge>
                   <Badge variant="outline">
-                    {statsState.data.totalEdges} edges
+                    {d.settings_edges(statsState.data.totalEdges)}
                   </Badge>
                 </div>
                 <dl className="space-y-2 text-sm">
                   <div className="flex items-baseline gap-2">
-                    <dt className="min-w-32 text-muted-foreground">Provider</dt>
+                    <dt className="min-w-32 text-muted-foreground">
+                      {d.settings_provider}
+                    </dt>
                     <dd className="font-mono text-xs">
                       {statsState.data.provider}
                     </dd>
                   </div>
                   <div className="flex items-baseline gap-2">
                     <dt className="min-w-32 text-muted-foreground">
-                      Embedding Dim
+                      {d.settings_dim}
                     </dt>
                     <dd className="font-mono text-xs">
                       {statsState.data.embeddingDim}
@@ -136,7 +142,7 @@ export const SettingsPage = (): React.JSX.Element => {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <dt className="min-w-32 text-muted-foreground">
-                      Index Directory
+                      {d.settings_index_dir}
                     </dt>
                     <dd className="break-all font-mono text-xs">
                       {statsState.data.indexDirectory}
@@ -152,11 +158,10 @@ export const SettingsPage = (): React.JSX.Element => {
         {!isStaticMode && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Rebuild Index</CardTitle>
-              <CardDescription>
-                Re-analyze source files, rebuild the code graph, and update the
-                search index.
-              </CardDescription>
+              <CardTitle className="text-sm">
+                {d.settings_rebuild_title}
+              </CardTitle>
+              <CardDescription>{d.settings_rebuild_desc}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
@@ -171,13 +176,13 @@ export const SettingsPage = (): React.JSX.Element => {
                     )}
                   />
                   {rebuildState.status === "loading"
-                    ? "Rebuilding..."
-                    : "Rebuild"}
+                    ? d.settings_rebuilding
+                    : d.settings_rebuild_button}
                 </Button>
                 {rebuildState.status === "success" && (
                   <span className="flex items-center gap-1 text-sm text-green-400">
                     <CheckCircle2 className="size-3.5" />
-                    {rebuildState.data.functions} functions indexed
+                    {d.settings_rebuild_done(rebuildState.data.functions)}
                   </span>
                 )}
                 {rebuildState.status === "error" && (

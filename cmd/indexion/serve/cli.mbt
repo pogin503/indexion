@@ -21,6 +21,7 @@ pub struct ServeConfig {
   api_base_url : String
   model : String
   watch_stdin : Bool
+  wiki_config : @config.WikiFileConfig
 }
 
 ///|
@@ -40,6 +41,7 @@ pub fn ServeConfig::default() -> ServeConfig {
     api_base_url: @dconfig.DEFAULT_API_BASE_URL,
     model: @dconfig.DEFAULT_EMBEDDING_MODEL,
     watch_stdin: false,
+    wiki_config: @config.WikiFileConfig::empty(),
   }
 }
 
@@ -268,9 +270,11 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     _ => ()
   }
   let embed_file_config = @digest_cli.load_embedding_file_config()
+  let wiki_file_config = @config.load_effective_wiki_config(".indexion.toml")
   let merged = ServeConfig::from_matches(matches).apply_embedding_file_config(
     embed_file_config,
   )
+  let merged = { ..merged, wiki_config: wiki_file_config }
   let resolved_index_dir : String? = if merged.index_dir ==
     @dconfig.DEFAULT_INDEX_DIR {
     @config.resolve_project_indexion_dir(merged.workspace_dir, "digest")
@@ -495,6 +499,24 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         let body_data = body.read_all()
         let body_text = body_data.text()
         handle_plan_readme(conn, body_text, config, cors_enabled)
+        return
+      }
+      // Wiki assets — serve files from .indexion/wiki/assets/
+      if req.meth == @mhttp.Get &&
+        path.has_prefix("/api/wiki/assets/") {
+        conn.skip_request_body()
+        let asset_path = @config.substring_from(path, "/api/wiki/assets/".length())
+        let wiki_assets_dir = match @config.resolve_project_indexion_dir(
+          config.workspace_dir,
+          "wiki/assets",
+        ) {
+          Some(dir) => dir
+          None => {
+            send_json_error(conn, 404, "Not Found", cors_enabled)
+            return
+          }
+        }
+        serve_static(conn, wiki_assets_dir, "/" + asset_path)
         return
       }
       // Static file serving
