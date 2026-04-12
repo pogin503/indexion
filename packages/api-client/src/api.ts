@@ -10,12 +10,14 @@ import type {
   ApiResponse,
   CodeGraph,
   DigestMatch,
+  GrepMatch,
   ServerConfig,
   ExploreResult,
   IndexedFunction,
   KgfEdge,
   KgfSpecInfo,
   KgfToken,
+  SearchHit,
   WikiNav,
   WikiPage,
 } from "./types.ts";
@@ -100,6 +102,44 @@ export const runExplore = (
   signal?: AbortSignal,
 ): Promise<ApiResponse<ExploreResult>> =>
   client.post<ExploreResult>("/explore", body, signal);
+
+// --- Search ---
+
+export type SearchRequest = {
+  readonly query: string;
+  readonly paths?: ReadonlyArray<string>;
+  readonly topK?: number;
+  readonly minScore?: number;
+  readonly includes?: ReadonlyArray<string>;
+  readonly excludes?: ReadonlyArray<string>;
+  readonly filter?: string;
+  readonly provider?: string;
+};
+
+export const runSearch = (
+  client: HttpClient,
+  body: SearchRequest,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ReadonlyArray<SearchHit>>> =>
+  client.post<ReadonlyArray<SearchHit>>("/search", body, signal);
+
+// --- Grep ---
+
+export type GrepRequest = {
+  readonly pattern?: string;
+  readonly paths?: ReadonlyArray<string>;
+  readonly includes?: ReadonlyArray<string>;
+  readonly excludes?: ReadonlyArray<string>;
+  readonly semantic?: string;
+  readonly undocumented?: boolean;
+};
+
+export const runGrep = (
+  client: HttpClient,
+  body: GrepRequest,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ReadonlyArray<GrepMatch>>> =>
+  client.post<ReadonlyArray<GrepMatch>>("/grep", body, signal);
 
 // --- KGF ---
 

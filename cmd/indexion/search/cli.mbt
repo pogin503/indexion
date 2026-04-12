@@ -15,7 +15,7 @@
 /// ```
 
 ///|
-pub struct SearchConfig {
+pub(all) struct SearchConfig {
   query : String
   paths : Array[String]
   top_k : Int
@@ -134,6 +134,59 @@ pub fn command() -> @argparse.Command {
       ),
     ],
   )
+}
+
+///|
+/// Run search and return results as JSON string.
+/// For use by `indexion serve` API endpoint.
+pub async fn run_to_json(config : SearchConfig) -> String? {
+  if config.query.length() == 0 {
+    return None
+  }
+  let paths = if config.paths.is_empty() { ["."] } else { config.paths }
+  // Pre-built wiki index path
+  match load_prebuilt_wiki_index(paths) {
+    Some(wiki_idx) => {
+      let wiki_hits = wiki_idx.search(
+        config.query,
+        top_k=config.top_k,
+        min_score=config.min_score,
+      ) catch {
+        _ => []
+      }
+      let hits = wiki_hits_to_search_hits(wiki_hits)
+      return Some(hits_to_json(hits))
+    }
+    None => ()
+  }
+  let documents = build_corpus(paths, config)
+  if documents.is_empty() {
+    return Some("[]")
+  }
+  let provider = @embed_config.resolve_provider(
+    config.provider_name,
+    config.api_key_env,
+    config.base_url,
+    config.model,
+    config.dim,
+  ) catch {
+    _ => return None
+  }
+  let engine = @search_engine.build_index(documents, provider) catch {
+    _ => return None
+  }
+  let filter = parse_filter(config.filter_str)
+  let hits = @search_engine.search_index(
+    engine,
+    config.query,
+    provider,
+    config.top_k,
+    config.min_score,
+    filter~,
+  ) catch {
+    _ => return None
+  }
+  Some(hits_to_json(hits))
 }
 
 ///|

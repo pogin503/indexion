@@ -407,6 +407,20 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         handle_wiki_search(conn, body_text, state.wiki_search, cors_enabled)
         return
       }
+      // Search endpoint
+      if req.meth == @mhttp.Post && path == "/api/search" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_search(conn, body_text, config, cors_enabled)
+        return
+      }
+      // Grep endpoint
+      if req.meth == @mhttp.Post && path == "/api/grep" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_grep(conn, body_text, config, cors_enabled)
+        return
+      }
       // Explore endpoint
       if req.meth == @mhttp.Post && path == "/api/explore" {
         let body_data = body.read_all()

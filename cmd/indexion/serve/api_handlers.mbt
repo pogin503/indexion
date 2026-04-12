@@ -514,6 +514,103 @@ async fn handle_plan_readme(
 }
 
 ///|
+async fn handle_search(
+  conn : @mhttp.ServerConnection,
+  body_text : String,
+  config : ServeConfig,
+  cors : Bool,
+) -> Unit {
+  let json : Json = @json.parse(body_text) catch {
+    _ => {
+      send_json_error(conn, 400, "Invalid JSON body", cors)
+      return
+    }
+  }
+  let query = json_string(json, "query", "")
+  if query.length() == 0 {
+    send_json_error(conn, 400, "query is required", cors)
+    return
+  }
+  let paths = json_string_array(json, "paths")
+  let effective_paths = if paths.length() > 0 {
+    for p in paths {
+      if !validate_path(p) {
+        send_json_error(conn, 400, "Invalid path", cors)
+        return
+      }
+    }
+    paths
+  } else {
+    [config.workspace_dir]
+  }
+  let search_config : @search_cli.SearchConfig = {
+    query,
+    paths: effective_paths,
+    top_k: json_double(json, "topK", 20.0).to_int(),
+    min_score: json_double(json, "minScore", 0.05),
+    includes: json_string_array(json, "includes"),
+    excludes: json_string_array(json, "excludes"),
+    specs_dir: config.specs_dir,
+    files_only: false,
+    json_output: true,
+    filter_str: json_string(json, "filter", ""),
+    provider_name: json_string(json, "provider", "tfidf"),
+    api_key_env: @embed_config.DEFAULT_API_KEY_ENV,
+    model: @embed_config.DEFAULT_EMBEDDING_MODEL,
+    base_url: @embed_config.DEFAULT_API_BASE_URL,
+    dim: @embed_config.DEFAULT_TFIDF_DIM,
+  }
+  match @search_cli.run_to_json(search_config) {
+    Some(result) => send_json_ok(conn, result, cors)
+    None => send_json_error(conn, 500, "Search failed", cors)
+  }
+}
+
+///|
+async fn handle_grep(
+  conn : @mhttp.ServerConnection,
+  body_text : String,
+  config : ServeConfig,
+  cors : Bool,
+) -> Unit {
+  let json : Json = @json.parse(body_text) catch {
+    _ => {
+      send_json_error(conn, 400, "Invalid JSON body", cors)
+      return
+    }
+  }
+  let grep_config : @grep_cli.GrepConfig = {
+    pattern: json_string(json, "pattern", ""),
+    paths: {
+      let p = json_string_array(json, "paths")
+      if p.length() > 0 {
+        for dir in p {
+          if !validate_path(dir) {
+            send_json_error(conn, 400, "Invalid path", cors)
+            return
+          }
+        }
+        p
+      } else {
+        [config.workspace_dir]
+      }
+    },
+    includes: json_string_array(json, "includes"),
+    excludes: json_string_array(json, "excludes"),
+    specs_dir: config.specs_dir,
+    semantic: json_string(json, "semantic", ""),
+    undocumented: json_bool(json, "undocumented", false),
+    context_lines: 0,
+    count_only: false,
+    files_only: false,
+  }
+  match @grep_cli.run_to_json(grep_config) {
+    Some(result) => send_json_ok(conn, result, cors)
+    None => send_json_error(conn, 400, "Pattern or semantic query required", cors)
+  }
+}
+
+///|
 /// Build readonly config JSON from ServeConfig.
 fn build_config_json(config : ServeConfig) -> String {
   let obj : Map[String, Json] = {}

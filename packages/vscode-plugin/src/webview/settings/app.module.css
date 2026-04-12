@@ -1,0 +1,48 @@
+/**
+ * @file Styles for the settings panel app.
+ */
+
+.container {
+  padding: 16px;
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  max-width: 600px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--vscode-widget-border, #444);
+  padding-bottom: 0;
+}
+
+.tab {
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+}
+
+.tabActive {
+  border-bottom-color: var(--vscode-focusBorder, #007acc);
+  color: var(--vscode-textLink-foreground, #007acc);
+}
+
+.status {
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: var(--vscode-inputValidation-infoBackground, #063b49);
+  border: 1px solid var(--vscode-inputValidation-infoBorder, #007acc);
+  border-radius: 4px;
+  font-size: 12px;
+}

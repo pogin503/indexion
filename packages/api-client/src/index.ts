@@ -25,6 +25,8 @@ export type {
   ServerConfig,
   Branding,
   BrandingColorSet,
+  SearchHit,
+  GrepMatch,
   ComparisonStrategy,
   DocGraphFormat,
 } from "./types.ts";
@@ -34,6 +36,8 @@ export type {
   DocGraphRequest,
   PlanRequest,
   SpecAlignRequest,
+  SearchRequest,
+  GrepRequest,
 } from "./api.ts";
 export {
   fetchGraph,
@@ -59,6 +63,8 @@ export {
   runSpecAlignTrace,
   runSpecAlignSuggest,
   runSpecAlignStatus,
+  runSearch,
+  runGrep,
   checkHealth,
   fetchConfig,
 } from "./api.ts";

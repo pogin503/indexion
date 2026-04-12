@@ -11,6 +11,10 @@ _build/
 # settings.local.json and worktrees/ must never be committed.
 .claude/settings.local.json
 .claude/worktrees/
-packages/vscode-plugin/
 node_modules/
 dist/
+out/
+*.vsix
+*.tgz
+coverage/
+.vscode-test/

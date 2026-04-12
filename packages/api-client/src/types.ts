@@ -123,6 +123,29 @@ export type KgfEdge = {
   readonly kind: string;
 };
 
+// --- Search ---
+
+export type SearchHit = {
+  readonly id: string;
+  readonly title: string;
+  readonly source: string;
+  readonly line: number;
+  readonly kind: string;
+  readonly score: number;
+  readonly attrs?: Record<string, string>;
+};
+
+// --- Grep ---
+
+export type GrepMatch = {
+  readonly file: string;
+  readonly line: number;
+  readonly matched?: string;
+  readonly kind?: string;
+  readonly name?: string;
+  readonly detail?: string;
+};
+
 // --- Config ---
 
 export type BrandingColorSet = {
@@ -156,7 +179,14 @@ export type ServerConfig = {
 
 // --- Enums (string literal unions for API parameters) ---
 
-export type ComparisonStrategy = "tfidf" | "ncd" | "hybrid" | "apted" | "tsed";
+export type ComparisonStrategy =
+  | "tfidf"
+  | "bm25"
+  | "jsd"
+  | "ncd"
+  | "hybrid"
+  | "apted"
+  | "tsed";
 
 export type DocGraphFormat =
   | "mermaid"

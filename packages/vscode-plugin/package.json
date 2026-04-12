@@ -1,0 +1,310 @@
+{
+  "name": "@indexion/vscode-plugin",
+  "displayName": "indexion",
+  "description": "Source code exploration and documentation tool powered by KGF",
+  "version": "0.1.0",
+  "publisher": "trkbt10",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "dist/extension.js",
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "indexion.explore",
+        "title": "Explore: Analyze Similarity",
+        "category": "indexion",
+        "icon": "$(search)"
+      },
+      {
+        "command": "indexion.planRefactor",
+        "title": "Plan: Refactor",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.planDocumentation",
+        "title": "Plan: Documentation Coverage",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.planReconcile",
+        "title": "Plan: Reconcile",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.planSolid",
+        "title": "Plan: Solid Extract",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.planUnwrap",
+        "title": "Plan: Unwrap",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.planReadme",
+        "title": "Plan: Generate README",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.docGraph",
+        "title": "Doc: Dependency Graph",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.kgfList",
+        "title": "KGF: List Specs",
+        "category": "indexion",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "indexion.kgfInspect",
+        "title": "KGF: Inspect File",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.kgfAdd",
+        "title": "KGF: Add Spec",
+        "category": "indexion",
+        "icon": "$(add)"
+      },
+      {
+        "command": "indexion.kgfUpdate",
+        "title": "KGF: Update Specs",
+        "category": "indexion",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "indexion.digestQuery",
+        "title": "Digest: Search by Purpose",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.search",
+        "title": "Search: Semantic Search",
+        "category": "indexion",
+        "icon": "$(search)"
+      },
+      {
+        "command": "indexion.grep",
+        "title": "Grep: Token Pattern Search",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.specAlignDiff",
+        "title": "Spec: Align Diff",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.specAlignTrace",
+        "title": "Spec: Align Trace",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.specAlignSuggest",
+        "title": "Spec: Align Suggest",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.specAlignStatus",
+        "title": "Spec: Align Status",
+        "category": "indexion"
+      },
+      {
+        "command": "indexion.openSettings",
+        "title": "Open Settings",
+        "category": "indexion",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "indexion.wikiOpen",
+        "title": "Wiki: Show",
+        "category": "indexion",
+        "icon": "$(book)"
+      },
+      {
+        "command": "indexion.planRun",
+        "title": "Plan: Run",
+        "category": "indexion",
+        "icon": "$(play)"
+      },
+      {
+        "command": "indexion.planClearHistory",
+        "title": "Plan: Clear History",
+        "category": "indexion",
+        "icon": "$(clear-all)"
+      }
+    ],
+    "configuration": {
+      "title": "indexion",
+      "properties": {
+        "indexion.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to indexion binary (auto-detect if empty)"
+        },
+        "indexion.specsDir": {
+          "type": "string",
+          "default": "kgfs",
+          "description": "KGF specs directory relative to workspace"
+        },
+        "indexion.defaultThreshold": {
+          "type": "number",
+          "default": 0.7,
+          "description": "Default similarity threshold (0.0-1.0)"
+        },
+        "indexion.defaultStrategy": {
+          "type": "string",
+          "default": "tfidf",
+          "enum": [
+            "tfidf",
+            "bm25",
+            "jsd",
+            "ncd",
+            "hybrid",
+            "apted",
+            "tsed"
+          ],
+          "description": "Default comparison strategy"
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "indexion.kgfList",
+          "when": "view == indexion.kgfList",
+          "group": "navigation"
+        },
+        {
+          "command": "indexion.kgfAdd",
+          "when": "view == indexion.kgfList",
+          "group": "navigation"
+        },
+        {
+          "command": "indexion.kgfUpdate",
+          "when": "view == indexion.kgfList",
+          "group": "navigation"
+        },
+        {
+          "command": "indexion.planClearHistory",
+          "when": "view == indexion.plans",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "indexion.planRun",
+          "when": "view == indexion.plans && viewItem == planType",
+          "group": "inline"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "indexion.kgfList",
+        "contents": "No KGF specs loaded.\n[Refresh](command:indexion.kgfList)"
+      },
+      {
+        "view": "indexion.plans",
+        "contents": "Select a plan type to run analysis.\n[Run Refactor](command:indexion.planRefactor)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "indexion",
+          "title": "indexion",
+          "icon": "media/icon.svg"
+        },
+        {
+          "id": "indexionWiki",
+          "title": "Wiki",
+          "icon": "media/wiki-dark.svg"
+        }
+      ]
+    },
+    "views": {
+      "indexion": [
+        {
+          "id": "indexion.search",
+          "name": "Search",
+          "type": "webview"
+        },
+        {
+          "id": "indexion.kgfList",
+          "name": "KGF Specs"
+        },
+        {
+          "id": "indexion.explore",
+          "name": "Explore",
+          "type": "webview"
+        },
+        {
+          "id": "indexion.plans",
+          "name": "Plans"
+        }
+      ],
+      "indexionWiki": [
+        {
+          "id": "indexion.wiki",
+          "name": "Wiki",
+          "type": "webview"
+        }
+      ]
+    }
+  },
+  "packageManager": "bun@1.3.11",
+  "scripts": {
+    "build:extension": "vite build --config vite.extension.config.ts",
+    "build:webview": "vite build --config vite.webview.config.ts",
+    "build": "bun run build:extension && bun run build:webview",
+    "watch:extension": "vite build --config vite.extension.config.ts --watch",
+    "watch:webview": "vite build --config vite.webview.config.ts --watch",
+    "watch": "bun run watch:extension & bun run watch:webview",
+    "dev": "./scripts/dev.sh",
+    "clean": "rimraf dist",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build:e2e": "vite build --config vite.e2e.config.ts",
+    "test:e2e": "bun run build && bun run build:e2e && vscode-test",
+    "test:cov": "vitest run --coverage",
+    "test": "vitest --run",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@indexion/api-client": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "ajv": "^8.18.0",
+    "happy-dom": "^20.8.8",
+    "prettier": "^3.8.1",
+    "rimraf": "^6.1.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0",
+    "vite-plugin-dts": "^4",
+    "vitest": "^4.1.0"
+  }
+}

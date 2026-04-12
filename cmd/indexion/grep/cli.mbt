@@ -59,7 +59,7 @@
 
 ///|
 /// CLI configuration for grep.
-pub struct GrepConfig {
+pub(all) struct GrepConfig {
   pattern : String
   paths : Array[String]
   includes : Array[String]
@@ -169,6 +169,36 @@ pub fn command() -> @argparse.Command {
       ),
     ],
   )
+}
+
+///|
+/// Run grep and return results as JSON string.
+/// For use by `indexion serve` API endpoint.
+pub fn run_to_json(config : GrepConfig) -> String? {
+  let paths = if config.paths.length() == 0 { ["."] } else { config.paths }
+  // Handle --semantic queries
+  if config.semantic.length() > 0 {
+    match parse_semantic_query(config.semantic) {
+      Some(query) => return run_semantic_search_json(paths, query, config)
+      None => return None
+    }
+  }
+  if config.undocumented {
+    return run_semantic_search_json(paths, Undocumented, config)
+  }
+  if config.pattern.length() == 0 {
+    return None
+  }
+  let registry = @kgf_features.load_registry(
+    specs_dir=config.specs_dir,
+    target_dirs=paths,
+  )
+  let aliases = build_alias_table(registry)
+  let matchers = parse_pattern_with_aliases(config.pattern, aliases)
+  if matchers.length() == 0 {
+    return None
+  }
+  run_pattern_search_json(paths, matchers, config)
 }
 
 ///|

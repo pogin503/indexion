@@ -173,6 +173,87 @@ fn collect_search_files(
 }
 
 ///|
+/// Run token pattern search and return matches as JSON string.
+/// For use by `indexion serve` API endpoint.
+pub fn run_pattern_search_json(
+  paths : Array[String],
+  matchers : Array[TokenMatcher],
+  config : GrepConfig,
+) -> String? {
+  let (registry, files) = match load_registry_and_files(paths, config) {
+    Some(r) => r
+    None => return None
+  }
+  if files.length() == 0 {
+    return Some("[]")
+  }
+  let results : Array[Json] = []
+  for file in files {
+    let (path, content) = file
+    let spec = match registry {
+      Some(reg) =>
+        match reg.detect_from_path(path) {
+          Some(lang) => reg.get_spec(lang)
+          None => None
+        }
+      None => None
+    }
+    let tokens = match @kgf_features.tokenize_source(content, path, registry) {
+      Some(t) => t
+      None => continue
+    }
+    let matches = find_matches(tokens, matchers, path, content, spec~)
+    for m in matches {
+      let obj : Map[String, Json] = {}
+      obj["file"] = m.file.to_json()
+      obj["line"] = m.line.to_json()
+      obj["matched"] = m.matched_text.to_json()
+      results.push(Json::object(obj))
+    }
+  }
+  Some(Json::array(results).stringify(indent=2))
+}
+
+///|
+/// Run semantic search and return matches as JSON string.
+/// For use by `indexion serve` API endpoint.
+pub fn run_semantic_search_json(
+  paths : Array[String],
+  query : SemanticQuery,
+  config : GrepConfig,
+) -> String? {
+  match query {
+    Similar(_, _) => return None // Similar requires async embedding — not supported via grep API
+    _ => ()
+  }
+  let (registry, files) = match load_registry_and_files(paths, config) {
+    Some(r) => r
+    None => return None
+  }
+  let results : Array[Json] = []
+  for file in files {
+    let (path, content) = file
+    let tokens = match @kgf_features.tokenize_source(content, path, registry) {
+      Some(t) => t
+      None => continue
+    }
+    let matches = run_semantic_query_on_file(
+      query, tokens, path, content, registry,
+    )
+    for m in matches {
+      let obj : Map[String, Json] = {}
+      obj["file"] = m.file.to_json()
+      obj["line"] = m.line.to_json()
+      obj["kind"] = m.kind.to_json()
+      obj["name"] = m.name.to_json()
+      obj["detail"] = m.detail.to_json()
+      results.push(Json::object(obj))
+    }
+  }
+  Some(Json::array(results).stringify(indent=2))
+}
+
+///|
 fn print_match(m : GrepMatch, lines : Array[String], context : Int) -> Unit {
   let line_idx = m.line - 1
   let start = if line_idx - context < 0 { 0 } else { line_idx - context }

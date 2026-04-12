@@ -1,0 +1,108 @@
+/**
+ * @file Styles for the similarity matrix component.
+ */
+
+.container {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.table {
+  border-collapse: collapse;
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.cornerCell {
+  background: var(--vscode-editor-background);
+}
+
+.headerCell {
+  padding: 4px 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-widget-border, #333);
+}
+
+.rowHeader {
+  padding: 4px 8px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-widget-border, #333);
+}
+
+.cell {
+  width: 32px;
+  height: 32px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-widget-border, #333);
+  cursor: default;
+}
+
+.empty {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  padding: 12px 0;
+}
+
+.fallback {
+  margin: 12px 0;
+}
+
+.fallback p {
+  margin: 0 0 8px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+}
+
+.pairList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pairItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.score {
+  min-width: 36px;
+  text-align: right;
+  font-weight: 600;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.arrow {
+  color: var(--vscode-descriptionForeground);
+}
+
+.fileLink {
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground, #007acc);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+  font-family: var(--vscode-editor-font-family);
+  padding: 0;
+}
+
+.fileLink:hover {
+  color: var(--vscode-textLink-activeForeground, #3794ff);
+}

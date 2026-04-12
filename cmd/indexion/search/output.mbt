@@ -50,8 +50,8 @@ fn format_text(
 }
 
 ///|
-/// Format search results as JSON.
-fn format_json(hits : Array[@search_engine.SearchHit]) -> Unit {
+/// Serialize search hits to a JSON string.
+pub fn hits_to_json(hits : Array[@search_engine.SearchHit]) -> String {
   let arr : Array[Json] = []
   for hit in hits {
     let doc = hit.document
@@ -71,5 +71,11 @@ fn format_json(hits : Array[@search_engine.SearchHit]) -> Unit {
     }
     arr.push(Json::object(m))
   }
-  println(Json::array(arr).stringify(indent=2))
+  Json::array(arr).stringify(indent=2)
+}
+
+///|
+/// Format search results as JSON.
+fn format_json(hits : Array[@search_engine.SearchHit]) -> Unit {
+  println(hits_to_json(hits))
 }
