@@ -1,0 +1,14 @@
+/**
+ * @file Styles for the status message component.
+ */
+
+.statusMsg {
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.error {
+  color: var(--vscode-errorForeground);
+}

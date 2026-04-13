@@ -5,15 +5,13 @@
  * No custom styling — all appearance inherited from VSCode theme.
  */
 
-import "@vscode-elements/elements/dist/vscode-textfield/index.js";
-import "@vscode-elements/elements/dist/vscode-tree/index.js";
-import "@vscode-elements/elements/dist/vscode-tree-item/index.js";
-import "@vscode-elements/elements/dist/vscode-icon/index.js";
 import type { VscodeTree } from "@vscode-elements/elements";
 import React, { useCallback, useEffect, useRef } from "react";
 import type { WikiNavItem } from "@indexion/api-client";
 import type { WikiToWebview, WikiFromWebview, WikiSearchHit } from "../../views/wiki/messages.ts";
 import { usePostMessage, useWebviewReducer } from "../bridge/context.tsx";
+import { StatusMsg } from "../components/status-msg.tsx";
+import layout from "../components/sidebar-layout.module.css";
 
 // ─── Nav tree item (recursive) ──────────────────────────
 
@@ -166,14 +164,13 @@ export const WikiPageApp = (): React.JSX.Element => {
   }, [dispatch]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className={layout.sidebarRoot}>
       <vscode-textfield
         placeholder="Search"
         value={searchQuery}
         disabled={!serverReady || undefined}
         onInput={handleSearchInput}
         onKeyDown={handleSearchKeyDown}
-        style={{ margin: 0 }}
       />
 
       {!serverReady && !searchLoading && <StatusMsg>Server not ready</StatusMsg>}
@@ -192,7 +189,7 @@ export const WikiPageApp = (): React.JSX.Element => {
       {searchResults === null && !navLoading && !error && nav.length === 0 && <StatusMsg>No wiki pages</StatusMsg>}
 
       {searchResults === null && !navLoading && !error && nav.length > 0 && (
-        <vscode-tree ref={treeRef} style={{ flex: 1, overflow: "auto" }}>
+        <vscode-tree ref={treeRef} className={layout.scrollableTree}>
           {nav.map((item) => (
             <NavTreeItem key={item.id} item={item} activePageId={activePageId} />
           ))}
@@ -215,29 +212,10 @@ const SearchResultsView = ({
   readonly onNavigate: (pageId: string) => void;
   readonly onClear: () => void;
 }): React.JSX.Element => (
-  <div style={{ flex: 1, overflow: "auto" }}>
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        padding: "2px 8px",
-        fontSize: "11px",
-        color: "var(--vscode-descriptionForeground)",
-      }}
-    >
+  <div className={layout.scrollableArea}>
+    <div className={layout.resultSummarySpaced}>
       <span>{results.length} results</span>
-      <button
-        type="button"
-        onClick={onClear}
-        style={{
-          background: "none",
-          border: "none",
-          color: "var(--vscode-textLink-foreground)",
-          cursor: "pointer",
-          fontSize: "11px",
-          padding: 0,
-        }}
-      >
+      <button type="button" onClick={onClear} className={layout.textLinkButton}>
         Clear
       </button>
     </div>
@@ -250,26 +228,5 @@ const SearchResultsView = ({
         </vscode-tree-item>
       ))}
     </vscode-tree>
-  </div>
-);
-
-// ─── Status message ─────────────────────────────────────
-
-const StatusMsg = ({
-  children,
-  error: isError,
-}: {
-  readonly children: React.ReactNode;
-  readonly error?: boolean;
-}): React.JSX.Element => (
-  <div
-    style={{
-      padding: "8px",
-      textAlign: "center",
-      fontSize: "12px",
-      color: isError ? "var(--vscode-errorForeground)" : "var(--vscode-descriptionForeground)",
-    }}
-  >
-    {children}
   </div>
 );

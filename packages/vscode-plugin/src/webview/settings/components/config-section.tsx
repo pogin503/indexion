@@ -4,6 +4,7 @@
 
 import React from "react";
 import type { SettingsConfig } from "../../../panels/settings/messages.ts";
+import layout from "../../components/sidebar-layout.module.css";
 import styles from "./config-section.module.css";
 
 type ConfigSectionProps = {
@@ -19,71 +20,55 @@ export const ConfigSection = ({ config, onChange, onSave }: ConfigSectionProps):
 
   return (
     <div className={styles.section}>
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="binaryPath">
-          Binary Path
-        </label>
-        <input
-          id="binaryPath"
-          className={styles.input}
-          type="text"
+      <vscode-form-group variant="vertical">
+        <vscode-label>Binary Path</vscode-label>
+        <vscode-textfield
           value={config.binaryPath}
           placeholder="auto-detect"
-          onChange={(e) => handleChange("binaryPath", e.target.value)}
+          onInput={(e: React.FormEvent) => handleChange("binaryPath", (e.target as HTMLInputElement).value)}
         />
-        <span className={styles.hint}>Leave empty to auto-detect from PATH</span>
-      </div>
+        <vscode-form-helper>Leave empty to auto-detect from PATH</vscode-form-helper>
+      </vscode-form-group>
 
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="specsDir">
-          KGF Specs Directory
-        </label>
-        <input
-          id="specsDir"
-          className={styles.input}
-          type="text"
+      <vscode-form-group variant="vertical">
+        <vscode-label>KGF Specs Directory</vscode-label>
+        <vscode-textfield
           value={config.specsDir}
-          onChange={(e) => handleChange("specsDir", e.target.value)}
+          onInput={(e: React.FormEvent) => handleChange("specsDir", (e.target as HTMLInputElement).value)}
         />
-      </div>
+      </vscode-form-group>
 
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="threshold">
-          Default Threshold
-        </label>
-        <input
-          id="threshold"
-          className={styles.input}
+      <vscode-form-group variant="vertical">
+        <vscode-label>Default Threshold</vscode-label>
+        <vscode-textfield
           type="number"
           min="0"
           max="1"
           step="0.05"
-          value={config.defaultThreshold}
-          onChange={(e) => handleChange("defaultThreshold", Number(e.target.value))}
+          value={String(config.defaultThreshold)}
+          onInput={(e: React.FormEvent) =>
+            handleChange("defaultThreshold", Number((e.target as HTMLInputElement).value))
+          }
         />
-      </div>
+      </vscode-form-group>
 
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="strategy">
-          Default Strategy
-        </label>
-        <select
-          id="strategy"
-          className={styles.input}
+      <vscode-form-group variant="vertical">
+        <vscode-label>Default Strategy</vscode-label>
+        <vscode-single-select
           value={config.defaultStrategy}
-          onChange={(e) => handleChange("defaultStrategy", e.target.value)}
+          onChange={(e: React.FormEvent) => handleChange("defaultStrategy", (e.target as HTMLSelectElement).value)}
         >
-          <option value="tfidf">TF-IDF</option>
-          <option value="ncd">NCD</option>
-          <option value="hybrid">Hybrid</option>
-          <option value="apted">APTED</option>
-          <option value="tsed">TSED</option>
-        </select>
-      </div>
+          <vscode-option value="tfidf">TF-IDF</vscode-option>
+          <vscode-option value="ncd">NCD</vscode-option>
+          <vscode-option value="hybrid">Hybrid</vscode-option>
+          <vscode-option value="apted">APTED</vscode-option>
+          <vscode-option value="tsed">TSED</vscode-option>
+        </vscode-single-select>
+      </vscode-form-group>
 
-      <button className={styles.saveButton} onClick={() => onSave(config)} type="button">
+      <vscode-button onClick={() => onSave(config)} className={layout.alignStart}>
         Save
-      </button>
+      </vscode-button>
     </div>
   );
 };

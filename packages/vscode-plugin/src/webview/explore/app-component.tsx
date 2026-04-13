@@ -5,19 +5,13 @@
  * and results displayed in <vscode-tree>.
  */
 
-import "@vscode-elements/elements/dist/vscode-textfield/index.js";
-import "@vscode-elements/elements/dist/vscode-button/index.js";
-import "@vscode-elements/elements/dist/vscode-single-select/index.js";
-import "@vscode-elements/elements/dist/vscode-option/index.js";
-import "@vscode-elements/elements/dist/vscode-tree/index.js";
-import "@vscode-elements/elements/dist/vscode-tree-item/index.js";
-import "@vscode-elements/elements/dist/vscode-icon/index.js";
-import "@vscode-elements/elements/dist/vscode-badge/index.js";
-import "@vscode-elements/elements/dist/vscode-label/index.js";
 import React, { useCallback } from "react";
 import type { SimilarityPair, ComparisonStrategy } from "@indexion/api-client";
 import type { ExploreToWebview, ExploreFromWebview } from "../../views/explore/messages.ts";
 import { usePostMessage, useWebviewReducer } from "../bridge/context.tsx";
+import { StatusMsg } from "../components/status-msg.tsx";
+import layout from "../components/sidebar-layout.module.css";
+import styles from "./app.module.css";
 
 const STRATEGIES: ReadonlyArray<ComparisonStrategy> = ["tfidf", "hybrid", "apted", "tsed", "ncd"];
 
@@ -104,35 +98,24 @@ export const ExploreApp = (): React.JSX.Element => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "4px" }}>
-      {/* Controls */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "4px",
-          padding: "4px 0",
-          borderBottom: "1px solid var(--vscode-panel-border)",
-        }}
-      >
-        <div style={{ display: "flex", gap: "4px" }}>
-          <vscode-textfield placeholder="Select directory..." value={targetDir} readonly style={{ flex: 1 }} />
-          <vscode-button onClick={handlePickDir} style={{ flexShrink: 0 }}>
+    <div className={layout.sidebarRoot}>
+      <div className={layout.sidebarControls}>
+        <div className={layout.toolbarRow}>
+          <vscode-textfield placeholder="Select directory..." value={targetDir} readonly className={styles.dirInput} />
+          <vscode-button onClick={handlePickDir} className={styles.dirPickButton}>
             ...
           </vscode-button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "0 2px" }}>
-          <vscode-label style={{ fontSize: "11px", flexShrink: 0 }}>
-            Threshold: {Math.round(threshold * 100)}%
-          </vscode-label>
+        <div className={layout.toolbarRowCenter}>
+          <vscode-label className={styles.thresholdLabel}>Threshold: {Math.round(threshold * 100)}%</vscode-label>
           <input
             type="range"
             min={0}
             max={100}
             value={Math.round(threshold * 100)}
             onChange={(e) => dispatch({ type: "setThreshold", value: Number(e.target.value) / 100 })}
-            style={{ flex: 1, accentColor: "var(--vscode-button-background)" }}
+            className={styles.thresholdSlider}
           />
         </div>
 
@@ -154,18 +137,16 @@ export const ExploreApp = (): React.JSX.Element => {
         </vscode-button>
       </div>
 
-      {/* Status */}
       {!serverReady && <StatusMsg>Server not ready</StatusMsg>}
       {error && <StatusMsg error>{error}</StatusMsg>}
       {pairs.length > 0 && (
-        <div style={{ padding: "2px 8px", fontSize: "11px", color: "var(--vscode-descriptionForeground)" }}>
+        <div className={layout.resultSummary}>
           {pairs.length} pairs in {fileCount} files
         </div>
       )}
 
-      {/* Results */}
       {pairs.length > 0 && (
-        <vscode-tree style={{ flex: 1, overflow: "auto" }}>
+        <vscode-tree className={layout.scrollableTree}>
           {pairs.map((pair, i) => (
             <vscode-tree-item key={i} onClick={() => handleOpenDiff(pair)}>
               <vscode-icon slot="icon-leaf" name="diff" />
@@ -179,22 +160,3 @@ export const ExploreApp = (): React.JSX.Element => {
     </div>
   );
 };
-
-const StatusMsg = ({
-  children,
-  error: isError,
-}: {
-  readonly children: React.ReactNode;
-  readonly error?: boolean;
-}): React.JSX.Element => (
-  <div
-    style={{
-      padding: "8px",
-      textAlign: "center",
-      fontSize: "12px",
-      color: isError ? "var(--vscode-errorForeground)" : "var(--vscode-descriptionForeground)",
-    }}
-  >
-    {children}
-  </div>
-);

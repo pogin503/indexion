@@ -5,6 +5,7 @@
 import React from "react";
 import type { PlanResultsToWebview, PlanResultsFromWebview } from "../../panels/plan-results/messages.ts";
 import { usePostMessage, useWebviewReducer } from "../bridge/context.tsx";
+import { FileLink } from "../components/file-link.tsx";
 import styles from "./app.module.css";
 
 // ─── State & reducer ────────────────────────────────────
@@ -58,11 +59,7 @@ export const PlanResultsApp = (): React.JSX.Element => {
               <div key={i} className={styles.line}>
                 {line.split(fileMatch[0]).map((part, j) => (
                   <React.Fragment key={j}>
-                    {j > 0 && (
-                      <button className={styles.fileLink} onClick={() => handleFileClick(filePath)} type="button">
-                        {filePath}
-                      </button>
-                    )}
+                    {j > 0 && <FileLink filePath={filePath} onClick={handleFileClick} />}
                     {part}
                   </React.Fragment>
                 ))}
@@ -83,9 +80,9 @@ export const PlanResultsApp = (): React.JSX.Element => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>{result.title}</h1>
-        <button className={styles.copyButton} onClick={handleCopy} type="button">
+        <vscode-button secondary onClick={handleCopy}>
           Copy
-        </button>
+        </vscode-button>
       </div>
       {renderContent()}
     </div>

@@ -1,0 +1,18 @@
+/**
+ * @file Styles for the file-link component.
+ */
+
+.fileLink {
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground, #007acc);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+  font-family: var(--vscode-editor-font-family);
+  padding: 0;
+}
+
+.fileLink:hover {
+  color: var(--vscode-textLink-activeForeground, #3794ff);
+}

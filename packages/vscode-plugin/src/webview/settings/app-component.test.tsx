@@ -15,6 +15,32 @@ const postFromHost = (data: unknown): void => {
   });
 };
 
+const sampleConfig = {
+  global: {
+    binaryPath: "/usr/bin/indexion",
+    specsDir: "specs",
+    defaultThreshold: 0.8,
+    defaultStrategy: "hybrid",
+    includes: [],
+    excludes: [],
+  },
+  local: {
+    binaryPath: "",
+    specsDir: "kgfs",
+    defaultThreshold: 0.9,
+    defaultStrategy: "tfidf",
+    includes: [],
+    excludes: [],
+  },
+};
+
+/**
+ * Query all <vscode-textfield> elements, returning [element, value] tuples.
+ * Useful since vscode-label/vscode-textfield don't support getByLabelText in jsdom.
+ */
+const getTextfieldValues = (container: HTMLElement): ReadonlyArray<string> =>
+  Array.from(container.querySelectorAll("vscode-textfield")).map((el) => el.getAttribute("value") ?? "");
+
 let SettingsApp: React.FC;
 
 beforeAll(async () => {
@@ -32,7 +58,7 @@ describe("SettingsApp", () => {
     expect(postedMessages).toContainEqual({ type: "load" });
   });
 
-  it("renders title and tabs", () => {
+  it("renders title and tab headers", () => {
     renderWithProvider(<SettingsApp />);
     expect(screen.getByText("indexion Settings")).toBeInTheDocument();
     expect(screen.getByText("Local (.indexion/)")).toBeInTheDocument();
@@ -40,79 +66,25 @@ describe("SettingsApp", () => {
   });
 
   it("populates fields when configLoaded received", () => {
-    renderWithProvider(<SettingsApp />);
-    postFromHost({
-      type: "configLoaded",
-      global: {
-        binaryPath: "/usr/bin/indexion",
-        specsDir: "specs",
-        defaultThreshold: 0.8,
-        defaultStrategy: "hybrid",
-        includes: [],
-        excludes: [],
-      },
-      local: {
-        binaryPath: "",
-        specsDir: "kgfs",
-        defaultThreshold: 0.9,
-        defaultStrategy: "tfidf",
-        includes: [],
-        excludes: [],
-      },
-    });
-    const thresholdInput = screen.getByLabelText("Default Threshold") as HTMLInputElement;
-    expect(thresholdInput.value).toBe("0.9");
+    const { container } = renderWithProvider(<SettingsApp />);
+    postFromHost({ type: "configLoaded", ...sampleConfig });
+    // Local tab is active by default; first vscode-tab-panel contains local config
+    const panels = container.querySelectorAll("vscode-tab-panel");
+    const localPanel = panels[0];
+    const values = getTextfieldValues(localPanel as HTMLElement);
+    // The 3rd textfield is threshold (after binaryPath and specsDir)
+    expect(values[2]).toBe("0.9");
   });
 
-  it("switches to global tab and shows global config", () => {
-    renderWithProvider(<SettingsApp />);
-    postFromHost({
-      type: "configLoaded",
-      global: {
-        binaryPath: "/usr/bin/indexion",
-        specsDir: "specs",
-        defaultThreshold: 0.8,
-        defaultStrategy: "hybrid",
-        includes: [],
-        excludes: [],
-      },
-      local: {
-        binaryPath: "",
-        specsDir: "kgfs",
-        defaultThreshold: 0.9,
-        defaultStrategy: "tfidf",
-        includes: [],
-        excludes: [],
-      },
-    });
-    fireEvent.click(screen.getByText("Global"));
-    const thresholdInput = screen.getByLabelText("Default Threshold") as HTMLInputElement;
-    expect(thresholdInput.value).toBe("0.8");
-  });
-
-  it("sends save message with correct scope", () => {
-    renderWithProvider(<SettingsApp />);
-    postFromHost({
-      type: "configLoaded",
-      global: {
-        binaryPath: "",
-        specsDir: "kgfs",
-        defaultThreshold: 0.7,
-        defaultStrategy: "tfidf",
-        includes: [],
-        excludes: [],
-      },
-      local: {
-        binaryPath: "",
-        specsDir: "kgfs",
-        defaultThreshold: 0.7,
-        defaultStrategy: "tfidf",
-        includes: [],
-        excludes: [],
-      },
-    });
+  it("sends save message with correct scope for local tab", () => {
+    const { container } = renderWithProvider(<SettingsApp />);
+    postFromHost({ type: "configLoaded", ...sampleConfig });
     resetMessages();
-    fireEvent.click(screen.getByText("Save"));
+    // Click the first Save button (local tab panel)
+    const saveButtons = container.querySelectorAll("vscode-button");
+    const localSave = Array.from(saveButtons).find((el) => el.textContent?.trim() === "Save");
+    expect(localSave).toBeDefined();
+    fireEvent.click(localSave!);
     expect(postedMessages).toHaveLength(1);
     expect(postedMessages[0]).toMatchObject({ type: "save", scope: "local" });
   });

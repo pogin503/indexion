@@ -4,6 +4,7 @@
 
 import React, { useCallback, useEffect } from "react";
 import { usePostMessage, useWebviewReducer } from "../../bridge/context.tsx";
+import layout from "../../components/sidebar-layout.module.css";
 import styles from "./kgf-section.module.css";
 
 /** KGF spec entry received from the extension host. */
@@ -115,25 +116,24 @@ export const KgfSection = (): React.JSX.Element => {
 
       <div className={styles.actions}>
         <div className={styles.addRow}>
-          <input
-            className={styles.input}
-            type="text"
+          <vscode-textfield
             value={addInput}
             placeholder="spec name (e.g., python)"
-            onChange={(e) => dispatch({ type: "setAddInput", value: e.target.value })}
-            onKeyDown={(e) => {
+            onInput={(e: React.FormEvent) =>
+              dispatch({ type: "setAddInput", value: (e.target as HTMLInputElement).value })
+            }
+            onKeyDown={(e: React.KeyboardEvent) => {
               if (e.key === "Enter") {
                 handleAdd();
               }
             }}
+            className={layout.flexFill}
           />
-          <button className={styles.button} onClick={handleAdd} type="button">
-            Add
-          </button>
+          <vscode-button onClick={handleAdd}>Add</vscode-button>
         </div>
-        <button className={styles.buttonSecondary} onClick={handleUpdateAll} type="button">
+        <vscode-button secondary onClick={handleUpdateAll} className={layout.alignStart}>
           Update All
-        </button>
+        </vscode-button>
       </div>
 
       <div className={styles.specList}>

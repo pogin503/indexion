@@ -3,6 +3,7 @@
  */
 
 import React from "react";
+import { FileLink } from "../../components/file-link.tsx";
 import styles from "./similarity-matrix.module.css";
 
 type SimilarityPair = {
@@ -56,13 +57,9 @@ export const SimilarityMatrix = ({ files, pairs, onFileClick }: SimilarityMatrix
           {pairs.slice(0, 50).map((pair, i) => (
             <div key={i} className={styles.pairItem}>
               <span className={styles.score}>{Math.round(pair.similarity * 100)}%</span>
-              <button className={styles.fileLink} onClick={() => onFileClick?.(pair.file1)} type="button">
-                {shortName(pair.file1)}
-              </button>
+              <FileLink filePath={pair.file1} label={shortName(pair.file1)} onClick={(f) => onFileClick?.(f)} />
               <span className={styles.arrow}>↔</span>
-              <button className={styles.fileLink} onClick={() => onFileClick?.(pair.file2)} type="button">
-                {shortName(pair.file2)}
-              </button>
+              <FileLink filePath={pair.file2} label={shortName(pair.file2)} onClick={(f) => onFileClick?.(f)} />
             </div>
           ))}
         </div>

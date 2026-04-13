@@ -3,6 +3,8 @@
  */
 
 import React, { useState } from "react";
+import { FileLink } from "../../components/file-link.tsx";
+import layout from "../../components/sidebar-layout.module.css";
 import styles from "./refactor-checklist.module.css";
 
 /** A single refactoring item parsed from plan output. */
@@ -52,12 +54,7 @@ export const RefactorChecklist = ({ items, onFileClick }: RefactorChecklistProps
   return (
     <div className={styles.container}>
       <div className={styles.progress}>
-        <div className={styles.progressBar}>
-          <div
-            className={styles.progressFill}
-            style={{ width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : "0%" }}
-          />
-        </div>
+        <vscode-progress-bar value={completedCount} max={totalCount} className={layout.flexFill} />
         <span className={styles.progressText}>
           {completedCount}/{totalCount} completed
         </span>
@@ -68,24 +65,17 @@ export const RefactorChecklist = ({ items, onFileClick }: RefactorChecklistProps
           const isChecked = checked.includes(item.id);
           return (
             <div key={item.id} className={`${styles.item} ${isChecked ? styles.itemChecked : ""}`}>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  className={styles.checkbox}
-                  checked={isChecked}
-                  onChange={() => toggleItem(item.id)}
-                />
+              <div className={styles.checkboxRow}>
+                <vscode-checkbox checked={isChecked || undefined} onChange={() => toggleItem(item.id)} />
                 <span className={styles.severity} style={{ color: severityColor(item.severity) }}>
                   [{item.severity}]
                 </span>
                 <span className={isChecked ? styles.textChecked : styles.text}>{item.text}</span>
-              </label>
+              </div>
               {item.files.length > 0 && (
                 <div className={styles.files}>
                   {item.files.map((file) => (
-                    <button key={file} className={styles.fileLink} onClick={() => onFileClick?.(file)} type="button">
-                      {file}
-                    </button>
+                    <FileLink key={file} filePath={file} onClick={(f) => onFileClick?.(f)} />
                   ))}
                 </div>
               )}

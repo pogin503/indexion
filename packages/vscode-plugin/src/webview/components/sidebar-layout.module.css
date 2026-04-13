@@ -1,0 +1,99 @@
+/**
+ * @file Shared layout classes for sidebar webview panels (explore, search, wiki-page).
+ *
+ * These panels share the same structural pattern:
+ *   sidebarRoot > controls + resultSummary + scrollableTree
+ */
+
+/* ── Root container — fills the sidebar viewport ── */
+
+.sidebarRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Controls section — sits above the result area ── */
+
+.sidebarControls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+/* ── Horizontal toolbar row inside controls ── */
+
+.toolbarRow {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbarRowCenter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+/* ── Result summary line (e.g. "12 pairs in 5 files") ── */
+
+.resultSummary {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* ── Result summary with space-between (count + action) ── */
+
+.resultSummarySpaced {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* ── Scrollable tree area — fills remaining space ── */
+
+.scrollableTree {
+  flex: 1;
+  overflow: auto;
+}
+
+/* ── Scrollable area — generic flex-grow scrollable region ── */
+
+.scrollableArea {
+  flex: 1;
+  overflow: auto;
+}
+
+/* ── Inline text link button (e.g. "Clear") ── */
+
+/* ── Utility: fill remaining width in a flex row ── */
+
+.flexFill {
+  flex: 1;
+}
+
+/* ── Utility: align button to start (left) ── */
+
+.alignStart {
+  align-self: flex-start;
+}
+
+/* ── Inline text link button (e.g. "Clear") ── */
+
+.textLinkButton {
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+}
+
+.textLinkButton:hover {
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+}

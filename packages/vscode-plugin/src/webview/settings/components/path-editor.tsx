@@ -3,7 +3,6 @@
  */
 
 import React from "react";
-import styles from "./path-editor.module.css";
 
 type PathEditorProps = {
   readonly label: string;
@@ -14,17 +13,13 @@ type PathEditorProps = {
 };
 
 export const PathEditor = ({ label, value, placeholder, hint, onChange }: PathEditorProps): React.JSX.Element => (
-  <div className={styles.field}>
-    <label className={styles.label}>{label}</label>
-    <div className={styles.row}>
-      <input
-        className={styles.input}
-        type="text"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-    {hint && <span className={styles.hint}>{hint}</span>}
-  </div>
+  <vscode-form-group variant="vertical">
+    <vscode-label>{label}</vscode-label>
+    <vscode-textfield
+      value={value}
+      placeholder={placeholder}
+      onInput={(e: React.FormEvent) => onChange((e.target as HTMLInputElement).value)}
+    />
+    {hint && <vscode-form-helper>{hint}</vscode-form-helper>}
+  </vscode-form-group>
 );

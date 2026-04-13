@@ -14,6 +14,10 @@ const makeItems = (count: number) =>
     severity: (["high", "medium", "low"] as const)[i % 3],
   }));
 
+/** Query all <vscode-checkbox> elements inside a container. */
+const getCheckboxes = (container: HTMLElement): ReadonlyArray<HTMLElement> =>
+  Array.from(container.querySelectorAll("vscode-checkbox"));
+
 describe("RefactorChecklist", () => {
   it("shows empty message when no items", () => {
     render(<RefactorChecklist items={[]} />);
@@ -37,20 +41,20 @@ describe("RefactorChecklist", () => {
   });
 
   it("updates progress when items are checked", () => {
-    render(<RefactorChecklist items={makeItems(3)} />);
-    const checkboxes = screen.getAllByRole("checkbox");
-    fireEvent.click(checkboxes[0]);
+    const { container } = render(<RefactorChecklist items={makeItems(3)} />);
+    const checkboxes = getCheckboxes(container);
+    fireEvent.change(checkboxes[0]);
     expect(screen.getByText("1/3 completed")).toBeInTheDocument();
-    fireEvent.click(checkboxes[1]);
+    fireEvent.change(checkboxes[1]);
     expect(screen.getByText("2/3 completed")).toBeInTheDocument();
   });
 
   it("unchecks item when clicked again", () => {
-    render(<RefactorChecklist items={makeItems(2)} />);
-    const checkboxes = screen.getAllByRole("checkbox");
-    fireEvent.click(checkboxes[0]);
+    const { container } = render(<RefactorChecklist items={makeItems(2)} />);
+    const checkboxes = getCheckboxes(container);
+    fireEvent.change(checkboxes[0]);
     expect(screen.getByText("1/2 completed")).toBeInTheDocument();
-    fireEvent.click(checkboxes[0]);
+    fireEvent.change(checkboxes[0]);
     expect(screen.getByText("0/2 completed")).toBeInTheDocument();
   });
 

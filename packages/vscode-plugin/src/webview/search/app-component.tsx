@@ -5,14 +5,11 @@
  * Example: "parse configuration" finds functions that parse config files.
  */
 
-import "@vscode-elements/elements/dist/vscode-textfield/index.js";
-import "@vscode-elements/elements/dist/vscode-tree/index.js";
-import "@vscode-elements/elements/dist/vscode-tree-item/index.js";
-import "@vscode-elements/elements/dist/vscode-icon/index.js";
-import "@vscode-elements/elements/dist/vscode-badge/index.js";
 import React, { useCallback } from "react";
 import type { SearchToWebview, SearchFromWebview, SearchResultItem } from "../../views/search/messages.ts";
 import { usePostMessage, useWebviewReducer } from "../bridge/context.tsx";
+import { StatusMsg } from "../components/status-msg.tsx";
+import layout from "../components/sidebar-layout.module.css";
 
 // ─── State & reducer ────────────────────────────────────
 
@@ -97,14 +94,13 @@ export const SearchApp = (): React.JSX.Element => {
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className={layout.sidebarRoot}>
       <vscode-textfield
         placeholder="Describe what you're looking for..."
         value={query}
         disabled={!serverReady || undefined}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
-        style={{ margin: 0 }}
       />
 
       {!serverReady && !searching && <StatusMsg>Waiting for indexion server...</StatusMsg>}
@@ -120,10 +116,8 @@ export const SearchApp = (): React.JSX.Element => {
 
       {results.length > 0 && (
         <>
-          <div style={{ padding: "2px 8px", fontSize: "11px", color: "var(--vscode-descriptionForeground)" }}>
-            {results.length} results
-          </div>
-          <vscode-tree style={{ flex: 1, overflow: "auto" }}>
+          <div className={layout.resultSummary}>{results.length} results</div>
+          <vscode-tree className={layout.scrollableTree}>
             {results.map((item, i) => (
               <vscode-tree-item key={i} onClick={() => handleResultClick(item)}>
                 <vscode-icon slot="icon-leaf" name="symbol-method" />
@@ -140,22 +134,3 @@ export const SearchApp = (): React.JSX.Element => {
     </div>
   );
 };
-
-const StatusMsg = ({
-  children,
-  error: isError,
-}: {
-  readonly children: React.ReactNode;
-  readonly error?: boolean;
-}): React.JSX.Element => (
-  <div
-    style={{
-      padding: "8px",
-      textAlign: "center",
-      fontSize: "12px",
-      color: isError ? "var(--vscode-errorForeground)" : "var(--vscode-descriptionForeground)",
-    }}
-  >
-    {children}
-  </div>
-);

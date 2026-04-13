@@ -66,6 +66,8 @@ const settingsReducer = (state: SettingsState, action: SettingsAction): Settings
   }
 };
 
+const TAB_SCOPES = ["local", "global"] as const;
+
 // ─── Component ──────────────────────────────────────────
 
 export const SettingsApp = (): React.JSX.Element => {
@@ -92,31 +94,36 @@ export const SettingsApp = (): React.JSX.Element => {
     [postMessage],
   );
 
+  const handleTabSelect = useCallback(
+    (e: React.SyntheticEvent) => {
+      const detail = (e.nativeEvent as CustomEvent<{ selectedIndex: number }>).detail;
+      dispatch({ type: "setActiveTab", tab: TAB_SCOPES[detail.selectedIndex] });
+    },
+    [dispatch],
+  );
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>indexion Settings</h1>
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === "local" ? styles.tabActive : ""}`}
-          onClick={() => dispatch({ type: "setActiveTab", tab: "local" })}
-          type="button"
-        >
-          Local (.indexion/)
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === "global" ? styles.tabActive : ""}`}
-          onClick={() => dispatch({ type: "setActiveTab", tab: "global" })}
-          type="button"
-        >
-          Global
-        </button>
-      </div>
       {saveStatus && <div className={styles.status}>{saveStatus}</div>}
-      <ConfigSection
-        config={activeTab === "global" ? globalConfig : localConfig}
-        onChange={(config) => dispatch({ type: "updateConfig", scope: activeTab, config })}
-        onSave={(config) => handleSave(activeTab, config)}
-      />
+      <vscode-tabs selected-index={activeTab === "local" ? 0 : 1} onVsc-tabs-select={handleTabSelect}>
+        <vscode-tab-header slot="header">Local (.indexion/)</vscode-tab-header>
+        <vscode-tab-header slot="header">Global</vscode-tab-header>
+        <vscode-tab-panel>
+          <ConfigSection
+            config={localConfig}
+            onChange={(config) => dispatch({ type: "updateConfig", scope: "local", config })}
+            onSave={(config) => handleSave("local", config)}
+          />
+        </vscode-tab-panel>
+        <vscode-tab-panel>
+          <ConfigSection
+            config={globalConfig}
+            onChange={(config) => dispatch({ type: "updateConfig", scope: "global", config })}
+            onSave={(config) => handleSave("global", config)}
+          />
+        </vscode-tab-panel>
+      </vscode-tabs>
     </div>
   );
 };
