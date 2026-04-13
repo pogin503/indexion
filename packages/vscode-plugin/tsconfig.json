@@ -10,17 +10,16 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noEmit": true,
-    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
-    "paths": {
-      "@indexion/api-client": ["../api-client/src/index.ts"]
-    },
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "declaration": true,
     "outDir": "dist",
-    "types": ["node", "vitest/globals", "vite/client", "./src/webview/vscode-elements.d.ts"]
+    "paths": {
+      "@indexion/api-client": ["../api-client/src/index.ts"]
+    },
+    "types": ["node", "vitest/globals", "vite/client", "mocha"]
   },
-  "include": ["src/**/*", "spec/**/*"],
-  "exclude": ["src/webview/**/*", "src/e2e/**/*"]
+  "include": ["src/**/*", "spec/**/*"]
 }

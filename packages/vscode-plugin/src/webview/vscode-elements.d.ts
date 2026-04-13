@@ -2,6 +2,8 @@
  * @file JSX intrinsic element declarations for @vscode-elements/elements.
  *
  * React 19 uses React.JSX namespace for custom element types.
+ * Must use `interface` (not `type`) so TypeScript merges these entries
+ * into the existing IntrinsicElements interface instead of replacing it.
  */
 
 import type {
@@ -23,7 +25,7 @@ type WC<E, A = object> = React.DetailedHTMLProps<React.HTMLAttributes<E>, E> & A
 
 declare module "react" {
   namespace JSX {
-    type IntrinsicElements = {
+    interface IntrinsicElements {
       "vscode-textfield": WC<
         VscodeTextfield,
         {
@@ -50,6 +52,6 @@ declare module "react" {
       "vscode-single-select": WC<VscodeSingleSelect, { value?: string }>;
       "vscode-option": WC<VscodeOption, { value?: string; selected?: boolean; disabled?: boolean }>;
       "vscode-label": WC<VscodeLabel>;
-    };
+    }
   }
 }

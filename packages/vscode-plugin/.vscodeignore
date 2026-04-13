@@ -9,7 +9,6 @@
 .prettierrc
 eslint.config.js
 tsconfig.json
-tsconfig.webview.json
 vite.config.ts
 vite.extension.config.ts
 vite.webview.config.ts

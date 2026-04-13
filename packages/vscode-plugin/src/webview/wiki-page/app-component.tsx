@@ -9,6 +9,7 @@ import "@vscode-elements/elements/dist/vscode-textfield/index.js";
 import "@vscode-elements/elements/dist/vscode-tree/index.js";
 import "@vscode-elements/elements/dist/vscode-tree-item/index.js";
 import "@vscode-elements/elements/dist/vscode-icon/index.js";
+import type { VscodeTree } from "@vscode-elements/elements";
 import React, { useCallback, useEffect, useRef } from "react";
 import type { WikiNavItem } from "@indexion/api-client";
 import type { WikiToWebview, WikiFromWebview, WikiSearchHit } from "../../views/wiki/messages.ts";
@@ -107,7 +108,7 @@ export const WikiPageApp = (): React.JSX.Element => {
   const postMessage = usePostMessage<WikiFromWebview>();
   const [state, dispatch] = useWebviewReducer(wikiReducer, initialState);
   const { nav, activePageId, searchQuery, searchResults, navLoading, searchLoading, serverReady, error } = state;
-  const treeRef = useRef<HTMLElement>(null);
+  const treeRef = useRef<VscodeTree>(null);
 
   const handleNavigate = useCallback(
     (pageId: string) => {
