@@ -183,11 +183,13 @@ function useFitToWidth(svg: SvgData | null) {
   const svgVersionRef = useRef(0);
   const [fitVersion, setFitVersion] = useState(0);
 
-  // Increment svgVersion when svg changes
-  const currentSvgVersion = useMemo(() => {
+  // Track svg identity changes via ref — svg is the intentional trigger
+  const prevSvgRef = useRef(svg);
+  if (prevSvgRef.current !== svg) {
+    prevSvgRef.current = svg;
     svgVersionRef.current++;
-    return svgVersionRef.current;
-  }, [svg]);
+  }
+  const currentSvgVersion = svgVersionRef.current;
 
   const ready = fitVersion >= currentSvgVersion;
 

@@ -16,9 +16,7 @@ if (!hasArtifact) {
   );
 }
 
-const kgfAlias = hasArtifact
-  ? { "@indexion/kgf-tokenizer": artifactPath }
-  : {};
+const kgfAlias = hasArtifact ? { "@indexion/kgf-tokenizer": artifactPath } : {};
 
 export default defineConfig({
   plugins: [react()],

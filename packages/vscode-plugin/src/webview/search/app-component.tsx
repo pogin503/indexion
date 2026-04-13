@@ -177,6 +177,13 @@ const MODES: ReadonlyArray<ModeInfo> = [
 
 const findMode = (id: SearchMode): ModeInfo => MODES.find((m) => m.id === id) ?? MODES[0];
 
+const RESULT_SUMMARY: Record<SearchMode, (n: number, f: number) => string> = {
+  explore: (n, f) => `${n} pairs in ${f} files`,
+  search: (n, f) => `${n} results in ${f} files`,
+  grep: (n, f) => `${n} results in ${f} files`,
+  digest: (n, f) => `${n} results in ${f} files`,
+};
+
 // ─── Component ──────────────────────────────────────────
 
 export const SearchApp = (): React.JSX.Element => {
@@ -276,19 +283,22 @@ export const SearchApp = (): React.JSX.Element => {
 
   // Group results by file for tree display
   const fileGroups = React.useMemo(() => {
-    if (results.length === 0) return [];
+    if (results.length === 0) {
+      return [];
+    }
     const groups: Array<{ file: string; items: ReadonlyArray<SearchResultItem> }> = [];
     const map = new Map<string, Array<SearchResultItem>>();
     const order: Array<string> = [];
     for (const item of results) {
       const key = item.filePath ?? "";
-      let arr = map.get(key);
-      if (!arr) {
-        arr = [];
+      const existing = map.get(key);
+      if (existing) {
+        existing.push(item);
+      } else {
+        const arr: Array<SearchResultItem> = [item];
         map.set(key, arr);
         order.push(key);
       }
-      arr.push(item);
     }
     for (const key of order) {
       groups.push({ file: key, items: map.get(key)! });
@@ -369,11 +379,7 @@ export const SearchApp = (): React.JSX.Element => {
       {/* ── Result summary ── */}
       {hasResults && (
         <div className={layout.resultSummarySpaced}>
-          <span>
-            {mode === "explore"
-              ? `${resultCount} pairs in ${exploreFileCount} files`
-              : `${resultCount} results in ${fileCount} files`}
-          </span>
+          <span>{RESULT_SUMMARY[mode](resultCount, mode === "explore" ? exploreFileCount : fileCount)}</span>
           <button type="button" className={layout.textLinkButton} onClick={() => dispatch({ type: "clearSearch" })}>
             Clear
           </button>

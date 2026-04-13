@@ -20,16 +20,18 @@ const DICTS: Record<string, Dict> = {
 
 export const resolveDict = (locale?: string | null): Dict => {
   const tag =
-    !locale || locale === "auto"
-      ? (navigator.language ?? "en")
-      : locale;
+    !locale || locale === "auto" ? (navigator.language ?? "en") : locale;
 
   // Exact match
-  if (tag in DICTS) return DICTS[tag]!;
+  if (tag in DICTS) {
+    return DICTS[tag]!;
+  }
 
   // Language prefix (e.g. "ja-JP" -> "ja")
   const prefix = tag.split("-")[0]!;
-  if (prefix in DICTS) return DICTS[prefix]!;
+  if (prefix in DICTS) {
+    return DICTS[prefix]!;
+  }
 
   // Fallback
   return en;

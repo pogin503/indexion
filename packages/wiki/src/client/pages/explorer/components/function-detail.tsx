@@ -25,10 +25,7 @@ const Section = ({
   </div>
 );
 
-export const FunctionDetail = ({
-  fn,
-  onClose,
-}: Props): React.JSX.Element => {
+export const FunctionDetail = ({ fn, onClose }: Props): React.JSX.Element => {
   const d = useDict();
   return (
     <div className="flex flex-col gap-4 p-4">

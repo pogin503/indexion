@@ -31,21 +31,27 @@ export const Header = ({ onSearchClick }: Props): React.JSX.Element => {
     setColorSchemePreference(next);
   };
 
-  const schemeIcon =
-    colorSchemePreference === "dark" ? (
-      <Moon className="size-4" />
-    ) : colorSchemePreference === "light" ? (
-      <Sun className="size-4" />
-    ) : (
-      <Monitor className="size-4" />
-    );
+  const schemeIcon = (() => {
+    switch (colorSchemePreference) {
+      case "dark":
+        return <Moon className="size-4" />;
+      case "light":
+        return <Sun className="size-4" />;
+      default:
+        return <Monitor className="size-4" />;
+    }
+  })();
 
-  const schemeLabel =
-    colorSchemePreference === "dark"
-      ? d.color_scheme_dark
-      : colorSchemePreference === "light"
-        ? d.color_scheme_light
-        : d.color_scheme_system;
+  const schemeLabel = (() => {
+    switch (colorSchemePreference) {
+      case "dark":
+        return d.color_scheme_dark;
+      case "light":
+        return d.color_scheme_light;
+      default:
+        return d.color_scheme_system;
+    }
+  })();
 
   const NAV_ITEMS = [
     ["/", d.nav_explorer, true],

@@ -37,9 +37,7 @@ export const OnboardingState = ({
       </div>
       {!built && (
         <Button onClick={onBuild} disabled={building}>
-          <RefreshCw
-            className={`size-3.5 ${building ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`size-3.5 ${building ? "animate-spin" : ""}`} />
           {building ? d.onboarding_building : d.onboarding_build_button}
         </Button>
       )}

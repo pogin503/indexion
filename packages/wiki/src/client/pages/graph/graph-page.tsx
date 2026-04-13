@@ -74,9 +74,7 @@ export const GraphPage = (): React.JSX.Element => {
       {active && (
         <Card className="pointer-events-none absolute right-4 top-14 z-10 max-w-xs">
           <CardHeader className="p-3">
-            <CardTitle className="font-mono text-sm">
-              {active.path}
-            </CardTitle>
+            <CardTitle className="font-mono text-sm">{active.path}</CardTitle>
             <CardDescription className="font-mono">
               {d.graph_detail(
                 active.fileCount,

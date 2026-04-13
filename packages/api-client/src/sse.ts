@@ -7,7 +7,11 @@
 
 /** SSE event types emitted by the server. */
 export type SseEvent =
-  | { readonly type: "progress"; readonly phase: string; readonly detail: string }
+  | {
+      readonly type: "progress";
+      readonly phase: string;
+      readonly detail: string;
+    }
   | { readonly type: "item"; readonly data: unknown }
   | { readonly type: "items"; readonly data: ReadonlyArray<unknown> }
   | { readonly type: "result"; readonly data: unknown }
@@ -41,7 +45,10 @@ export const postStream = async (
   });
 
   if (!res.ok) {
-    options.onEvent({ type: "error", message: `HTTP ${res.status}: ${res.statusText}` });
+    options.onEvent({
+      type: "error",
+      message: `HTTP ${res.status}: ${res.statusText}`,
+    });
     return;
   }
 
@@ -75,8 +82,9 @@ export const postStream = async (
           try {
             const event = JSON.parse(jsonStr) as SseEvent;
             options.onEvent(event);
-          } catch {
-            // Skip malformed JSON lines
+          } catch (err) {
+            // Skip malformed JSON lines — data stream may contain partial writes
+            console.debug("SSE: skipping malformed JSON", err);
           }
         }
       }
