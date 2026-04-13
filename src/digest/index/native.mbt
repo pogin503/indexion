@@ -605,6 +605,20 @@ pub fn DigestIndex::load_or_create(
 }
 
 ///|
+/// Load index from disk and restore function units from graph.
+/// This is the complete load path — callers should prefer this over
+/// `load_or_create` + manual `restore_units_from_graph`.
+pub fn DigestIndex::load_with_graph(
+  index_dir : String,
+  digest_config : @config.DigestConfig,
+  graph : @graph.CodeGraph,
+) -> DigestIndex {
+  let index = DigestIndex::load_or_create(index_dir, digest_config)
+  index.restore_units_from_graph(graph, digest_config.to_extract_config())
+  index
+}
+
+///|
 /// Save the index to disk.
 pub fn DigestIndex::save_to_dir(
   self : DigestIndex,

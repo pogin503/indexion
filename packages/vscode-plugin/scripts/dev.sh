@@ -11,8 +11,13 @@ if ! command -v code >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "[1/3] Building extension..."
-bun run --cwd "$ROOT_DIR" build
+# Build unless SKIP_BUILD=1 (set by Makefile which already built).
+if [ "${SKIP_BUILD:-}" != "1" ]; then
+  echo "[1/3] Building extension..."
+  bun run --cwd "$ROOT_DIR" build
+else
+  echo "[1/3] Build skipped (SKIP_BUILD=1)."
+fi
 
 echo "[2/3] Resetting isolated VS Code profile..."
 rm -rf "$USER_DATA_DIR" "$EXTENSIONS_DIR"

@@ -29,7 +29,7 @@ fn fixture_config_for(lang_dir : String) -> VerifyConfig {
     ..VerifyConfig::default(),
     spec_patterns: [fixture_root() + "/spec/jsonrpc-2.0.md"],
     target_dir: fixture_root() + "/" + lang_dir,
-    root_dir: Some(""),
+    root_dir: None,
     specs_dir: fixture_specs_dir(),
   }
 }
@@ -41,7 +41,7 @@ fn fixture_config_html(lang_dir : String) -> VerifyConfig {
     ..VerifyConfig::default(),
     spec_patterns: [fixture_root() + "/spec/rfc7396-merge-patch.html"],
     target_dir: fixture_root() + "/" + lang_dir,
-    root_dir: Some(""),
+    root_dir: None,
     specs_dir: fixture_specs_dir(),
   }
 }

@@ -165,7 +165,7 @@ async fn handle_grep_stream(
 async fn handle_search_stream(
   conn : @mhttp.ServerConnection,
   body_text : String,
-  config : ServeConfig,
+  state : ServerState,
   cors : Bool,
 ) -> Unit {
   let json : Json = @json.parse(body_text) catch {
@@ -179,54 +179,26 @@ async fn handle_search_stream(
     send_json_error(conn, 400, "query is required", cors)
     return
   }
-  let paths = json_string_array(json, "paths")
-  let effective_paths = if paths.length() > 0 {
-    for p in paths {
-      if !validate_path(p) {
-        send_json_error(conn, 400, "Invalid path", cors)
-        return
-      }
-    }
-    paths
-  } else {
-    [config.workspace_dir]
-  }
+  let top_k = json_double(json, "topK", 20.0).to_int()
+  let min_score = json_double(json, "minScore", 0.05)
   // Start SSE
   sse_start(conn, cors)
-  sse_progress(conn, "indexing", "Building search index...")
-  let search_config : @search_cli.SearchConfig = {
+  sse_progress(conn, "searching", "Querying digest index...")
+  // Query the pre-built digest index directly — no corpus rebuild.
+  let hits = serve_query_cascade(
+    state.index,
+    state.digest_config,
     query,
-    paths: effective_paths,
-    top_k: json_double(json, "topK", 20.0).to_int(),
-    min_score: json_double(json, "minScore", 0.05),
-    includes: json_string_array(json, "includes"),
-    excludes: json_string_array(json, "excludes"),
-    specs_dir: config.specs_dir,
-    files_only: false,
-    json_output: true,
-    filter_str: json_string(json, "filter", ""),
-    provider_name: json_string(json, "provider", "tfidf"),
-    api_key_env: @embed_config.DEFAULT_API_KEY_ENV,
-    model: @embed_config.DEFAULT_EMBEDDING_MODEL,
-    base_url: @embed_config.DEFAULT_API_BASE_URL,
-    dim: @embed_config.DEFAULT_TFIDF_DIM,
-  }
-  sse_progress(conn, "searching", "Querying...")
-  match @search_cli.run_to_json(search_config) {
-    Some(result) => {
-      let parsed : Json = @json.parse(result) catch { _ => Json::array([]) }
-      match parsed {
-        Array(arr) => {
-          for item in arr {
-            sse_item(conn, item)
-          }
-          sse_done(conn, arr.length())
-        }
-        _ => sse_done(conn, 0)
-      }
+    top_k,
+  )
+  let mut total = 0
+  for hit in hits {
+    if hit.score >= min_score {
+      sse_item(conn, query_hit_to_search_json(hit))
+      total = total + 1
     }
-    None => sse_error(conn, "Search failed")
   }
+  sse_done(conn, total)
 }
 
 // ─── Streaming Explore ─────────────────────────────────
@@ -333,4 +305,53 @@ async fn handle_digest_query_stream(
     }
   }
   sse_done(conn, total)
+}
+
+///|
+/// Convert a digest QueryHit to the search frontend JSON format.
+/// Maps digest fields to the SearchHit shape: title, source, line, kind, score.
+fn query_hit_to_search_json(hit : @types.QueryHit) -> Json {
+  let m : Map[String, Json] = {}
+  m["id"] = hit.function.symbol.id.to_json()
+  m["title"] = hit.function.name().to_json()
+  m["source"] = hit.function.module_id.to_json()
+  m["line"] = (0 : Int).to_json()
+  m["kind"] = hit.function.symbol.kind.to_json()
+  m["score"] = hit.score.to_json()
+  let summary = match hit.function.symbol.doc {
+    Some(doc) => doc
+    None =>
+      match hit.function.impression {
+        Some(imp) => imp.summary
+        None => ""
+      }
+  }
+  if summary.length() > 0 {
+    let attrs_json : Map[String, Json] = {}
+    attrs_json["summary"] = summary.to_json()
+    m["attrs"] = Json::object(attrs_json)
+  }
+  Json::object(m)
+}
+
+///|
+/// Convert a SearchHit to the JSON format expected by the frontend.
+/// Matches the structure produced by @search_cli.hits_to_json (per-item).
+fn search_hit_to_json(hit : @search_engine.SearchHit) -> Json {
+  let doc = hit.document
+  let m : Map[String, Json] = {}
+  m["id"] = doc.id.to_json()
+  m["title"] = doc.title.to_json()
+  m["source"] = doc.source.to_json()
+  m["line"] = doc.line.to_json()
+  m["kind"] = doc.kind.to_json()
+  m["score"] = hit.score.to_json()
+  if !doc.attrs.is_empty() {
+    let attrs_json : Map[String, Json] = {}
+    for entry in doc.attrs {
+      attrs_json[entry.0] = entry.1.to_json()
+    }
+    m["attrs"] = Json::object(attrs_json)
+  }
+  Json::object(m)
 }

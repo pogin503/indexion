@@ -154,22 +154,12 @@ fn collect_search_files(
   config : GrepConfig,
   registry : @kgf_registry.KGFRegistry,
 ) -> Array[(String, String)] {
-  let kgf_ignore = registry.collect_ignore_patterns()
-  let discover_opts = @pipeline.DiscoverOptions::new(
-    recursive=true,
+  @common.collect_files(
+    paths,
     includes=config.includes,
     excludes=config.excludes,
-    include_hidden=true,
-    kgf_ignore~,
+    registry=Some(registry),
   )
-  let results : Array[(String, String)] = []
-  let supported = @pipeline.collect_supported_file_info(
-    paths, discover_opts, registry,
-  )
-  for file in supported {
-    results.push((file.path, file.content))
-  }
-  results
 }
 
 ///|

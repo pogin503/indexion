@@ -169,7 +169,10 @@ pub fn run_to_string(config : GraphConfig) -> String? {
     target_dirs=config.input_paths,
   )
   let kgf_ignore = registry.collect_ignore_patterns()
-  let discover_opts = @pipeline.DiscoverOptions::new(kgf_ignore~)
+  let discover_opts = @pipeline.DiscoverOptions::new(
+    root_dir=@pipeline.root_dir_from_paths(config.input_paths),
+    kgf_ignore~,
+  )
   let candidate_paths = @pipeline.discover_files(
     config.input_paths,
     discover_opts,

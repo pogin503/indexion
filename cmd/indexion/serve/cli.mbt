@@ -411,7 +411,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       if req.meth == @mhttp.Post && path == "/api/search" {
         let body_data = body.read_all()
         let body_text = body_data.text()
-        handle_search(conn, body_text, config, cors_enabled)
+        handle_search(conn, body_text, state, cors_enabled)
         return
       }
       // Grep endpoint
@@ -432,7 +432,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       if req.meth == @mhttp.Post && path == "/api/search/stream" {
         let body_data = body.read_all()
         let body_text = body_data.text()
-        handle_search_stream(conn, body_text, config, cors_enabled)
+        handle_search_stream(conn, body_text, state, cors_enabled)
         return
       }
       if req.meth == @mhttp.Post && path == "/api/grep/stream" {
@@ -638,9 +638,10 @@ async fn do_load(
   @digest_cli.log_progress(
     "Graph: " + graph.symbol_count().to_string() + " symbols",
   )
-  let index = @index.DigestIndex::load_or_create(
+  let index = @index.DigestIndex::load_with_graph(
     config.index_dir,
     digest_config,
+    graph,
   )
   let provider = @digest_cli.resolve_provider(digest_cli_config)
   let index_json = build_index_json(index)

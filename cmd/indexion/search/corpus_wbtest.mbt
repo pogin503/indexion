@@ -215,3 +215,31 @@ async test "search retrieval keeps code-side version SoT with explicit file list
   assert_true(has_document_for_source(docs, root + "/moon.mod.json"))
   assert_true(has_hit_source(hits, root + "/src/update/version.mbt"))
 }
+
+///|
+test "build_corpus excludes files matched by .indexionignore" {
+  let root = temp_dir("ignore")
+  write_file(root + "/src/main.mbt", "fn main() { println(\"hello\") }\n")
+  write_file(root + "/_build/out.mbt", "fn out() {}\n")
+  write_file(root + "/node_modules/dep.mbt", "fn dep() {}\n")
+  write_file(root + "/fixtures/sample.mbt", "fn sample() {}\n")
+  write_file(root + "/.indexionignore", "_build/\nnode_modules/\nfixtures/\n")
+  let docs = build_corpus([root], search_config())
+  // Included
+  assert_true(has_document_for_source(docs, root + "/src/main.mbt"))
+  // Excluded by .indexionignore
+  assert_false(has_document_for_source(docs, root + "/_build/out.mbt"))
+  assert_false(has_document_for_source(docs, root + "/node_modules/dep.mbt"))
+  assert_false(has_document_for_source(docs, root + "/fixtures/sample.mbt"))
+}
+
+///|
+test "build_corpus excludes files matched by .gitignore" {
+  let root = temp_dir("gitignore")
+  write_file(root + "/src/app.mbt", "fn app() {}\n")
+  write_file(root + "/dist/bundle.js", "var x = 1;\n")
+  write_file(root + "/.gitignore", "dist/\n")
+  let docs = build_corpus([root], search_config())
+  assert_true(has_document_for_source(docs, root + "/src/app.mbt"))
+  assert_false(has_document_for_source(docs, root + "/dist/bundle.js"))
+}

@@ -137,6 +137,95 @@ pub fn command() -> @argparse.Command {
 }
 
 ///|
+/// Load the digest index from the project's .indexion/digest/ directory.
+/// Returns None if no index exists.
+fn load_digest_index(workspace_dir : String) -> @index.DigestIndex? {
+  let index_dir = match @config.resolve_project_indexion_dir(
+    workspace_dir,
+    "digest",
+  ) {
+    Some(dir) => dir
+    None => return None
+  }
+  let mp = @dconfig.manifest_path(index_dir)
+  let gp = @dconfig.graph_path(index_dir)
+  if !@fs.path_exists(mp) || !@fs.path_exists(gp) {
+    return None
+  }
+  let embed_file_config = @digest_cli.load_embedding_file_config()
+  let digest_config = @digest_cli.build_digest_config(
+    {
+      command: "",
+      input_path: workspace_dir,
+      purpose: "",
+      index_dir,
+      provider: "auto",
+      dim: @dconfig.DEFAULT_TFIDF_DIM,
+      strategy: "hnsw",
+      specs_dir: "kgfs",
+      api_key_env: @dconfig.DEFAULT_API_KEY_ENV,
+      api_base_url: @dconfig.DEFAULT_API_BASE_URL,
+      model: @dconfig.DEFAULT_EMBEDDING_MODEL,
+      source_dir: workspace_dir,
+      top_k: 10,
+      min_score: 0.1,
+      no_update: false,
+      file_providers: embed_file_config.providers,
+    },
+    file_providers=embed_file_config.providers,
+  )
+  let graph_json = @fs.read_file_to_string(gp) catch { _ => return None }
+  let graph = match @graph.CodeGraph::from_json_string(graph_json) {
+    Some(g) => g
+    None => return None
+  }
+  Some(@index.DigestIndex::load_with_graph(index_dir, digest_config, graph))
+}
+
+///|
+/// Query the digest index and convert results to SearchHits.
+fn query_digest_index(
+  index : @index.DigestIndex,
+  query : String,
+  top_k : Int,
+  min_score : Double,
+) -> Array[@search_engine.SearchHit] {
+  let digest_hits = index.query(query, top_k)
+  let hits : Array[@search_engine.SearchHit] = []
+  for dh in digest_hits {
+    if dh.score < min_score {
+      continue
+    }
+    let func = dh.function
+    let summary = match func.symbol.doc {
+      Some(doc) => doc
+      None =>
+        match func.impression {
+          Some(imp) => imp.summary
+          None => ""
+        }
+    }
+    let doc_attrs : Map[String, String] = {}
+    doc_attrs["node_type"] = @kgf_features.node_type_code
+    doc_attrs["node_kind"] = func.symbol.kind
+    if summary.length() > 0 {
+      doc_attrs["summary"] = summary
+    }
+    let doc : @search_engine.SearchDocument = {
+      id: func.symbol.id,
+      text: "",
+      title: func.name(),
+      source: func.module_id,
+      line: 0,
+      kind: func.symbol.kind,
+      attrs: doc_attrs,
+    }
+    hits.push({ document: doc, score: dh.score })
+  }
+  hits
+}
+
+///|
 /// Run search and return results as JSON string.
 /// For use by `indexion serve` API endpoint.
 pub async fn run_to_json(config : SearchConfig) -> String? {
@@ -159,34 +248,20 @@ pub async fn run_to_json(config : SearchConfig) -> String? {
     }
     None => ()
   }
-  let documents = build_corpus(paths, config)
-  if documents.is_empty() {
-    return Some("[]")
+  // Use the pre-built digest index (SoT).
+  let workspace = graph_target_dir(paths)
+  match load_digest_index(workspace) {
+    Some(index) => {
+      let hits = query_digest_index(
+        index,
+        config.query,
+        config.top_k,
+        config.min_score,
+      )
+      Some(hits_to_json(hits))
+    }
+    None => Some("[]")
   }
-  let provider = @embed_config.resolve_provider(
-    config.provider_name,
-    config.api_key_env,
-    config.base_url,
-    config.model,
-    config.dim,
-  ) catch {
-    _ => return None
-  }
-  let engine = @search_engine.build_index(documents, provider) catch {
-    _ => return None
-  }
-  let filter = parse_filter(config.filter_str)
-  let hits = @search_engine.search_index(
-    engine,
-    config.query,
-    provider,
-    config.top_k,
-    config.min_score,
-    filter~,
-  ) catch {
-    _ => return None
-  }
-  Some(hits_to_json(hits))
 }
 
 ///|
@@ -199,7 +274,6 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
   let paths = if config.paths.is_empty() { ["."] } else { config.paths }
   // When targeting a single wiki directory with a pre-built vector index,
   // use the full WikiSearchIndex (engine + sections map) to resolve hits.
-  // This avoids the id_map/documents emptiness that results from from_bytes().
   match load_prebuilt_wiki_index(paths) {
     Some(wiki_idx) => {
       let wiki_hits = wiki_idx.search(
@@ -232,69 +306,27 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     }
     None => ()
   }
-  let documents = build_corpus(paths, config)
-  if documents.is_empty() {
-    println("No searchable content found.")
-    return
-  }
-  let provider = @embed_config.resolve_provider(
-    config.provider_name,
-    config.api_key_env,
-    config.base_url,
-    config.model,
-    config.dim,
-  ) catch {
-    @embed_config.MissingApiKey(env) => {
-      println(
-        "Error: " + env + " not set. provider=openai requires an API key.",
+  // Use the pre-built digest index (SoT).
+  let workspace = graph_target_dir(paths)
+  match load_digest_index(workspace) {
+    Some(index) => {
+      let hits = query_digest_index(
+        index,
+        config.query,
+        config.top_k,
+        config.min_score,
       )
-      return
+      if hits.is_empty() {
+        println("No results found.")
+      } else if config.json_output {
+        format_json(hits)
+      } else {
+        format_text(hits, config.files_only)
+      }
     }
-    @embed_config.UnknownProvider(name) => {
-      println("Error: Unknown provider: " + name)
-      return
+    None => {
+      println(@digest_cli.build_hint())
     }
-  }
-  let engine = @search_engine.build_index(documents, provider) catch {
-    @embed.ParseError(msg) => {
-      println("Error: Failed to build index: " + msg)
-      return
-    }
-    @embed.ApiError(code, msg) => {
-      println("Error: API error (" + code.to_string() + "): " + msg)
-      return
-    }
-    @embed.NoResult => {
-      println("Error: No embedding result.")
-      return
-    }
-  }
-  let filter = parse_filter(config.filter_str)
-  let hits = @search_engine.search_index(
-    engine,
-    config.query,
-    provider,
-    config.top_k,
-    config.min_score,
-    filter~,
-  ) catch {
-    @embed.ParseError(msg) => {
-      println("Error: Search failed: " + msg)
-      return
-    }
-    @embed.ApiError(code, msg) => {
-      println("Error: Search API error (" + code.to_string() + "): " + msg)
-      return
-    }
-    @embed.NoResult => {
-      println("Error: No search embedding result.")
-      return
-    }
-  }
-  if config.json_output {
-    format_json(hits)
-  } else {
-    format_text(hits, config.files_only)
   }
 }
 
@@ -327,7 +359,7 @@ fn wiki_hits_to_search_hits(
 /// Parse filter string into FilterExpr.
 /// Format: "key:value,key2:value2" → Must([match_(key, value), ...])
 /// Empty string → None (no filter).
-fn parse_filter(filter_str : String) -> @vcdb_filter.FilterExpr? {
+pub fn parse_filter(filter_str : String) -> @vcdb_filter.FilterExpr? {
   if filter_str.length() == 0 {
     return None
   }

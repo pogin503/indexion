@@ -28,6 +28,16 @@ import styles from "./app.module.css";
 
 const STRATEGIES: ReadonlyArray<ComparisonStrategy> = ["tfidf", "hybrid", "apted", "tsed", "ncd"];
 
+const basename = (path: string): string => {
+  const i = path.lastIndexOf("/");
+  return i >= 0 ? path.slice(i + 1) : path;
+};
+
+const dirname = (path: string): string => {
+  const i = path.lastIndexOf("/");
+  return i >= 0 ? path.slice(0, i) : "";
+};
+
 // ─── State & reducer ────────────────────────────────────
 
 type SearchState = {
@@ -264,6 +274,30 @@ export const SearchApp = (): React.JSX.Element => {
   const hasResults = results.length > 0 || explorePairs.length > 0;
   const resultCount = mode === "explore" ? explorePairs.length : results.length;
 
+  // Group results by file for tree display
+  const fileGroups = React.useMemo(() => {
+    if (results.length === 0) return [];
+    const groups: Array<{ file: string; items: ReadonlyArray<SearchResultItem> }> = [];
+    const map = new Map<string, Array<SearchResultItem>>();
+    const order: Array<string> = [];
+    for (const item of results) {
+      const key = item.filePath ?? "";
+      let arr = map.get(key);
+      if (!arr) {
+        arr = [];
+        map.set(key, arr);
+        order.push(key);
+      }
+      arr.push(item);
+    }
+    for (const key of order) {
+      groups.push({ file: key, items: map.get(key)! });
+    }
+    return groups;
+  }, [results]);
+
+  const fileCount = fileGroups.length;
+
   return (
     <div className={layout.sidebarRoot}>
       {/* ── Search input composite (icon + input + toggle buttons in one border) ── */}
@@ -336,7 +370,9 @@ export const SearchApp = (): React.JSX.Element => {
       {hasResults && (
         <div className={layout.resultSummarySpaced}>
           <span>
-            {mode === "explore" ? `${resultCount} pairs in ${exploreFileCount} files` : `${resultCount} results`}
+            {mode === "explore"
+              ? `${resultCount} pairs in ${exploreFileCount} files`
+              : `${resultCount} results in ${fileCount} files`}
           </span>
           <button type="button" className={layout.textLinkButton} onClick={() => dispatch({ type: "clearSearch" })}>
             Clear
@@ -344,17 +380,35 @@ export const SearchApp = (): React.JSX.Element => {
         </div>
       )}
 
-      {/* ── Results: standard items ── */}
-      {results.length > 0 && (
+      {/* ── Results: grouped by file ── */}
+      {fileGroups.length > 0 && (
         <vscode-tree className={layout.scrollableTree}>
-          {results.map((item, i) => (
-            <vscode-tree-item key={i} onClick={() => handleResultClick(item)}>
-              <vscode-icon slot="icon-leaf" name={item.icon} />
-              {item.label}
-              <span slot="description">{item.description}</span>
-              {item.score !== undefined && (
-                <vscode-badge slot="decoration">{Math.round(item.score * 100)}%</vscode-badge>
-              )}
+          {fileGroups.map((group) => (
+            <vscode-tree-item
+              key={group.file}
+              open
+              onClick={() => postMessage({ type: "openFile", filePath: group.file })}
+            >
+              <vscode-icon slot="icon-branch" name="file" />
+              <vscode-icon slot="icon-leaf" name="file" />
+              {basename(group.file)}
+              <span slot="description">{dirname(group.file)}</span>
+              <vscode-badge slot="decoration">{group.items.length}</vscode-badge>
+              {group.items.map((item, j) => (
+                <vscode-tree-item
+                  key={j}
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    handleResultClick(item);
+                  }}
+                >
+                  <vscode-icon slot="icon-leaf" name="symbol-method" />
+                  {item.label}
+                  {item.score !== undefined && (
+                    <vscode-badge slot="decoration">{Math.round(item.score * 100)}%</vscode-badge>
+                  )}
+                </vscode-tree-item>
+              ))}
             </vscode-tree-item>
           ))}
         </vscode-tree>

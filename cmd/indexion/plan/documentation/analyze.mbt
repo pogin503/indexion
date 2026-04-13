@@ -112,6 +112,7 @@ pub fn analyze_documentation(
   }
   // Stage 1: Discover files using pipeline SoT
   let discover_opts = @pipeline.DiscoverOptions::new(
+    root_dir=normalized_dir,
     recursive=true,
     kgf_ignore~,
   )

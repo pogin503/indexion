@@ -241,6 +241,7 @@ pub fn run_matches(matches : @argparse.Matches) -> Unit {
   log_progress("[2/4] Discovering files...")
   let kgf_ignore = registry.collect_ignore_patterns()
   let discover_opts = @pipeline.DiscoverOptions::new(
+    root_dir=@pipeline.root_dir_from_paths(config.paths),
     recursive=config.recursive,
     excludes=config.excludes,
     kgf_ignore~,

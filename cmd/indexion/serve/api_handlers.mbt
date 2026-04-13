@@ -517,7 +517,7 @@ async fn handle_plan_readme(
 async fn handle_search(
   conn : @mhttp.ServerConnection,
   body_text : String,
-  config : ServeConfig,
+  state : ServerState,
   cors : Bool,
 ) -> Unit {
   let json : Json = @json.parse(body_text) catch {
@@ -531,39 +531,22 @@ async fn handle_search(
     send_json_error(conn, 400, "query is required", cors)
     return
   }
-  let paths = json_string_array(json, "paths")
-  let effective_paths = if paths.length() > 0 {
-    for p in paths {
-      if !validate_path(p) {
-        send_json_error(conn, 400, "Invalid path", cors)
-        return
-      }
-    }
-    paths
-  } else {
-    [config.workspace_dir]
-  }
-  let search_config : @search_cli.SearchConfig = {
+  let top_k = json_double(json, "topK", 20.0).to_int()
+  let min_score = json_double(json, "minScore", 0.05)
+  // Query the pre-built digest index directly.
+  let hits = serve_query_cascade(
+    state.index,
+    state.digest_config,
     query,
-    paths: effective_paths,
-    top_k: json_double(json, "topK", 20.0).to_int(),
-    min_score: json_double(json, "minScore", 0.05),
-    includes: json_string_array(json, "includes"),
-    excludes: json_string_array(json, "excludes"),
-    specs_dir: config.specs_dir,
-    files_only: false,
-    json_output: true,
-    filter_str: json_string(json, "filter", ""),
-    provider_name: json_string(json, "provider", "tfidf"),
-    api_key_env: @embed_config.DEFAULT_API_KEY_ENV,
-    model: @embed_config.DEFAULT_EMBEDDING_MODEL,
-    base_url: @embed_config.DEFAULT_API_BASE_URL,
-    dim: @embed_config.DEFAULT_TFIDF_DIM,
+    top_k,
+  )
+  let arr : Array[Json] = []
+  for hit in hits {
+    if hit.score >= min_score {
+      arr.push(query_hit_to_search_json(hit))
+    }
   }
-  match @search_cli.run_to_json(search_config) {
-    Some(result) => send_json_ok(conn, result, cors)
-    None => send_json_error(conn, 500, "Search failed", cors)
-  }
+  send_json_ok(conn, Json::array(arr).stringify(), cors)
 }
 
 ///|

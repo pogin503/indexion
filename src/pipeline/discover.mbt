@@ -43,14 +43,23 @@ pub fn DiscoverOptions::default() -> DiscoverOptions {
 ///|
 /// Create discover options.
 pub fn DiscoverOptions::new(
+  root_dir~ : String,
   recursive? : Bool = true,
   includes? : Array[String] = [],
   excludes? : Array[String] = [],
   include_hidden? : Bool = false,
   kgf_ignore? : Array[(String, String)] = [],
-  root_dir? : String = "",
 ) -> DiscoverOptions {
   { recursive, includes, excludes, include_hidden, kgf_ignore, root_dir }
+}
+
+///|
+/// Derive root_dir from a list of target paths.
+/// Uses the first path, falling back to ".".
+/// SoT for root_dir derivation — all callers that have paths but not
+/// an explicit root_dir should use this instead of inline logic.
+pub fn root_dir_from_paths(paths : Array[String]) -> String {
+  if paths.length() > 0 { paths[0] } else { "." }
 }
 
 ///|
@@ -62,12 +71,13 @@ pub fn discover_files(
   paths : Array[String],
   options : DiscoverOptions,
 ) -> Array[String] {
-  // Create filter config - load ignore patterns from project root if specified
-  let mut filter = if options.root_dir.length() > 0 {
-    build_filter_from_root(options.root_dir)
-  } else {
-    @filter.FilterConfig::new()
+  // Load ignore patterns from root_dir (required — empty string is a bug).
+  guard options.root_dir.length() > 0 else {
+    abort(
+      "discover_files: root_dir must not be empty. Use root_dir_from_paths() to derive it.",
+    )
   }
+  let mut filter = build_filter_from_root(options.root_dir)
   // Add user includes and excludes
   filter = filter
     .with_includes(options.includes)
@@ -190,8 +200,12 @@ fn collect_files_impl(
           clean_path + "/" + entry
         }
         if @fs.is_dir(full_path) {
-          if !options.include_hidden && dir_filter.should_skip_dir(entry) {
-            continue
+          if dir_filter.should_skip_dir(entry) {
+            // include_hidden overrides only the default ".*" hidden-dir rule,
+            // not user/project ignore patterns (.gitignore, .indexionignore, KGF).
+            if !options.include_hidden || !has_hidden_segment(entry) {
+              continue
+            }
           }
           if options.recursive {
             collect_files_impl(full_path, options, dir_filter, file_paths)
@@ -232,15 +246,14 @@ fn has_hidden_segment(path : String) -> Bool {
 }
 
 ///|
-/// Build a FilterConfig with hoisted ignore patterns from the project root.
-/// Loads .gitignore (hoisted from git root) and .indexionignore (hoisted from
-/// indexion root) and combines them into a single filter configuration.
+/// Build a FilterConfig with ignore patterns from root_dir only.
+/// Reads .gitignore and .indexionignore directly from root_dir without
+/// traversing up to git root — parent directories' ignore files are
+/// loaded incrementally during directory traversal in collect_files_impl.
 pub fn build_filter_from_root(root_dir : String) -> @filter.FilterConfig {
-  let git_patterns = @vcs_git.load_gitignore(root_dir)
-  let ixn_patterns = @config.load_indexionignore(root_dir)
-  let config = @filter.FilterConfig::new()
-  let config = config.with_gitignore_patterns(git_patterns)
-  config.with_indexionignore_patterns(ixn_patterns)
+  @filter.FilterConfig::new()
+    .with_gitignore_from_dir(root_dir, @vcs_git.GITIGNORE_FILENAME)
+    .with_indexionignore_from_dir(root_dir, @config.INDEXIONIGNORE_FILENAME)
 }
 
 ///|

@@ -67,7 +67,7 @@ fn discover_spec_files(
   }
   let discovered = @pipeline.collect_supported_file_info(
     [spec_path],
-    @pipeline.DiscoverOptions::new(),
+    @pipeline.DiscoverOptions::new(root_dir=spec_path),
     registry,
   )
   for file in discovered {
@@ -101,7 +101,7 @@ fn discover_impl_files(
     let kgf_ignore = registry.collect_ignore_patterns()
     let discovered = @pipeline.collect_supported_file_info(
       [impl_path],
-      @pipeline.DiscoverOptions::new(kgf_ignore~),
+      @pipeline.DiscoverOptions::new(root_dir=impl_path, kgf_ignore~),
       registry,
     )
     for file in discovered {

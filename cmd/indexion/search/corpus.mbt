@@ -8,7 +8,7 @@
 /// Build a search corpus from the given paths.
 /// Classifies files using KGF spec features: specs with content_type: document
 /// are indexed by section splitting, others by function extraction.
-fn build_corpus(
+pub fn build_corpus(
   paths : Array[String],
   config : SearchConfig,
 ) -> Array[@search_engine.SearchDocument] {
@@ -41,6 +41,7 @@ fn build_corpus(
       None => []
     }
     let opts = @pipeline.DiscoverOptions::new(
+      root_dir=@pipeline.root_dir_from_paths(file_paths),
       recursive=true,
       includes=config.includes,
       excludes=config.excludes,
@@ -61,20 +62,19 @@ fn build_corpus(
         None => code_files.push((file.path, file.content))
       }
     }
-    // 5. Build code documents via CodeGraph (includes edge info)
+    // 5. Build code documents via KGF function extraction (lightweight).
+    //    Graph construction (build_graph_from_source) is too expensive for
+    //    search — caller/callee counts do not justify a full rebuild.
+    //    If a pre-built graph is needed, the serve layer can supply it
+    //    separately via build_corpus_with_graph().
     if code_files.length() > 0 {
-      if has_directory_input(file_paths) {
-        let graph_target = graph_target_dir(file_paths)
-        extract_code_documents_with_graph(
-          code_files,
-          registry,
-          config.specs_dir,
-          graph_target,
-          documents,
-        )
-      } else {
-        extract_code_file_documents(code_files, registry, documents)
+      let code_docs = @grep.extract_code_documents(code_files, registry)
+      for doc in code_docs {
+        documents.push(doc)
       }
+      // Also emit file-level summary documents so broad queries
+      // match files by path and symbol names.
+      extract_code_file_documents(code_files, registry, documents)
     }
     // 6. Build structured documents.
     for file in structured_files {
@@ -85,23 +85,6 @@ fn build_corpus(
     }
   }
   documents
-}
-
-///|
-fn has_directory_input(paths : Array[String]) -> Bool {
-  for path in paths {
-    if path_is_dir(path) {
-      return true
-    }
-  }
-  false
-}
-
-///|
-fn path_is_dir(path : String) -> Bool {
-  @fs.is_dir(path) catch {
-    _ => false
-  }
 }
 
 ///|
@@ -381,245 +364,6 @@ fn push_whole_file_document(
   })
 }
 
-///|
-/// Build code documents via CodeGraph when possible.
-/// Uses a file-hash-based cache: if all source file hashes match the previous
-/// run, the cached graph is reused without re-analyzing. On any change (drift),
-/// the graph is rebuilt and the cache updated.
-/// Falls back to direct function extraction if graph construction fails.
-fn extract_code_documents_with_graph(
-  code_files : Array[(String, String)],
-  registry : @kgf_registry.KGFRegistry?,
-  specs_dir : String,
-  target_dir : String,
-  out : Array[@search_engine.SearchDocument],
-) -> Unit {
-  let cache_dir = @config.join_path(
-    match @config.resolve_project_indexion_dir(target_dir, "cache") {
-      Some(dir) => dir
-      None => @config.join_path(target_dir, ".indexion/cache")
-    },
-    "search-graph",
-  )
-  // Try cache
-  match load_graph_cache(cache_dir, code_files) {
-    Some(graph) => extract_code_from_graph(graph, code_files, registry, out)
-    None => {
-      // Cache miss or drift — rebuild
-      let build_result = @digest_cli.build_graph_from_source(
-        target_dir, specs_dir,
-      )
-      match build_result {
-        Some(r) => {
-          save_graph_cache(cache_dir, r.graph, r.file_hashes)
-          extract_code_from_graph(r.graph, code_files, registry, out)
-        }
-        None => {
-          let code_docs = @grep.extract_code_documents(code_files, registry)
-          for doc in code_docs {
-            out.push(doc)
-          }
-        }
-      }
-    }
-  }
-}
-
-///|
-/// Compute a combined hash of all source file hashes for cache validation.
-fn compute_files_fingerprint(code_files : Array[(String, String)]) -> String {
-  let buf = StringBuilder::new()
-  for file in code_files {
-    buf.write_string(file.0)
-    buf.write_char(':')
-    buf.write_string(file.1.length().to_string())
-    buf.write_char('\n')
-  }
-  @cas_hash.compute_hash(buf.to_string()).to_string()
-}
-
-///|
-/// Try to load a cached graph if the fingerprint matches.
-fn load_graph_cache(
-  cache_dir : String,
-  code_files : Array[(String, String)],
-) -> @graph.CodeGraph? {
-  let fp_path = @config.join_path(cache_dir, "fingerprint.txt")
-  let graph_path = @config.join_path(cache_dir, "graph.json")
-  let saved_fp = @fs.read_file_to_string(fp_path) catch { _ => return None }
-  let current_fp = compute_files_fingerprint(code_files)
-  if @common.trim_ascii_spaces(saved_fp) != current_fp {
-    return None
-  }
-  let graph_json_str = @fs.read_file_to_string(graph_path) catch {
-    _ => return None
-  }
-  @graph.CodeGraph::from_json_string(graph_json_str)
-}
-
-///|
-/// Save graph and fingerprint to cache.
-fn save_graph_cache(
-  cache_dir : String,
-  graph : @graph.CodeGraph,
-  file_hashes : Map[String, @cas_types.ContentHash],
-) -> Unit {
-  @config.ensure_dir_recursive(cache_dir)
-  let fp_path = @config.join_path(cache_dir, "fingerprint.txt")
-  let graph_path = @config.join_path(cache_dir, "graph.json")
-  // Fingerprint from actual file hashes
-  let buf = StringBuilder::new()
-  for entry in file_hashes {
-    buf.write_string(entry.0)
-    buf.write_char(':')
-    buf.write_string(entry.1.to_string())
-    buf.write_char('\n')
-  }
-  let fp = @cas_hash.compute_hash(buf.to_string()).to_string()
-  @fs.write_string_to_file(fp_path, fp) catch {
-    _ => ()
-  }
-  let graph_json = graph.to_json().stringify()
-  @fs.write_string_to_file(graph_path, graph_json) catch {
-    _ => ()
-  }
-}
-
-///|
-/// Extract code documents from CodeGraph with edge information.
-/// Produces both symbol-level documents (for precise matches) and
-/// file-level summary documents (so that file-scoped queries like
-/// "spec draft profile" can locate the containing file).
-fn extract_code_from_graph(
-  graph : @graph.CodeGraph,
-  code_files : Array[(String, String)],
-  registry : @kgf_registry.KGFRegistry?,
-  out : Array[@search_engine.SearchDocument],
-) -> Unit {
-  // Build set of target file paths for filtering
-  let file_set : Map[String, Bool] = {}
-  for file in code_files {
-    file_set[file.0] = true
-  }
-  // Build module_id → file path mapping
-  let module_files : Map[String, String] = {}
-  for mod_entry in graph.get_modules() {
-    match mod_entry.1.file {
-      Some(f) => module_files[mod_entry.0] = f
-      None => ()
-    }
-  }
-  // Collect symbol names per file for file-level summary documents
-  let file_symbols : Map[String, Array[String]] = {}
-  for entry in graph.get_symbols() {
-    let symbol = entry.1
-    let module_file = match module_files.get(symbol.module_id) {
-      Some(f) => f
-      None => continue
-    }
-    // Only include symbols from target files
-    if !file_set.contains(module_file) {
-      continue
-    }
-    let lang = match registry {
-      Some(reg) =>
-        match reg.detect_from_path(module_file) {
-          Some(l) => l
-          None => ""
-        }
-      None => ""
-    }
-    let buf = StringBuilder::new()
-    buf.write_string(symbol.name)
-    buf.write_string(" ")
-    buf.write_string(symbol.kind)
-    buf.write_string(" ")
-    buf.write_string(symbol.ns)
-    buf.write_string(" ")
-    buf.write_string(@config.basename(module_file))
-    buf.write_string(" ")
-    buf.write_string(symbol.module_id)
-    let callers = graph.get_callers(entry.0)
-    let callees = graph.get_callees(entry.0)
-    let doc_attrs : Map[String, String] = {}
-    doc_attrs["node_type"] = @kgf_features.node_type_code
-    doc_attrs["node_kind"] = symbol.kind
-    if lang.length() > 0 {
-      doc_attrs["language"] = lang
-    }
-    doc_attrs["module"] = symbol.module_id
-    doc_attrs["callers"] = callers.length().to_string()
-    doc_attrs["callees"] = callees.length().to_string()
-    match symbol.doc {
-      Some(doc) => {
-        doc_attrs["doc"] = doc
-        buf.write_string(" ")
-        buf.write_string(doc)
-      }
-      None => ()
-    }
-    out.push({
-      id: module_file + ":" + symbol.name,
-      text: buf.to_string(),
-      title: symbol.name,
-      source: module_file,
-      line: 0,
-      kind: symbol.kind,
-      attrs: doc_attrs,
-    })
-    // Accumulate symbol names for the file-level summary
-    match file_symbols.get(module_file) {
-      Some(arr) => arr.push(symbol.name)
-      None => file_symbols[module_file] = [symbol.name]
-    }
-  }
-  // Emit one file-level summary document per source file.
-  // Its text aggregates the file path components and all symbol names so that
-  // broad queries ("spec draft profile") match the file itself.
-  for file in code_files {
-    let (path, _content) = file
-    let lang = match registry {
-      Some(reg) =>
-        match reg.detect_from_path(path) {
-          Some(l) => l
-          None => ""
-        }
-      None => ""
-    }
-    let buf = StringBuilder::new()
-    buf.write_string(path)
-    buf.write_string(" ")
-    // Include path components as separate tokens so queries like
-    // "spec draft profile" match path segments individually.
-    for segment in @common.split_by_slash(path) {
-      buf.write_string(segment)
-      buf.write_string(" ")
-    }
-    match file_symbols.get(path) {
-      Some(names) =>
-        for name in names {
-          buf.write_string(" ")
-          buf.write_string(name)
-        }
-      None => ()
-    }
-    let attrs : Map[String, String] = {}
-    attrs["node_type"] = @kgf_features.node_type_code
-    attrs["node_kind"] = "file"
-    if lang.length() > 0 {
-      attrs["language"] = lang
-    }
-    out.push({
-      id: path,
-      text: buf.to_string(),
-      title: @config.basename(path),
-      source: path,
-      line: 1,
-      kind: "file",
-      attrs,
-    })
-  }
-}
 
 ///|
 fn extract_code_file_documents(

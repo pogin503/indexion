@@ -372,6 +372,13 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
 
 ///|
 /// Write progress message (TODO: use stderr when available).
+///|
+/// Hint message for when a digest index is required but not found.
+/// SoT for the build command suggestion across all consumers (search, serve, etc.).
+pub fn build_hint() -> String {
+  "No digest index found. Build it with:\n\n  indexion digest build .\n"
+}
+
 pub fn log_progress(msg : String) -> Unit {
   println(msg)
 }
@@ -609,7 +616,10 @@ pub fn build_graph_from_source(
   )
   log_progress("Collecting files...")
   let kgf_ignore = registry.collect_ignore_patterns()
-  let discover_opts = @pipeline.DiscoverOptions::new(kgf_ignore~)
+  let discover_opts = @pipeline.DiscoverOptions::new(
+    kgf_ignore~,
+    root_dir=source_dir,
+  )
   let paths = @pipeline.discover_files([source_dir], discover_opts)
   if paths.length() == 0 {
     log_error("No files found in: " + source_dir)
@@ -683,7 +693,7 @@ async fn run_build_async(config : CliConfig) -> Unit {
   if config.input_path == "" {
     log_error("Input path required (source directory or graph.json)")
     println("")
-    println("Usage: indexion digest build <path>")
+    println(build_hint())
     return
   }
   // Acquire build lock to prevent concurrent builds
