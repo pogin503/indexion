@@ -773,18 +773,14 @@ fn find_function_duplicates(
   let func_names : Array[String] = []
   let func_bodies : Array[String] = []
   let func_files : Array[String] = []
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
   for file in files {
     let (path, content) = file
-    let lang = match reg.detect_from_path(path) {
-      Some(l) => l
+    let toolkit = match toolkit_reg.for_path(path) {
+      Some(t) => t
       None => continue
     }
-    let spec = match reg.get_spec(lang) {
-      Some(s) => s
-      None => continue
-    }
-    let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-    let tokens = lexer.tokenize(content)
+    let tokens = toolkit.get_lexer().tokenize(content)
     let functions = @kgf_features.extract_functions(content, path, registry)
     let lines = @common.split_lines(content)
     // Build token index → line number
@@ -883,22 +879,21 @@ fn find_magic_strings(
   let min_files = 2
   // value → Array[(file, line)]
   let occurrences : Map[String, Array[(String, Int)]] = {}
+  let toolkit_reg2 = match registry {
+    Some(reg) => Some(@kgf_toolkit.ToolkitRegistry::new(reg))
+    None => None
+  }
   for item in files {
     let (path, content) = item
-    let reg = match registry {
-      Some(r) => r
+    let toolkit = match toolkit_reg2 {
+      Some(tr) =>
+        match tr.for_path(path) {
+          Some(t) => t
+          None => continue
+        }
       None => continue
     }
-    let lang = match reg.detect_from_path(path) {
-      Some(l) => l
-      None => continue
-    }
-    let spec = match reg.get_spec(lang) {
-      Some(s) => s
-      None => continue
-    }
-    let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-    let tokens = lexer.tokenize(content)
+    let tokens = toolkit.get_lexer().tokenize(content)
     // Build line number tracking
     let mut line = 1
     for tok in tokens {

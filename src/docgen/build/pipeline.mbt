@@ -103,7 +103,7 @@ pub fn analyze_files_with_progress(
   let root = ""
   let active_rules_cache : Map[String, @hashset.HashSet[String]] = Map::new()
   let peg_cache : Map[String, @kgf_peg.PEG] = Map::new()
-  let lexer_cache : Map[String, @kgf_lexer.Lexer] = Map::new()
+  let lexer_cache : Map[String, @kgf_toolkit.LanguageToolkit] = Map::new()
   let graphs : Array[@graph.CodeGraph] = []
   let total = files.length()
   for i, entry in files {
@@ -156,17 +156,18 @@ pub fn analyze_files_with_progress(
 }
 
 ///|
+/// Get or build a lexer for a spec, using ToolkitRegistry's built-in cache.
 fn get_or_build_lexer(
   spec_name : String,
-  spec : @kgf_types.KGFSpec,
-  cache : Map[String, @kgf_lexer.Lexer],
+  _spec : @kgf_types.KGFSpec,
+  toolkit_cache : Map[String, @kgf_toolkit.LanguageToolkit],
 ) -> @kgf_lexer.Lexer {
-  match cache.get(spec_name) {
-    Some(lexer) => lexer
+  match toolkit_cache.get(spec_name) {
+    Some(toolkit) => toolkit.get_lexer()
     None => {
-      let built = @kgf_lexer.Lexer::new(spec.get_tokens())
-      cache.set(spec_name, built)
-      built
+      let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(_spec)
+      toolkit_cache.set(spec_name, toolkit)
+      toolkit.get_lexer()
     }
   }
 }

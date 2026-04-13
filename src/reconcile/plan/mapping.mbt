@@ -234,8 +234,8 @@ fn add_feature_terms(
   if selected_kinds.is_empty() {
     return false
   }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let lexed = lexer.tokenize(text)
+  let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(spec)
+  let lexed = toolkit.tokenize(text)
   for tok in lexed {
     if selected_kinds.contains(lower_string(tok.get_kind())) {
       add_surface_term(tokens, tok.get_text())
@@ -502,8 +502,8 @@ pub fn build_fragment_match_signals(
           })
           continue
         }
-        let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-        let tokens = lexer.tokenize(source_text)
+        let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(spec)
+        let tokens = toolkit.tokenize(source_text)
         for tok in tokens {
           let normalized_kind = lower_string(tok.get_kind())
           if reference_kinds.contains(normalized_kind) {

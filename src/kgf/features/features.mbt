@@ -146,9 +146,20 @@ pub fn tokenize_with_kgf(
   content : String,
   spec : @kgf_types.KGFSpec,
 ) -> Array[String] {
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
-  let id_set = build_identifier_set(spec~)
+  let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(spec)
+  tokenize_with_toolkit(content, toolkit)
+}
+
+///|
+/// Tokenize source code using a cached LanguageToolkit.
+/// Prefer this over `tokenize_with_kgf` when processing multiple files of the
+/// same language — the toolkit reuses compiled lexer and feature sets.
+pub fn tokenize_with_toolkit(
+  content : String,
+  toolkit : @kgf_toolkit.LanguageToolkit,
+) -> Array[String] {
+  let tokens = toolkit.tokenize(content)
+  let id_set = toolkit.get_identifier_set()
   let result : Array[String] = []
   for tok in tokens {
     result.push(kgf_tok_to_tfidf_token(tok, id_set~))
@@ -160,30 +171,34 @@ pub fn tokenize_with_kgf(
 /// Tokenize files using KGF lexer.
 /// Files without KGF spec support are skipped (empty tokens).
 /// Returns (tokenized documents, kgf_hit_count).
+///
+/// Uses ToolkitRegistry internally so that files sharing the same language
+/// reuse the compiled Lexer and feature sets (no redundant construction).
 pub fn tokenize_files_with_kgf(
   files : Array[(String, String)],
   registry : @kgf_registry.KGFRegistry?,
 ) -> (Array[Array[String]], Int) {
   let tokenized : Array[Array[String]] = []
   let mut kgf_hits = 0
-  for file in files {
-    let (path, content) = file
-    let tokens = match registry {
-      Some(reg) =>
-        match reg.detect_from_path(path) {
-          Some(lang) =>
-            match reg.get_spec(lang) {
-              Some(spec) => {
-                kgf_hits += 1
-                tokenize_with_kgf(content, spec)
-              }
-              None => []
-            }
+  match registry {
+    Some(reg) => {
+      let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
+      for file in files {
+        let (path, content) = file
+        let tokens = match toolkit_reg.for_path(path) {
+          Some(toolkit) => {
+            kgf_hits += 1
+            tokenize_with_toolkit(content, toolkit)
+          }
           None => []
         }
-      None => []
+        tokenized.push(tokens)
+      }
     }
-    tokenized.push(tokens)
+    None =>
+      for _file in files {
+        tokenized.push([])
+      }
   }
   (tokenized, kgf_hits)
 }
@@ -266,35 +281,18 @@ pub fn tokenize_source(
     Some(r) => r
     None => return None
   }
-  let lang = match reg.detect_from_path(path) {
-    Some(l) => l
-    None => return None
-  }
-  let spec = match reg.get_spec(lang) {
-    Some(s) => s
-    None => return None
-  }
-  let prepared = preprocess_content(content, spec)
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  Some(lexer.tokenize(prepared))
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
+  toolkit_reg.tokenize(content, path)
 }
 
 ///|
+/// Apply preprocessing steps from the spec to content.
+/// Delegates to LanguageToolkit::preprocess for the actual work.
 pub fn preprocess_content(
   content : String,
   spec : @kgf_types.KGFSpec,
 ) -> String {
-  match spec.get_preprocess() {
-    Some(steps) =>
-      @kgf_preprocess.apply_preprocess(
-        content,
-        Some(steps),
-        spec.get_preprocess_fst(),
-      ) catch {
-        _ => panic()
-      }
-    None => content
-  }
+  @kgf_toolkit.LanguageToolkit::from_spec(spec).preprocess(content)
 }
 
 ///|

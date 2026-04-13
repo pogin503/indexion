@@ -56,26 +56,9 @@ pub fn UnwrapEdit::new(
 
 ///|
 /// Build set of keywords that are allowed in proxy function bodies.
-/// These are keywords that don't imply control flow or additional logic:
-/// - `function_keyword`: closures/lambdas passed as arguments (e.g. KW_fn, KW_def)
-/// - `self_keyword`: method receiver references (e.g. KW_self)
+/// Delegates to LanguageToolkit::get_allowed_keywords for the cached result.
 fn build_allowed_keywords(spec : @kgf_types.KGFSpec) -> Map[String, Bool] {
-  let allowed : Map[String, Bool] = {}
-  match spec.get_feature("function_keyword") {
-    Some(keywords) =>
-      for kw in keywords {
-        allowed[kw] = true
-      }
-    None => ()
-  }
-  match spec.get_feature("self_keyword") {
-    Some(keywords) =>
-      for kw in keywords {
-        allowed[kw] = true
-      }
-    None => ()
-  }
-  allowed
+  @kgf_toolkit.LanguageToolkit::from_spec(spec).get_allowed_keywords()
 }
 
 ///|
@@ -84,29 +67,13 @@ fn build_allowed_keywords(spec : @kgf_types.KGFSpec) -> Map[String, Bool] {
 fn build_qualifier_separator_set(
   spec : @kgf_types.KGFSpec,
 ) -> Map[String, Bool] {
-  let set : Map[String, Bool] = {}
-  match spec.get_feature("qualifier_separators") {
-    Some(kinds) =>
-      for kind in kinds {
-        set[kind] = true
-      }
-    None => ()
-  }
-  set
+  @kgf_toolkit.LanguageToolkit::from_spec(spec).get_qualifier_separators()
 }
 
 ///|
 /// Build set of self-keyword token kinds from KGF spec's `self_keyword` feature.
 fn build_self_keyword_set(spec : @kgf_types.KGFSpec) -> Map[String, Bool] {
-  let set : Map[String, Bool] = {}
-  match spec.get_feature("self_keyword") {
-    Some(keywords) =>
-      for kw in keywords {
-        set[kw] = true
-      }
-    None => ()
-  }
-  set
+  @kgf_toolkit.LanguageToolkit::from_spec(spec).get_self_keywords()
 }
 
 ///|
@@ -192,14 +159,15 @@ pub fn detect_proxy_functions(
       )
     }
   }
-  // Tokenize with the same preprocessed content that the parser used
-  let prepared = preprocess_content(content, spec)
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(prepared)
-  let id_set = build_identifier_set(spec~)
-  let allowed_kw = build_allowed_keywords(spec)
-  let qualifier_set = build_qualifier_separator_set(spec)
-  let self_kw_set = build_self_keyword_set(spec)
+  // Tokenize with the same preprocessed content that the parser used.
+  // Use LanguageToolkit for cached lexer and feature sets.
+  let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(spec)
+  let prepared = toolkit.preprocess(content)
+  let tokens = toolkit.get_lexer().tokenize(prepared)
+  let id_set = toolkit.get_identifier_set()
+  let allowed_kw = toolkit.get_allowed_keywords()
+  let qualifier_set = toolkit.get_qualifier_separators()
+  let self_kw_set = toolkit.get_self_keywords()
   let result : Array[ProxyFunction] = []
   // Build token index → line number mapping
   let token_lines : Array[Int] = Array::make(tokens.length(), 1)
@@ -630,8 +598,9 @@ pub fn find_call_sites(
   file : String,
   spec~ : @kgf_types.KGFSpec,
 ) -> Array[UnwrapEdit] {
-  let id_set = build_identifier_set(spec~)
-  let qualifier_set = build_qualifier_separator_set(spec)
+  let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(spec)
+  let id_set = toolkit.get_identifier_set()
+  let qualifier_set = toolkit.get_qualifier_separators()
   // Resolve function keyword from spec to distinguish definitions from calls
   let fn_keyword = match spec.get_feature("function_keyword") {
     Some(keywords) =>

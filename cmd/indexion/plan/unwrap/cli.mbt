@@ -307,18 +307,14 @@ fn run_with_config(config : UnwrapConfig) -> Unit {
       return
     }
   }
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
   for file in files {
     let (path, content) = file
-    let lang = match reg.detect_from_path(path) {
-      Some(l) => l
-      None => continue
+    match toolkit_reg.for_path(path) {
+      Some(toolkit) =>
+        file_tokens.set(path, toolkit.get_lexer().tokenize(content))
+      None => ()
     }
-    let spec = match reg.get_spec(lang) {
-      Some(s) => s
-      None => continue
-    }
-    let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-    file_tokens.set(path, lexer.tokenize(content))
   }
   // For each wrapper, find call sites across all files
   let all_edits : Array[(String, Array[@kgf_features.UnwrapEdit])] = []

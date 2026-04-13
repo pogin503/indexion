@@ -179,21 +179,6 @@ pub fn table_pairs_for_line(
 }
 
 ///|
-fn preprocess_content(content : String, spec : @kgf_types.KGFSpec) -> String {
-  match spec.get_preprocess() {
-    Some(steps) =>
-      @kgf_preprocess.apply_preprocess(
-        content,
-        Some(steps),
-        spec.get_preprocess_fst(),
-      ) catch {
-        _ => panic()
-      }
-    None => content
-  }
-}
-
-///|
 pub fn load_document_sections(
   content : String,
   path : String,
@@ -203,18 +188,19 @@ pub fn load_document_sections(
     Some(value) => value
     None => return []
   }
-  let language = match reg.detect_from_path(path) {
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
+  let toolkit = match toolkit_reg.for_path(path) {
     Some(value) => value
     None => return []
   }
-  let spec = match reg.get_spec(language) {
-    Some(value) => value
-    None => return []
-  }
-  let prepared = preprocess_content(content, spec)
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(prepared)
-  extract_document_sections(tokens, prepared, spec=Some(spec), path~)
+  let prepared = toolkit.preprocess(content)
+  let tokens = toolkit.get_lexer().tokenize(prepared)
+  extract_document_sections(
+    tokens,
+    prepared,
+    spec=Some(toolkit.get_spec()),
+    path~,
+  )
 }
 
 ///|
@@ -401,9 +387,9 @@ pub fn interpret_document(
   path : String,
   spec : @kgf_types.KGFSpec,
 ) -> InterpretedDocument {
-  let prepared = preprocess_content(content, spec)
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(prepared)
+  let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(spec)
+  let prepared = toolkit.preprocess(content)
+  let tokens = toolkit.get_lexer().tokenize(prepared)
   let sections = extract_document_sections(
     tokens,
     prepared,

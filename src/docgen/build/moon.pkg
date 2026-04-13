@@ -7,6 +7,7 @@ import {
   "trkbt10/indexion/src/kgf/lexer" @kgf_lexer,
   "trkbt10/indexion/src/kgf/peg" @kgf_peg,
   "trkbt10/indexion/src/kgf/registry" @registry,
+  "trkbt10/indexion/src/kgf/toolkit" @kgf_toolkit,
   "trkbt10/indexion/src/kgf/semantics" @kgf_semantics,
   "trkbt10/indexion/src/kgf/types" @kgf_types,
 }

@@ -119,16 +119,16 @@ pub fn tokenize_file(
     Some(s) => s
     None => return result
   }
-  let id_set = @features.build_identifier_set(spec~)
-  let vocab_set = @features.build_vocabulary_token_set(spec~)
+  let toolkit = @toolkit.LanguageToolkit::from_spec(spec)
+  let id_set = toolkit.get_identifier_set()
+  let vocab_set = toolkit.get_vocabulary_set()
   let ref_set = build_feature_set(spec, "reference_token_kinds")
   // Embedded code fence handling (declared in KGF features section).
   // If the spec declares embedded_code_fence, we track open/close state
   // and re-tokenize content tokens with the detected language's spec.
   let fence_token = get_single_feature(spec, "embedded_code_fence")
   let content_token = get_single_feature(spec, "embedded_content_token")
-  let lexer = @lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
+  let tokens = toolkit.tokenize(content)
   let mut in_fence = false
   let mut fence_spec : @types.KGFSpec? = None
   for tok in tokens {
@@ -187,10 +187,10 @@ pub fn tokenize_with_spec(
   spec : @types.KGFSpec,
   output : Array[String],
 ) -> Unit {
-  let id_set = @features.build_identifier_set(spec~)
-  let vocab_set = @features.build_vocabulary_token_set(spec~)
-  let lexer = @lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(content)
+  let toolkit = @toolkit.LanguageToolkit::from_spec(spec)
+  let id_set = toolkit.get_identifier_set()
+  let vocab_set = toolkit.get_vocabulary_set()
+  let tokens = toolkit.tokenize(content)
   for tok in tokens {
     let feature = tok_to_feature(tok, id_set~)
     let lowered = feature.to_lower()

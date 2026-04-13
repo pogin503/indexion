@@ -16,22 +16,18 @@ pub fn extract(
     trees.push(content_to_simple_tree(content))
     return trees
   }
-  guard reg.detect_from_path(display_name) is Some(lang) else {
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
+  guard toolkit_reg.for_path(display_name) is Some(toolkit) else {
     trees.push(content_to_simple_tree(content))
     return trees
   }
-  guard reg.get_spec(lang) is Some(spec) else {
-    trees.push(content_to_simple_tree(content))
-    return trees
-  }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let kgf_tokens = lexer.tokenize(content)
+  let kgf_tokens = toolkit.get_lexer().tokenize(content)
   let funcs = @kgf_features.extract_function_trees(
     content,
     display_name,
     kgf_tokens,
     registry,
-    spec~,
+    spec=toolkit.get_spec(),
   )
   if funcs.is_empty() {
     trees.push(content_to_simple_tree(content))

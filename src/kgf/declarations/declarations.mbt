@@ -40,18 +40,11 @@ pub(all) enum DeclarationVisibility {
 }
 
 ///|
-fn preprocess_content(content : String, spec : @kgf_types.KGFSpec) -> String {
-  match spec.get_preprocess() {
-    Some(steps) =>
-      @kgf_preprocess.apply_preprocess(
-        content,
-        Some(steps),
-        spec.get_preprocess_fst(),
-      ) catch {
-        _ => panic()
-      }
-    None => content
-  }
+fn preprocess_content(
+  content : String,
+  toolkit : @kgf_toolkit.LanguageToolkit,
+) -> String {
+  toolkit.preprocess(content)
 }
 
 ///|
@@ -79,17 +72,8 @@ pub fn tokenize_source(
     Some(r) => r
     None => return None
   }
-  let lang = match reg.detect_from_path(path) {
-    Some(l) => l
-    None => return None
-  }
-  let spec = match reg.get_spec(lang) {
-    Some(s) => s
-    None => return None
-  }
-  let prepared = preprocess_content(content, spec)
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  Some(lexer.tokenize(prepared))
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
+  toolkit_reg.tokenize(content, path)
 }
 
 ///|
@@ -188,17 +172,14 @@ fn parse_source(
     Some(r) => r
     None => return None
   }
-  let lang = match reg.detect_from_path(path) {
-    Some(l) => l
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
+  let toolkit = match toolkit_reg.for_path(path) {
+    Some(t) => t
     None => return None
   }
-  let spec = match reg.get_spec(lang) {
-    Some(s) => s
-    None => return None
-  }
-  let prepared = preprocess_content(content, spec)
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-  let tokens = lexer.tokenize(prepared)
+  let spec = toolkit.get_spec()
+  let prepared = preprocess_content(content, toolkit)
+  let tokens = toolkit.get_lexer().tokenize(prepared)
   let peg = @kgf_peg.build_peg(spec) catch { _ => return None }
   let start_rule = spec.get_start_rule()
   let parse_result = match @kgf_peg.run_parse(peg, spec, start_rule, tokens) {

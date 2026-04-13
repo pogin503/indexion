@@ -686,31 +686,28 @@ fn calculate_function_pairs(
   println("      Extracting functions...")
   let all_functions : Array[(@kgf_features.ExtractedFunction, @apted.TreeNode)] = []
   let mut total_functions = 0
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(resolved_registry)
   for file in files {
     let (path, content) = file
-    // Detect language and get spec
-    match resolved_registry.detect_from_path(path) {
-      Some(lang) =>
-        match resolved_registry.get_spec(lang) {
-          Some(spec) => {
-            // Tokenize
-            let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
-            let tokens = lexer.tokenize(content)
-            // Extract functions and convert to TreeNodes
-            let func_trees = @kgf_features.extract_function_trees(
-              content,
-              path,
-              tokens,
-              registry,
-              spec~,
-            )
-            for ft in func_trees {
-              all_functions.push(ft)
-              total_functions += 1
-            }
-          }
-          None => ()
+    // Detect language and get toolkit (cached per language)
+    match toolkit_reg.for_path(path) {
+      Some(toolkit) => {
+        let spec = toolkit.get_spec()
+        // Tokenize using cached lexer
+        let tokens = toolkit.get_lexer().tokenize(content)
+        // Extract functions and convert to TreeNodes
+        let func_trees = @kgf_features.extract_function_trees(
+          content,
+          path,
+          tokens,
+          registry,
+          spec~,
+        )
+        for ft in func_trees {
+          all_functions.push(ft)
+          total_functions += 1
         }
+      }
       None => ()
     }
   }

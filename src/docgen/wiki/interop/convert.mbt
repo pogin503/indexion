@@ -38,7 +38,8 @@ pub fn load_wiki_spec(spec_name : String) -> WikiBackendSpec? {
     Some(s) => s
     None => return None
   }
-  let lexer = @kgf_lexer.Lexer::new(spec.get_tokens())
+  let toolkit = @kgf_toolkit.LanguageToolkit::from_spec(spec)
+  let lexer = toolkit.get_lexer()
   let peg = @kgf_peg.build_peg(spec) catch { _ => return None }
   let nav_file = get_feature_string(spec, "nav_file", "")
   let home_file = get_feature_string(spec, "home_file", "")
