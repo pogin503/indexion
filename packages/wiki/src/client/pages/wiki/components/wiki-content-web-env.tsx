@@ -9,7 +9,10 @@ import { useCallback, useMemo } from "react";
 import { Link } from "react-router";
 import { KgfSpecProvider } from "@indexion/syntax-highlight";
 import { SourceBadge } from "./source-badge.tsx";
-import { WikiContentEnvProvider, type WikiContentEnv } from "./wiki-content-context.tsx";
+import {
+  WikiContentEnvProvider,
+  type WikiContentEnv,
+} from "./wiki-content-context.tsx";
 import { useDict } from "../../../i18n/index.ts";
 import { client } from "../../../lib/client.ts";
 

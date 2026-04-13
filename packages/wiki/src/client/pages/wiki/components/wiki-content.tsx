@@ -110,9 +110,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
           </h3>
           <ul className="flex flex-wrap gap-2">
             {page.children.map((childId) => (
-              <li key={childId}>
-                {env.renderWikiLink(childId, childId)}
-              </li>
+              <li key={childId}>{env.renderWikiLink(childId, childId)}</li>
             ))}
           </ul>
         </nav>

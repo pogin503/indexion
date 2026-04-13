@@ -7,17 +7,20 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import {
-  WikiContent,
-  WikiContentEnvProvider,
-  type WikiContentEnv,
-} from "@indexion/wiki/components";
-import type { WikiPage } from "@indexion/api-client";
+import { WikiContent, WikiContentEnvProvider, type WikiContentEnv } from "@indexion/wiki/components";
+import type { WikiPage, WikiSourceRef } from "@indexion/api-client";
 import type { WikiPageToWebview, WikiPageFromWebview } from "../../panels/wiki-page/messages.ts";
 import { usePostMessage, useWebviewReducer } from "../bridge/context.tsx";
 import { StatusMsg } from "../components/status-msg.tsx";
 import { FileLink } from "../components/file-link.tsx";
 import styles from "./wiki-viewer.module.css";
+
+function formatSourceLabel(src: WikiSourceRef): string {
+  if (src.lines[1] > 0) {
+    return `${src.file}:${src.lines[0]}-${src.lines[1]}`;
+  }
+  return src.file;
+}
 
 // ─── State & reducer ────────────────────────────────────
 
@@ -80,22 +83,14 @@ export const WikiViewerApp = (): React.JSX.Element => {
   const env = useMemo(
     (): WikiContentEnv => ({
       renderWikiLink: (pageId, children) => (
-        <button
-          type="button"
-          className={styles.wikiLink}
-          onClick={() => handleNavigate(pageId)}
-        >
+        <button type="button" className={styles.wikiLink} onClick={() => handleNavigate(pageId)}>
           {children}
         </button>
       ),
       renderSourceBadge: (source) => (
         <FileLink
           filePath={source.file}
-          label={
-            source.lines[1] > 0
-              ? `${source.file}:${source.lines[0]}-${source.lines[1]}`
-              : source.file
-          }
+          label={formatSourceLabel(source)}
           onClick={() => handleOpenFile(source.file, source.lines[0])}
         />
       ),

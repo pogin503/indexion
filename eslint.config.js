@@ -72,6 +72,12 @@ export default tseslint.config(
           message:
             "else if は禁止されています。switch-case または object の key-value で解決してください。",
         },
+        {
+          selector:
+            "CallExpression[callee.name='useEffect'] :function > BlockStatement > ExpressionStatement > CallExpression[callee.name=/^set[A-Z]/]",
+          message:
+            "useEffect内でsetState (set*) を呼ばないでください。useSyncExternalStoreや外部ストア経由で状態を更新してください。",
+        },
       ],
       "no-empty": ["error", { allowEmptyCatch: false }],
       "@typescript-eslint/no-unused-vars": [
@@ -97,6 +103,7 @@ export default tseslint.config(
       "react-hooks/exhaustive-deps": "warn",
     },
   },
+
 
   // ── vscode-plugin: strict rules ───────────────────────────
   {

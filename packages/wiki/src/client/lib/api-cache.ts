@@ -68,6 +68,7 @@ export const cachedFetch = <T>(
     const entry = cache.get(key) as CacheEntry<T> | undefined;
     if (entry) {
       entry.result = result;
+      notify();
     }
     return result;
   });
@@ -95,7 +96,11 @@ export const invalidate = (...keys: CacheKeyValue[]): void => {
   notify();
 };
 
-/** Current cache version. Changes on every invalidation. */
+/** Read a cached result synchronously. Returns null if not yet resolved. */
+export const getCachedResult = <T>(key: CacheKeyValue): ApiResponse<T> | null =>
+  (cache.get(key) as CacheEntry<T> | undefined)?.result ?? null;
+
+/** Current cache version. Changes on every invalidation or fetch completion. */
 export const getCacheVersion = (): number => version;
 
 /** Subscribe to invalidation events. Returns unsubscribe. */

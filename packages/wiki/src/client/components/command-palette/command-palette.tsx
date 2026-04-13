@@ -1,9 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Command } from "cmdk";
 import { Search, FileCode2, BookOpen, Sparkles } from "lucide-react";
 import { client, isStaticMode } from "../../lib/client.ts";
-import { cachedFetch, CacheKey } from "../../lib/api-cache.ts";
+import { useCachedApiCall } from "../../lib/hooks.ts";
+import { CacheKey } from "../../lib/api-cache.ts";
 import {
   fetchGraph,
   fetchDigestIndex,
@@ -12,7 +20,6 @@ import {
   searchWiki,
   type CodeGraph,
   type DigestMatch,
-  type IndexedFunction,
   type WikiNav,
 } from "@indexion/api-client";
 import { useDict } from "../../i18n/index.ts";
@@ -41,6 +48,45 @@ const DEBOUNCE_MS = 300;
 const detectScope = (pathname: string): Scope =>
   pathname.startsWith("/wiki") ? "wiki" : "explorer";
 
+// ── Search result store (module singleton) ───────────────
+
+type SearchState = {
+  readonly wikiResults: ReadonlyArray<WikiSearchHit>;
+  readonly semanticResults: ReadonlyArray<DigestMatch>;
+};
+
+const EMPTY_SEARCH: SearchState = { wikiResults: [], semanticResults: [] };
+let searchState = EMPTY_SEARCH;
+const searchListeners = new Set<() => void>();
+let searchVersion = 0;
+
+function searchSubscribe(cb: () => void): () => void {
+  searchListeners.add(cb);
+  return () => searchListeners.delete(cb);
+}
+
+function searchGetSnapshot(): number {
+  return searchVersion;
+}
+
+function updateSearch(next: Partial<SearchState>): void {
+  searchState = { ...searchState, ...next };
+  searchVersion++;
+  for (const cb of searchListeners) {
+    cb();
+  }
+}
+
+function resetSearch(): void {
+  searchState = EMPTY_SEARCH;
+  searchVersion++;
+  for (const cb of searchListeners) {
+    cb();
+  }
+}
+
+// ── Component ────────────────────────────────────────────
+
 export const CommandPalette = ({
   open,
   onOpenChange,
@@ -51,58 +97,48 @@ export const CommandPalette = ({
   const scope = detectScope(location.pathname);
 
   const [query, setQuery] = useState("");
-  const [graph, setGraph] = useState<CodeGraph | null>(null);
-  const [digestIndex, setDigestIndex] =
-    useState<ReadonlyArray<IndexedFunction> | null>(null);
-  const [wikiNav, setWikiNav] = useState<WikiNav | null>(null);
-  const [wikiResults, setWikiResults] = useState<ReadonlyArray<WikiSearchHit>>(
-    [],
-  );
-  const [semanticResults, setSemanticResults] = useState<
-    ReadonlyArray<DigestMatch>
-  >([]);
   const debounceRef = useRef(0);
 
-  // Load graph once for symbol search (explorer scope), via app-level cache
-  useEffect(() => {
-    if (!open || graph || scope !== "explorer") {
-      return;
-    }
-    cachedFetch(CacheKey.digest.graph, () => fetchGraph(client)).then((r) => {
-      if (r.ok) {
-        setGraph(r.data);
-      }
-    });
-  }, [open, graph, scope]);
+  // Data loading via app-level cache (no setState in effects)
+  const graphState = useCachedApiCall(CacheKey.digest.graph, () =>
+    fetchGraph(client),
+  );
+  const graph: CodeGraph | null =
+    scope === "explorer" && graphState.status === "success"
+      ? graphState.data
+      : null;
 
-  // In static mode, pre-load data for client-side search
-  useEffect(() => {
-    if (!open || !isStaticMode) {
-      return;
-    }
-    if (scope === "explorer" && !digestIndex) {
-      cachedFetch(CacheKey.digest.index, () => fetchDigestIndex(client)).then(
-        (r) => {
-          if (r.ok) {
-            setDigestIndex(r.data);
-          }
-        },
-      );
-    }
-    if (scope === "wiki" && !wikiNav) {
-      cachedFetch(CacheKey.wiki.nav, () => fetchWikiNav(client)).then((r) => {
-        if (r.ok) {
-          setWikiNav(r.data);
-        }
-      });
-    }
-  }, [open, scope, digestIndex, wikiNav]);
+  const digestState = useCachedApiCall(CacheKey.digest.index, () =>
+    fetchDigestIndex(client),
+  );
+  const digestIndex =
+    isStaticMode && scope === "explorer" && digestState.status === "success"
+      ? digestState.data
+      : null;
 
-  // Debounced searches — scoped, with static mode fallback
+  const wikiNavState = useCachedApiCall(CacheKey.wiki.nav, () =>
+    fetchWikiNav(client),
+  );
+  const wikiNav: WikiNav | null =
+    isStaticMode && scope === "wiki" && wikiNavState.status === "success"
+      ? wikiNavState.data
+      : null;
+
+  // Subscribe to search results store
+  const version = useSyncExternalStore(
+    searchSubscribe,
+    searchGetSnapshot,
+    searchGetSnapshot,
+  );
+  const { wikiResults, semanticResults } = useMemo(() => {
+    void version;
+    return searchState;
+  }, [version]);
+
+  // Debounced search — side effect only, results go to external store
   useEffect(() => {
     if (!query.trim()) {
-      setWikiResults([]);
-      setSemanticResults([]);
+      resetSearch();
       return;
     }
 
@@ -131,7 +167,7 @@ export const CommandPalette = ({
           }
           return results;
         };
-        setWikiResults(flattenNav(wikiNav.pages).slice(0, 10));
+        updateSearch({ wikiResults: flattenNav(wikiNav.pages).slice(0, 10) });
       }
       if (scope === "explorer" && digestIndex) {
         const matches = digestIndex
@@ -147,7 +183,7 @@ export const CommandPalette = ({
             score: 1,
             summary: fn.doc ?? fn.summary ?? "",
           }));
-        setSemanticResults(matches);
+        updateSearch({ semanticResults: matches });
       }
       return;
     }
@@ -159,7 +195,6 @@ export const CommandPalette = ({
       }
 
       if (scope === "wiki") {
-        // Wiki scope: only search wiki
         const wiki = await searchWiki(client, {
           query: query.trim(),
           topK: 10,
@@ -168,10 +203,11 @@ export const CommandPalette = ({
           return;
         }
         if (wiki.ok) {
-          setWikiResults(wiki.data as ReadonlyArray<WikiSearchHit>);
+          updateSearch({
+            wikiResults: wiki.data as ReadonlyArray<WikiSearchHit>,
+          });
         }
       } else {
-        // Explorer scope: symbol (client-side) + semantic (server)
         const semantic = await queryDigest(client, {
           purpose: query.trim(),
           topK: 10,
@@ -180,32 +216,40 @@ export const CommandPalette = ({
           return;
         }
         if (semantic.ok) {
-          setSemanticResults(semantic.data);
+          updateSearch({ semanticResults: semantic.data });
         }
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(timeout);
   }, [query, scope, wikiNav, digestIndex]);
 
-  // Reset on close
+  // Reset search store when palette closes
   useEffect(() => {
     if (!open) {
-      setQuery("");
-      setWikiResults([]);
-      setSemanticResults([]);
+      resetSearch();
     }
   }, [open]);
 
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (!next) {
+        setQuery("");
+      }
+      onOpenChange(next);
+    },
+    [onOpenChange],
+  );
+
   const go = useCallback(
     (path: string) => {
-      onOpenChange(false);
+      handleOpenChange(false);
       navigate(path);
     },
-    [navigate, onOpenChange],
+    [navigate, handleOpenChange],
   );
 
   // Client-side symbol filter (explorer scope only)
-  const symbolResults = (() => {
+  const symbolResults = useMemo(() => {
     if (scope !== "explorer" || !graph || !query.trim()) {
       return [];
     }
@@ -218,7 +262,7 @@ export const CommandPalette = ({
       )
       .slice(0, 12)
       .map(([id, sym]) => ({ id, ...sym }));
-  })();
+  }, [scope, graph, query]);
 
   const hasResults =
     symbolResults.length > 0 ||
@@ -228,7 +272,7 @@ export const CommandPalette = ({
   return (
     <Command.Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       label="Search"
       shouldFilter={false}
       className="fixed inset-0 z-50"

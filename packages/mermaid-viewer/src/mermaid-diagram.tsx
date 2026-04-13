@@ -7,7 +7,14 @@
  * The diagram stays hidden until the initial fit completes to avoid flash.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   TransformWrapper,
   TransformComponent,
@@ -66,45 +73,90 @@ function extractViewBoxSize(el: SVGSVGElement): { w: number; h: number } {
   return { w: 0, h: 0 };
 }
 
+// ── Mermaid render store ───────────────────────────────────────────
+
+type MermaidEntry =
+  | { readonly state: "resolved"; readonly svg: SvgData }
+  | { readonly state: "error"; readonly message: string };
+
+const mermaidCache = new Map<string, MermaidEntry>();
+const mermaidInflight = new Set<string>();
+const mermaidListeners = new Set<() => void>();
+let mermaidVersion = 0;
+
+function mermaidSubscribe(cb: () => void): () => void {
+  mermaidListeners.add(cb);
+  return () => mermaidListeners.delete(cb);
+}
+
+function mermaidGetSnapshot(): number {
+  return mermaidVersion;
+}
+
+function mermaidNotify(): void {
+  mermaidVersion++;
+  for (const cb of mermaidListeners) {
+    cb();
+  }
+}
+
+function ensureMermaidRender(code: string): void {
+  if (mermaidCache.has(code) || mermaidInflight.has(code)) {
+    return;
+  }
+  mermaidInflight.add(code);
+  renderMermaid(code);
+}
+
+async function renderMermaid(code: string): Promise<void> {
+  try {
+    const { default: mermaid } = await import("mermaid");
+    mermaid.initialize({ startOnLoad: false, theme: "dark" });
+    const { svg: raw } = await mermaid.render(
+      `mermaid-${Math.random().toString(36).slice(2)}`,
+      code,
+    );
+    mermaidCache.set(code, { state: "resolved", svg: parseMermaidSvg(raw) });
+  } catch (err: unknown) {
+    console.error("[mermaid-viewer] Render failed:", err);
+    mermaidCache.set(code, { state: "error", message: String(err) });
+  }
+  mermaidInflight.delete(code);
+  mermaidNotify();
+}
+
 // ── Hooks ──────────────────────────────────────────────────────────
 
 /** Lazy-load mermaid, render code to normalized SVG data. */
 function useMermaidSvg(code: string) {
-  const [error, setError] = useState<string | null>(null);
-  const [svg, setSvg] = useState<SvgData | null>(null);
+  const version = useSyncExternalStore(
+    mermaidSubscribe,
+    mermaidGetSnapshot,
+    mermaidGetSnapshot,
+  );
 
   useEffect(() => {
-    if (!code.trim()) {
-      return;
+    if (code.trim()) {
+      ensureMermaidRender(code);
     }
-    let cancelled = false;
-    setError(null);
-
-    import("mermaid").then(({ default: mermaid }) => {
-      if (cancelled) {
-        return;
-      }
-      mermaid.initialize({ startOnLoad: false, theme: "dark" });
-      mermaid
-        .render(`mermaid-${Math.random().toString(36).slice(2)}`, code)
-        .then(({ svg: raw }) => {
-          if (!cancelled) {
-            setSvg(parseMermaidSvg(raw));
-          }
-        })
-        .catch((err) => {
-          if (!cancelled) {
-            setError(String(err));
-          }
-        });
-    });
-
-    return () => {
-      cancelled = true;
-    };
   }, [code]);
 
-  return { svg, error };
+  return useMemo(() => {
+    void version;
+    if (!code.trim()) {
+      return { svg: null, error: null };
+    }
+    const entry = mermaidCache.get(code);
+    if (!entry) {
+      return { svg: null, error: null };
+    }
+    switch (entry.state) {
+      case "resolved":
+        return { svg: entry.svg, error: null };
+      case "error":
+        return { svg: null, error: entry.message };
+    }
+  }, [code, version]);
 }
 
 const MIN_HEIGHT = 120;
@@ -115,12 +167,29 @@ const MAX_VH = 0.8;
  * and call setTransform to fit the SVG to container width.
  * Tracks `ready` state — false until the first successful fit.
  */
+/**
+ * Fit-to-width state tracked via a monotonic version counter.
+ * `svgVersion` increments when svg changes (not yet fitted).
+ * `fitVersion` increments when fitToWidth completes.
+ * `ready` = they match (current svg has been fitted).
+ */
 function useFitToWidth(svg: SvgData | null) {
   const outerRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const [displayHeight, setDisplayHeight] = useState(300);
-  const [ready, setReady] = useState(false);
   const prevWidthRef = useRef(0);
+
+  // Version tracking: ready when fitVersion catches up to svgVersion
+  const svgVersionRef = useRef(0);
+  const [fitVersion, setFitVersion] = useState(0);
+
+  // Increment svgVersion when svg changes
+  const currentSvgVersion = useMemo(() => {
+    svgVersionRef.current++;
+    return svgVersionRef.current;
+  }, [svg]);
+
+  const ready = fitVersion >= currentSvgVersion;
 
   const fitToWidth = useCallback(() => {
     const el = outerRef.current;
@@ -139,17 +208,17 @@ function useFitToWidth(svg: SvgData | null) {
 
     // setDisplayHeight triggers re-render → need to wait for DOM update.
     // Double-rAF: first waits for React commit, second for browser layout.
+    const targetVersion = svgVersionRef.current;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const ref = transformRef.current;
         if (!ref) {
           return;
         }
-        // Center vertically: offset Y so scaled SVG is centered in container
         const scaledH = svg.h * scale;
         const y = scaledH < containerH ? (containerH - scaledH) / 2 : 0;
-        ref.setTransform(0, y, scale, 0); // 0ms animation = instant
-        setReady(true);
+        ref.setTransform(0, y, scale, 0);
+        setFitVersion(targetVersion);
       });
     });
   }, [svg]);
@@ -160,7 +229,6 @@ function useFitToWidth(svg: SvgData | null) {
     if (!el || !svg) {
       return;
     }
-    setReady(false);
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = entry.contentRect.width;

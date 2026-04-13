@@ -8,6 +8,7 @@
   },
   "files": ["src"],
   "scripts": {
+    "dev": "vite dev",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -21,7 +22,11 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
     "react": "^19.0.0",
-    "typescript": "^5.9.3"
+    "react-dom": "^19.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.0"
   }
 }

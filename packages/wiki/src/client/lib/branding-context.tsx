@@ -16,6 +16,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { Branding, BrandingColorSet } from "@indexion/api-client";
 
@@ -128,25 +129,10 @@ const loadPreference = (
 };
 
 // ---------------------------------------------------------------------------
-// System scheme detection
-// ---------------------------------------------------------------------------
-
-const getSystemScheme = (): ColorScheme =>
-  globalThis.matchMedia?.("(prefers-color-scheme: light)").matches
-    ? "light"
-    : "dark";
-
-const resolveScheme = (pref: ColorSchemePreference): ColorScheme =>
-  pref === "system" ? getSystemScheme() : pref;
-
-// ---------------------------------------------------------------------------
 // CSS variable injection
 // ---------------------------------------------------------------------------
 
-const applyColors = (
-  scheme: ColorScheme,
-  branding: Branding | null,
-): void => {
+const applyColors = (scheme: ColorScheme, branding: Branding | null): void => {
   const html = document.documentElement;
 
   // Set class for CSS-only selectors (e.g. prose dark:prose-invert)
@@ -156,8 +142,18 @@ const applyColors = (
   const defaults = scheme === "dark" ? DARK_DEFAULTS : LIGHT_DEFAULTS;
   const overrides: BrandingColorSet =
     scheme === "dark"
-      ? (branding?.colors.dark ?? { background: null, foreground: null, primary: null, accent: null })
-      : (branding?.colors.light ?? { background: null, foreground: null, primary: null, accent: null });
+      ? (branding?.colors.dark ?? {
+          background: null,
+          foreground: null,
+          primary: null,
+          accent: null,
+        })
+      : (branding?.colors.light ?? {
+          background: null,
+          foreground: null,
+          primary: null,
+          accent: null,
+        });
 
   // Apply primary color variables
   for (const [key, vars] of Object.entries(COLOR_VAR_MAP)) {
@@ -181,8 +177,7 @@ const applyColors = (
   }
 
   // Muted foreground — a mid-tone between bg and fg
-  const mutedFg =
-    scheme === "dark" ? "oklch(0.708 0 0)" : "oklch(0.45 0 0)";
+  const mutedFg = scheme === "dark" ? "oklch(0.708 0 0)" : "oklch(0.45 0 0)";
   html.style.setProperty("--color-muted-foreground", mutedFg);
   html.style.setProperty("--color-sidebar-foreground", mutedFg);
 
@@ -196,6 +191,24 @@ const applyColors = (
   html.style.setProperty("--color-ring", ring);
   html.style.setProperty("--color-sidebar-ring", ring);
 };
+
+// ---------------------------------------------------------------------------
+// System scheme subscription (useSyncExternalStore)
+// ---------------------------------------------------------------------------
+
+const mql =
+  typeof globalThis.matchMedia === "function"
+    ? globalThis.matchMedia("(prefers-color-scheme: light)")
+    : null;
+
+function subscribeSystemScheme(cb: () => void): () => void {
+  mql?.addEventListener("change", cb);
+  return () => mql?.removeEventListener("change", cb);
+}
+
+function getSystemSchemeSnapshot(): ColorScheme {
+  return mql?.matches ? "light" : "dark";
+}
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -214,7 +227,15 @@ export const BrandingProvider = ({
     loadPreference(branding?.defaultColorScheme ?? null),
   );
 
-  const [scheme, setScheme] = useState<ColorScheme>(() => resolveScheme(pref));
+  // System scheme via useSyncExternalStore (no setState for external events)
+  const systemScheme = useSyncExternalStore(
+    subscribeSystemScheme,
+    getSystemSchemeSnapshot,
+    () => "dark" as const,
+  );
+
+  // Derived: resolve preference to concrete scheme
+  const scheme: ColorScheme = pref === "system" ? systemScheme : pref;
 
   // Persist preference
   const setColorSchemePreference = useCallback(
@@ -224,23 +245,6 @@ export const BrandingProvider = ({
     },
     [],
   );
-
-  // Listen to system scheme changes when preference is "system"
-  useEffect(() => {
-    if (pref !== "system") {
-      setScheme(pref);
-      return;
-    }
-
-    setScheme(getSystemScheme());
-
-    const mql = globalThis.matchMedia("(prefers-color-scheme: light)");
-    const handler = (e: MediaQueryListEvent) => {
-      setScheme(e.matches ? "light" : "dark");
-    };
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, [pref]);
 
   // Apply CSS variables whenever scheme or branding changes
   useEffect(() => {

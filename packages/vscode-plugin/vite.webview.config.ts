@@ -27,6 +27,9 @@ export default defineConfig({
   resolve: {
     alias: kgfAlias,
   },
+  optimizeDeps: {
+    exclude: ["@indexion/kgf-tokenizer"],
+  },
   build: {
     outDir: "dist/webview",
     rollupOptions: {

@@ -29,6 +29,9 @@ export default defineConfig({
     conditions: ["bun", "module"],
     alias: kgfAlias,
   },
+  optimizeDeps: {
+    exclude: ["@indexion/kgf-tokenizer"],
+  },
   build: {
     outDir: "../../dist/client",
     emptyOutDir: true,

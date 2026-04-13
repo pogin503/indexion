@@ -14,10 +14,19 @@
  * the same `tokenize(spec_text, source) -> JSON string` signature.
  */
 
+let warned = false;
+
 /**
  * Tokenize source code using a KGF spec string.
  * Returns a JSON string: `[{"kind":"...","text":"...","pos":N}, ...]`
  */
 export function tokenize(_spec_text: string, _source: string): string {
+  if (!warned) {
+    warned = true;
+    console.warn(
+      "[kgf-tokenizer] Using stub — syntax highlighting is disabled. " +
+        "Run `moon build --target js` to build the real tokenizer.",
+    );
+  }
   return "[]";
 }

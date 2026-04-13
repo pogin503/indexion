@@ -8,24 +8,20 @@ import { CommandPalette } from "../command-palette/command-palette.tsx";
 import { client, isStaticMode } from "../../lib/client.ts";
 import { BrandingProvider } from "../../lib/branding-context.tsx";
 import { DictContext, resolveDict } from "../../i18n/index.ts";
+import { useCachedApiCall } from "../../lib/hooks.ts";
+import { CacheKey } from "../../lib/api-cache.ts";
 
 export const AppLayout = (): React.JSX.Element => {
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [branding, setBranding] = useState<Branding | null>(null);
 
-  // Fetch branding from /api/config (fire-and-forget; UI works without it)
-  useEffect(() => {
-    fetchConfig(client).then((res) => {
-      if (res.ok) {
-        setBranding(res.data.branding);
-      }
-    });
-  }, []);
-
-  const dict = useMemo(
-    () => resolveDict(branding?.locale),
-    [branding?.locale],
+  // Branding: fetched via app-level cache, no setState in effect
+  const configState = useCachedApiCall(CacheKey.server.config, () =>
+    fetchConfig(client),
   );
+  const branding: Branding | null =
+    configState.status === "success" ? configState.data.branding : null;
+
+  const dict = useMemo(() => resolveDict(branding?.locale), [branding?.locale]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {

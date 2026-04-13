@@ -5,7 +5,7 @@
  * Provides the React hook, component, and context for spec resolution.
  */
 
-export { KgfCodeBlock, LANG_ALIASES } from "./kgf-code-block.tsx";
+export { KgfCodeBlock } from "./kgf-code-block.tsx";
 export {
   useKgfHighlight,
   type HighlightResult,
