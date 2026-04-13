@@ -12,6 +12,7 @@ export const MOCK_CLIENT: HttpClient = {
 
 export const mockDocument = {
   uri: { toString: () => "file:///workspace/test.mbt", fsPath: "/workspace/test.mbt" },
+  languageId: "plaintext",
   version: 1,
 } as unknown as vscode.TextDocument;
 

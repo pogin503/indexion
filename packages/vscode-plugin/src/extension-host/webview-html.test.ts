@@ -118,4 +118,28 @@ describe("buildWebviewHtml", () => {
     // script-src must include both nonce (for entry) and cspSource (for imported chunks)
     expect(html).toMatch(/script-src 'nonce-[^']+' https:\/\/test\.csp/);
   });
+
+  it("does not include codicons link when codiconsUri is not provided", () => {
+    const html = buildWebviewHtml({
+      webview: mockWebview,
+      scriptUri: mockUri("/app.js"),
+      styleUri: mockUri("/style.css"),
+      title: "Test",
+    });
+    expect(html).not.toContain("vscode-codicon-stylesheet");
+    expect(html).not.toContain("font-src");
+  });
+
+  it("includes codicons link and font-src when codiconsUri is provided", () => {
+    const html = buildWebviewHtml({
+      webview: mockWebview,
+      scriptUri: mockUri("/app.js"),
+      styleUri: mockUri("/style.css"),
+      codiconsUri: mockUri("/codicons/codicon.css"),
+      title: "Test",
+    });
+    expect(html).toContain('id="vscode-codicon-stylesheet"');
+    expect(html).toContain("/codicons/codicon.css");
+    expect(html).toContain("font-src");
+  });
 });

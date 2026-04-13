@@ -50,7 +50,15 @@ const mapTokenKind = (kind: string): { readonly typeIndex: number; readonly modi
   return mapping[kind];
 };
 
-/** Create a KGF-based SemanticTokensProvider. */
+/**
+ * Create a KGF-based SemanticTokensProvider.
+ *
+ * Acts as a second-class provider: when a dedicated extension already
+ * provides grammar-based highlighting (languageId !== "plaintext"),
+ * KGF steps back and returns nothing. For files that VSCode cannot
+ * highlight natively, KGF provides universal fallback highlighting
+ * via its spec-based tokenizer.
+ */
 export const createSemanticTokensProvider = (
   getClient: () => HttpClient | undefined,
 ): vscode.DocumentSemanticTokensProvider => ({
@@ -58,6 +66,10 @@ export const createSemanticTokensProvider = (
     document: vscode.TextDocument,
     token: vscode.CancellationToken,
   ): Promise<vscode.SemanticTokens | undefined> => {
+    if (document.languageId !== "plaintext") {
+      return undefined;
+    }
+
     const client = getClient();
     if (!client) {
       return undefined;

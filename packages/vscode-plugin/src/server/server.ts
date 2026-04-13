@@ -141,6 +141,7 @@ export type ServerManager = {
   readonly start: () => Promise<void>;
   readonly stop: () => void;
   readonly getClient: () => HttpClient | undefined;
+  readonly getBaseUrl: () => string | undefined;
   readonly isReady: () => boolean;
   readonly onReady: vscode.Event<void>;
 };
@@ -149,6 +150,7 @@ export type ServerManager = {
 type ServerState = {
   proc: ChildProcess | undefined;
   client: HttpClient | undefined;
+  baseUrl: string | undefined;
   ready: boolean;
   starting: boolean;
   stopped: boolean;
@@ -157,7 +159,14 @@ type ServerState = {
 /** Create a server lifecycle manager. */
 export const createServerManager = (config: ServerConfig, log: vscode.OutputChannel): ServerManager => {
   const resolved = resolveBinary(config.binaryPath, config.workspaceDir);
-  const s: ServerState = { proc: undefined, client: undefined, ready: false, starting: false, stopped: false };
+  const s: ServerState = {
+    proc: undefined,
+    client: undefined,
+    baseUrl: undefined,
+    ready: false,
+    starting: false,
+    stopped: false,
+  };
   const readyEmitter = new vscode.EventEmitter<void>();
 
   const start = async (): Promise<void> => {
@@ -210,6 +219,7 @@ export const createServerManager = (config: ServerConfig, log: vscode.OutputChan
         const wasReady = s.ready;
         s.ready = false;
         s.client = undefined;
+        s.baseUrl = undefined;
         s.proc = undefined;
         s.starting = false;
         if (!s.stopped && wasReady) {
@@ -229,6 +239,7 @@ export const createServerManager = (config: ServerConfig, log: vscode.OutputChan
       });
       if (healthy) {
         s.client = createHttpClient(baseUrl);
+        s.baseUrl = baseUrl;
         s.ready = true;
         readyEmitter.fire();
       }
@@ -242,6 +253,7 @@ export const createServerManager = (config: ServerConfig, log: vscode.OutputChan
     const p = s.proc;
     s.proc = undefined;
     s.client = undefined;
+    s.baseUrl = undefined;
     s.ready = false;
     if (!p) {
       return;
@@ -261,6 +273,7 @@ export const createServerManager = (config: ServerConfig, log: vscode.OutputChan
     start,
     stop,
     getClient: () => s.client,
+    getBaseUrl: () => s.baseUrl,
     isReady: () => s.ready,
     onReady: readyEmitter.event,
   };

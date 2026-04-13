@@ -408,10 +408,49 @@ fn run_inspect(config : KgfConfig) -> Unit {
 }
 
 ///|
-/// Run tokens-only inspection.
+/// Run tokens-only inspection (no parse step).
 fn run_tokens(config : KgfConfig) -> Unit {
-  let c = { ..config, show_events: false, show_edges: false }
-  run_inspect(c)
+  println("=== indexion kgf inspect ===")
+  println("File: \{config.file_path}")
+  println("")
+  let registry = @registry.KGFRegistry::load_from_dir(config.kgf_dir)
+  let resolved = match
+    resolve_spec_name(config.file_path, config.spec_name, registry) {
+    Some(n) => n
+    None => {
+      println("Error: Cannot detect language for file")
+      println("Use --spec=<name> to specify explicitly")
+      return
+    }
+  }
+  println("Detected spec: \{resolved}")
+  let spec = match registry.get_spec(resolved) {
+    Some(s) => s
+    None => {
+      println("Error: Spec '\{resolved}' not found")
+      return
+    }
+  }
+  let source = match read_source(config.file_path) {
+    Some(s) => s
+    None => {
+      println("Error reading file: \{config.file_path}")
+      return
+    }
+  }
+  println("Source length: \{source.length()} chars")
+  println("")
+  println("=== Tokens ===")
+  let lexer = @lexer.Lexer::new(spec.get_tokens())
+  let tokens = lexer.tokenize(source)
+  println("Token count: \{tokens.length()}")
+  for i, tok in tokens {
+    if i < 50 {
+      println("  [\{i}] \{tok.kind}: \"\{escape_string(tok.text)}\"")
+    } else if i == 50 {
+      println("  ... (\{tokens.length() - 50} more tokens)")
+    }
+  }
 }
 
 ///|

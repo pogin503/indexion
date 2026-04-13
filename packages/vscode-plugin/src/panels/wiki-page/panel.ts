@@ -9,6 +9,7 @@ import * as vscode from "vscode";
 import { fetchWikiPage, type HttpClient } from "@indexion/api-client";
 import type { WikiPageToWebview, WikiPageFromWebview } from "./messages.ts";
 import { buildWebviewHtml } from "../../extension-host/webview-html.ts";
+import { resolveCodiconsUri } from "../../extension-host/codicons.ts";
 
 /** Manages a single wiki page panel. Reused across navigations. */
 export type WikiPagePanelManager = {
@@ -82,7 +83,10 @@ export const createWikiPagePanelManager = (
       { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
       {
         enableScripts: true,
-        localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "dist", "webview")],
+        localResourceRoots: [
+          vscode.Uri.joinPath(context.extensionUri, "dist", "webview"),
+          vscode.Uri.joinPath(context.extensionUri, "node_modules", "@vscode", "codicons", "dist"),
+        ],
       },
     );
 
@@ -97,11 +101,13 @@ export const createWikiPagePanelManager = (
     const styleUri = panel.webview.asWebviewUri(
       vscode.Uri.joinPath(context.extensionUri, "dist", "webview", "style.css"),
     );
+    const codiconsUri = resolveCodiconsUri(panel.webview, context.extensionUri);
 
     panel.webview.html = buildWebviewHtml({
       webview: panel.webview,
       scriptUri,
       styleUri,
+      codiconsUri,
       title: "Wiki Page",
       allowInlineStyles: true,
     });

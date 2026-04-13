@@ -8,7 +8,6 @@ import { registerProviders } from "./providers/index.ts";
 import { resolveConfig } from "./config/index.ts";
 import { createKgfListProvider } from "./views/kgf-list/provider.ts";
 import { createSearchViewProvider } from "./views/search/provider.ts";
-import { createExploreViewProvider } from "./views/explore/provider.ts";
 import { createPlansProvider } from "./views/plans/provider.ts";
 import { createWikiTreeProvider } from "./views/wiki/provider.ts";
 import { createWikiPagePanelManager } from "./panels/wiki-page/panel.ts";
@@ -22,6 +21,9 @@ const state: { server: ServerManager | undefined } = { server: undefined };
 
 /** Get the current HTTP client, or undefined if server not ready. */
 const getClient = () => state.server?.getClient();
+
+/** Get the current API base URL, or undefined if server not ready. */
+const getBaseUrl = () => state.server?.getBaseUrl();
 
 /** Public API exported to other extensions and E2E tests. */
 export type ExtensionApi = {
@@ -60,17 +62,9 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
   registerProviders(context, getClient);
 
   // --- Search WebviewView ---
-  const searchProvider = createSearchViewProvider(context.extensionUri, getClient);
+  const searchProvider = createSearchViewProvider(context.extensionUri, getBaseUrl);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("indexion.search", searchProvider, {
-      webviewOptions: { retainContextWhenHidden: true },
-    }),
-  );
-
-  // --- Explore WebviewView ---
-  const exploreProvider = createExploreViewProvider(context.extensionUri, getClient);
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("indexion.explore", exploreProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
   );
@@ -97,7 +91,6 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
       kgfListProvider.refresh();
       wikiTreeProvider.refresh();
       searchProvider.notifyServerStatus(true);
-      exploreProvider.notifyServerStatus(true);
     };
 
     if (state.server.isReady()) {

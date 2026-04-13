@@ -5,6 +5,9 @@
 export type { HttpClient } from "./client.ts";
 export { createHttpClient, apiGet, apiPost } from "./client.ts";
 
+export type { SseEvent, StreamPostOptions } from "./sse.ts";
+export { postStream } from "./sse.ts";
+
 export type {
   ApiResponse,
   CodeGraph,

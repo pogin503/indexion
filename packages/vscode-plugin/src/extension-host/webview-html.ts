@@ -24,6 +24,8 @@ export type WebviewHtmlOptions = {
   readonly title: string;
   /** Allow inline styles via 'unsafe-inline' in CSP. Needed for React inline styles. */
   readonly allowInlineStyles?: boolean;
+  /** URI to the codicons CSS file. When provided, loads the codicon font for vscode-icon. */
+  readonly codiconsUri?: vscode.Uri;
 };
 
 /** Build the CSP style-src directive based on options. */
@@ -34,18 +36,31 @@ const resolveStyleSrc = (options: WebviewHtmlOptions): string => {
   return `${options.webview.cspSource}`;
 };
 
+/** Build the codicons <link> element if a URI is provided. */
+const resolveCodiconsLink = (uri: vscode.Uri | undefined): string => {
+  if (!uri) {
+    return "";
+  }
+  return `\n  <link id="vscode-codicon-stylesheet" rel="stylesheet" href="${uri}">`;
+};
+
 /** Generate HTML content for a webview with CSP, script, and stylesheet. */
 export const buildWebviewHtml = (options: WebviewHtmlOptions): string => {
   const nonce = generateNonce();
   const styleSrc = resolveStyleSrc(options);
+
+  // font-src is required for codicons webfont
+  const fontSrc = options.codiconsUri ? `font-src ${options.webview.cspSource};` : "";
+
+  const codiconsLink = resolveCodiconsLink(options.codiconsUri);
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${styleSrc}; script-src 'nonce-${nonce}' ${options.webview.cspSource};">
-  <link rel="stylesheet" href="${options.styleUri}">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${styleSrc}; ${fontSrc} script-src 'nonce-${nonce}' ${options.webview.cspSource};">
+  <link rel="stylesheet" href="${options.styleUri}">${codiconsLink}
   <title>${options.title}</title>
   <style nonce="${nonce}">body{margin:0;padding:0;overflow:hidden}html,body,#root{height:100%;width:100%}</style>
 </head>

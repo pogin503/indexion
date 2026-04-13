@@ -33,6 +33,14 @@ describe("SEMANTIC_TOKEN_LEGEND", () => {
 });
 
 describe("createSemanticTokensProvider", () => {
+  it("returns undefined when a dedicated grammar exists", async () => {
+    const tsDocument = { ...mockDocument, languageId: "typescript" } as unknown as typeof mockDocument;
+    const provider = createSemanticTokensProvider(() => MOCK_CLIENT);
+    const result = await provider.provideDocumentSemanticTokens(tsDocument, mockToken);
+    expect(result).toBeUndefined();
+    expect(tokenizeFile).not.toHaveBeenCalled();
+  });
+
   it("returns undefined when no config", async () => {
     const provider = createSemanticTokensProvider(() => undefined);
     const result = await provider.provideDocumentSemanticTokens(mockDocument, mockToken);

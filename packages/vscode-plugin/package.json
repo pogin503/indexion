@@ -238,13 +238,8 @@
       "activitybar": [
         {
           "id": "indexionSearch",
-          "title": "Search",
+          "title": "indexion Search",
           "icon": "media/search-dark.svg"
-        },
-        {
-          "id": "indexionExplore",
-          "title": "Explore",
-          "icon": "media/icon.svg"
         },
         {
           "id": "indexionPlans",
@@ -268,13 +263,6 @@
         {
           "id": "indexion.search",
           "name": "Search",
-          "type": "webview"
-        }
-      ],
-      "indexionExplore": [
-        {
-          "id": "indexion.explore",
-          "name": "Similar Code",
           "type": "webview"
         }
       ],
@@ -324,6 +312,7 @@
     "@indexion/syntax-highlight": "workspace:*",
     "@indexion/wiki": "workspace:*",
     "@vscode-elements/elements": "^2.5.1",
+    "@vscode/codicons": "^0.0.45",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

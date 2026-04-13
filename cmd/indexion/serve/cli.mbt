@@ -428,6 +428,37 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         handle_explore(conn, body_text, config, cors_enabled)
         return
       }
+      // SSE streaming endpoints
+      if req.meth == @mhttp.Post && path == "/api/search/stream" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_search_stream(conn, body_text, config, cors_enabled)
+        return
+      }
+      if req.meth == @mhttp.Post && path == "/api/grep/stream" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_grep_stream(conn, body_text, config, cors_enabled)
+        return
+      }
+      if req.meth == @mhttp.Post && path == "/api/explore/stream" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_explore_stream(conn, body_text, config, cors_enabled)
+        return
+      }
+      if req.meth == @mhttp.Post && path == "/api/digest/query/stream" {
+        let body_data = body.read_all()
+        let body_text = body_data.text()
+        handle_digest_query_stream(
+          conn,
+          body_text,
+          state.index,
+          state.digest_config,
+          cors_enabled,
+        )
+        return
+      }
       // KGF POST endpoints
       if req.meth == @mhttp.Post && path == "/api/kgf/tokens" {
         let body_data = body.read_all()
