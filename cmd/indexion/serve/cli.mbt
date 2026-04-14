@@ -346,7 +346,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
   // Build GET route table (SoT for API paths)
   let get_routes = build_get_routes(state, config)
   // Start HTTP server
-  let server = @mhttp.Server::new(host=config.host, port=config.port) catch {
+  let server = @mhttp.Server::new(host=config.host, port=config.port, reuse_addr=true) catch {
     err => {
       @digest_cli.log_error("Server init failed: " + err.to_string())
       return
