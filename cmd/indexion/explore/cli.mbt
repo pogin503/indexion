@@ -19,7 +19,7 @@
 /// | Option | Description | Default |
 /// |--------|-------------|---------|
 /// | `--format=FORMAT` | Output: `matrix`, `list`, `cluster`, `json` | matrix |
-/// | `--strategy=NAME` | Algorithm: `tfidf`, `ncd`, `hybrid` | tfidf |
+/// | `--strategy=NAME` | Algorithm: `hybrid`, `tfidf`, `ncd`, `bm25`, `jsd`, `apted`, `tsed` | hybrid |
 /// | `--threshold=FLOAT` | Min similarity for list/json/cluster output | 0.5 |
 /// | `--ext=EXT` | File extension filter (repeatable) | all |
 /// | `--include=PATTERN` | Include files matching glob pattern | * |
@@ -57,7 +57,7 @@
 pub(all) struct ExploreConfig {
   target_dirs : Array[String] // multiple directories supported
   format : String // "matrix", "list", "cluster", "json"
-  strategy : String // "hybrid", "ncd", "tfidf", "apted", "tsed", "bm25", "jsd"
+  strategy : String // "hybrid" (default), "tfidf", "ncd", "apted", "tsed", "bm25", "jsd"
   threshold : Double // similarity threshold for clustering
   fdr : Double // FDR correction level (0 = disabled, 0.05 = 5% FDR)
   extensions : Array[String] // file extensions to include
@@ -72,7 +72,7 @@ pub fn ExploreConfig::default() -> ExploreConfig {
   {
     target_dirs: [],
     format: "matrix",
-    strategy: "tfidf",
+    strategy: "hybrid",
     threshold: 0.5,
     fdr: 0.0,
     extensions: [],
@@ -92,8 +92,8 @@ pub fn ExploreConfig::from_matches(
     _ => "matrix"
   }
   let strategy = match matches.values.get("strategy") {
-    Some(arr) => if arr.length() > 0 { arr[0] } else { "tfidf" }
-    _ => "tfidf"
+    Some(arr) => if arr.length() > 0 { arr[0] } else { "hybrid" }
+    _ => "hybrid"
   }
   let threshold = match matches.values.get("threshold") {
     Some(arr) =>
@@ -160,7 +160,7 @@ pub fn command() -> @argparse.Command {
       ),
       @argparse.OptionArg(
         "strategy",
-        about="Similarity strategy: tfidf, bm25, jsd, ncd, hybrid, apted, tsed",
+        about="Similarity strategy: hybrid (default), tfidf, bm25, jsd, ncd, apted, tsed",
         default_values=["tfidf"],
       ),
       @argparse.OptionArg(
