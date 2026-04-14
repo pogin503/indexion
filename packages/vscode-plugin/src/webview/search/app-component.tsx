@@ -203,9 +203,10 @@ export const SearchApp = (): React.JSX.Element => {
       const selected = detail[0];
       const filePath = selected.getAttribute("data-file-path");
       const lineAttr = selected.getAttribute("data-line");
+      const symbol = selected.getAttribute("data-symbol") ?? undefined;
       if (filePath) {
         const line = lineAttr ? Number(lineAttr) : undefined;
-        postMessage({ type: "openFile", filePath, line });
+        postMessage({ type: "openFile", filePath, line, symbol });
       }
     };
     el.addEventListener("vsc-tree-select", handler);
@@ -315,7 +316,7 @@ export const SearchApp = (): React.JSX.Element => {
               <span slot="description">{dirname(group.file)}</span>
               <vscode-badge slot="decoration">{group.items.length}</vscode-badge>
               {group.items.map((item, j) => (
-                <vscode-tree-item key={j} data-file-path={item.filePath} data-line={item.line}>
+                <vscode-tree-item key={j} data-file-path={item.filePath} data-line={item.line} data-symbol={item.label}>
                   <vscode-icon slot="icon-leaf" name="symbol-method" />
                   {item.label}
                   {item.score !== undefined && (

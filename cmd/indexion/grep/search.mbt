@@ -205,6 +205,61 @@ pub fn run_pattern_search_json(
 }
 
 ///|
+/// Prepare grep search: load registry, collect files, parse pattern.
+/// Returns (registry, files, matchers) or None if setup fails.
+pub fn prepare_pattern_search(
+  paths : Array[String],
+  config : GrepConfig,
+) -> (@kgf_registry.KGFRegistry?, Array[(String, String)], Array[TokenMatcher])? {
+  let registry = @kgf_features.load_registry(
+    specs_dir=config.specs_dir,
+    target_dirs=paths,
+  )
+  let aliases = build_alias_table(registry)
+  let matchers = parse_pattern_with_aliases(config.pattern, aliases)
+  if matchers.length() == 0 {
+    return None
+  }
+  let files = collect_search_files(paths, config, match registry {
+    Some(r) => r
+    None => @kgf_features.load_registry_or_empty(specs_dir=config.specs_dir, target_dirs=paths)
+  })
+  Some((registry, files, matchers))
+}
+
+///|
+/// Process a single file for grep matches, returning JSON items.
+pub fn grep_single_file(
+  path : String,
+  content : String,
+  matchers : Array[TokenMatcher],
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[Json] {
+  let tokens = match @kgf_features.tokenize_source(content, path, registry) {
+    Some(t) => t
+    None => return []
+  }
+  let spec = match registry {
+    Some(reg) =>
+      match reg.detect_from_path(path) {
+        Some(lang) => reg.get_spec(lang)
+        None => None
+      }
+    None => None
+  }
+  let matches = find_matches(tokens, matchers, path, content, spec~)
+  let results : Array[Json] = []
+  for m in matches {
+    let obj : Map[String, Json] = {}
+    obj["file"] = m.file.to_json()
+    obj["line"] = m.line.to_json()
+    obj["matched"] = m.matched_text.to_json()
+    results.push(Json::object(obj))
+  }
+  results
+}
+
+///|
 /// Run semantic search and return matches as JSON string.
 /// For use by `indexion serve` API endpoint.
 pub fn run_semantic_search_json(

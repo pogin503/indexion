@@ -141,7 +141,7 @@ describe("SearchApp", () => {
       tree!.dispatchEvent(new CustomEvent("vsc-tree-select", { detail: [treeItem] }));
     });
 
-    expect(postedMessages).toContainEqual({ type: "openFile", filePath: "src/x.ts", line: 42 });
+    expect(postedMessages).toContainEqual({ type: "openFile", filePath: "src/x.ts", line: 42, symbol: "my_fn" });
   });
 
   it("shows error message", () => {

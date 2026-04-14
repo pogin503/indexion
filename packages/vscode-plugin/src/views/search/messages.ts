@@ -43,7 +43,7 @@ export type SearchFromWebview =
   | { readonly type: "search"; readonly query: string }
   | { readonly type: "digest"; readonly query: string }
   | { readonly type: "grep"; readonly pattern: string }
-  | { readonly type: "openFile"; readonly filePath: string; readonly line?: number };
+  | { readonly type: "openFile"; readonly filePath: string; readonly line?: number; readonly symbol?: string };
 
 // ─── Converters ────────────────────────────────────────
 

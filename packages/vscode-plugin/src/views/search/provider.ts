@@ -176,14 +176,21 @@ export const createSearchViewProvider = (
             break;
           case "openFile": {
             const uri = resolveFileUri(msg.filePath);
-            log?.appendLine(`[search] openFile: ${msg.filePath} → ${uri.fsPath}`);
             vscode.workspace.openTextDocument(uri).then(
               (doc) => {
-                log?.appendLine(`[search] opened: ${doc.uri.fsPath}`);
                 const options: vscode.TextDocumentShowOptions = {};
                 if (msg.line !== undefined && msg.line > 0) {
+                  // Exact line number from grep — use directly.
                   const pos = new vscode.Position(msg.line - 1, 0);
                   options.selection = new vscode.Range(pos, pos);
+                } else if (msg.symbol) {
+                  // No line number (e.g. search/digest) — find the symbol in the file.
+                  const text = doc.getText();
+                  const idx = text.indexOf(msg.symbol);
+                  if (idx >= 0) {
+                    const pos = doc.positionAt(idx);
+                    options.selection = new vscode.Range(pos, pos);
+                  }
                 }
                 vscode.window.showTextDocument(doc, options);
               },

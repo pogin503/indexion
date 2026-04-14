@@ -141,21 +141,36 @@ async fn handle_grep_stream(
   // Start SSE
   sse_start(conn, cors)
   sse_progress(conn, "searching", "Running grep...")
-  match @grep_cli.run_to_json(grep_config) {
-    Some(result) => {
-      let parsed : Json = @json.parse(result) catch { _ => Json::array([]) }
-      match parsed {
-        Array(arr) => {
-          // Stream items one by one for incremental display
-          for item in arr {
-            sse_item(conn, item)
-          }
-          sse_done(conn, arr.length())
-        }
-        _ => sse_done(conn, 0)
-      }
+  @async.sleep(0)
+  // Prepare search: load registry, collect files, parse matchers
+  let paths = if grep_config.paths.length() == 0 {
+    [config.workspace_dir]
+  } else {
+    grep_config.paths
+  }
+  match @grep_cli.prepare_pattern_search(paths, grep_config) {
+    None => {
+      sse_error(conn, "Pattern or semantic query required")
+      return
     }
-    None => sse_error(conn, "Pattern or semantic query required")
+    Some((registry, files, matchers)) => {
+      // Process files one at a time, yielding between each file
+      // so the event loop can serve other requests (health, wiki, etc).
+      let mut total = 0
+      for i, file in files {
+        let (path, content) = file
+        let items = @grep_cli.grep_single_file(path, content, matchers, registry)
+        for item in items {
+          sse_item(conn, item)
+          total = total + 1
+        }
+        // Yield every few files to let other connections be served.
+        if i % 5 == 4 {
+          @async.sleep(0)
+        }
+      }
+      sse_done(conn, total)
+    }
   }
 }
 
@@ -184,6 +199,7 @@ async fn handle_search_stream(
   // Start SSE
   sse_start(conn, cors)
   sse_progress(conn, "searching", "Querying digest index...")
+  @async.sleep(0)
   // Query the pre-built digest index directly — no corpus rebuild.
   let hits = serve_query_cascade(
     state.index,
@@ -192,10 +208,13 @@ async fn handle_search_stream(
     top_k,
   )
   let mut total = 0
-  for hit in hits {
+  for i, hit in hits {
     if hit.score >= min_score {
       sse_item(conn, query_hit_to_search_json(hit))
       total = total + 1
+    }
+    if i % 50 == 49 {
+      @async.sleep(0)
     }
   }
   sse_done(conn, total)
@@ -242,6 +261,7 @@ async fn handle_explore_stream(
     specs_dir: config.specs_dir,
   }
   sse_progress(conn, "comparing", "Analyzing similarity...")
+  @async.sleep(0)
   match @explore_cli.run_to_json(explore_config) {
     Some(result) => {
       let parsed : Json = @json.parse(result) catch { _ => Json::object({}) }
@@ -296,12 +316,16 @@ async fn handle_digest_query_stream(
   // Start SSE
   sse_start(conn, cors)
   sse_progress(conn, "querying", "Searching functions by purpose...")
+  @async.sleep(0)
   let hits = serve_query_cascade(index, digest_config, purpose, top_k)
   let mut total = 0
-  for hit in hits {
+  for i, hit in hits {
     if hit.score >= min_score {
       sse_item(conn, query_hit_to_json(hit))
       total = total + 1
+    }
+    if i % 50 == 49 {
+      @async.sleep(0)
     }
   }
   sse_done(conn, total)
