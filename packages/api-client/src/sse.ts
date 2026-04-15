@@ -41,7 +41,9 @@ const YIELD_BATCH_SIZE = 50;
  * Yields to the event loop every YIELD_BATCH_SIZE events to prevent
  * monopolising the extension host when the server sends thousands of results.
  */
-async function* readSseStream(reader: ReadableStreamDefaultReader<Uint8Array>): AsyncGenerator<SseEvent> {
+async function* readSseStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+): AsyncGenerator<SseEvent> {
   const decoder = new TextDecoder();
   const state = { buffer: "", count: 0 };
 
@@ -66,8 +68,8 @@ async function* readSseStream(reader: ReadableStreamDefaultReader<Uint8Array>): 
         if (line.startsWith("data: ")) {
           try {
             yield JSON.parse(line.slice(6)) as SseEvent;
-          } catch {
-            // Skip malformed JSON — partial writes from the server
+          } catch (e) {
+            console.debug("SSE: skipping malformed JSON chunk", e);
           }
           state.count++;
           if (state.count >= YIELD_BATCH_SIZE) {
