@@ -10,7 +10,7 @@
  */
 
 import { useMemo } from "react";
-import { useKgfHighlight } from "./use-kgf-highlight.ts";
+import { useKgfHighlight, type ColorScheme } from "./use-kgf-highlight.ts";
 
 function extractLang(className: string | undefined): string | null {
   const match = /language-(\S+)/.exec(className ?? "");
@@ -20,15 +20,17 @@ function extractLang(className: string | undefined): string | null {
 type Props = React.HTMLAttributes<HTMLElement> & {
   children?: React.ReactNode;
   className?: string;
+  colorScheme?: ColorScheme;
 };
 
 export const KgfCodeBlock = (props: Props): React.JSX.Element => {
+  const { colorScheme, ...rest } = props;
   const lang = useMemo(() => extractLang(props.className), [props.className]);
   const code = String(props.children).replace(/\n$/, "");
-  const { segments } = useKgfHighlight(lang, code);
+  const { segments } = useKgfHighlight(lang, code, colorScheme);
 
   return (
-    <code className={props.className}>
+    <code className={rest.className}>
       {segments.map((seg, i) =>
         seg.color ? (
           <span key={i} style={{ color: seg.color }}>

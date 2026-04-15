@@ -113,8 +113,18 @@ async function resolveUniversal(fetchSpec: FetchKgfSpec): Promise<CacheEntry> {
 
 // ─── Color mapping ──────────────────────────────────────
 
-/** FNV-1a hash → deterministic HSL color for a token kind (dark theme). */
-function colorForKind(kind: string): string {
+export type ColorScheme = "dark" | "light";
+
+/**
+ * FNV-1a hash → deterministic HSL color for a token kind.
+ *
+ * Dark theme:  lightness 55-70%, saturation 55-80%  (bright on dark bg)
+ * Light theme: lightness 25-40%, saturation 55-80%  (dark on light bg)
+ *
+ * Hue and saturation are identical across themes so the same token kind
+ * keeps its colour identity; only lightness is flipped.
+ */
+function colorForKind(kind: string, scheme: ColorScheme): string {
   const FNV_OFFSET = 0x811c9dc5;
   const FNV_PRIME = 0x01000193;
   let h = FNV_OFFSET;
@@ -123,7 +133,8 @@ function colorForKind(kind: string): string {
   }
   const hue = h % 360;
   const sat = 55 + ((h >>> 8) % 25);
-  const light = 55 + ((h >>> 16) % 15);
+  const lightBase = scheme === "dark" ? 55 : 25;
+  const light = lightBase + ((h >>> 16) % 15);
   return `hsl(${hue},${sat}%,${light}%)`;
 }
 
@@ -141,7 +152,11 @@ export type HighlightResult = {
 
 // ─── Tokenization ───────────────────────────────────────
 
-function tokenizeToResult(spec: string, code: string): HighlightResult {
+function tokenizeToResult(
+  spec: string,
+  code: string,
+  scheme: ColorScheme,
+): HighlightResult {
   try {
     const raw = tokenize(spec, code);
     const tokens: Tok[] = JSON.parse(raw);
@@ -157,7 +172,7 @@ function tokenizeToResult(spec: string, code: string): HighlightResult {
       if (tok.pos > lastEnd) {
         segments.push({ text: code.slice(lastEnd, tok.pos), color: null });
       }
-      segments.push({ text: tok.text, color: colorForKind(tok.kind) });
+      segments.push({ text: tok.text, color: colorForKind(tok.kind, scheme) });
       lastEnd = tok.pos + tok.text.length;
     }
     if (lastEnd < code.length) {
@@ -182,6 +197,7 @@ function tokenizeToResult(spec: string, code: string): HighlightResult {
 export function useKgfHighlight(
   lang: string | null,
   code: string,
+  scheme: ColorScheme = "dark",
 ): HighlightResult {
   const fetchSpec = useKgfSpecFetcher();
 
@@ -213,12 +229,12 @@ export function useKgfHighlight(
 
     switch (entry.state) {
       case "resolved":
-        return tokenizeToResult(entry.spec, code);
+        return tokenizeToResult(entry.spec, code, scheme);
       case "empty":
         return {
           status: "unsupported",
           segments: [{ text: code, color: null }],
         };
     }
-  }, [lang, code, fetchSpec, version]);
+  }, [lang, code, fetchSpec, version, scheme]);
 }

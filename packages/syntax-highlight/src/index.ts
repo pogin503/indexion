@@ -8,6 +8,7 @@
 export { KgfCodeBlock } from "./kgf-code-block.tsx";
 export {
   useKgfHighlight,
+  type ColorScheme,
   type HighlightResult,
   type HighlightSegment,
 } from "./use-kgf-highlight.ts";
