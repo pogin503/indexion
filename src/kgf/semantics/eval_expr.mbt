@@ -822,3 +822,46 @@ fn eval_func_cond(args : Array[Json]) -> Json {
     Json::null()
   }
 }
+
+// ── Known built-in registries (SoT) ─────────────────────
+//
+// These functions expose the set of names recognized by eval_call,
+// eval_func, and eval_var. They are the single source of truth —
+// check/check.mbt consumes them instead of maintaining a duplicate list.
+
+///|
+/// Returns true if `name` is a known context-dependent call ($resolve, $scope, etc.).
+/// SoT: the match arms in eval_call above.
+pub fn is_known_call(name : String) -> Bool {
+  match name {
+    "resolve" | "scope" | "callId" | "autoSym" | "autoCall" | "collectRefs" =>
+      true
+    _ => false
+  }
+}
+
+///|
+/// Returns true if `name` is a known pure built-in function (concat, obj, etc.).
+/// SoT: the match arms in eval_func above.
+pub fn is_known_func(name : String) -> Bool {
+  match name {
+    "concat" | "obj" | "coalesce" | "not" | "eq" | "add" | "sub" | "mul" |
+    "div" | "floor" | "hexToInt" | "slice" | "stripQuotes" | "first" |
+    "last" | "toUpper" | "toLower" | "trim" | "containsStr" | "startsWith" |
+    "beforeFirst" | "afterFirst" | "digits" | "countOccurrences" |
+    "collectLinesAfterPrefixes" | "regexCaptures" | "regexPairs" | "cond" |
+    "children" =>
+      true
+    _ => false
+  }
+}
+
+///|
+/// Returns true if `name` is a known built-in variable ($file, $root, etc.).
+/// SoT: the if-chain in eval_var above.
+pub fn is_known_builtin_var(name : String) -> Bool {
+  match name {
+    "file" | "root" | "language" => true
+    _ => false
+  }
+}

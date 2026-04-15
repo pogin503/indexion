@@ -171,6 +171,17 @@ pub fn command() -> @argparse.Command {
         positionals=file_positional[:],
       ),
       @argparse.Command(
+        "check",
+        about="Validate KGF spec structure (regex, symbol references, semantics)",
+        positionals=[
+          @argparse.PositionArg(
+            "spec-or-file",
+            about="KGF spec name or .kgf file path",
+            num_args=@argparse.ValueRange(lower=1),
+          ),
+        ],
+      ),
+      @argparse.Command(
         "classify",
         about="Classification model tools",
         subcommand_required=true,
@@ -243,6 +254,12 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
         "events" => run_events(config)
         "edges" => run_edges(config)
         _ => ()
+      }
+    }
+    "check" => {
+      match matches.subcommand {
+        Some((_, check_matches)) => run_check(config.kgf_dir, check_matches)
+        _ => println(command().render_help())
       }
     }
     "classify" => {
@@ -880,5 +897,70 @@ fn run_classify_train(
       println(@kgf_classify.serialize_classify_section(model))
     }
     None => println("Error: No training data found (no sections extracted)")
+  }
+}
+
+///|
+/// Run the `kgf check` subcommand.
+fn run_check(kgf_dir : String, matches : @argparse.Matches) -> Unit {
+  let targets = matches.values.get("spec-or-file").unwrap_or([])
+  if targets.length() == 0 {
+    println("Error: No spec or file specified")
+    return
+  }
+  let registry = @registry.KGFRegistry::load_from_dir(kgf_dir)
+  let mut total_errors = 0
+  let mut total_warnings = 0
+  for target in targets {
+    // Try as spec name first, then as file path
+    let spec = match registry.get_spec(target) {
+      Some(s) => s
+      None => {
+        // Try reading as .kgf file
+        let content = @fs.read_file_to_string(target) catch {
+          _ => {
+            println("Error: '" + target + "' is not a known spec name or readable file")
+            continue
+          }
+        }
+        match @kgf_parser.parse_kgf(content) {
+          Some(s) => s
+          None => {
+            println("Error: Failed to parse '" + target + "' as KGF spec")
+            continue
+          }
+        }
+      }
+    }
+    let diagnostics = @kgf_check.check(spec)
+    let mut errors = 0
+    let mut warnings = 0
+    for d in diagnostics {
+      match d.get_severity() {
+        "error" => errors += 1
+        _ => warnings += 1
+      }
+    }
+    total_errors += errors
+    total_warnings += warnings
+    let name = spec.get_language()
+    if diagnostics.length() == 0 {
+      println(name + ": ok")
+    } else {
+      println(name + ": " + errors.to_string() + " error(s), " + warnings.to_string() + " warning(s)")
+      for d in diagnostics {
+        let severity = d.get_severity()
+        let prefix = if severity == "error" { "  ERROR" } else { "  WARN " }
+        println(prefix + " [" + d.get_section() + "] " + d.get_message())
+      }
+    }
+  }
+  println("")
+  if total_errors == 0 && total_warnings == 0 {
+    println("All checks passed.")
+  } else {
+    println(
+      "Total: " + total_errors.to_string() + " error(s), " + total_warnings.to_string() + " warning(s)",
+    )
   }
 }
