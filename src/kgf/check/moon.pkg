@@ -1,6 +1,14 @@
 import {
   "moonbitlang/core/json" @json,
+  "trkbt10/indexion/src/kgf/lexer" @kgf_lexer,
+  "trkbt10/indexion/src/kgf/peg" @kgf_peg,
   "trkbt10/indexion/src/kgf/types" @kgf_types,
   "trkbt10/indexion/src/kgf/semantics" @kgf_semantics,
   "trkbt10/indexion/src/regexp" @regexp,
 }
+
+import {
+  "moonbitlang/x/fs" @fs,
+  "trkbt10/indexion/src/kgf/fixtures" @kgf_fixtures,
+  "trkbt10/indexion/src/kgf/registry" @registry,
+} for "wbtest"
