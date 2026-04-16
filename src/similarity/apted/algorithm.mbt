@@ -6,16 +6,14 @@
 // Space complexity: O(n * m)
 
 ///|
-/// Compute tree edit distance between two trees using Zhang-Shasha algorithm.
-/// Returns the minimum cost to transform tree1 into tree2.
-pub fn compute_tree_edit_distance(
-  tree1 : TreeNode,
-  tree2 : TreeNode,
+/// Compute tree edit distance on pre-indexed trees.
+pub fn compute_tree_edit_distance_indexed(
+  t1 : IndexedTree,
+  size1 : Int,
+  t2 : IndexedTree,
+  size2 : Int,
   config : CostConfig,
 ) -> Double {
-  // Handle trivial cases
-  let size1 = tree1.size()
-  let size2 = tree2.size()
   if size1 == 0 && size2 == 0 {
     return 0.0
   }
@@ -25,11 +23,84 @@ pub fn compute_tree_edit_distance(
   if size2 == 0 {
     return size1.to_double() * config.delete_cost
   }
-  // Index both trees
-  let t1 = IndexedTree::from_tree(tree1)
-  let t2 = IndexedTree::from_tree(tree2)
-  // Run Zhang-Shasha algorithm
   zhang_shasha(t1, t2, config)
+}
+
+///|
+/// Normalized tree edit distance on pre-indexed trees.
+/// Returns a value in [0, 1] where 0 = identical trees.
+pub fn normalized_tree_edit_distance_indexed(
+  t1 : IndexedTree,
+  size1 : Int,
+  t2 : IndexedTree,
+  size2 : Int,
+  config : CostConfig,
+) -> Double {
+  let raw_dist = compute_tree_edit_distance_indexed(t1, size1, t2, size2, config)
+  let max_dist = size1.to_double() * config.delete_cost +
+    size2.to_double() * config.insert_cost
+  if max_dist <= 0.0 {
+    return 0.0
+  }
+  let normalized = raw_dist / max_dist
+  if normalized < 0.0 {
+    0.0
+  } else if normalized > 1.0 {
+    1.0
+  } else {
+    normalized
+  }
+}
+
+///|
+/// Tree similarity on pre-indexed trees.
+/// Returns a value in [0, 1] where 1 = identical trees.
+pub fn tree_similarity_indexed(
+  t1 : IndexedTree,
+  size1 : Int,
+  t2 : IndexedTree,
+  size2 : Int,
+  config : CostConfig,
+) -> Double {
+  1.0 - normalized_tree_edit_distance_indexed(t1, size1, t2, size2, config)
+}
+
+///|
+/// Exact upper bound on unit-cost tree_similarity based on sizes alone.
+///
+/// With CostConfig::default() (all costs = 1.0):
+///   raw_dist >= |size1 - size2|
+///   max_dist = size1 + size2
+///   similarity <= 1 - |size1-size2| / (size1+size2)
+pub fn unit_cost_tree_similarity_upper_bound(
+  size1 : Int,
+  size2 : Int,
+) -> Double {
+  if size1 == 0 && size2 == 0 {
+    return 1.0
+  }
+  let denom = size1 + size2
+  if denom <= 0 {
+    return 0.0
+  }
+  let diff = if size1 > size2 { size1 - size2 } else { size2 - size1 }
+  let ub = 1.0 - diff.to_double() / denom.to_double()
+  if ub < 0.0 { 0.0 } else { ub }
+}
+
+///|
+/// Compute tree edit distance between two trees using Zhang-Shasha algorithm.
+/// Returns the minimum cost to transform tree1 into tree2.
+pub fn compute_tree_edit_distance(
+  tree1 : TreeNode,
+  tree2 : TreeNode,
+  config : CostConfig,
+) -> Double {
+  let size1 = tree1.size()
+  let size2 = tree2.size()
+  let t1 = IndexedTree::from_tree_with_size(tree1, size1)
+  let t2 = IndexedTree::from_tree_with_size(tree2, size2)
+  compute_tree_edit_distance_indexed(t1, size1, t2, size2, config)
 }
 
 ///|
@@ -143,24 +214,11 @@ pub fn normalized_tree_edit_distance(
   tree2 : TreeNode,
   config : CostConfig,
 ) -> Double {
-  let raw_dist = compute_tree_edit_distance(tree1, tree2, config)
   let size1 = tree1.size()
   let size2 = tree2.size()
-  // Maximum possible distance: delete all from tree1 + insert all to tree2
-  let max_dist = size1.to_double() * config.delete_cost +
-    size2.to_double() * config.insert_cost
-  if max_dist <= 0.0 {
-    return 0.0
-  }
-  let normalized = raw_dist / max_dist
-  // Clamp to [0, 1]
-  if normalized < 0.0 {
-    0.0
-  } else if normalized > 1.0 {
-    1.0
-  } else {
-    normalized
-  }
+  let t1 = IndexedTree::from_tree_with_size(tree1, size1)
+  let t2 = IndexedTree::from_tree_with_size(tree2, size2)
+  normalized_tree_edit_distance_indexed(t1, size1, t2, size2, config)
 }
 
 ///|
@@ -171,5 +229,9 @@ pub fn tree_similarity(
   tree2 : TreeNode,
   config : CostConfig,
 ) -> Double {
-  1.0 - normalized_tree_edit_distance(tree1, tree2, config)
+  let size1 = tree1.size()
+  let size2 = tree2.size()
+  let t1 = IndexedTree::from_tree_with_size(tree1, size1)
+  let t2 = IndexedTree::from_tree_with_size(tree2, size2)
+  tree_similarity_indexed(t1, size1, t2, size2, config)
 }

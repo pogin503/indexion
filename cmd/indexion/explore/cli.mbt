@@ -644,85 +644,36 @@ fn apply_fdr_to_file_pairs(
 
 ///|
 /// Calculate function-level similarity pairs using APTED or TSED.
+/// Delegates to @batch for core comparison logic.
 fn calculate_function_pairs(
   files : Array[(String, String)],
   strategy : String,
   min_similarity : Double,
-  registry : @registry.KGFRegistry?,
+  _registry : @registry.KGFRegistry?,
 ) -> Array[FilePair] {
-  let pairs : Array[FilePair] = []
-  let resolved_registry = match registry {
-    Some(r) => r
-    None => {
-      println("      Warning: KGF registry not found, cannot extract functions")
-      return pairs
-    }
-  }
-  // Extract functions from all files
   println("      Extracting functions...")
-  let all_functions : Array[(@kgf_features.ExtractedFunction, @apted.TreeNode)] = []
-  let mut total_functions = 0
-  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(resolved_registry)
-  for file in files {
-    let (path, content) = file
-    // Detect language and get toolkit (cached per language)
-    match toolkit_reg.for_path(path) {
-      Some(toolkit) => {
-        let spec = toolkit.get_spec()
-        // Tokenize using cached lexer
-        let tokens = toolkit.get_lexer().tokenize(content)
-        // Extract functions and convert to TreeNodes
-        let func_trees = @kgf_features.extract_function_trees(
-          content,
-          path,
-          tokens,
-          registry,
-          spec~,
-        )
-        for ft in func_trees {
-          all_functions.push(ft)
-          total_functions += 1
-        }
-      }
-      None => ()
-    }
+  let entries : Array[@batch.FileEntry] = []
+  for f in files {
+    entries.push(@batch.FileEntry::new(f.0, f.1))
   }
-  println("      Found " + total_functions.to_string() + " functions")
-  if all_functions.length() < 2 {
-    println("      Need at least 2 functions to compare")
-    return pairs
+  let result = if strategy == "tsed" {
+    @batch.compare_tsed_functions(entries, min_similarity)
+  } else {
+    @batch.compare_apted_functions(entries, min_similarity)
   }
-  // Calculate function pairs
-  let total_fn_pairs = all_functions.length() * (all_functions.length() - 1) / 2
   println(
-    "      Comparing " + total_fn_pairs.to_string() + " function pairs...",
+    "      Found " +
+    result.pairs_compared.to_string() +
+    " function pairs compared",
   )
-  let cost_config = @apted.CostConfig::default()
-  let tsed_config = @apted.TSEDConfig::default()
-  for i = 0; i < all_functions.length(); i = i + 1 {
-    let (func1, tree1) = all_functions[i]
-    for j = i + 1; j < all_functions.length(); j = j + 1 {
-      let (func2, tree2) = all_functions[j]
-      // Skip comparing functions from the same file with the same name
-      if func1.get_file() == func2.get_file() &&
-        func1.get_name() == func2.get_name() {
-        continue
-      }
-      // Calculate similarity based on strategy
-      let sim = if strategy == "tsed" {
-        @apted.calculate_tsed(tree1, tree2, tsed_config)
-      } else {
-        @apted.tree_similarity(tree1, tree2, cost_config)
-      }
-      if sim >= min_similarity {
-        pairs.push({
-          file1: func1.qualified_name(),
-          file2: func2.qualified_name(),
-          similarity: sim,
-          _distance: 1.0 - sim,
-        })
-      }
-    }
+  let pairs : Array[FilePair] = []
+  for m in result.matches {
+    pairs.push({
+      file1: m.file1,
+      file2: m.file2,
+      similarity: m.similarity,
+      _distance: 1.0 - m.similarity,
+    })
   }
   pairs
 }

@@ -20,24 +20,35 @@ pub struct IndexedTree {
 } derive(Debug)
 
 ///|
-/// Create an IndexedTree from a TreeNode.
-pub fn IndexedTree::from_tree(root : TreeNode) -> IndexedTree {
-  let size = root.size()
-  // Arrays are 1-indexed, so allocate size+1
+/// Create an IndexedTree from a TreeNode when size is already known.
+pub fn IndexedTree::from_tree_with_size(
+  root : TreeNode,
+  size : Int,
+) -> IndexedTree {
   let labels : Array[String] = Array::make(size + 1, "")
   let leftmost_leaf : Array[Int] = Array::make(size + 1, 0)
   let children_count : Array[Int] = Array::make(size + 1, 0)
-  // Postorder traversal to fill arrays
   let postorder_counter : PostorderCounter = { val: 0 }
   ignore(
     fill_postorder(
       root, labels, leftmost_leaf, children_count, postorder_counter,
     ),
   )
-  // Compute keyroots
-  // A node i is a keyroot if it's the root OR l(i) != l(parent(i))
   let keyroots = compute_keyroots(size, leftmost_leaf)
   { size, labels, leftmost_leaf, keyroots, children_count }
+}
+
+///|
+/// Create an IndexedTree from a TreeNode.
+pub fn IndexedTree::from_tree(root : TreeNode) -> IndexedTree {
+  IndexedTree::from_tree_with_size(root, root.size())
+}
+
+///|
+/// Index a tree and return both the indexed tree and its size.
+pub fn index_tree_with_size(root : TreeNode) -> (IndexedTree, Int) {
+  let size = root.size()
+  (IndexedTree::from_tree_with_size(root, size), size)
 }
 
 ///|
