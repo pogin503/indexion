@@ -34,12 +34,64 @@ pub fn LexDiagnostic::get_text(self : LexDiagnostic) -> String {
 
 ///|
 /// Tokenizes input and returns lexer diagnostics.
-///
-/// Phase A only wires the public API. Unmatched-span collection is implemented
-/// in a later phase, so diagnostics are currently empty.
 pub fn Lexer::tokenize_with_diagnostics(
   self : Lexer,
   input : String,
 ) -> (Array[@types.Tok], Array[LexDiagnostic]) {
-  (self.tokenize(input), [])
+  let result : Array[@types.Tok] = []
+  let diagnostics : Array[LexDiagnostic] = []
+  let input_chars = @regexp.build_input_chars(input)
+  let mut pos = 0
+  let mut unmatched_start = -1
+  let mut unmatched_end = -1
+  while pos < input.length() {
+    let match_result = self.try_match(input, input_chars, pos)
+    match match_result {
+      Some((token_def, end_pos, text, group1)) => {
+        if unmatched_start >= 0 {
+          diagnostics.push(
+            LexDiagnostic::new(
+              unmatched_start,
+              unmatched_end - unmatched_start,
+              input[unmatched_start:unmatched_end].to_string(),
+            ),
+          )
+          unmatched_start = -1
+          unmatched_end = -1
+        }
+        if !token_def.skip {
+          match text {
+            Some(token_text) => {
+              let value = match group1 {
+                Some(captured) => Some(captured)
+                None => extract_value(token_text, token_def)
+              }
+              result.push(
+                @types.Tok::new(token_def.name, token_text, pos, value~),
+              )
+            }
+            None => ()
+          }
+        }
+        pos = end_pos
+      }
+      None => {
+        if unmatched_start < 0 {
+          unmatched_start = pos
+        }
+        pos = pos + 1
+        unmatched_end = pos
+      }
+    }
+  }
+  if unmatched_start >= 0 {
+    diagnostics.push(
+      LexDiagnostic::new(
+        unmatched_start,
+        unmatched_end - unmatched_start,
+        input[unmatched_start:unmatched_end].to_string(),
+      ),
+    )
+  }
+  (result, diagnostics)
 }
