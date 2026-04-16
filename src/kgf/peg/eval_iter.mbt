@@ -39,10 +39,14 @@ priv struct IterEvalContext {
   peg : PEG
   tokens : Array[@types.Tok]
   token_ids : Array[Int]
+  token_names : Array[String]
   memo : Array[MemoState]
   num_positions : Int
   on_rule_match : (String, Map[String, Json], Int, Int) -> Unit
   emit_filter : @hashset.HashSet[String]?
+  diagnostics_enabled : Bool
+  mut furthest_pos : Int
+  furthest_expected : Array[String]
   work : Array[WorkItem]
   results : Array[FastEvalResult]
 }
@@ -54,19 +58,25 @@ fn IterEvalContext::new(
   tokens : Array[@types.Tok],
   on_rule_match : (String, Map[String, Json], Int, Int) -> Unit,
   emit_filter? : @hashset.HashSet[String]? = None,
+  diagnostics_enabled? : Bool = false,
 ) -> IterEvalContext {
   let num_nodes = peg.fast_nodes.length()
   let num_positions = tokens.length() + 1
   let memo = create_memo(num_nodes, num_positions)
   let token_ids = compute_token_ids(peg, tokens)
+  let token_names = compute_token_names(peg)
   {
     peg,
     tokens,
     token_ids,
+    token_names,
     memo,
     num_positions,
     on_rule_match,
     emit_filter,
+    diagnostics_enabled,
+    furthest_pos: 0,
+    furthest_expected: [],
     work: Array::new(capacity=1024),
     results: Array::new(capacity=256),
   }
@@ -78,6 +88,30 @@ fn should_emit_rule_iter(ctx : IterEvalContext, name : String) -> Bool {
   match ctx.emit_filter {
     Some(filter) => filter.contains(name)
     None => true
+  }
+}
+
+///|
+/// Records a failed token expectation for diagnostic runs.
+fn record_token_failure(
+  ctx : IterEvalContext,
+  pos : Int,
+  expected_id : Int,
+) -> Unit {
+  if !ctx.diagnostics_enabled || pos < ctx.furthest_pos {
+    return
+  }
+  if pos > ctx.furthest_pos {
+    ctx.furthest_pos = pos
+    ctx.furthest_expected.clear()
+  }
+  let expected = if expected_id >= 0 && expected_id < ctx.token_names.length() {
+    ctx.token_names[expected_id]
+  } else {
+    ""
+  }
+  if expected.length() > 0 && !ctx.furthest_expected.contains(expected) {
+    ctx.furthest_expected.push(expected)
   }
 }
 
@@ -142,6 +176,7 @@ fn process_eval(ctx : IterEvalContext, node_id : Int, pos : Int) -> Unit {
         ctx.memo[memo_idx] = Succeeded(pos + 1, labels)
         ctx.results.push({ ok: true, end_pos: pos + 1, labels })
       } else {
+        record_token_failure(ctx, pos, expected_id)
         ctx.memo[memo_idx] = Failed
         ctx.results.push({ ok: false, end_pos: pos, labels: empty_labels() })
       }

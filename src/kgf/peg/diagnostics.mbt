@@ -50,31 +50,93 @@ fn token_at(tokens : Array[@types.Tok], pos : Int) -> @types.Tok? {
 }
 
 ///|
+/// Runs iterative PEG parse and keeps diagnostic tracking state.
+fn run_parse_diag_iter_internal(
+  peg : PEG,
+  tokens : Array[@types.Tok],
+  start_rule : String,
+  on_rule_match : (String, Map[String, Json], Int, Int) -> Unit,
+  emit_filter : @hashset.HashSet[String]?,
+) -> (FastEvalResult, Map[String, Json], Int, Array[String]) {
+  let ctx = IterEvalContext::new(
+    peg,
+    tokens,
+    on_rule_match,
+    emit_filter~,
+    diagnostics_enabled=true,
+  )
+  match peg.get_fast_rule_body_id(start_rule) {
+    None =>
+      (
+        { ok: false, end_pos: 0, labels: empty_labels() },
+        Map::new(),
+        ctx.furthest_pos,
+        ctx.furthest_expected,
+      )
+    Some(body_node_id) => {
+      ctx.work.push(Eval(body_node_id, 0))
+      eval_iter_loop(ctx)
+      let result = ctx.results
+        .pop()
+        .unwrap_or({ ok: false, end_pos: 0, labels: empty_labels() })
+      if result.ok && should_emit_rule_iter(ctx, start_rule) {
+        let labels_map = materialize(result.labels, ctx.tokens)
+        labels_map.set("_start_tok", (0).to_json())
+        labels_map.set("_end_tok", result.end_pos.to_json())
+        (ctx.on_rule_match)(start_rule, labels_map, 0, result.end_pos)
+      }
+      let final_labels = materialize(result.labels, ctx.tokens)
+      (result, final_labels, ctx.furthest_pos, ctx.furthest_expected)
+    }
+  }
+}
+
+///|
 /// Runs a PEG parse and returns parse diagnostics.
-///
-/// Phase A only wires the public API. Furthest-position and expected-token
-/// tracking are implemented in a later phase.
 pub fn run_parse_with_diagnostics(
   peg : PEG,
   spec : @types.KGFSpec,
   start_rule : String,
   tokens : Array[@types.Tok],
 ) -> (EvalResult?, ParseDiagnostic) {
-  let result = run_parse(peg, spec, start_rule, tokens)
-  let furthest_pos = match result {
-    Some(r) => r.get_pos()
-    None => 0
+  let active_rules : @hashset.HashSet[String] = @hashset.new()
+  for name, _ in spec.get_rules() {
+    active_rules.add(name)
   }
-  let fully_consumed = match result {
-    Some(r) => r.is_ok() && r.get_pos() == tokens.length()
-    None => false
+  let events : Array[(String, Map[String, Json])] = []
+  let callback = fn(
+    rule_name : String,
+    labels : Map[String, Json],
+    _start_pos : Int,
+    _end_pos : Int,
+  ) {
+    events.push((rule_name, labels))
   }
+  let (fast_result, final_labels, furthest_pos, expected_kinds) = run_parse_diag_iter_internal(
+    peg,
+    tokens,
+    start_rule,
+    callback,
+    Some(active_rules),
+  )
+  let result = if fast_result.ok {
+    Some(EvalResult::success(fast_result.end_pos, labels=final_labels, events~))
+  } else {
+    None
+  }
+  let fully_consumed = fast_result.ok && fast_result.end_pos == tokens.length()
+  let diagnostic_pos = if fast_result.ok {
+    fast_result.end_pos
+  } else {
+    furthest_pos
+  }
+  let diagnostic_expected = if fast_result.ok { [] } else { expected_kinds }
   (
     result,
     ParseDiagnostic::new(
-      furthest_pos,
-      token_at(tokens, furthest_pos),
-      [],
+      diagnostic_pos,
+      token_at(tokens, diagnostic_pos),
+      diagnostic_expected,
       fully_consumed,
     ),
   )

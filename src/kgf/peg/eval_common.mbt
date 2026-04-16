@@ -152,7 +152,7 @@ fn merge_labels(
 /// Pre-computes token IDs for fast matching.
 fn compute_token_ids(peg : PEG, tokens : Array[@types.Tok]) -> Array[Int] {
   let token_ids : Array[Int] = Array::make(tokens.length(), -1)
-  for i = 0; i < tokens.length(); i = i + 1 {
+  for i in 0..<tokens.length() {
     let kind = tokens[i].kind
     match peg.get_token_id(kind) {
       Some(id) => token_ids[i] = id
@@ -160,6 +160,18 @@ fn compute_token_ids(peg : PEG, tokens : Array[@types.Tok]) -> Array[Int] {
     }
   }
   token_ids
+}
+
+///|
+/// Pre-computes token names by token ID for diagnostics.
+fn compute_token_names(peg : PEG) -> Array[String] {
+  let token_names : Array[String] = Array::make(peg.token_ids.length(), "")
+  for name, id in peg.token_ids {
+    if id >= 0 && id < token_names.length() {
+      token_names[id] = name
+    }
+  }
+  token_names
 }
 
 ///|
