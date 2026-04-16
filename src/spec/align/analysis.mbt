@@ -2291,6 +2291,49 @@ fn filter_snapshot_for_incremental(
 }
 
 ///|
+/// Build a lightweight file hash map for cache validation.
+/// Discovers spec and impl files, reads each, and computes content hashes
+/// without performing any parsing or similarity calculation.
+fn build_current_file_hashes(
+  config : SpecAlignConfig,
+  registry : @registry.KGFRegistry,
+) -> Map[String, String] {
+  let hashes : Map[String, String] = {}
+  let spec_files = discover_spec_files(config.spec_path, registry)
+  let impl_files = discover_impl_files(config.impl_path, registry)
+  for path in spec_files {
+    let content = @fs.read_file_to_string(path) catch { _ => continue }
+    hashes.set(path, @cas_hash.compute_hash(content).to_string())
+  }
+  for path in impl_files {
+    let content = @fs.read_file_to_string(path) catch { _ => continue }
+    hashes.set(path, @cas_hash.compute_hash(content).to_string())
+  }
+  hashes
+}
+
+///|
+/// Check whether two file hash maps are identical (same keys and values).
+fn file_hashes_match(
+  cached : Map[String, String],
+  current : Map[String, String],
+) -> Bool {
+  if cached.length() != current.length() {
+    return false
+  }
+  for path, hash in current {
+    match cached.get(path) {
+      Some(cached_hash) =>
+        if cached_hash != hash {
+          return false
+        }
+      None => return false
+    }
+  }
+  true
+}
+
+///|
 async fn snapshot_for_config_async(config : SpecAlignConfig) -> AlignSnapshot? {
   let cache_dir = match resolve_cache_dir(config) {
     Some(value) => value
@@ -2308,6 +2351,34 @@ async fn snapshot_for_config_async(config : SpecAlignConfig) -> AlignSnapshot? {
       } else {
         None
       }
+  }
+  // Fast path: if a cached snapshot exists and all source files are unchanged,
+  // skip the expensive build_snapshot (BM25 + NCD) entirely.
+  match previous {
+    Some(cached) =>
+      if cached.config.algorithm == config.algorithm &&
+        cached.config.threshold == config.threshold &&
+        cached.config.spec_format == config.spec_format {
+        let registry = @kgf_features.load_registry_or_empty(
+          specs_dir=config.specs_dir,
+          target_dir=config.impl_path,
+        )
+        let current_hashes = build_current_file_hashes(effective_config, registry)
+        if file_hashes_match(cached.file_hashes, current_hashes) {
+          // Carry forward the caller's config so that report-only fields
+          // (subcommand, fail_on, direction, format, agent) take effect.
+          let snapshot = { ..cached, config: effective_config, cache_hit: true }
+          if !config.incremental {
+            return Some(snapshot)
+          }
+          let changed_files = match git_changed_files(config) {
+            Some(value) => value
+            None => return None
+          }
+          return Some(filter_snapshot_for_incremental(snapshot, changed_files))
+        }
+      }
+    None => ()
   }
   let snapshot = match build_snapshot(effective_config, previous) {
     Some(value) => value
