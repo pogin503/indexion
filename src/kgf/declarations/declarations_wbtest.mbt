@@ -78,13 +78,23 @@ test "declarations: RFC 2795 fixture extracts KGF top-level declarations" {
     Some(registry()),
   )
   let names = declaration_names(decls)
-  assert_true(decls.length() >= 18)
-  assert_false(names.contains("keeperExchangeExample"))
-  assert_false(names.contains("chimpSessionExample"))
-  assert_false(names.contains("iambPentSessionExample"))
-  assert_false(names.contains("panSessionExample"))
-  assert_false(names.contains("ChimpCommand"))
-  assert_false(names.contains("PanCommand"))
+  // All top-level declarations (exported + non-exported) are extracted.
+  // The file has 20 exported + several non-exported declarations.
+  assert_true(decls.length() >= 30)
+  // Exported declarations must be present
+  assert_true(names.contains("protocolNumbers"))
+  assert_true(names.contains("encodeITag"))
+  assert_true(names.contains("decodeITag"))
+  assert_true(names.contains("encodeImpsPacket"))
+  assert_true(names.contains("decodeKeeperMessage"))
+  assert_true(names.contains("parseChimpCommand"))
+  assert_true(names.contains("parsePanCommand"))
+  assert_true(names.contains("criticRejectCodes"))
+  // Non-exported declarations are also included (semantics emits
+  // declares edges for all top-level declarations)
+  assert_true(names.contains("keeperExchangeExample"))
+  assert_true(names.contains("ChimpCommand"))
+  assert_true(names.contains("PanCommand"))
 }
 
 ///|
