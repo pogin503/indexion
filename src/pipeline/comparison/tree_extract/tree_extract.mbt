@@ -3,6 +3,28 @@
 /// Extracts function-level AST trees from source files via KGF.
 
 ///|
+/// Extract function trees with metadata from a source file.
+/// Returns (ExtractedFunction, TreeNode) pairs for function-level comparison.
+/// Returns empty array when KGF is unavailable or no functions found.
+pub fn extract_functions(
+  display_name : String,
+  content : String,
+  registry : @kgf_registry.KGFRegistry?,
+) -> Array[(@kgf_features.ExtractedFunction, @apted.TreeNode)] {
+  guard registry is Some(reg) else { return [] }
+  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
+  guard toolkit_reg.for_path(display_name) is Some(toolkit) else { return [] }
+  let kgf_tokens = toolkit.get_lexer().tokenize(content)
+  @kgf_features.extract_function_trees(
+    content,
+    display_name,
+    kgf_tokens,
+    registry,
+    spec=toolkit.get_spec(),
+  )
+}
+
+///|
 /// Extract tree representations from a source file.
 /// Uses KGF to detect language, tokenize, and extract function trees.
 /// Falls back to simple whitespace tokenization when KGF is unavailable.
@@ -11,30 +33,13 @@ pub fn extract(
   content : String,
   registry : @kgf_registry.KGFRegistry?,
 ) -> Array[@apted.TreeNode] {
-  let trees : Array[@apted.TreeNode] = []
-  guard registry is Some(reg) else {
-    trees.push(content_to_simple_tree(content))
-    return trees
-  }
-  let toolkit_reg = @kgf_toolkit.ToolkitRegistry::new(reg)
-  guard toolkit_reg.for_path(display_name) is Some(toolkit) else {
-    trees.push(content_to_simple_tree(content))
-    return trees
-  }
-  let kgf_tokens = toolkit.get_lexer().tokenize(content)
-  let funcs = @kgf_features.extract_function_trees(
-    content,
-    display_name,
-    kgf_tokens,
-    registry,
-    spec=toolkit.get_spec(),
-  )
+  let funcs = extract_functions(display_name, content, registry)
   if funcs.is_empty() {
-    trees.push(content_to_simple_tree(content))
-  } else {
-    for func in funcs {
-      trees.push(func.1)
-    }
+    return [content_to_simple_tree(content)]
+  }
+  let trees : Array[@apted.TreeNode] = []
+  for func in funcs {
+    trees.push(func.1)
   }
   trees
 }
