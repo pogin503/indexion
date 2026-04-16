@@ -10,6 +10,46 @@ priv struct CheckConfig {
 }
 
 ///|
+#cfg(any(target="native", target="llvm"))
+extern "c" fn native_exit(code : Int) = "exit"
+
+///|
+#cfg(any(target="native", target="llvm"))
+fn exit_with_code(code : Int) -> Unit {
+  native_exit(code)
+  panic()
+}
+
+///|
+#cfg(any(target="wasm", target="wasm-gc"))
+fn wasm_exit(code : Int) -> Unit = "__moonbit_sys_unstable" "exit"
+
+///|
+#cfg(any(target="wasm", target="wasm-gc"))
+fn exit_with_code(code : Int) -> Unit {
+  wasm_exit(code)
+}
+
+///|
+#cfg(target="js")
+extern "js" fn js_try_exit(code : Int) -> Bool =
+  #| () => {
+  #|   if (typeof process !== "undefined" && typeof process.exit === "function") {
+  #|     process.exit(code);
+  #|     return true;
+  #|   }
+  #|   return false;
+  #| }
+
+///|
+#cfg(target="js")
+fn exit_with_code(code : Int) -> Unit {
+  if !js_try_exit(code) {
+    panic()
+  }
+}
+
+///|
 fn get_str(
   matches : @argparse.Matches,
   key : String,
@@ -76,7 +116,7 @@ pub fn command() -> @argparse.Command {
 
 ///|
 /// Entry point for the check command.
-pub async fn run_matches(matches : @argparse.Matches) -> Unit {
+pub fn run_matches(matches : @argparse.Matches) -> Unit {
   let config = CheckConfig::from_matches(matches)
   if config.paths.length() == 0 {
     println(command().render_help())
@@ -86,37 +126,46 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     specs_dir=config.specs_dir,
     target_dirs=config.paths,
   )
+  let reg = match registry {
+    Some(reg) => reg
+    None => {
+      println("error: failed to load KGF registry")
+      exit_with_code(1)
+      return
+    }
+  }
   let files = @common.collect_files(
     config.paths,
     includes=config.includes,
     excludes=config.excludes,
-    registry~,
+    registry=Some(reg),
   )
   let diagnostics : Array[@kgf_check.CheckDiagnostic] = []
-  match registry {
-    Some(reg) =>
-      for file in files {
-        let path = file.0
-        let content = file.1
-        match reg.detect_from_path(path) {
-          Some(language) =>
-            match reg.get_spec(language) {
-              Some(spec) => {
-                let file_diagnostics = @kgf_check.check_source(
-                  content, path, spec,
-                )
-                for diagnostic in file_diagnostics {
-                  diagnostics.push(diagnostic)
-                }
-              }
-              None => ()
+  for file in files {
+    let path = file.0
+    let content = file.1
+    match reg.detect_from_path(path) {
+      Some(language) =>
+        match reg.get_spec(language) {
+          Some(spec) => {
+            let file_diagnostics = @kgf_check.check_source(content, path, spec)
+            for diagnostic in file_diagnostics {
+              diagnostics.push(diagnostic)
             }
+          }
           None => ()
         }
-      }
-    None => ()
+      None => ()
+    }
   }
   diagnostics.sort_by(fn(a, b) { a.compare(b) })
+  let mut has_errors = false
+  for diagnostic in diagnostics {
+    if diagnostic.get_severity() == "error" {
+      has_errors = true
+    }
+  }
+  let exit_code = if has_errors { 1 } else { 0 }
   if config.format == "json" {
     println(@kgf_check.diagnostics_to_json(diagnostics))
   } else {
@@ -126,5 +175,8 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
       }
       println(diagnostic.format_human())
     }
+  }
+  if exit_code != 0 {
+    exit_with_code(exit_code)
   }
 }
