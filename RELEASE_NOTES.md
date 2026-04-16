@@ -1,3 +1,79 @@
+# v0.11.0
+
+## Highlights
+
+- **`indexion check` Command** — New source check pipeline with lexer diagnostics, PEG parse diagnostics, and CLI execution
+- **Mermaid KGF Spec** — New `mermaid.kgf` for flowchart, sequence, class, ER, Gantt, and state diagrams
+- **Indexed Tree Performance** — Tree similarity calculations refactored to use indexed trees with comprehensive tests
+- **JS/TS Grammar Fix** — Multiline function parameters now parse correctly across all four JS/TS KGF specs
+
+## New Features
+
+### `indexion check` — Source Check Pipeline
+
+Structural validation pipeline for source files:
+
+- **Lexer diagnostics** — Token-level error detection
+- **PEG parse diagnostics** — Grammar-level parse error reporting
+- **CLI execution** — Full `check` subcommand with generated interfaces
+
+```bash
+indexion check src/
+```
+
+### Mermaid Diagram KGF Spec
+
+`kgfs/dsl/mermaid.kgf` — Tokenization and declaration extraction for Mermaid diagram definitions including flowchart, sequence, class, ER, Gantt, and state diagram types.
+
+### KGF Registry: `load_registry` Function
+
+New `load_registry` function for KGF directory resolution, simplifying spec loading across commands.
+
+## Improvements
+
+### Indexed Tree Similarity
+
+Tree similarity calculations refactored to use indexed trees for improved performance. Includes comprehensive test suite for indexed tree functionality.
+
+### Tree Extraction Refactoring
+
+Function-level extraction separated from general tree extraction for improved clarity and structure.
+
+### File Hash Map for Cache Validation
+
+New file hash map functions for cache validation: `current_file_hashes` and comparison logic for detecting file changes.
+
+### Test Fixtures
+
+New components and utilities added to test fixtures: ItemList, TodoApp, Counter, and enhanced UserService methods for broader JS/TS parsing coverage.
+
+## Bug Fixes
+
+### JS/TS Multiline Parameter Parsing
+
+Fixed a critical bug in all four JS/TS KGF specs (`.js`, `.jsx`, `.ts`, `.tsx`) where `ParamList` did not allow `NL` tokens between parameters. This caused the PEG parser to silently stop at the first function with multiline parameters — all subsequent declarations in the file were lost.
+
+**Root cause:** `ParamList -> Param ( COMMA Param )*` required all parameters on a single line. Functions like `decodeITag(data: Uint8Array, offset = 0)` split across lines would fail to parse, and because `Atom` lacked declaration keywords as fallback, `Item*` terminated immediately.
+
+**Fix:**
+- `ParamList` now allows `NL*` between commas and parameters, plus trailing commas
+- `FunctionDecl`, `MethodDecl`, `MethodSig`, and `TypeAtom` allow `NL*` around `ParamList`
+- Declaration keywords added to `Atom` rule as fallback to prevent catastrophic parse termination
+
+### KGF Submodule Updates
+
+- Enhanced JavaScript and TypeScript grammars with new keywords, improved parsing rules, and JSDoc comment support
+- Added initial KGF language specification for Mermaid diagrams
+- Resolved all `kgf check` errors across 11 specs
+
+## Internal
+
+- Version: 0.10.0 → 0.11.0
+- 56 files changed, +2,367 lines, −224 lines
+- Tests: 1475/1475 passing
+
+---
+
 # v0.10.0
 
 ## Highlights
