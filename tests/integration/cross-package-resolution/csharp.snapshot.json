@@ -1,0 +1,79 @@
+{
+  "modules": [
+    "nuget:Json",
+    "nuget:Models",
+    "nuget:Logging",
+    "nuget:Repositories",
+    "fixtures/project/csharp/src/Models.cs",
+    "fixtures/project/csharp/Example.csproj",
+    "fixtures/project/csharp/src/Services/UserService.cs",
+    "fixtures/project/csharp/src/Repositories/UserRepository.cs"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Json",
+      "via": "Json"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Json",
+      "via": "Json"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Models",
+      "via": "Models"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Models",
+      "via": "Models"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Logging",
+      "via": "Logging"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Logging",
+      "via": "Logging"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Repositories",
+      "via": "Repositories"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Services/UserService.cs",
+      "to": "nuget:Repositories",
+      "via": "Repositories"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Repositories/UserRepository.cs",
+      "to": "nuget:Models",
+      "via": "Models"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Repositories/UserRepository.cs",
+      "to": "nuget:Models",
+      "via": "Models"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Repositories/UserRepository.cs",
+      "to": "nuget:Logging",
+      "via": "Logging"
+    },
+    {
+      "from": "fixtures/project/csharp/src/Repositories/UserRepository.cs",
+      "to": "nuget:Logging",
+      "via": "Logging"
+    }
+  ],
+  "stats": {
+    "symbols": 25,
+    "edges": 28,
+    "unresolved_structural_edges": 0
+  }
+}

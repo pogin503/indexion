@@ -1,0 +1,71 @@
+{
+  "modules": [
+    "crate:clap",
+    "crate:serde",
+    "crate:tokio",
+    "crate:example_cli",
+    "fixtures/project/cargo/Cargo.toml",
+    "fixtures/project/cargo/src/cli.rs",
+    "fixtures/project/cargo/src/lib.rs",
+    "fixtures/project/cargo/src/main.rs",
+    "fixtures/project/cargo/src/config.rs",
+    "fixtures/project/cargo/src/runner.rs"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/cargo/src/cli.rs",
+      "to": "crate:clap",
+      "via": "clap"
+    },
+    {
+      "from": "fixtures/project/cargo/src/lib.rs",
+      "to": "fixtures/project/cargo/src/cli.rs",
+      "via": "cli"
+    },
+    {
+      "from": "fixtures/project/cargo/src/lib.rs",
+      "to": "fixtures/project/cargo/src/config.rs",
+      "via": "config"
+    },
+    {
+      "from": "fixtures/project/cargo/src/lib.rs",
+      "to": "fixtures/project/cargo/src/runner.rs",
+      "via": "runner"
+    },
+    {
+      "from": "fixtures/project/cargo/src/main.rs",
+      "to": "crate:example_cli",
+      "via": "example_cli"
+    },
+    {
+      "from": "fixtures/project/cargo/src/config.rs",
+      "to": "crate:serde",
+      "via": "serde"
+    },
+    {
+      "from": "fixtures/project/cargo/src/runner.rs",
+      "to": "crate:serde",
+      "via": "serde"
+    },
+    {
+      "from": "fixtures/project/cargo/src/runner.rs",
+      "to": "crate:tokio",
+      "via": "tokio"
+    },
+    {
+      "from": "fixtures/project/cargo/src/runner.rs",
+      "to": "fixtures/project/cargo/src/cli.rs",
+      "via": "cli::Cli"
+    },
+    {
+      "from": "fixtures/project/cargo/src/runner.rs",
+      "to": "fixtures/project/cargo/src/config.rs",
+      "via": "config::Config"
+    }
+  ],
+  "stats": {
+    "symbols": 3,
+    "edges": 25,
+    "unresolved_structural_edges": 0
+  }
+}

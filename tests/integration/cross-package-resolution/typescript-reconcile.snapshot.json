@@ -1,0 +1,17 @@
+{
+  "modules": [
+    "fixtures/project/typescript-reconcile/README.md",
+    "fixtures/project/typescript-reconcile/src/api.ts",
+    "fixtures/project/typescript-reconcile/docs/api.md",
+    "fixtures/project/typescript-reconcile/package.json",
+    "fixtures/project/typescript-reconcile/tsconfig.json",
+    "fixtures/project/typescript-reconcile/src/internal.ts",
+    "fixtures/project/typescript-reconcile/src/api.ts::ReportRenderer.render"
+  ],
+  "moduleDependsOn": [],
+  "stats": {
+    "symbols": 9,
+    "edges": 11,
+    "unresolved_structural_edges": 0
+  }
+}

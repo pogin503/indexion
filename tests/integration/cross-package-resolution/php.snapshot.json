@@ -1,0 +1,58 @@
+{
+  "modules": [
+    "composer:Client",
+    "composer:UserDto",
+    "composer:UserService",
+    "fixtures/project/php/composer.json",
+    "fixtures/project/php/src/helpers.php",
+    "fixtures/project/php/src/Dto/UserDto.php",
+    "fixtures/project/php/src/UserService.php"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/php/src/helpers.php",
+      "to": "composer:UserDto",
+      "via": "UserDto"
+    },
+    {
+      "from": "fixtures/project/php/src/helpers.php",
+      "to": "composer:UserDto",
+      "via": "UserDto"
+    },
+    {
+      "from": "fixtures/project/php/src/helpers.php",
+      "to": "composer:UserService",
+      "via": "UserService"
+    },
+    {
+      "from": "fixtures/project/php/src/helpers.php",
+      "to": "composer:UserService",
+      "via": "UserService"
+    },
+    {
+      "from": "fixtures/project/php/src/UserService.php",
+      "to": "composer:Client",
+      "via": "Client"
+    },
+    {
+      "from": "fixtures/project/php/src/UserService.php",
+      "to": "composer:Client",
+      "via": "Client"
+    },
+    {
+      "from": "fixtures/project/php/src/UserService.php",
+      "to": "composer:UserDto",
+      "via": "UserDto"
+    },
+    {
+      "from": "fixtures/project/php/src/UserService.php",
+      "to": "composer:UserDto",
+      "via": "UserDto"
+    }
+  ],
+  "stats": {
+    "symbols": 8,
+    "edges": 23,
+    "unresolved_structural_edges": 0
+  }
+}

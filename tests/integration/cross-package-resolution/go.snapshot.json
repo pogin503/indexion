@@ -1,0 +1,102 @@
+{
+  "modules": [
+    "pkg:go.uber.org/zap",
+    "fixtures/project/go/go.mod",
+    "pkg:github.com/spf13/cobra",
+    "fixtures/project/go/main.go",
+    "pkg:github.com/gin-gonic/gin",
+    "fixtures/project/go/cmd/root.go",
+    "pkg:github.com/example/go-service/cmd",
+    "fixtures/project/go/internal/config/config.go",
+    "fixtures/project/go/internal/server/server.go",
+    "pkg:github.com/example/go-service/internal/config",
+    "pkg:github.com/example/go-service/internal/server"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/go/main.go",
+      "to": "pkg:github.com/example/go-service/cmd",
+      "via": "github.com/example/go-service/cmd"
+    },
+    {
+      "from": "fixtures/project/go/main.go",
+      "to": "pkg:github.com/example/go-service/cmd",
+      "via": "github.com/example/go-service/cmd"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:go.uber.org/zap",
+      "via": "go.uber.org/zap"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:go.uber.org/zap",
+      "via": "go.uber.org/zap"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:github.com/spf13/cobra",
+      "via": "github.com/spf13/cobra"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:github.com/spf13/cobra",
+      "via": "github.com/spf13/cobra"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:github.com/example/go-service/internal/config",
+      "via": "github.com/example/go-service/internal/config"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:github.com/example/go-service/internal/config",
+      "via": "github.com/example/go-service/internal/config"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:github.com/example/go-service/internal/server",
+      "via": "github.com/example/go-service/internal/server"
+    },
+    {
+      "from": "fixtures/project/go/cmd/root.go",
+      "to": "pkg:github.com/example/go-service/internal/server",
+      "via": "github.com/example/go-service/internal/server"
+    },
+    {
+      "from": "fixtures/project/go/internal/server/server.go",
+      "to": "pkg:go.uber.org/zap",
+      "via": "go.uber.org/zap"
+    },
+    {
+      "from": "fixtures/project/go/internal/server/server.go",
+      "to": "pkg:go.uber.org/zap",
+      "via": "go.uber.org/zap"
+    },
+    {
+      "from": "fixtures/project/go/internal/server/server.go",
+      "to": "pkg:github.com/gin-gonic/gin",
+      "via": "github.com/gin-gonic/gin"
+    },
+    {
+      "from": "fixtures/project/go/internal/server/server.go",
+      "to": "pkg:github.com/gin-gonic/gin",
+      "via": "github.com/gin-gonic/gin"
+    },
+    {
+      "from": "fixtures/project/go/internal/server/server.go",
+      "to": "pkg:github.com/example/go-service/internal/config",
+      "via": "github.com/example/go-service/internal/config"
+    },
+    {
+      "from": "fixtures/project/go/internal/server/server.go",
+      "to": "pkg:github.com/example/go-service/internal/config",
+      "via": "github.com/example/go-service/internal/config"
+    }
+  ],
+  "stats": {
+    "symbols": 12,
+    "edges": 26,
+    "unresolved_structural_edges": 0
+  }
+}

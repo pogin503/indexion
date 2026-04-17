@@ -1,0 +1,88 @@
+{
+  "modules": [
+    "crate:axum",
+    "crate:clap",
+    "crate:serde",
+    "crate:thiserror",
+    "crate:serde_json",
+    "crate:example_core",
+    "fixtures/project/cargo-workspace/Cargo.toml",
+    "fixtures/project/cargo-workspace/crates/cli/Cargo.toml",
+    "fixtures/project/cargo-workspace/crates/cli/src/main.rs",
+    "fixtures/project/cargo-workspace/crates/core/Cargo.toml",
+    "fixtures/project/cargo-workspace/crates/core/src/lib.rs",
+    "fixtures/project/cargo-workspace/crates/core/src/error.rs",
+    "fixtures/project/cargo-workspace/crates/server/Cargo.toml",
+    "fixtures/project/cargo-workspace/crates/core/src/config.rs",
+    "fixtures/project/cargo-workspace/crates/server/src/main.rs",
+    "fixtures/project/cargo-workspace/crates/cli/src/commands.rs",
+    "fixtures/project/cargo-workspace/crates/server/src/handlers.rs"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/cargo-workspace/crates/cli/src/main.rs",
+      "to": "crate:clap",
+      "via": "clap"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/cli/src/main.rs",
+      "to": "crate:example_core",
+      "via": "example_core"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/core/src/lib.rs",
+      "to": "fixtures/project/cargo-workspace/crates/core/src/error.rs",
+      "via": "error"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/core/src/lib.rs",
+      "to": "fixtures/project/cargo-workspace/crates/core/src/config.rs",
+      "via": "config"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/core/src/error.rs",
+      "to": "crate:thiserror",
+      "via": "thiserror"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/core/src/config.rs",
+      "to": "crate:serde",
+      "via": "serde"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/server/src/main.rs",
+      "to": "crate:axum",
+      "via": "axum"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/server/src/main.rs",
+      "to": "crate:example_core",
+      "via": "example_core"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/cli/src/commands.rs",
+      "to": "crate:clap",
+      "via": "clap"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/cli/src/commands.rs",
+      "to": "crate:example_core",
+      "via": "example_core"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/server/src/handlers.rs",
+      "to": "crate:axum",
+      "via": "axum"
+    },
+    {
+      "from": "fixtures/project/cargo-workspace/crates/server/src/handlers.rs",
+      "to": "crate:serde_json",
+      "via": "serde_json"
+    }
+  ],
+  "stats": {
+    "symbols": 7,
+    "edges": 18,
+    "unresolved_structural_edges": 0
+  }
+}

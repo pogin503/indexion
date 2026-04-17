@@ -1,0 +1,104 @@
+{
+  "modules": [
+    "pip:abc",
+    "pip:auth",
+    "pip:token",
+    "pip:client",
+    "pip:models",
+    "pip:pydantic",
+    "pip:tenacity",
+    "fixtures/project/python/pyproject.toml",
+    "fixtures/project/python/src/example_sdk/client.py",
+    "fixtures/project/python/src/example_sdk/models.py",
+    "fixtures/project/python/src/example_sdk/__init__.py",
+    "fixtures/project/python/src/example_sdk/auth/token.py",
+    "fixtures/project/python/src/example_sdk/auth/__init__.py"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/python/src/example_sdk/client.py",
+      "to": "pip:auth",
+      "via": "auth"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/client.py",
+      "to": "pip:auth",
+      "via": "auth"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/client.py",
+      "to": "pip:models",
+      "via": "models"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/client.py",
+      "to": "pip:models",
+      "via": "models"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/client.py",
+      "to": "pip:tenacity",
+      "via": "tenacity"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/client.py",
+      "to": "pip:tenacity",
+      "via": "tenacity"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/models.py",
+      "to": "pip:pydantic",
+      "via": "pydantic"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/models.py",
+      "to": "pip:pydantic",
+      "via": "pydantic"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/__init__.py",
+      "to": "pip:client",
+      "via": "client"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/__init__.py",
+      "to": "pip:client",
+      "via": "client"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/__init__.py",
+      "to": "pip:models",
+      "via": "models"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/__init__.py",
+      "to": "pip:models",
+      "via": "models"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/auth/token.py",
+      "to": "pip:abc",
+      "via": "abc"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/auth/token.py",
+      "to": "pip:abc",
+      "via": "abc"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/auth/__init__.py",
+      "to": "pip:token",
+      "via": "token"
+    },
+    {
+      "from": "fixtures/project/python/src/example_sdk/auth/__init__.py",
+      "to": "pip:token",
+      "via": "token"
+    }
+  ],
+  "stats": {
+    "symbols": 8,
+    "edges": 31,
+    "unresolved_structural_edges": 0
+  }
+}

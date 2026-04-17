@@ -1,0 +1,44 @@
+{
+  "modules": [
+    "npm:clsx",
+    "npm:react",
+    "fixtures/project/npm/package.json",
+    "fixtures/project/npm/src/index.ts",
+    "fixtures/project/npm/src/types.ts",
+    "fixtures/project/npm/src/utils.ts",
+    "fixtures/project/npm/src/components/Input.tsx",
+    "fixtures/project/npm/src/components/Button.tsx"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/npm/src/components/Input.tsx",
+      "to": "npm:react",
+      "via": "react"
+    },
+    {
+      "from": "fixtures/project/npm/src/components/Input.tsx",
+      "to": "fixtures/project/npm/src/types.ts",
+      "via": "../types"
+    },
+    {
+      "from": "fixtures/project/npm/src/components/Button.tsx",
+      "to": "npm:clsx",
+      "via": "clsx"
+    },
+    {
+      "from": "fixtures/project/npm/src/components/Button.tsx",
+      "to": "npm:react",
+      "via": "react"
+    },
+    {
+      "from": "fixtures/project/npm/src/components/Button.tsx",
+      "to": "fixtures/project/npm/src/types.ts",
+      "via": "../types"
+    }
+  ],
+  "stats": {
+    "symbols": 17,
+    "edges": 23,
+    "unresolved_structural_edges": 0
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "modules": [
+    "gem:json",
+    "gem:calculator/history",
+    "gem:calculator/formatter",
+    "fixtures/project/ruby/Gemfile",
+    "fixtures/project/ruby/lib/calculator.rb",
+    "fixtures/project/ruby/lib/calculator/history.rb",
+    "fixtures/project/ruby/lib/calculator/formatter.rb"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/ruby/lib/calculator.rb",
+      "to": "gem:json",
+      "via": "json"
+    },
+    {
+      "from": "fixtures/project/ruby/lib/calculator.rb",
+      "to": "gem:json",
+      "via": "json"
+    },
+    {
+      "from": "fixtures/project/ruby/lib/calculator.rb",
+      "to": "gem:calculator/history",
+      "via": "@history",
+      "alias": "@history"
+    },
+    {
+      "from": "fixtures/project/ruby/lib/calculator.rb",
+      "to": "gem:calculator/history",
+      "via": "calculator/history"
+    },
+    {
+      "from": "fixtures/project/ruby/lib/calculator.rb",
+      "to": "gem:calculator/history",
+      "via": "calculator/history"
+    },
+    {
+      "from": "fixtures/project/ruby/lib/calculator.rb",
+      "to": "gem:calculator/formatter",
+      "via": "calculator/formatter"
+    },
+    {
+      "from": "fixtures/project/ruby/lib/calculator.rb",
+      "to": "gem:calculator/formatter",
+      "via": "calculator/formatter"
+    }
+  ],
+  "stats": {
+    "symbols": 24,
+    "edges": 29,
+    "unresolved_structural_edges": 0
+  }
+}

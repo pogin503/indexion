@@ -1,0 +1,32 @@
+{
+  "modules": [
+    "fixtures/project/npm-circular/src/a.ts",
+    "fixtures/project/npm-circular/src/b.ts",
+    "fixtures/project/npm-circular/src/c.ts",
+    "fixtures/project/npm-circular/src/d.ts",
+    "fixtures/project/npm-circular/package.json",
+    "fixtures/project/npm-circular/src/index.ts"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/npm-circular/src/a.ts",
+      "to": "fixtures/project/npm-circular/src/b.ts",
+      "via": "./b"
+    },
+    {
+      "from": "fixtures/project/npm-circular/src/b.ts",
+      "to": "fixtures/project/npm-circular/src/a.ts",
+      "via": "./a"
+    },
+    {
+      "from": "fixtures/project/npm-circular/src/c.ts",
+      "to": "fixtures/project/npm-circular/src/d.ts",
+      "via": "./d"
+    }
+  ],
+  "stats": {
+    "symbols": 9,
+    "edges": 13,
+    "unresolved_structural_edges": 0
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "modules": [
+    "npm:react",
+    "npm:lodash",
+    "npm:@example/ui",
+    "npm:@example/core",
+    "fixtures/project/npm-monorepo/package.json",
+    "fixtures/project/npm-monorepo/packages/app/src/App.tsx",
+    "fixtures/project/npm-monorepo/packages/ui/package.json",
+    "fixtures/project/npm-monorepo/packages/ui/src/index.ts",
+    "fixtures/project/npm-monorepo/packages/ui/src/types.ts",
+    "fixtures/project/npm-monorepo/packages/app/package.json",
+    "fixtures/project/npm-monorepo/packages/ui/src/Modal.tsx",
+    "fixtures/project/npm-monorepo/packages/core/package.json",
+    "fixtures/project/npm-monorepo/packages/core/src/index.ts",
+    "fixtures/project/npm-monorepo/packages/ui/src/Button.tsx"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/npm-monorepo/packages/app/src/App.tsx",
+      "to": "npm:react",
+      "via": "react"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/app/src/App.tsx",
+      "to": "npm:@example/ui",
+      "via": "@example/ui"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/app/src/App.tsx",
+      "to": "npm:@example/core",
+      "via": "@example/core"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/ui/src/types.ts",
+      "to": "npm:react",
+      "via": "react"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/ui/src/Modal.tsx",
+      "to": "npm:react",
+      "via": "react"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/ui/src/Modal.tsx",
+      "to": "fixtures/project/npm-monorepo/packages/ui/src/types.ts",
+      "via": "./types"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/ui/src/Modal.tsx",
+      "to": "fixtures/project/npm-monorepo/packages/ui/src/Button.tsx",
+      "via": "./Button"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/core/src/index.ts",
+      "to": "npm:lodash",
+      "via": "lodash"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/ui/src/Button.tsx",
+      "to": "npm:react",
+      "via": "react"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/ui/src/Button.tsx",
+      "to": "npm:@example/core",
+      "via": "@example/core"
+    },
+    {
+      "from": "fixtures/project/npm-monorepo/packages/ui/src/Button.tsx",
+      "to": "fixtures/project/npm-monorepo/packages/ui/src/types.ts",
+      "via": "./types"
+    }
+  ],
+  "stats": {
+    "symbols": 15,
+    "edges": 43,
+    "unresolved_structural_edges": 0
+  }
+}

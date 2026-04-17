@@ -1,0 +1,41 @@
+{
+  "modules": [
+    "pkg:moonbitlang/core/strconv",
+    "fixtures/project/moonbit/src/lib.mbt",
+    "fixtures/project/moonbit/src/moon.pkg",
+    "fixtures/project/moonbit/moon.mod.json",
+    "fixtures/project/moonbit/src/utils/moon.pkg",
+    "fixtures/project/moonbit/src/utils/utils.mbt"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/moonbit/src/lib.mbt",
+      "to": "pkg:moonbitlang/core/strconv",
+      "via": "@strconv",
+      "alias": "@strconv"
+    },
+    {
+      "from": "fixtures/project/moonbit/src/lib.mbt",
+      "to": "fixtures/project/moonbit/src/utils/moon.pkg",
+      "via": "@utils",
+      "alias": "@utils"
+    },
+    {
+      "from": "fixtures/project/moonbit/src/moon.pkg",
+      "to": "pkg:moonbitlang/core/strconv",
+      "via": "moonbitlang/core/strconv",
+      "alias": "@strconv"
+    },
+    {
+      "from": "fixtures/project/moonbit/src/moon.pkg",
+      "to": "fixtures/project/moonbit/src/utils/moon.pkg",
+      "via": "trkbt10/sample-lib/utils",
+      "alias": "@utils"
+    }
+  ],
+  "stats": {
+    "symbols": 13,
+    "edges": 19,
+    "unresolved_structural_edges": 0
+  }
+}

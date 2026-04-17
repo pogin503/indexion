@@ -1,0 +1,16 @@
+{
+  "modules": [
+    "fixtures/project/vcpkg/vcpkg.json",
+    "fixtures/project/vcpkg/src/main.cpp",
+    "fixtures/project/vcpkg/src/config.cpp",
+    "fixtures/project/vcpkg/src/server.cpp",
+    "fixtures/project/vcpkg/include/config.hpp",
+    "fixtures/project/vcpkg/include/server.hpp"
+  ],
+  "moduleDependsOn": [],
+  "stats": {
+    "symbols": 4,
+    "edges": 9,
+    "unresolved_structural_edges": 0
+  }
+}

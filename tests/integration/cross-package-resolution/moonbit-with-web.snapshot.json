@@ -1,0 +1,49 @@
+{
+  "modules": [
+    "fixtures/project/moonbit-with-web/moon.mod.json",
+    "fixtures/project/moonbit-with-web/web/src/api.ts",
+    "fixtures/project/moonbit-with-web/web/src/app.ts",
+    "fixtures/project/moonbit-with-web/src/api/moon.pkg",
+    "fixtures/project/moonbit-with-web/web/package.json",
+    "fixtures/project/moonbit-with-web/web/src/types.ts",
+    "fixtures/project/moonbit-with-web/src/core/moon.pkg",
+    "fixtures/project/moonbit-with-web/src/core/task.mbt",
+    "fixtures/project/moonbit-with-web/src/api/handler.mbt",
+    "fixtures/project/moonbit-with-web/src/core/task.mbt::doc::Creates a new task.",
+    "fixtures/project/moonbit-with-web/src/api/handler.mbt::doc::In-memory store for tasks."
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/moonbit-with-web/web/src/api.ts",
+      "to": "fixtures/project/moonbit-with-web/web/src/types.ts",
+      "via": "./types"
+    },
+    {
+      "from": "fixtures/project/moonbit-with-web/web/src/app.ts",
+      "to": "fixtures/project/moonbit-with-web/web/src/api.ts",
+      "via": "./api"
+    },
+    {
+      "from": "fixtures/project/moonbit-with-web/web/src/app.ts",
+      "to": "fixtures/project/moonbit-with-web/web/src/types.ts",
+      "via": "./types"
+    },
+    {
+      "from": "fixtures/project/moonbit-with-web/src/api/moon.pkg",
+      "to": "fixtures/project/moonbit-with-web/src/core/moon.pkg",
+      "via": "example/task-app/src/core",
+      "alias": "@core"
+    },
+    {
+      "from": "fixtures/project/moonbit-with-web/src/api/handler.mbt",
+      "to": "fixtures/project/moonbit-with-web/src/core/moon.pkg",
+      "via": "@core",
+      "alias": "@core"
+    }
+  ],
+  "stats": {
+    "symbols": 28,
+    "edges": 34,
+    "unresolved_structural_edges": 0
+  }
+}

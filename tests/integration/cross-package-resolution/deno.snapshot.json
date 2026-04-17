@@ -1,0 +1,42 @@
+{
+  "modules": [
+    "npm:zod",
+    "npm:@std/http",
+    "fixtures/project/deno/main.ts",
+    "fixtures/project/deno/deno.json",
+    "fixtures/project/deno/routes.ts",
+    "fixtures/project/deno/lib/validator.ts"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/deno/main.ts",
+      "to": "npm:@std/http",
+      "via": "@std/http"
+    },
+    {
+      "from": "fixtures/project/deno/main.ts",
+      "to": "fixtures/project/deno/routes.ts",
+      "via": "./routes.ts"
+    },
+    {
+      "from": "fixtures/project/deno/routes.ts",
+      "to": "npm:zod",
+      "via": "zod"
+    },
+    {
+      "from": "fixtures/project/deno/routes.ts",
+      "to": "fixtures/project/deno/lib/validator.ts",
+      "via": "./lib/validator.ts"
+    },
+    {
+      "from": "fixtures/project/deno/lib/validator.ts",
+      "to": "npm:zod",
+      "via": "zod"
+    }
+  ],
+  "stats": {
+    "symbols": 7,
+    "edges": 16,
+    "unresolved_structural_edges": 0
+  }
+}

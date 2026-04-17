@@ -1,0 +1,69 @@
+{
+  "modules": [
+    "spm:Logging",
+    "spm:Foundation",
+    "spm:ArgumentParser",
+    "spm:MySwiftPackage",
+    "fixtures/project/swift/Package.swift",
+    "fixtures/project/swift/Sources/CLI/main.swift",
+    "fixtures/project/swift/Sources/MySwiftPackage/Models.swift",
+    "fixtures/project/swift/Sources/MySwiftPackage/Greeter.swift"
+  ],
+  "moduleDependsOn": [
+    {
+      "from": "fixtures/project/swift/Sources/CLI/main.swift",
+      "to": "spm:ArgumentParser",
+      "via": "ArgumentParser"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/CLI/main.swift",
+      "to": "spm:ArgumentParser",
+      "via": "ArgumentParser"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/CLI/main.swift",
+      "to": "spm:MySwiftPackage",
+      "via": "MySwiftPackage"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/CLI/main.swift",
+      "to": "spm:MySwiftPackage",
+      "via": "MySwiftPackage"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/MySwiftPackage/Models.swift",
+      "to": "spm:Foundation",
+      "via": "Foundation"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/MySwiftPackage/Models.swift",
+      "to": "spm:Foundation",
+      "via": "Foundation"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/MySwiftPackage/Greeter.swift",
+      "to": "spm:Logging",
+      "via": "Logging"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/MySwiftPackage/Greeter.swift",
+      "to": "spm:Logging",
+      "via": "Logging"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/MySwiftPackage/Greeter.swift",
+      "to": "spm:Foundation",
+      "via": "Foundation"
+    },
+    {
+      "from": "fixtures/project/swift/Sources/MySwiftPackage/Greeter.swift",
+      "to": "spm:Foundation",
+      "via": "Foundation"
+    }
+  ],
+  "stats": {
+    "symbols": 13,
+    "edges": 17,
+    "unresolved_structural_edges": 0
+  }
+}
