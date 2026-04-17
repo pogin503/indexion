@@ -117,6 +117,51 @@ pub fn CodeGraph::add_edge(
 }
 
 ///|
+/// Rewrite edge endpoints in place according to the provided map. Used by
+/// post-merge enrichment to collapse external references (e.g. `pkg:<proj>/foo`)
+/// back to their canonical internal module ids once the project layout has
+/// been fully observed. The rewrite is applied to both `from` and `to` so that
+/// a canonicalized node participates as both source and target consistently.
+pub fn CodeGraph::rewrite_edge_targets(
+  self : CodeGraph,
+  rewrite : Map[String, String],
+) -> Unit {
+  if rewrite.is_empty() {
+    return
+  }
+  for i = 0; i < self.edges.length(); i = i + 1 {
+    let e = self.edges[i]
+    let new_from = match rewrite.get(e.from) {
+      Some(v) => v
+      None => e.from
+    }
+    let new_to = match rewrite.get(e.to) {
+      Some(v) => v
+      None => e.to
+    }
+    if new_from != e.from || new_to != e.to {
+      self.edges[i] = { kind: e.kind, from: new_from, to: new_to, attrs: e.attrs }
+    }
+  }
+  // Also drop any `moduleDependsOn` edges that become self-loops as a result
+  // of canonicalization (a file depending on its own package manifest is not a
+  // meaningful fact and clutters the graph).
+  let kept : Array[Edge] = []
+  for e in self.edges {
+    if e.kind is ModuleDependsOn && e.from == e.to {
+      continue
+    }
+    kept.push(e)
+  }
+  while self.edges.length() > 0 {
+    let _ = self.edges.pop()
+  }
+  for e in kept {
+    self.edges.push(e)
+  }
+}
+
+///|
 /// Get all modules in the graph.
 pub fn CodeGraph::get_modules(self : CodeGraph) -> Map[String, ModuleNode] {
   self.modules
@@ -316,9 +361,19 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
     let (resolved_to, _) = resolve_edge_target(
       edge.to, edge, self.modules, self.symbols, symbol_by_module_name,
     )
-    // Anything still unresolved becomes an external module entry so the
-    // consumer (nodeIndex) finds a node for every endpoint.
-    if !self.symbols.contains(resolved_to) && !modules_out.contains(resolved_to) {
+    // Backfill missing endpoints only for edges whose kind intrinsically
+    // encodes a graph-structural relationship. `Custom` kinds come from KGF
+    // spec authors who use them for metadata (project name, keyword,
+    // repository URL, package entry path, …). Auto-creating modules for
+    // those turns strings like "Apache-2.0" or "parsing" into fake nodes,
+    // which breaks downstream consumers. Built-in kinds — Declares,
+    // ModuleDependsOn, Calls, and the rest — always point at real
+    // modules or symbols, so backfilling them preserves the invariant that
+    // every `declares` / `moduleDependsOn` / `calls` endpoint resolves.
+    let is_structural = !(edge.kind is Custom(_))
+    if is_structural &&
+      !self.symbols.contains(resolved_to) &&
+      !modules_out.contains(resolved_to) {
       modules_out.set(resolved_to, { id: resolved_to, file: None })
       backfilled_count = backfilled_count + 1
       if backfilled_samples.length() < 5 {

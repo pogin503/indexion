@@ -29,12 +29,13 @@ pub fn build_with_graph_progress(
   config : DocConfig,
   on_progress : ProgressCallback?,
 ) -> (@render.DocOutput, @graph.CodeGraph) {
-  let graphs = analyze_files_with_progress(
+  let (graphs, file_tokens) = analyze_files_collect(
     config.files,
     config.specs,
     on_progress,
   )
   let merged = merge_graphs(graphs)
+  enrich_graph(merged, file_tokens, config.specs)
   let output = match config.options.format {
     @render.Markdown => @render.render_markdown(merged, config.options)
     @render.Json => @render.DocOutput::with_json(@render.render_json(merged))
@@ -82,42 +83,83 @@ pub fn analyze_files_with_progress(
   specs : Map[String, @kgf_types.KGFSpec],
   on_progress : ProgressCallback?,
 ) -> Array[@graph.CodeGraph] {
-  // Build registry for language/spec detection
+  let (graphs, _) = analyze_files_collect(files, specs, on_progress)
+  graphs
+}
+
+///|
+/// Per-file tokens captured during analysis. `spec_name` enables a second pass
+/// (enrichment) to know which language the file was parsed with without having
+/// to re-detect it.
+pub struct FileTokens {
+  path : String
+  spec_name : String
+  tokens : Array[@kgf_types.Tok]
+}
+
+///|
+pub fn FileTokens::new(
+  path : String,
+  spec_name : String,
+  tokens : Array[@kgf_types.Tok],
+) -> FileTokens {
+  { path, spec_name, tokens }
+}
+
+///|
+pub fn FileTokens::get_path(self : FileTokens) -> String {
+  self.path
+}
+
+///|
+pub fn FileTokens::get_spec_name(self : FileTokens) -> String {
+  self.spec_name
+}
+
+///|
+pub fn FileTokens::get_tokens(self : FileTokens) -> Array[@kgf_types.Tok] {
+  self.tokens
+}
+
+///|
+/// Analyze files and also collect per-file tokens. Tokens feed the post-merge
+/// enrichment pass which emits cross-package edges that grammar-level analysis
+/// cannot produce on its own (e.g. MoonBit `@alias` usages resolved via the
+/// sibling `moon.pkg`).
+pub fn analyze_files_collect(
+  files : Array[(String, String)],
+  specs : Map[String, @kgf_types.KGFSpec],
+  on_progress : ProgressCallback?,
+) -> (Array[@graph.CodeGraph], Array[FileTokens]) {
   let registry = build_registry(specs)
-  // Build a set of known file paths for resolution
   let known_paths : Map[String, Bool] = {}
   for entry in files {
     known_paths.set(entry.0, true)
   }
-  // Check known paths first, then fall back to actual filesystem
   let file_exists = fn(path : String) -> Bool {
     known_paths.contains(path) || (@fs.is_file(path) catch { _ => false })
   }
-  // Read file for manifest resolution (package.json etc.)
   let read_file = fn(path : String) -> String? {
     Some(@fs.read_file_to_string(path)) catch {
       _ => None
     }
   }
-  // Use empty root - paths are already relative to working directory
   let root = ""
   let active_rules_cache : Map[String, @hashset.HashSet[String]] = Map::new()
   let peg_cache : Map[String, @kgf_peg.PEG] = Map::new()
   let lexer_cache : Map[String, @kgf_toolkit.LanguageToolkit] = Map::new()
   let graphs : Array[@graph.CodeGraph] = []
+  let file_tokens : Array[FileTokens] = []
   let total = files.length()
   for i, entry in files {
     let path = entry.0
     let content = entry.1
-    // Report progress
     match on_progress {
       Some(ProgressCallback(callback)) => callback((i + 1, total, path))
       None => ()
     }
-    // Detect language and get spec name using registry
     let file_info = @analyze.analyze_file_with_registry(registry, path, content)
     let spec_name = file_info.get_spec_name()
-    // Try to get the spec
     match specs.get(spec_name) {
       Some(spec) => {
         let active_rules = match active_rules_cache.get(spec_name) {
@@ -131,28 +173,30 @@ pub fn analyze_files_with_progress(
         let lexer = get_or_build_lexer(spec_name, spec, lexer_cache)
         match get_or_build_peg(spec_name, spec, peg_cache) {
           Some(peg) => {
-            let graph = analyze_with_spec(
+            let (graph, tokens) = analyze_with_spec_collect(
               path, content, spec, active_rules, root, file_exists, read_file, lexer,
               peg,
             )
             graphs.push(graph)
+            file_tokens.push(FileTokens::new(path, spec_name, tokens))
           }
           None => {
             let graph = @graph.CodeGraph::new()
             let _ = graph.get_or_add_module(path, file=Some(path))
             graphs.push(graph)
+            file_tokens.push(FileTokens::new(path, spec_name, []))
           }
         }
       }
       None => {
-        // No spec available, create minimal graph with just the module
         let graph = @graph.CodeGraph::new()
         let _ = graph.get_or_add_module(path, file=Some(path))
         graphs.push(graph)
+        file_tokens.push(FileTokens::new(path, spec_name, []))
       }
     }
   }
-  graphs
+  (graphs, file_tokens)
 }
 
 ///|
@@ -194,8 +238,10 @@ fn get_or_build_peg(
 }
 
 ///|
-/// Analyze a single file with a KGF spec.
-fn analyze_with_spec(
+/// Analyze a single file with a KGF spec, returning the per-file graph and the
+/// tokenization so downstream enrichment passes can run token-level queries
+/// (e.g. PackageRef scans) without re-tokenizing.
+fn analyze_with_spec_collect(
   path : String,
   content : String,
   spec : @kgf_types.KGFSpec,
@@ -205,19 +251,14 @@ fn analyze_with_spec(
   read_file : (String) -> String?,
   lexer : @kgf_lexer.Lexer,
   peg : @kgf_peg.PEG,
-) -> @graph.CodeGraph {
+) -> (@graph.CodeGraph, Array[@kgf_types.Tok]) {
   let graph = @graph.CodeGraph::new()
-  // Create module node for the file
   let _ = graph.get_or_add_module(path, file=Some(path))
-  // Tokenize using cached lexer.
   let tokens = lexer.tokenize(content)
-  // Get start rule
   let start_rule = spec.get_start_rule()
-  // Run parse
   let parse_result = @kgf_peg.run_parse_filtered(
     peg, spec, start_rule, tokens, active_rules,
   )
-  // Evaluate semantics for all matched rules (via events)
   match parse_result {
     Some(eval_result) => {
       let ctx = @kgf_semantics.SemEvalCtx::new(
@@ -229,7 +270,6 @@ fn analyze_with_spec(
         file_exists,
         read_file~,
       )
-      // Process all rule match events for semantic evaluation
       for event in eval_result.get_events() {
         let rule_name = event.0
         let labels = event.1
@@ -238,7 +278,7 @@ fn analyze_with_spec(
     }
     None => ()
   }
-  graph
+  (graph, tokens)
 }
 
 ///|
