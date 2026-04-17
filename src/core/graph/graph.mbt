@@ -287,6 +287,120 @@ pub fn EdgeKind::from_string(s : String) -> EdgeKind {
 }
 
 ///|
+/// Resolve an edge endpoint against known symbols and modules by matching on
+/// the endpoint's trailing id segment. This covers the cross-spec mismatch
+/// where semantics scripts emit `<file>::<name>` while `attrs def` registers
+/// `<file>::<ns>:<name>`, or where nested `<parent>.<name>` references need
+/// to be rewritten to the canonical symbol id.
+fn rewrite_by_trailing_name(
+  id : String,
+  modules : Map[String, ModuleNode],
+  symbols : Map[String, SymbolNode],
+  symbol_by_module_name : Map[String, String],
+) -> String? {
+  if symbols.contains(id) || modules.contains(id) {
+    return None
+  }
+  // Try to split at "::" to extract (module_id, trailing_name). When the
+  // trailing_name itself contains "." (member syntax), fall back to the last
+  // segment so `ClassName.method` still matches a symbol named `method` in
+  // the enclosing file. The module_id side does not need to be exact — the
+  // `(module_id, name)` lookup is keyed on the file the symbol was declared
+  // in.
+  let sep_idx = find_last_substring(id, "::")
+  if sep_idx < 0 {
+    return None
+  }
+  let module_part = substring_upto(id, sep_idx)
+  let tail = substring_from(id, sep_idx + 2)
+  // The trailing name might be bare ("foo"), ns-prefixed ("value:foo"), or
+  // dotted ("ClassName.method"). Strip a leading `<ns>:` prefix if present,
+  // then take the last dot-separated segment.
+  let after_ns = match find_char(tail, ':') {
+    -1 => tail
+    i => substring_from(tail, i + 1)
+  }
+  let bare = last_dot_segment(after_ns)
+  let key = module_part + "\u{1f}" + bare
+  match symbol_by_module_name.get(key) {
+    Some(sym_id) => Some(sym_id)
+    None => None
+  }
+}
+
+///|
+fn find_last_substring(s : String, needle : String) -> Int {
+  let ca = s.to_array()
+  let na = needle.to_array()
+  if na.length() == 0 || na.length() > ca.length() {
+    return -1
+  }
+  let mut last = -1
+  for i = 0; i <= ca.length() - na.length(); i = i + 1 {
+    let mut ok = true
+    for j = 0; j < na.length(); j = j + 1 {
+      if ca[i + j] != na[j] {
+        ok = false
+        break
+      }
+    }
+    if ok {
+      last = i
+    }
+  }
+  last
+}
+
+///|
+fn substring_upto(s : String, end : Int) -> String {
+  let ca = s.to_array()
+  let sb = StringBuilder::new()
+  for i = 0; i < end && i < ca.length(); i = i + 1 {
+    sb.write_char(ca[i])
+  }
+  sb.to_string()
+}
+
+///|
+fn substring_from(s : String, start : Int) -> String {
+  let ca = s.to_array()
+  if start >= ca.length() {
+    return ""
+  }
+  let sb = StringBuilder::new()
+  for i = start; i < ca.length(); i = i + 1 {
+    sb.write_char(ca[i])
+  }
+  sb.to_string()
+}
+
+///|
+fn find_char(s : String, c : Char) -> Int {
+  let ca = s.to_array()
+  for i = 0; i < ca.length(); i = i + 1 {
+    if ca[i] == c {
+      return i
+    }
+  }
+  -1
+}
+
+///|
+fn last_dot_segment(s : String) -> String {
+  let ca = s.to_array()
+  let mut last = -1
+  for i = 0; i < ca.length(); i = i + 1 {
+    if ca[i] == '.' {
+      last = i
+    }
+  }
+  if last < 0 {
+    return s
+  }
+  substring_from(s, last + 1)
+}
+
+///|
 /// Resolve an edge target against known symbols and modules.
 /// If the target already exists, returns it unchanged. If a `declares` edge
 /// references a target that matches an existing symbol by `(module_id, name)`,
@@ -361,6 +475,18 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
     let (resolved_to, _) = resolve_edge_target(
       edge.to, edge, self.modules, self.symbols, symbol_by_module_name,
     )
+    // Also resolve the edge's `from`: nested declarations (class methods
+    // etc.) are emitted by semantics scripts with from = the parent
+    // symbol's scope-looked-up id, which can differ from the canonical
+    // symbol id registered by `attrs def`. Applying the same trailing-name
+    // rewrite keeps both endpoints pointing at real nodes.
+    let resolved_from = match
+      rewrite_by_trailing_name(
+        edge.from, self.modules, self.symbols, symbol_by_module_name,
+      ) {
+      Some(v) => v
+      None => edge.from
+    }
     // Backfill missing endpoints only for edges whose kind intrinsically
     // encodes a graph-structural relationship. `Custom` kinds come from KGF
     // spec authors who use them for metadata (project name, keyword,
@@ -380,6 +506,15 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
         backfilled_samples.push(resolved_to)
       }
     }
+    if is_structural &&
+      !self.symbols.contains(resolved_from) &&
+      !modules_out.contains(resolved_from) {
+      modules_out.set(resolved_from, { id: resolved_from, file: None })
+      backfilled_count = backfilled_count + 1
+      if backfilled_samples.length() < 5 {
+        backfilled_samples.push(resolved_from)
+      }
+    }
     let edge_obj : Map[String, Json] = {}
     // Attrs first, then canonical fields — canonical fields must win so
     // attrs like `"kind": "Function"` on a `declares` edge do not clobber
@@ -388,7 +523,7 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
       edge_obj.set(attr_entry.0, attr_entry.1.to_json())
     }
     edge_obj.set("kind", edge.kind.to_string().to_json())
-    edge_obj.set("from", edge.from.to_json())
+    edge_obj.set("from", resolved_from.to_json())
     edge_obj.set("to", resolved_to.to_json())
     edges_arr.push(Json::object(edge_obj))
   }

@@ -607,6 +607,27 @@ fn try_match_project(
               }
             }
           }
+          // No manifest under candidate_dir — languages without per-directory
+          // manifests (Go, Python without __init__.py, etc.) still put source
+          // files directly under the sub-package dir. Accept any module whose
+          // file path sits exactly in candidate_dir. This is deterministic
+          // because Map iteration in MoonBit preserves insertion order and
+          // the first match wins.
+          for candidate_dir in candidate_dirs {
+            let prefix = candidate_dir + "/"
+            for entry in modules {
+              let mod_id = entry.0
+              let mod = entry.1
+              match mod.file {
+                Some(f) =>
+                  if f.has_prefix(prefix) &&
+                    dir_of(f) == candidate_dir {
+                    return Some(mod_id)
+                  }
+                None => ()
+              }
+            }
+          }
         }
       }
       None => ()
