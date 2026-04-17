@@ -8,7 +8,11 @@
 import type { EdgeStyle, NodeStyle, ThemeColors } from "../types.ts";
 
 const DEFAULT_NODE_STYLE: NodeStyle = { radius: 5, color: "#6b7280" };
-const DEFAULT_EDGE_STYLE: EdgeStyle = { color: "#6b7280", dash: [], arrow: true };
+const DEFAULT_EDGE_STYLE: EdgeStyle = {
+  color: "#6b7280",
+  dash: [],
+  arrow: true,
+};
 
 export const DARK_THEME: ThemeColors = {
   background: "#0f0f14",
@@ -73,10 +77,17 @@ export function getEdgeStyle(kind: string, theme: ThemeColors): EdgeStyle {
 }
 
 export function resolveTheme(pref: "dark" | "light" | "auto"): ThemeColors {
-  if (pref === "dark") return DARK_THEME;
-  if (pref === "light") return LIGHT_THEME;
+  if (pref === "dark") {
+    return DARK_THEME;
+  }
+  if (pref === "light") {
+    return LIGHT_THEME;
+  }
   // "auto": respect system preference
-  if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
     return DARK_THEME;
   }
   return LIGHT_THEME;

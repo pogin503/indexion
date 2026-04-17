@@ -6,7 +6,11 @@ import type { ViewNode } from "../types.ts";
 
 export type SpatialHash = {
   rebuild(nodes: readonly ViewNode[]): void;
-  queryPoint(worldX: number, worldY: number, maxRadius: number): ViewNode | null;
+  queryPoint(
+    worldX: number,
+    worldY: number,
+    maxRadius: number,
+  ): ViewNode | null;
 };
 
 export function createSpatialHash(cellSize: number = 40): SpatialHash {
@@ -34,7 +38,11 @@ class GridSpatialHash implements SpatialHash {
     }
   }
 
-  queryPoint(worldX: number, worldY: number, maxRadius: number): ViewNode | null {
+  queryPoint(
+    worldX: number,
+    worldY: number,
+    maxRadius: number,
+  ): ViewNode | null {
     const col = Math.floor(worldX / this.cellSize);
     const row = Math.floor(worldY / this.cellSize);
     const maxDistSq = maxRadius * maxRadius;
@@ -44,7 +52,9 @@ class GridSpatialHash implements SpatialHash {
     for (let dc = -1; dc <= 1; dc++) {
       for (let dr = -1; dr <= 1; dr++) {
         const bucket = this.cells.get(this.key(col + dc, row + dr));
-        if (!bucket) continue;
+        if (!bucket) {
+          continue;
+        }
         for (const node of bucket) {
           const dx = node.x - worldX;
           const dy = node.y - worldY;
@@ -61,7 +71,10 @@ class GridSpatialHash implements SpatialHash {
   }
 
   private keyForWorld(worldX: number, worldY: number): string {
-    return this.key(Math.floor(worldX / this.cellSize), Math.floor(worldY / this.cellSize));
+    return this.key(
+      Math.floor(worldX / this.cellSize),
+      Math.floor(worldY / this.cellSize),
+    );
   }
 
   private key(col: number, row: number): string {

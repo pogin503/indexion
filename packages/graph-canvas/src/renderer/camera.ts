@@ -40,28 +40,42 @@ export function pan(camera: Camera, dx: number, dy: number): void {
   camera.y += dy;
 }
 
+export type FitToViewArgs = {
+  readonly camera: Camera;
+  readonly nodes: readonly ViewNode[];
+  readonly canvasWidth: number;
+  readonly canvasHeight: number;
+  readonly padding?: number;
+};
+
 /**
  * Calculate and apply the transform that fits all given nodes
  * within the viewport with the specified padding.
  */
-export function fitToView(
-  camera: Camera,
-  nodes: readonly ViewNode[],
-  canvasWidth: number,
-  canvasHeight: number,
-  padding: number = 40,
-): void {
-  if (nodes.length === 0) return;
+export function fitToView(args: FitToViewArgs): void {
+  const { camera, nodes, canvasWidth, canvasHeight } = args;
+  const padding = args.padding ?? 40;
+  if (nodes.length === 0) {
+    return;
+  }
 
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
   let y1 = -Infinity;
   for (const n of nodes) {
-    if (n.x < x0) x0 = n.x;
-    if (n.y < y0) y0 = n.y;
-    if (n.x > x1) x1 = n.x;
-    if (n.y > y1) y1 = n.y;
+    if (n.x < x0) {
+      x0 = n.x;
+    }
+    if (n.y < y0) {
+      y0 = n.y;
+    }
+    if (n.x > x1) {
+      x1 = n.x;
+    }
+    if (n.y > y1) {
+      y1 = n.y;
+    }
   }
 
   const bboxW = x1 - x0 || 1;
@@ -71,7 +85,11 @@ export function fitToView(
 
   const availW = canvasWidth - padding * 2;
   const availH = canvasHeight - padding * 2;
-  camera.scale = clamp(Math.min(availW / bboxW, availH / bboxH), camera.minScale, camera.maxScale);
+  camera.scale = clamp(
+    Math.min(availW / bboxW, availH / bboxH),
+    camera.minScale,
+    camera.maxScale,
+  );
   camera.x = canvasWidth / 2 - centerX * camera.scale;
   camera.y = canvasHeight / 2 - centerY * camera.scale;
 }
@@ -83,7 +101,10 @@ export function getVisibleBounds(
   canvasHeight: number,
 ): { x0: number; y0: number; x1: number; y1: number } {
   const topLeft = screenToWorld(camera, { x: 0, y: 0 });
-  const bottomRight = screenToWorld(camera, { x: canvasWidth, y: canvasHeight });
+  const bottomRight = screenToWorld(camera, {
+    x: canvasWidth,
+    y: canvasHeight,
+  });
   return { x0: topLeft.x, y0: topLeft.y, x1: bottomRight.x, y1: bottomRight.y };
 }
 

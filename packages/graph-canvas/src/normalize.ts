@@ -3,7 +3,13 @@
  */
 
 import type { CodeGraph } from "@indexion/api-client";
-import type { GraphInput, GraphJSON, ViewEdge, ViewGraph, ViewNode } from "./types.ts";
+import type {
+  GraphInput,
+  GraphJSON,
+  ViewEdge,
+  ViewGraph,
+  ViewNode,
+} from "./types.ts";
 
 /** Detect input type and normalize to ViewGraph. */
 export function normalizeGraph(input: GraphInput): ViewGraph {
@@ -20,7 +26,15 @@ export function fromCodeGraph(cg: CodeGraph): ViewGraph {
 
   // Modules → ViewNodes
   for (const [id, mod] of Object.entries(cg.modules)) {
-    const node = makeNode(id, id, mod.file ? "module" : "external", "", mod.file ?? null, null, {});
+    const node = makeNode({
+      id,
+      label: id,
+      kind: mod.file ? "module" : "external",
+      group: "",
+      file: mod.file ?? null,
+      doc: null,
+      metadata: {},
+    });
     nodes.push(node);
     nodeIndex.set(id, node);
   }
@@ -30,15 +44,33 @@ export function fromCodeGraph(cg: CodeGraph): ViewGraph {
     if (nodeIndex.has(id)) {
       // Update existing module node to symbol info
       const existing = nodeIndex.get(id)!;
-      const replacement = makeNode(id, sym.name, sym.kind, sym.module, existing.file, sym.doc ?? null, {});
+      const replacement = makeNode({
+        id,
+        label: sym.name,
+        kind: sym.kind,
+        group: sym.module,
+        file: existing.file,
+        doc: sym.doc ?? null,
+        metadata: {},
+      });
       replacement.x = existing.x;
       replacement.y = existing.y;
       const idx = nodes.indexOf(existing);
-      if (idx >= 0) nodes[idx] = replacement;
+      if (idx >= 0) {
+        nodes[idx] = replacement;
+      }
       nodeIndex.set(id, replacement);
     } else {
       const parentMod = cg.modules[sym.module];
-      const node = makeNode(id, sym.name, sym.kind, sym.module, parentMod?.file ?? null, sym.doc ?? null, {});
+      const node = makeNode({
+        id,
+        label: sym.name,
+        kind: sym.kind,
+        group: sym.module,
+        file: parentMod?.file ?? null,
+        doc: sym.doc ?? null,
+        metadata: {},
+      });
       nodes.push(node);
       nodeIndex.set(id, node);
     }
@@ -49,7 +81,9 @@ export function fromCodeGraph(cg: CodeGraph): ViewGraph {
   for (const e of cg.edges) {
     const source = nodeIndex.get(e.from);
     const target = nodeIndex.get(e.to);
-    if (!source || !target) continue;
+    if (!source || !target) {
+      continue;
+    }
     edges.push({
       sourceId: e.from,
       targetId: e.to,
@@ -69,7 +103,15 @@ export function fromGraphJSON(gj: GraphJSON): ViewGraph {
   const nodeIndex = new Map<string, ViewNode>();
 
   for (const gn of gj.nodes) {
-    const node = makeNode(gn.id, gn.label, gn.kind, "", gn.file ?? null, null, gn.metadata ?? {});
+    const node = makeNode({
+      id: gn.id,
+      label: gn.label,
+      kind: gn.kind,
+      group: "",
+      file: gn.file ?? null,
+      doc: null,
+      metadata: gn.metadata ?? {},
+    });
     nodes.push(node);
     nodeIndex.set(gn.id, node);
   }
@@ -78,7 +120,9 @@ export function fromGraphJSON(gj: GraphJSON): ViewGraph {
   for (const ge of gj.edges) {
     const source = nodeIndex.get(ge.from);
     const target = nodeIndex.get(ge.to);
-    if (!source || !target) continue;
+    if (!source || !target) {
+      continue;
+    }
     edges.push({
       sourceId: ge.from,
       targetId: ge.to,
@@ -118,7 +162,7 @@ function placeNearNeighbors(node: ViewNode, graph: ViewGraph): void {
   let cy = 0;
   let count = 0;
   for (const edge of graph.edges) {
-    const neighbor = edge.sourceId === node.id ? edge.target : edge.targetId === node.id ? edge.source : null;
+    const neighbor = neighborOf(edge, node.id);
     if (neighbor && (neighbor.x !== 0 || neighbor.y !== 0)) {
       cx += neighbor.x;
       cy += neighbor.y;
@@ -134,14 +178,33 @@ function placeNearNeighbors(node: ViewNode, graph: ViewGraph): void {
   // else: leave at (0,0) — circularLayout will handle initial placement
 }
 
-function makeNode(
-  id: string,
-  label: string,
-  kind: string,
-  group: string,
-  file: string | null,
-  doc: string | null,
-  metadata: Record<string, string>,
-): ViewNode {
-  return { id, label, kind, group, file, doc, metadata, x: 0, y: 0, vx: 0, vy: 0, pinned: false };
+function neighborOf(edge: ViewEdge, nodeId: string): ViewNode | null {
+  if (edge.sourceId === nodeId) {
+    return edge.target;
+  }
+  if (edge.targetId === nodeId) {
+    return edge.source;
+  }
+  return null;
+}
+
+type MakeNodeArgs = {
+  readonly id: string;
+  readonly label: string;
+  readonly kind: string;
+  readonly group: string;
+  readonly file: string | null;
+  readonly doc: string | null;
+  readonly metadata: Record<string, string>;
+};
+
+function makeNode(args: MakeNodeArgs): ViewNode {
+  return {
+    ...args,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    pinned: false,
+  };
 }

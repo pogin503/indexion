@@ -31,7 +31,9 @@ export function toggleSelect(
 }
 
 export function clearSelection(state: SelectionState): SelectionState {
-  if (state.selected.size === 0) return state;
+  if (state.selected.size === 0) {
+    return state;
+  }
   return {
     selected: new Set(),
     focusCenter: state.focusCenter,
@@ -61,7 +63,9 @@ export function enterFocusMode(
 }
 
 export function exitFocusMode(state: SelectionState): SelectionState {
-  if (!state.focusCenter && state.focusNeighbors.size === 0) return state;
+  if (!state.focusCenter && state.focusNeighbors.size === 0) {
+    return state;
+  }
   return {
     selected: new Set(state.selected),
     focusCenter: null,

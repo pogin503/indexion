@@ -12,10 +12,15 @@ import type { ViewEdge, ViewNode } from "../types.ts";
  * Place nodes in concentric circles, sorted by degree.
  * Only affects nodes whose position is (0, 0) (not yet placed).
  */
-export function circularLayout(nodes: ViewNode[], edges: readonly ViewEdge[]): void {
+export function circularLayout(
+  nodes: ViewNode[],
+  edges: readonly ViewEdge[],
+): void {
   // Compute degree per node
   const degree = new Map<string, number>();
-  for (const n of nodes) degree.set(n.id, 0);
+  for (const n of nodes) {
+    degree.set(n.id, 0);
+  }
   for (const e of edges) {
     degree.set(e.sourceId, (degree.get(e.sourceId) ?? 0) + 1);
     degree.set(e.targetId, (degree.get(e.targetId) ?? 0) + 1);
@@ -23,7 +28,9 @@ export function circularLayout(nodes: ViewNode[], edges: readonly ViewEdge[]): v
 
   // Collect unplaced nodes
   const unplaced = nodes.filter((n) => n.x === 0 && n.y === 0 && !n.pinned);
-  if (unplaced.length === 0) return;
+  if (unplaced.length === 0) {
+    return;
+  }
 
   // Sort by degree descending (most connected at center)
   unplaced.sort((a, b) => (degree.get(b.id) ?? 0) - (degree.get(a.id) ?? 0));

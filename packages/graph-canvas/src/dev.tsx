@@ -4,13 +4,23 @@ import { GraphCanvas } from "./graph-canvas.tsx";
 import type { GraphCanvasHandle, GraphJSON } from "./types.ts";
 import "./dev.css";
 
-const EDGE_KINDS = ["dependency", "calls", "extends", "implements", "declares", "references", "imports"];
+const EDGE_KINDS = [
+  "dependency",
+  "calls",
+  "extends",
+  "implements",
+  "declares",
+  "references",
+  "imports",
+];
 
 function DevApp() {
   const graphRef = useRef<GraphCanvasHandle>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [searchQuery, setSearchQuery] = useState("");
-  const [enabledEdgeKinds, setEnabledEdgeKinds] = useState<Set<string>>(() => new Set(EDGE_KINDS));
+  const [enabledEdgeKinds, setEnabledEdgeKinds] = useState<Set<string>>(
+    () => new Set(EDGE_KINDS),
+  );
   const graph = useMemo(() => sampleGraph(), []);
 
   const toggleEdgeKind = (kind: string) => {
@@ -30,7 +40,10 @@ function DevApp() {
       <div style={styles.toolbar}>
         <div style={styles.titleGroup}>
           <h1 style={styles.title}>Code Graph</h1>
-          <p style={styles.subtitle}>Drag nodes, pan the background, scroll to zoom, double-click to focus.</p>
+          <p style={styles.subtitle}>
+            Drag nodes, pan the background, scroll to zoom, double-click to
+            focus.
+          </p>
         </div>
         <input
           aria-label="Search graph"
@@ -41,12 +54,18 @@ function DevApp() {
         />
         <button
           type="button"
-          onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+          onClick={() =>
+            setTheme((current) => (current === "dark" ? "light" : "dark"))
+          }
           style={styles.button}
         >
           {theme === "dark" ? "Light" : "Dark"}
         </button>
-        <button type="button" onClick={() => graphRef.current?.fitToView()} style={styles.button}>
+        <button
+          type="button"
+          onClick={() => graphRef.current?.fitToView()}
+          style={styles.button}
+        >
           Fit
         </button>
       </div>
@@ -93,7 +112,8 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateRows: "auto auto 1fr",
     background: "#18181b",
     color: "#f9fafb",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    fontFamily:
+      "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
   },
   toolbar: {
     display: "flex",
@@ -155,36 +175,176 @@ const styles: Record<string, React.CSSProperties> = {
 
 function sampleGraph(): GraphJSON {
   const nodes = [
-    { id: "mod:index", label: "src/index.mbt", kind: "module", file: "src/index.mbt" },
-    { id: "mod:graph", label: "src/graph.mbt", kind: "module", file: "src/graph.mbt" },
-    { id: "mod:parser", label: "src/parser.mbt", kind: "module", file: "src/parser.mbt" },
-    { id: "mod:filter", label: "src/filter.mbt", kind: "module", file: "src/filter.mbt" },
-    { id: "mod:wiki", label: "src/wiki.mbt", kind: "module", file: "src/wiki.mbt" },
-    { id: "mod:api", label: "packages/api", kind: "module", file: "packages/api/src/lib.mbt" },
+    {
+      id: "mod:index",
+      label: "src/index.mbt",
+      kind: "module",
+      file: "src/index.mbt",
+    },
+    {
+      id: "mod:graph",
+      label: "src/graph.mbt",
+      kind: "module",
+      file: "src/graph.mbt",
+    },
+    {
+      id: "mod:parser",
+      label: "src/parser.mbt",
+      kind: "module",
+      file: "src/parser.mbt",
+    },
+    {
+      id: "mod:filter",
+      label: "src/filter.mbt",
+      kind: "module",
+      file: "src/filter.mbt",
+    },
+    {
+      id: "mod:wiki",
+      label: "src/wiki.mbt",
+      kind: "module",
+      file: "src/wiki.mbt",
+    },
+    {
+      id: "mod:api",
+      label: "packages/api",
+      kind: "module",
+      file: "packages/api/src/lib.mbt",
+    },
     { id: "ext:moonbit", label: "moonbitlang/core", kind: "external" },
     { id: "ext:vscode", label: "vscode", kind: "external" },
-    { id: "fn:buildGraph", label: "buildGraph", kind: "function", file: "src/graph.mbt" },
-    { id: "fn:addNode", label: "addNode", kind: "function", file: "src/graph.mbt" },
-    { id: "fn:addEdge", label: "addEdge", kind: "function", file: "src/graph.mbt" },
-    { id: "fn:parseFile", label: "parseFile", kind: "function", file: "src/parser.mbt" },
-    { id: "fn:parseSymbol", label: "parseSymbol", kind: "function", file: "src/parser.mbt" },
-    { id: "fn:filterFiles", label: "filterFiles", kind: "function", file: "src/filter.mbt" },
-    { id: "fn:matchPattern", label: "matchPattern", kind: "function", file: "src/filter.mbt" },
-    { id: "fn:renderWiki", label: "renderWiki", kind: "function", file: "src/wiki.mbt" },
-    { id: "fn:fetchGraph", label: "fetchGraph", kind: "function", file: "packages/api/src/client.mbt" },
-    { id: "type:CodeGraph", label: "CodeGraph", kind: "type", file: "src/graph.mbt" },
-    { id: "type:GraphNode", label: "GraphNode", kind: "struct", file: "src/graph.mbt" },
-    { id: "type:GraphEdge", label: "GraphEdge", kind: "struct", file: "src/graph.mbt" },
-    { id: "type:FilterConfig", label: "FilterConfig", kind: "type", file: "src/filter.mbt" },
-    { id: "type:WikiPage", label: "WikiPage", kind: "struct", file: "src/wiki.mbt" },
-    { id: "var:cache", label: "graphCache", kind: "variable", file: "src/index.mbt" },
-    { id: "var:patterns", label: "ignorePatterns", kind: "variable", file: "src/filter.mbt" },
-    { id: "fn:indexWorkspace", label: "indexWorkspace", kind: "function", file: "src/index.mbt" },
-    { id: "fn:loadConfig", label: "loadConfig", kind: "function", file: "src/index.mbt" },
-    { id: "fn:writeArtifacts", label: "writeArtifacts", kind: "function", file: "src/wiki.mbt" },
-    { id: "type:ApiClient", label: "ApiClient", kind: "type", file: "packages/api/src/client.mbt" },
-    { id: "fn:openPreview", label: "openPreview", kind: "function", file: "packages/vscode/src/extension.ts" },
-    { id: "type:PreviewPanel", label: "PreviewPanel", kind: "struct", file: "packages/vscode/src/panel.ts" },
+    {
+      id: "fn:buildGraph",
+      label: "buildGraph",
+      kind: "function",
+      file: "src/graph.mbt",
+    },
+    {
+      id: "fn:addNode",
+      label: "addNode",
+      kind: "function",
+      file: "src/graph.mbt",
+    },
+    {
+      id: "fn:addEdge",
+      label: "addEdge",
+      kind: "function",
+      file: "src/graph.mbt",
+    },
+    {
+      id: "fn:parseFile",
+      label: "parseFile",
+      kind: "function",
+      file: "src/parser.mbt",
+    },
+    {
+      id: "fn:parseSymbol",
+      label: "parseSymbol",
+      kind: "function",
+      file: "src/parser.mbt",
+    },
+    {
+      id: "fn:filterFiles",
+      label: "filterFiles",
+      kind: "function",
+      file: "src/filter.mbt",
+    },
+    {
+      id: "fn:matchPattern",
+      label: "matchPattern",
+      kind: "function",
+      file: "src/filter.mbt",
+    },
+    {
+      id: "fn:renderWiki",
+      label: "renderWiki",
+      kind: "function",
+      file: "src/wiki.mbt",
+    },
+    {
+      id: "fn:fetchGraph",
+      label: "fetchGraph",
+      kind: "function",
+      file: "packages/api/src/client.mbt",
+    },
+    {
+      id: "type:CodeGraph",
+      label: "CodeGraph",
+      kind: "type",
+      file: "src/graph.mbt",
+    },
+    {
+      id: "type:GraphNode",
+      label: "GraphNode",
+      kind: "struct",
+      file: "src/graph.mbt",
+    },
+    {
+      id: "type:GraphEdge",
+      label: "GraphEdge",
+      kind: "struct",
+      file: "src/graph.mbt",
+    },
+    {
+      id: "type:FilterConfig",
+      label: "FilterConfig",
+      kind: "type",
+      file: "src/filter.mbt",
+    },
+    {
+      id: "type:WikiPage",
+      label: "WikiPage",
+      kind: "struct",
+      file: "src/wiki.mbt",
+    },
+    {
+      id: "var:cache",
+      label: "graphCache",
+      kind: "variable",
+      file: "src/index.mbt",
+    },
+    {
+      id: "var:patterns",
+      label: "ignorePatterns",
+      kind: "variable",
+      file: "src/filter.mbt",
+    },
+    {
+      id: "fn:indexWorkspace",
+      label: "indexWorkspace",
+      kind: "function",
+      file: "src/index.mbt",
+    },
+    {
+      id: "fn:loadConfig",
+      label: "loadConfig",
+      kind: "function",
+      file: "src/index.mbt",
+    },
+    {
+      id: "fn:writeArtifacts",
+      label: "writeArtifacts",
+      kind: "function",
+      file: "src/wiki.mbt",
+    },
+    {
+      id: "type:ApiClient",
+      label: "ApiClient",
+      kind: "type",
+      file: "packages/api/src/client.mbt",
+    },
+    {
+      id: "fn:openPreview",
+      label: "openPreview",
+      kind: "function",
+      file: "packages/vscode/src/extension.ts",
+    },
+    {
+      id: "type:PreviewPanel",
+      label: "PreviewPanel",
+      kind: "struct",
+      file: "packages/vscode/src/panel.ts",
+    },
   ];
 
   const edges = [

@@ -19,11 +19,19 @@ export function applyRepulsion(
   alpha: number,
   config: ForceConfig,
 ): void {
-  if (nodes.length < 2) return;
+  if (nodes.length < 2) {
+    return;
+  }
 
   if (nodes.length >= config.barnesHutThreshold) {
     const tree = buildQuadTree(nodes);
-    applyBarnesHutRepulsion(tree, nodes, config.barnesHutTheta, config.repulsionStrength, alpha);
+    applyBarnesHutRepulsion({
+      root: tree,
+      nodes,
+      theta: config.barnesHutTheta,
+      strength: config.repulsionStrength,
+      alpha,
+    });
     return;
   }
 
@@ -97,7 +105,9 @@ export function applyCentering(
   alpha: number,
   config: ForceConfig,
 ): void {
-  if (nodes.length === 0) return;
+  if (nodes.length === 0) {
+    return;
+  }
   let cx = 0;
   let cy = 0;
   let count = 0;
@@ -110,7 +120,9 @@ export function applyCentering(
   cy /= count;
   const strength = config.centerStrength * alpha;
   for (const n of nodes) {
-    if (n.pinned) continue;
+    if (n.pinned) {
+      continue;
+    }
     n.vx -= (n.x - cx) * strength;
     n.vy -= (n.y - cy) * strength;
   }

@@ -38,12 +38,17 @@ const CLICK_DISTANCE = 5;
 const DOUBLE_CLICK_MS = 300;
 const HIT_RADIUS_SCREEN = 14;
 
+export type CreatePointerHandlerArgs = {
+  readonly canvas: HTMLCanvasElement;
+  readonly camera: Camera;
+  readonly spatialHash: SpatialHash;
+  readonly callbacks: PointerCallbacks;
+};
+
 export function createPointerHandler(
-  canvas: HTMLCanvasElement,
-  camera: Camera,
-  spatialHash: SpatialHash,
-  callbacks: PointerCallbacks,
+  args: CreatePointerHandlerArgs,
 ): PointerHandler {
+  const { canvas, camera, spatialHash, callbacks } = args;
   const state: PointerState = {
     mode: "idle",
     startScreen: { x: 0, y: 0 },
@@ -56,11 +61,17 @@ export function createPointerHandler(
 
   const getNodeAt = (screen: Vec2): ViewNode | null => {
     const world = screenToWorld(camera, screen);
-    return spatialHash.queryPoint(world.x, world.y, HIT_RADIUS_SCREEN / camera.scale);
+    return spatialHash.queryPoint(
+      world.x,
+      world.y,
+      HIT_RADIUS_SCREEN / camera.scale,
+    );
   };
 
   const setHover = (node: ViewNode | null): void => {
-    if (state.hoverNode?.id === node?.id) return;
+    if (state.hoverNode?.id === node?.id) {
+      return;
+    }
     state.hoverNode = node;
     callbacks.onHover?.(node);
     callbacks.requestRedraw();
@@ -116,16 +127,25 @@ export function createPointerHandler(
     callbacks.requestRedraw();
   };
 
-  const dispatchClick = (node: ViewNode | null, shift: boolean, timeStamp: number): void => {
+  const dispatchClick = (
+    node: ViewNode | null,
+    shift: boolean,
+    timeStamp: number,
+  ): void => {
     const nodeId = node?.id ?? null;
     const elapsed = timeStamp - state.lastClickTime;
-    const isDouble = elapsed <= DOUBLE_CLICK_MS && state.lastClickNodeId === nodeId;
+    const isDouble =
+      elapsed <= DOUBLE_CLICK_MS && state.lastClickNodeId === nodeId;
     state.lastClickTime = timeStamp;
     state.lastClickNodeId = nodeId;
 
     if (isDouble) {
-      if (node) callbacks.onNodeDoubleClick?.(node, shift);
-      if (!node) callbacks.onBackgroundDoubleClick?.(shift);
+      if (node) {
+        callbacks.onNodeDoubleClick?.(node, shift);
+      }
+      if (!node) {
+        callbacks.onBackgroundDoubleClick?.(shift);
+      }
       return;
     }
 
@@ -161,7 +181,10 @@ export function createPointerHandler(
   return { attach, detach };
 }
 
-function eventToCanvasPoint(canvas: HTMLCanvasElement, event: MouseEvent): Vec2 {
+function eventToCanvasPoint(
+  canvas: HTMLCanvasElement,
+  event: MouseEvent,
+): Vec2 {
   const rect = canvas.getBoundingClientRect();
   return {
     x: event.clientX - rect.left,

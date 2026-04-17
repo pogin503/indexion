@@ -27,7 +27,17 @@ type QuadNode = {
 };
 
 function createQuadNode(bounds: Bounds): QuadNode {
-  return { bounds, cx: 0, cy: 0, mass: 0, body: null, nw: null, ne: null, sw: null, se: null };
+  return {
+    bounds,
+    cx: 0,
+    cy: 0,
+    mass: 0,
+    body: null,
+    nw: null,
+    ne: null,
+    sw: null,
+    se: null,
+  };
 }
 
 function isLeaf(node: QuadNode): boolean {
@@ -82,6 +92,12 @@ function insertBody(root: QuadNode, body: ViewNode): void {
   root.mass = totalMass;
 }
 
+type RepulsionParams = {
+  readonly theta: number;
+  readonly strength: number;
+  readonly alpha: number;
+};
+
 /**
  * Apply Barnes-Hut repulsion force to a single body.
  * Traverses the tree, approximating distant groups.
@@ -89,23 +105,27 @@ function insertBody(root: QuadNode, body: ViewNode): void {
 function applyRepulsionToBody(
   node: QuadNode,
   body: ViewNode,
-  theta: number,
-  strength: number,
-  alpha: number,
+  params: RepulsionParams,
 ): void {
-  if (node.mass === 0) return;
+  if (node.mass === 0) {
+    return;
+  }
 
   const dx = node.cx - body.x;
   const dy = node.cy - body.y;
   const distSq = dx * dx + dy * dy;
 
   // Skip self
-  if (node.mass === 1 && node.body === body) return;
+  if (node.mass === 1 && node.body === body) {
+    return;
+  }
 
-  if (isLeaf(node) || canApproximate(node, distSq, theta)) {
+  if (isLeaf(node) || canApproximate(node, distSq, params.theta)) {
     // Treat as single body at center of mass
-    if (distSq < 1) return; // Avoid division by zero for coincident nodes
-    const force = (-strength * alpha * node.mass) / distSq;
+    if (distSq < 1) {
+      return;
+    } // Avoid division by zero for coincident nodes
+    const force = (-params.strength * params.alpha * node.mass) / distSq;
     const dist = Math.sqrt(distSq);
     body.vx += (dx / dist) * force;
     body.vy += (dy / dist) * force;
@@ -113,13 +133,25 @@ function applyRepulsionToBody(
   }
 
   // Recurse into children
-  if (node.nw) applyRepulsionToBody(node.nw, body, theta, strength, alpha);
-  if (node.ne) applyRepulsionToBody(node.ne, body, theta, strength, alpha);
-  if (node.sw) applyRepulsionToBody(node.sw, body, theta, strength, alpha);
-  if (node.se) applyRepulsionToBody(node.se, body, theta, strength, alpha);
+  if (node.nw) {
+    applyRepulsionToBody(node.nw, body, params);
+  }
+  if (node.ne) {
+    applyRepulsionToBody(node.ne, body, params);
+  }
+  if (node.sw) {
+    applyRepulsionToBody(node.sw, body, params);
+  }
+  if (node.se) {
+    applyRepulsionToBody(node.se, body, params);
+  }
 }
 
-function canApproximate(node: QuadNode, distSq: number, theta: number): boolean {
+function canApproximate(
+  node: QuadNode,
+  distSq: number,
+  theta: number,
+): boolean {
   const width = node.bounds.x1 - node.bounds.x0;
   // Barnes-Hut criterion: width / distance < theta
   return (width * width) / distSq < theta * theta;
@@ -137,10 +169,18 @@ export function buildQuadTree(nodes: readonly ViewNode[]): QuadNode {
   let x1 = -Infinity;
   let y1 = -Infinity;
   for (const n of nodes) {
-    if (n.x < x0) x0 = n.x;
-    if (n.y < y0) y0 = n.y;
-    if (n.x > x1) x1 = n.x;
-    if (n.y > y1) y1 = n.y;
+    if (n.x < x0) {
+      x0 = n.x;
+    }
+    if (n.y < y0) {
+      y0 = n.y;
+    }
+    if (n.x > x1) {
+      x1 = n.x;
+    }
+    if (n.y > y1) {
+      y1 = n.y;
+    }
   }
   // Expand slightly to avoid boundary issues
   const margin = Math.max(x1 - x0, y1 - y0) * 0.1 + 1;
@@ -161,18 +201,24 @@ export function buildQuadTree(nodes: readonly ViewNode[]): QuadNode {
   return root;
 }
 
+export type ApplyBarnesHutArgs = {
+  readonly root: QuadNode;
+  readonly nodes: readonly ViewNode[];
+  readonly theta: number;
+  readonly strength: number;
+  readonly alpha: number;
+};
+
 /**
  * Apply Barnes-Hut repulsion to all nodes using the given quadtree.
  */
-export function applyBarnesHutRepulsion(
-  root: QuadNode,
-  nodes: readonly ViewNode[],
-  theta: number,
-  strength: number,
-  alpha: number,
-): void {
+export function applyBarnesHutRepulsion(args: ApplyBarnesHutArgs): void {
+  const { root, nodes, theta, strength, alpha } = args;
+  const params: RepulsionParams = { theta, strength, alpha };
   for (const body of nodes) {
-    if (body.pinned) continue;
-    applyRepulsionToBody(root, body, theta, strength, alpha);
+    if (body.pinned) {
+      continue;
+    }
+    applyRepulsionToBody(root, body, params);
   }
 }

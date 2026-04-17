@@ -27,7 +27,9 @@ export function tick(
   graph: ViewGraph,
   config: ForceConfig,
 ): boolean {
-  if (!state.running) return false;
+  if (!state.running) {
+    return false;
+  }
 
   const { nodes, edges } = graph;
 

@@ -1,5 +1,10 @@
 /**
  * @file Canvas 2D renderer for graph frames.
+ *
+ * All drawing helpers take a RenderContext carrying the shared state
+ * (canvas 2d context, graph, camera, filter, selection, theme, bounds).
+ * This keeps argument lists short and makes the render pipeline easier
+ * to extend.
  */
 
 import type {
@@ -32,47 +37,73 @@ type Bounds = {
   readonly y1: number;
 };
 
+type RenderContext = {
+  readonly ctx: CanvasRenderingContext2D;
+  readonly graph: ViewGraph;
+  readonly camera: Camera;
+  readonly filter: FilterResult;
+  readonly selection: SelectionState;
+  readonly styles: ThemeColors;
+  readonly hoverNode: ViewNode | null;
+  readonly canvasSize: CanvasSize;
+  readonly dpr: number;
+  readonly bounds: Bounds;
+  readonly parallelEdges: ReadonlyMap<number, ParallelInfo>;
+};
+
+export type RenderFrameArgs = {
+  readonly ctx: CanvasRenderingContext2D;
+  readonly graph: ViewGraph;
+  readonly camera: Camera;
+  readonly filter: FilterResult;
+  readonly selection: SelectionState;
+  readonly styles: ThemeColors;
+  readonly hoverNode: ViewNode | null;
+  readonly canvasSize: CanvasSize;
+  readonly dpr: number;
+};
+
 const LABEL_BASE_SIZE = 12;
 const MAX_LABEL_CHARS = 20;
 const EDGE_MARGIN = 40;
 const NODE_MARGIN = 24;
 const ARROW_SIZE = 8;
 
-export function renderFrame(
-  ctx: CanvasRenderingContext2D,
-  graph: ViewGraph,
-  camera: Camera,
-  filter: FilterResult,
-  selection: SelectionState,
-  styles: ThemeColors,
-  hoverNode: ViewNode | null,
-  canvasSize: CanvasSize,
-  dpr: number,
-): void {
-  clearCanvas(ctx, styles, canvasSize, dpr);
+export function renderFrame(args: RenderFrameArgs): void {
+  const { ctx, camera, canvasSize, dpr } = args;
+  clearCanvas({ ctx, styles: args.styles, canvasSize, dpr });
 
-  const visibleBounds = getVisibleBounds(camera, canvasSize.width, canvasSize.height);
-  const expandedBounds = expandBounds(visibleBounds, EDGE_MARGIN / camera.scale);
-  const parallelEdges = buildParallelInfo(graph.edges);
+  const visibleBounds = getVisibleBounds(
+    camera,
+    canvasSize.width,
+    canvasSize.height,
+  );
+  const bounds = expandBounds(visibleBounds, EDGE_MARGIN / camera.scale);
+  const parallelEdges = buildParallelInfo(args.graph.edges);
+
+  const rc: RenderContext = { ...args, bounds, parallelEdges };
 
   setWorldTransform(ctx, camera, dpr);
-  drawEdges(ctx, graph, camera, filter, selection, styles, expandedBounds, parallelEdges);
-  drawNodes(ctx, graph, camera, filter, selection, styles, hoverNode, expandedBounds);
-  drawLabels(ctx, graph, camera, filter, selection, styles, expandedBounds);
+  drawEdges(rc);
+  drawNodes(rc);
+  drawLabels(rc);
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (hoverNode && filter.visibleNodes.has(hoverNode.id)) {
-    drawTooltip(ctx, hoverNode, camera, styles, canvasSize);
+  if (args.hoverNode && args.filter.visibleNodes.has(args.hoverNode.id)) {
+    drawTooltip(rc, args.hoverNode);
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
-function clearCanvas(
-  ctx: CanvasRenderingContext2D,
-  styles: ThemeColors,
-  canvasSize: CanvasSize,
-  dpr: number,
-): void {
+type ClearCanvasArgs = {
+  readonly ctx: CanvasRenderingContext2D;
+  readonly styles: ThemeColors;
+  readonly canvasSize: CanvasSize;
+  readonly dpr: number;
+};
+
+function clearCanvas(args: ClearCanvasArgs): void {
+  const { ctx, styles, canvasSize, dpr } = args;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvasSize.width * dpr, canvasSize.height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -80,7 +111,11 @@ function clearCanvas(
   ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 }
 
-function setWorldTransform(ctx: CanvasRenderingContext2D, camera: Camera, dpr: number): void {
+function setWorldTransform(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  dpr: number,
+): void {
   ctx.setTransform(
     camera.scale * dpr,
     0,
@@ -91,21 +126,17 @@ function setWorldTransform(ctx: CanvasRenderingContext2D, camera: Camera, dpr: n
   );
 }
 
-function drawEdges(
-  ctx: CanvasRenderingContext2D,
-  graph: ViewGraph,
-  camera: Camera,
-  filter: FilterResult,
-  selection: SelectionState,
-  styles: ThemeColors,
-  bounds: Bounds,
-  parallelEdges: ReadonlyMap<number, ParallelInfo>,
-): void {
+function drawEdges(rc: RenderContext): void {
+  const { ctx, graph, camera, filter, styles, bounds, parallelEdges } = rc;
   graph.edges.forEach((edge, index) => {
-    if (!filter.visibleEdges.has(index)) return;
-    if (!isEdgeInBounds(edge, bounds)) return;
+    if (!filter.visibleEdges.has(index)) {
+      return;
+    }
+    if (!isEdgeInBounds(edge, bounds)) {
+      return;
+    }
 
-    const opacity = focusOpacityForEdge(edge, selection, styles);
+    const opacity = focusOpacityForEdge(edge, rc.selection, styles);
     const edgeStyle = getEdgeStyle(edge.kind, styles);
     const parallel = parallelEdges.get(index) ?? { count: 1, index: 0 };
     const lineWidth = Math.max(1 / camera.scale, 1.3 / camera.scale);
@@ -123,24 +154,25 @@ function drawEdges(
     ctx.setLineDash([]);
 
     if (edgeStyle.arrow) {
-      drawArrowhead(ctx, edge, control, edge.kind, camera.scale, styles);
+      drawArrowhead({
+        ctx,
+        edge,
+        control,
+        edgeKind: edge.kind,
+        scale: camera.scale,
+        styles,
+      });
     }
     ctx.restore();
   });
 }
 
-function drawNodes(
-  ctx: CanvasRenderingContext2D,
-  graph: ViewGraph,
-  camera: Camera,
-  filter: FilterResult,
-  selection: SelectionState,
-  styles: ThemeColors,
-  hoverNode: ViewNode | null,
-  bounds: Bounds,
-): void {
+function drawNodes(rc: RenderContext): void {
+  const { ctx, graph, camera, filter, selection, styles, hoverNode } = rc;
   for (const node of graph.nodes) {
-    if (!shouldDrawNode(node, camera, filter, bounds)) continue;
+    if (!shouldDrawNode({ node, camera, filter, bounds: rc.bounds })) {
+      continue;
+    }
 
     const nodeStyle = getNodeStyle(node.kind, styles);
     const isSelected = selection.selected.has(node.id);
@@ -151,7 +183,7 @@ function drawNodes(
     ctx.save();
     ctx.globalAlpha = opacity;
     if (isHighlighted) {
-      drawGlow(ctx, node, nodeStyle.radius, styles);
+      drawGlow({ ctx, node, radius: nodeStyle.radius, styles });
     }
 
     ctx.fillStyle = nodeStyle.color;
@@ -160,30 +192,35 @@ function drawNodes(
     ctx.fill();
 
     if (isSelected || isHovered) {
-      ctx.strokeStyle = isSelected ? styles.selectionColor : styles.highlightColor;
+      ctx.strokeStyle = isSelected
+        ? styles.selectionColor
+        : styles.highlightColor;
       ctx.lineWidth = (isSelected ? 3 : 2) / camera.scale;
       ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeStyle.radius + 3 / camera.scale, 0, Math.PI * 2);
+      ctx.arc(
+        node.x,
+        node.y,
+        nodeStyle.radius + 3 / camera.scale,
+        0,
+        Math.PI * 2,
+      );
       ctx.stroke();
     }
     ctx.restore();
   }
 }
 
-function drawLabels(
-  ctx: CanvasRenderingContext2D,
-  graph: ViewGraph,
-  camera: Camera,
-  filter: FilterResult,
-  selection: SelectionState,
-  styles: ThemeColors,
-  bounds: Bounds,
-): void {
+function drawLabels(rc: RenderContext): void {
+  const { ctx, graph, camera, filter, selection, styles } = rc;
   const lod = getLod(camera.scale);
-  if (lod === "modules") return;
+  if (lod === "modules") {
+    return;
+  }
 
   const scaledFontSize = LABEL_BASE_SIZE * camera.scale;
-  if (lod !== "module-labels" && scaledFontSize < 8) return;
+  if (lod !== "module-labels" && scaledFontSize < 8) {
+    return;
+  }
   const screenFontSize = clamp(scaledFontSize, 8, 18);
   const fontSize = screenFontSize / camera.scale;
 
@@ -194,8 +231,12 @@ function drawLabels(
   ctx.font = `${fontSize}px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
 
   for (const node of graph.nodes) {
-    if (!shouldDrawNode(node, camera, filter, bounds)) continue;
-    if (lod === "module-labels" && node.kind !== "module") continue;
+    if (!shouldDrawNode({ node, camera, filter, bounds: rc.bounds })) {
+      continue;
+    }
+    if (lod === "module-labels" && node.kind !== "module") {
+      continue;
+    }
 
     const nodeStyle = getNodeStyle(node.kind, styles);
     const lines = labelLines(node, lod === "metadata");
@@ -212,13 +253,8 @@ function drawLabels(
   ctx.restore();
 }
 
-function drawTooltip(
-  ctx: CanvasRenderingContext2D,
-  node: ViewNode,
-  camera: Camera,
-  styles: ThemeColors,
-  canvasSize: CanvasSize,
-): void {
+function drawTooltip(rc: RenderContext, node: ViewNode): void {
+  const { ctx, camera, styles, canvasSize } = rc;
   const screen = worldToScreen(camera, { x: node.x, y: node.y });
   const lines = [
     node.label,
@@ -227,7 +263,8 @@ function drawTooltip(
   ];
   const padding = 8;
   const lineHeight = 17;
-  ctx.font = "12px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif";
+  ctx.font =
+    '12px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
   const width = Math.min(
     320,
     Math.max(...lines.map((line) => ctx.measureText(line).width)) + padding * 2,
@@ -240,27 +277,43 @@ function drawTooltip(
   ctx.fillStyle = tooltipBackground(styles.background);
   ctx.strokeStyle = styles.selectionColor;
   ctx.lineWidth = 1;
-  roundRect(ctx, x, y, width, height, 6);
+  roundRect({ ctx, x, y, width, height, radius: 6 });
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = styles.labelColor;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   lines.forEach((line, index) => {
-    ctx.fillText(line, x + padding, y + padding + index * lineHeight, width - padding * 2);
+    ctx.fillText(
+      line,
+      x + padding,
+      y + padding + index * lineHeight,
+      width - padding * 2,
+    );
   });
   ctx.restore();
 }
 
-function shouldDrawNode(
-  node: ViewNode,
-  camera: Camera,
-  filter: FilterResult,
-  bounds: Bounds,
-): boolean {
-  if (!filter.visibleNodes.has(node.id)) return false;
-  if (getLod(camera.scale) === "modules" && node.kind !== "module") return false;
-  return isPointInBounds(node.x, node.y, expandBounds(bounds, NODE_MARGIN / camera.scale));
+type ShouldDrawNodeArgs = {
+  readonly node: ViewNode;
+  readonly camera: Camera;
+  readonly filter: FilterResult;
+  readonly bounds: Bounds;
+};
+
+function shouldDrawNode(args: ShouldDrawNodeArgs): boolean {
+  const { node, camera, filter, bounds } = args;
+  if (!filter.visibleNodes.has(node.id)) {
+    return false;
+  }
+  if (getLod(camera.scale) === "modules" && node.kind !== "module") {
+    return false;
+  }
+  return isPointInBounds(
+    node.x,
+    node.y,
+    expandBounds(bounds, NODE_MARGIN / camera.scale),
+  );
 }
 
 function drawEdgePath(
@@ -291,14 +344,17 @@ function drawEdgePath(
   return control;
 }
 
-function drawArrowhead(
-  ctx: CanvasRenderingContext2D,
-  edge: ViewEdge,
-  control: Vec2 | null,
-  edgeKind: string,
-  scale: number,
-  styles: ThemeColors,
-): void {
+type DrawArrowheadArgs = {
+  readonly ctx: CanvasRenderingContext2D;
+  readonly edge: ViewEdge;
+  readonly control: Vec2 | null;
+  readonly edgeKind: string;
+  readonly scale: number;
+  readonly styles: ThemeColors;
+};
+
+function drawArrowhead(args: DrawArrowheadArgs): void {
+  const { ctx, edge, control, edgeKind, scale, styles } = args;
   const target = edge.target;
   const source = edge.source;
   const from = control ?? source;
@@ -330,12 +386,15 @@ function drawArrowhead(
   }
 }
 
-function drawGlow(
-  ctx: CanvasRenderingContext2D,
-  node: ViewNode,
-  radius: number,
-  styles: ThemeColors,
-): void {
+type DrawGlowArgs = {
+  readonly ctx: CanvasRenderingContext2D;
+  readonly node: ViewNode;
+  readonly radius: number;
+  readonly styles: ThemeColors;
+};
+
+function drawGlow(args: DrawGlowArgs): void {
+  const { ctx, node, radius, styles } = args;
   ctx.save();
   ctx.shadowColor = styles.highlightColor;
   ctx.shadowBlur = 18;
@@ -347,7 +406,9 @@ function drawGlow(
   ctx.restore();
 }
 
-function buildParallelInfo(edges: readonly ViewEdge[]): Map<number, ParallelInfo> {
+function buildParallelInfo(
+  edges: readonly ViewEdge[],
+): Map<number, ParallelInfo> {
   const groups = new Map<string, number[]>();
   edges.forEach((edge, index) => {
     const key = parallelKey(edge);
@@ -380,8 +441,12 @@ function focusOpacityForNode(
   selection: SelectionState,
   styles: ThemeColors,
 ): number {
-  if (!selection.focusCenter) return 1;
-  if (selection.focusNeighbors.has(node.id)) return 1;
+  if (!selection.focusCenter) {
+    return 1;
+  }
+  if (selection.focusNeighbors.has(node.id)) {
+    return 1;
+  }
   return styles.dimmedOpacity;
 }
 
@@ -390,8 +455,13 @@ function focusOpacityForEdge(
   selection: SelectionState,
   styles: ThemeColors,
 ): number {
-  if (!selection.focusCenter) return 0.65;
-  if (selection.focusNeighbors.has(edge.sourceId) && selection.focusNeighbors.has(edge.targetId)) {
+  if (!selection.focusCenter) {
+    return 0.65;
+  }
+  if (
+    selection.focusNeighbors.has(edge.sourceId) &&
+    selection.focusNeighbors.has(edge.targetId)
+  ) {
     return 0.75;
   }
   return styles.dimmedOpacity;
@@ -409,25 +479,44 @@ function labelLines(node: ViewNode, includeMetadata: boolean): string[] {
 }
 
 function truncate(value: string, maxChars: number): string {
-  if (value.length <= maxChars) return value;
+  if (value.length <= maxChars) {
+    return value;
+  }
   return `${value.slice(0, maxChars - 3)}...`;
 }
 
-function getLod(scale: number): "modules" | "module-labels" | "labels" | "metadata" {
-  if (scale < 0.3) return "modules";
-  if (scale < 0.7) return "module-labels";
-  if (scale < 1.5) return "labels";
+function getLod(
+  scale: number,
+): "modules" | "module-labels" | "labels" | "metadata" {
+  if (scale < 0.3) {
+    return "modules";
+  }
+  if (scale < 0.7) {
+    return "module-labels";
+  }
+  if (scale < 1.5) {
+    return "labels";
+  }
   return "metadata";
 }
 
 function isEdgeInBounds(edge: ViewEdge, bounds: Bounds): boolean {
-  if (isPointInBounds(edge.source.x, edge.source.y, bounds)) return true;
-  if (isPointInBounds(edge.target.x, edge.target.y, bounds)) return true;
+  if (isPointInBounds(edge.source.x, edge.source.y, bounds)) {
+    return true;
+  }
+  if (isPointInBounds(edge.target.x, edge.target.y, bounds)) {
+    return true;
+  }
   const x0 = Math.min(edge.source.x, edge.target.x);
   const y0 = Math.min(edge.source.y, edge.target.y);
   const x1 = Math.max(edge.source.x, edge.target.x);
   const y1 = Math.max(edge.source.y, edge.target.y);
-  return !(x1 < bounds.x0 || x0 > bounds.x1 || y1 < bounds.y0 || y0 > bounds.y1);
+  return !(
+    x1 < bounds.x0 ||
+    x0 > bounds.x1 ||
+    y1 < bounds.y0 ||
+    y0 > bounds.y1
+  );
 }
 
 function isPointInBounds(x: number, y: number, bounds: Bounds): boolean {
@@ -444,18 +533,23 @@ function expandBounds(bounds: Bounds, margin: number): Bounds {
 }
 
 function tooltipBackground(background: string): string {
-  if (background === "#fafafa") return "rgba(255, 255, 255, 0.92)";
+  if (background === "#fafafa") {
+    return "rgba(255, 255, 255, 0.92)";
+  }
   return "rgba(15, 15, 20, 0.92)";
 }
 
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-): void {
+type RoundRectArgs = {
+  readonly ctx: CanvasRenderingContext2D;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly radius: number;
+};
+
+function roundRect(args: RoundRectArgs): void {
+  const { ctx, x, y, width, height, radius } = args;
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.lineTo(x + width - radius, y);
