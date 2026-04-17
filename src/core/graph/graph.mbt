@@ -242,6 +242,39 @@ pub fn EdgeKind::from_string(s : String) -> EdgeKind {
 }
 
 ///|
+/// Resolve an edge target against known symbols and modules.
+/// If the target already exists, returns it unchanged. If a `declares` edge
+/// references a target that matches an existing symbol by `(module_id, name)`,
+/// rewrites it to the canonical symbol ID. Returns the pair
+/// `(resolved_id, was_rewritten)`; `was_rewritten` is true only when the ID
+/// changed.
+fn resolve_edge_target(
+  to : String,
+  edge : Edge,
+  modules : Map[String, ModuleNode],
+  symbols : Map[String, SymbolNode],
+  symbol_by_module_name : Map[String, String],
+) -> (String, Bool) {
+  if symbols.contains(to) || modules.contains(to) {
+    return (to, false)
+  }
+  // Try to resolve declares edges against the canonical symbol by (from, name).
+  if edge.kind is Declares {
+    match edge.attrs.get("name") {
+      Some(name) => {
+        let key = edge.from + "\u{1f}" + name
+        match symbol_by_module_name.get(key) {
+          Some(sym_id) => return (sym_id, true)
+          None => ()
+        }
+      }
+      None => ()
+    }
+  }
+  (to, false)
+}
+
+///|
 /// Convert CodeGraph to JSON string following KGF format.
 /// Format:
 /// {
@@ -249,10 +282,65 @@ pub fn EdgeKind::from_string(s : String) -> EdgeKind {
 ///   "symbols": { "id": { "name": "...", "kind": "...", "ns": "...", "module": "..." } },
 ///   "edges": [{ "kind": "...", "from": "...", "to": "...", ...attrs }]
 /// }
+///
+/// Before writing, edge endpoints are reconciled against the node tables:
+/// - `declares` edges whose `to` does not match a symbol ID are remapped to the
+///   canonical symbol by `(from, name)` lookup (KGF scripts often emit
+///   `<file>::<name>` while `attrs def` registers `<file>::<ns>:<name>`).
+/// - Any `to` that still has no matching node is registered as an external
+///   module with `file: null` so consumers see every endpoint in `modules` or
+///   `symbols`.
 pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
-  // Build modules object
-  let modules_obj : Map[String, Json] = {}
+  // Build (module_id, name) → symbol_id lookup for declares-edge normalization.
+  let symbol_by_module_name : Map[String, String] = {}
+  for entry in self.symbols {
+    let s = entry.1
+    let key = s.module_id + "\u{1f}" + s.name
+    // First write wins; later duplicates keep the earliest registration.
+    if !symbol_by_module_name.contains(key) {
+      symbol_by_module_name.set(key, s.id)
+    }
+  }
+
+  // Working copy of modules; receives backfilled external targets.
+  let modules_out : Map[String, ModuleNode] = {}
   for entry in self.modules {
+    modules_out.set(entry.0, entry.1)
+  }
+
+  // Build edges array with normalized endpoints.
+  let edges_arr : Array[Json] = []
+  let mut backfilled_count = 0
+  let backfilled_samples : Array[String] = []
+  for edge in self.edges {
+    let (resolved_to, _) = resolve_edge_target(
+      edge.to, edge, self.modules, self.symbols, symbol_by_module_name,
+    )
+    // Anything still unresolved becomes an external module entry so the
+    // consumer (nodeIndex) finds a node for every endpoint.
+    if !self.symbols.contains(resolved_to) && !modules_out.contains(resolved_to) {
+      modules_out.set(resolved_to, { id: resolved_to, file: None })
+      backfilled_count = backfilled_count + 1
+      if backfilled_samples.length() < 5 {
+        backfilled_samples.push(resolved_to)
+      }
+    }
+    let edge_obj : Map[String, Json] = {}
+    // Attrs first, then canonical fields — canonical fields must win so
+    // attrs like `"kind": "Function"` on a `declares` edge do not clobber
+    // the edge's actual kind.
+    for attr_entry in edge.attrs {
+      edge_obj.set(attr_entry.0, attr_entry.1.to_json())
+    }
+    edge_obj.set("kind", edge.kind.to_string().to_json())
+    edge_obj.set("from", edge.from.to_json())
+    edge_obj.set("to", resolved_to.to_json())
+    edges_arr.push(Json::object(edge_obj))
+  }
+
+  // Build modules object from working copy.
+  let modules_obj : Map[String, Json] = {}
+  for entry in modules_out {
     let id = entry.0
     let m = entry.1
     let file_json : Json = match m.file {
@@ -262,7 +350,7 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
     modules_obj.set(id, { "file": file_json })
   }
 
-  // Build symbols object
+  // Build symbols object.
   let symbols_obj : Map[String, Json] = {}
   for entry in self.symbols {
     let id = entry.0
@@ -279,18 +367,20 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
     symbols_obj.set(id, Json::object(sym_map))
   }
 
-  // Build edges array
-  let edges_arr : Array[Json] = []
-  for edge in self.edges {
-    let edge_obj : Map[String, Json] = {}
-    edge_obj.set("kind", edge.kind.to_string().to_json())
-    edge_obj.set("from", edge.from.to_json())
-    edge_obj.set("to", edge.to.to_json())
-    // Add attrs directly to edge object
-    for attr_entry in edge.attrs {
-      edge_obj.set(attr_entry.0, attr_entry.1.to_json())
+  if backfilled_count > 0 {
+    let mut sample_str = ""
+    for i, s in backfilled_samples {
+      if i > 0 {
+        sample_str = sample_str + ", "
+      }
+      sample_str = sample_str + s
     }
-    edges_arr.push(Json::object(edge_obj))
+    println(
+      "[codegraph] warning: " +
+      backfilled_count.to_string() +
+      " edge target(s) not registered as modules or symbols; auto-registered as external modules. samples: " +
+      sample_str,
+    )
   }
 
   let result : Json = {

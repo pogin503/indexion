@@ -386,3 +386,142 @@ test "JSON handles symbol without doc" {
   guard restored.get_symbol("pkg/foo#bar") is Some(s) else { return }
   assert_eq(s.doc, None)
 }
+
+///|
+/// Invariant: every edge endpoint in the JSON output must exist as a key in
+/// either `modules` or `symbols`. Consumers (e.g. the graph-canvas React
+/// renderer) drop edges with unknown endpoints, so any producer-side drift is a
+/// silent data loss.
+fn assert_edges_reference_known_nodes(graph : CodeGraph) -> Unit raise {
+  let json_str = graph.to_json_string()
+  guard CodeGraph::from_json_string(json_str) is Some(parsed) else {
+    fail("round-trip parse failed")
+  }
+  let modules = parsed.get_modules()
+  let symbols = parsed.get_symbols()
+  for edge in parsed.get_edges() {
+    let from_ok = modules.contains(edge.from) || symbols.contains(edge.from)
+    let to_ok = modules.contains(edge.to) || symbols.contains(edge.to)
+    if !from_ok {
+      fail("edge.from '" + edge.from + "' not in modules/symbols")
+    }
+    if !to_ok {
+      fail("edge.to '" + edge.to + "' not in modules/symbols")
+    }
+  }
+}
+
+///|
+test "to_json_string: declares edge 'to' is remapped to canonical symbol id" {
+  // Simulates the KGF-emitted shape: symbol registered via `attrs def` with
+  // id `<file>::<ns>:<name>`, declares edge emitted with `<file>::<name>`.
+  let graph = CodeGraph::new()
+  let _ = graph.get_or_add_module("src/foo.mbt", file=Some("src/foo.mbt"))
+  let _ = graph.get_or_add_symbol(
+    "src/foo.mbt::value:bar",
+    name="bar",
+    kind="Function",
+    ns="value",
+    module_id="src/foo.mbt",
+  )
+  let attrs : Map[String, String] = {}
+  attrs.set("name", "bar")
+  attrs.set("kind", "Function")
+  graph.add_edge(Declares, "src/foo.mbt", "src/foo.mbt::bar", attrs~)
+  assert_edges_reference_known_nodes(graph)
+  let json_str = graph.to_json_string()
+  // The canonical id must appear as the edge target.
+  assert_true(json_str.contains("\"src/foo.mbt::value:bar\""))
+  // The unnormalized form must NOT appear as a node/edge key.
+  assert_false(json_str.contains("\"src/foo.mbt::bar\""))
+}
+
+///|
+test "to_json_string: attrs cannot clobber canonical edge fields" {
+  // declares edges carry attrs like `kind=Function`; these must not overwrite
+  // the edge's own kind/from/to in the emitted JSON.
+  let graph = CodeGraph::new()
+  let _ = graph.get_or_add_symbol(
+    "m::value:f",
+    name="f",
+    kind="Function",
+    ns="value",
+    module_id="m",
+  )
+  let attrs : Map[String, String] = {}
+  attrs.set("name", "f")
+  attrs.set("kind", "Function")
+  attrs.set("from", "hijacked")
+  attrs.set("to", "hijacked")
+  graph.add_edge(Declares, "m", "m::value:f", attrs~)
+  let json_str = graph.to_json_string()
+  guard CodeGraph::from_json_string(json_str) is Some(parsed) else {
+    fail("round-trip parse failed")
+  }
+  let edges = parsed.get_edges()
+  assert_eq(edges.length(), 1)
+  assert_true(edges[0].kind is Declares)
+  assert_eq(edges[0].from, "m")
+  assert_eq(edges[0].to, "m::value:f")
+}
+
+///|
+test "to_json_string: unknown edge targets are backfilled as external modules" {
+  // module_depends_on edges often target external packages (e.g. `pkg:...`)
+  // that the KGF semantics layer did not register as modules. to_json_string
+  // must add them to `modules` so every endpoint resolves.
+  let graph = CodeGraph::new()
+  let _ = graph.get_or_add_module("src/mymod.pkg", file=Some("src/mymod.pkg"))
+  let attrs : Map[String, String] = {}
+  attrs.set("via", "some/external/pkg")
+  attrs.set("dep_kind", "value")
+  graph.add_edge(
+    ModuleDependsOn, "src/mymod.pkg", "pkg:some/external/pkg", attrs~,
+  )
+  assert_edges_reference_known_nodes(graph)
+  guard CodeGraph::from_json_string(graph.to_json_string()) is Some(parsed) else {
+    fail("round-trip parse failed")
+  }
+  guard parsed.get_module("pkg:some/external/pkg") is Some(m) else {
+    fail("external module not backfilled")
+  }
+  assert_eq(m.file, None)
+}
+
+///|
+test "to_json_string: full invariant holds for mixed graph" {
+  let graph = CodeGraph::new()
+  let _ = graph.get_or_add_module("a.mbt", file=Some("a.mbt"))
+  let _ = graph.get_or_add_module("b.mbt", file=Some("b.mbt"))
+  let _ = graph.get_or_add_symbol(
+    "a.mbt::value:hello",
+    name="hello",
+    kind="Function",
+    ns="value",
+    module_id="a.mbt",
+  )
+  let _ = graph.get_or_add_symbol(
+    "b.mbt::type:Thing",
+    name="Thing",
+    kind="Struct",
+    ns="type",
+    module_id="b.mbt",
+  )
+  let declares_attrs : Map[String, String] = {}
+  declares_attrs.set("name", "hello")
+  declares_attrs.set("kind", "Function")
+  graph.add_edge(Declares, "a.mbt", "a.mbt::hello", attrs=declares_attrs)
+  let struct_attrs : Map[String, String] = {}
+  struct_attrs.set("name", "Thing")
+  struct_attrs.set("kind", "Struct")
+  graph.add_edge(Declares, "b.mbt", "b.mbt::Thing", attrs=struct_attrs)
+  let dep_attrs : Map[String, String] = {}
+  dep_attrs.set("via", "b")
+  graph.add_edge(ModuleDependsOn, "a.mbt", "b.mbt", attrs=dep_attrs)
+  let ext_attrs : Map[String, String] = {}
+  ext_attrs.set("via", "moonbitlang/core")
+  graph.add_edge(
+    ModuleDependsOn, "a.mbt", "pkg:moonbitlang/core", attrs=ext_attrs,
+  )
+  assert_edges_reference_known_nodes(graph)
+}
