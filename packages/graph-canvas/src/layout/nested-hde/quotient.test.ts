@@ -77,7 +77,12 @@ describe("groupByCluster", () => {
       ["c", "Y"],
     ]);
     const groups = groupByCluster([a, b, c], assignment);
-    expect(groups.get("X")?.map((n) => n.id).sort()).toEqual(["a", "b"]);
+    expect(
+      groups
+        .get("X")
+        ?.map((n) => n.id)
+        .sort(),
+    ).toEqual(["a", "b"]);
     expect(groups.get("Y")?.map((n) => n.id)).toEqual(["c"]);
   });
 
@@ -110,7 +115,9 @@ describe("buildQuotientGraph", () => {
     const graph = mkGraph([a, b, c], []);
     const { graph: quotient } = buildQuotientGraph(graph, assignment);
     expect(quotient.nodes.length).toBe(2);
-    expect(new Set(quotient.nodes.map((n) => n.id))).toEqual(new Set(["X", "Y"]));
+    expect(new Set(quotient.nodes.map((n) => n.id))).toEqual(
+      new Set(["X", "Y"]),
+    );
   });
 
   it("drops self-edges (within-cluster edges contribute nothing)", () => {

@@ -46,7 +46,13 @@ describe("fibonacciPoints", () => {
 
   it("collapses to the origin for count=1 or radius=0", () => {
     expect(fibonacciPoints(1, 100)).toEqual([ORIGIN]);
-    expect(fibonacciPoints(5, 0)).toEqual([ORIGIN, ORIGIN, ORIGIN, ORIGIN, ORIGIN]);
+    expect(fibonacciPoints(5, 0)).toEqual([
+      ORIGIN,
+      ORIGIN,
+      ORIGIN,
+      ORIGIN,
+      ORIGIN,
+    ]);
   });
 
   it("every point lies on the requested sphere radius", () => {

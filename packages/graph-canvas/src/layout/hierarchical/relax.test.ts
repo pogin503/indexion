@@ -24,7 +24,10 @@ const SETTINGS: IntraRelaxSettings = {
   maxStep: 0.04,
 };
 
-function mkNode(id: string, pos: { x: number; y: number; z: number }): ViewNode {
+function mkNode(
+  id: string,
+  pos: { x: number; y: number; z: number },
+): ViewNode {
   return {
     id,
     label: id,
