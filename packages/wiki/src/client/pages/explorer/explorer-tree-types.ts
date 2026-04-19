@@ -24,17 +24,6 @@ export type FolderNode = {
 
 export type DepEdge = { from: string; to: string };
 
-export type Box3D = {
-  x: number;
-  y: number;
-  z: number;
-  w: number;
-  h: number;
-  d: number;
-};
-
-export type Size3 = { w: number; h: number; d: number };
-
 export type GraphTree = {
   nodes: Map<string, FolderNode>;
   edges: DepEdge[];

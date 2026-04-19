@@ -81,7 +81,6 @@ export const en: Dict = {
   loading_wiki: "Loading wiki\u2026",
   loading_page: "Loading page\u2026",
   loading_graph: "Loading graph data\u2026",
-  loading_3d_graph: "Loading 3D graph\u2026",
   connecting: "Connecting to server\u2026",
   error_label: "Error",
   error_connect_heading: "Cannot connect to server",

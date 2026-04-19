@@ -86,8 +86,6 @@ export const ja: Dict = {
   loading_page: "\u30da\u30fc\u30b8\u3092\u8aad\u307f\u8fbc\u307f\u4e2d\u2026",
   loading_graph:
     "\u30b0\u30e9\u30d5\u30c7\u30fc\u30bf\u3092\u8aad\u307f\u8fbc\u307f\u4e2d\u2026",
-  loading_3d_graph:
-    "3D\u30b0\u30e9\u30d5\u3092\u8aad\u307f\u8fbc\u307f\u4e2d\u2026",
   connecting: "\u30b5\u30fc\u30d0\u30fc\u306b\u63a5\u7d9a\u4e2d\u2026",
   error_label: "\u30a8\u30e9\u30fc",
   error_connect_heading:

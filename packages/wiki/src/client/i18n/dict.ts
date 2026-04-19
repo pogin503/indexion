@@ -85,7 +85,6 @@ export type Dict = {
   readonly loading_wiki: string;
   readonly loading_page: string;
   readonly loading_graph: string;
-  readonly loading_3d_graph: string;
   readonly connecting: string;
   readonly error_label: string;
   readonly error_connect_heading: string;

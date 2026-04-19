@@ -5,7 +5,7 @@ import type {
   FolderNode,
   DepEdge,
   GraphTree,
-} from "./graph-types.ts";
+} from "./explorer-tree-types.ts";
 
 const packageOf = (moduleId: string): string => {
   const idx = moduleId.lastIndexOf("/");

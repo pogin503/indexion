@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useApiCall } from "../../lib/hooks.ts";
 import { client } from "../../lib/client.ts";
-import { fetchGraph, fetchDigestIndex } from "@indexion/api-client";
+import { fetchGraph } from "@indexion/api-client";
+import { GraphCanvas, type ViewNode } from "@indexion/graph-canvas";
 import { LoadingSpinner } from "../../components/shared/loading-spinner.tsx";
 import { ErrorPanel } from "../../components/shared/error-panel.tsx";
 import {
@@ -10,87 +11,53 @@ import {
   CardTitle,
   CardDescription,
 } from "../../components/ui/card.tsx";
-import type { FolderNode } from "./graph-types.ts";
-import { buildTree } from "./graph-data.ts";
-import { buildScene } from "./graph-scene.ts";
 import { useDict } from "../../i18n/index.ts";
 
 export const GraphPage = (): React.JSX.Element => {
   const d = useDict();
   const graphState = useApiCall((signal) => fetchGraph(client, signal));
-  const indexState = useApiCall((signal) => fetchDigestIndex(client, signal));
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [hovered, setHovered] = useState<FolderNode | null>(null);
-  const [focused, setFocused] = useState<FolderNode | null>(null);
+  const [focused, setFocused] = useState<ViewNode | null>(null);
 
-  const tree = useMemo(() => {
-    if (graphState.status !== "success") {
-      return null;
-    }
-    return buildTree(
-      graphState.data,
-      indexState.status === "success" ? indexState.data : [],
-    );
-  }, [graphState, indexState]);
+  const handleNodeClick = useCallback((node: ViewNode) => setFocused(node), []);
 
-  const handleHover = useCallback((n: FolderNode | null) => setHovered(n), []);
-  const handleClick = useCallback((n: FolderNode | null) => setFocused(n), []);
-
-  useEffect(() => {
-    if (!tree || !containerRef.current) {
-      return;
-    }
-    return buildScene({
-      container: containerRef.current,
-      tree,
-      onHover: handleHover,
-      onClick: handleClick,
-    });
-  }, [tree, handleHover, handleClick]);
-
-  const loading =
-    graphState.status !== "success" || indexState.status === "loading";
-  const error =
-    (graphState.status === "error" && graphState.error) ||
-    (indexState.status === "error" && indexState.error) ||
-    null;
-
-  if (loading) {
+  if (graphState.status === "error") {
+    return <ErrorPanel message={graphState.error} />;
+  }
+  if (graphState.status !== "success") {
     return <LoadingSpinner message={d.loading_graph} />;
   }
-  if (error) {
-    return <ErrorPanel message={error} />;
-  }
 
-  const active = hovered ?? focused;
+  const graph = graphState.data;
+  const nodeCount =
+    Object.keys(graph.modules).length + Object.keys(graph.symbols).length;
+  const edgeCount = graph.edges.length;
 
   return (
     <div className="relative grid h-full grid-rows-[auto_1fr]">
       <div className="flex items-center border-b px-4 py-2">
         <span className="text-sm text-muted-foreground">
-          {tree ? d.graph_stats(tree.nodes.size, tree.edges.length) : ""}
+          {d.graph_stats(nodeCount, edgeCount)}
         </span>
       </div>
-      {active && (
+      {focused && (
         <Card className="pointer-events-none absolute right-4 top-14 z-10 max-w-xs">
           <CardHeader className="p-3">
-            <CardTitle className="font-mono text-sm">{active.path}</CardTitle>
-            <CardDescription className="font-mono">
-              {d.graph_detail(
-                active.fileCount,
-                active.symbolCount,
-                active.functionCount,
-              )}
-            </CardDescription>
-            {active.children.length > 0 && (
-              <CardDescription>
-                {d.graph_subdirs(active.children.length)}
+            <CardTitle className="font-mono text-sm">{focused.label}</CardTitle>
+            <CardDescription className="font-mono">{focused.kind}</CardDescription>
+            {focused.file && (
+              <CardDescription className="font-mono text-xs">
+                {focused.file}
               </CardDescription>
             )}
           </CardHeader>
         </Card>
       )}
-      <div ref={containerRef} className="overflow-hidden" />
+      <GraphCanvas
+        graph={graph}
+        clustering="directory"
+        layoutStrategy="hierarchy"
+        onNodeClick={handleNodeClick}
+      />
     </div>
   );
 };

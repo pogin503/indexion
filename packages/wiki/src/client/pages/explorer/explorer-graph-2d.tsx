@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { CodeGraph, IndexedFunction } from "@indexion/api-client";
-import { buildTree } from "../graph/graph-data.ts";
-import type { GraphTree, FolderNode } from "../graph/graph-types.ts";
+import { buildTree } from "./explorer-tree-data.ts";
+import type { GraphTree, FolderNode } from "./explorer-tree-types.ts";
 import { MermaidDiagram } from "@indexion/mermaid-viewer";
 import { ScrollArea } from "../../components/ui/scroll-area.tsx";
 
