@@ -39,6 +39,7 @@ export default defineConfig({
         search: "src/webview/search/app.tsx",
         explore: "src/webview/explore/app.tsx",
         "wiki-viewer": "src/webview/wiki-viewer/app.tsx",
+        "wiki-sidebar": "src/webview/wiki-sidebar/app.tsx",
       },
       output: {
         entryFileNames: "[name].js",

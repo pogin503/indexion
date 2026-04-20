@@ -299,7 +299,8 @@
       "indexionWiki": [
         {
           "id": "indexion.wiki",
-          "name": "Pages"
+          "name": "Pages",
+          "type": "webview"
         }
       ]
     }

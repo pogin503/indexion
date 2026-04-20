@@ -8,6 +8,7 @@
 
 import { createContext, useContext } from "react";
 import type { WikiSourceRef } from "@indexion/api-client";
+import type { ColorScheme } from "@indexion/syntax-highlight";
 
 export type WikiContentEnv = {
   /** Render a wiki:// internal link. Receives the page ID (wiki:// prefix stripped). */
@@ -28,6 +29,9 @@ export type WikiContentEnv = {
    * navigation already shows the tree structure).
    */
   readonly relatedPagesLabel: string | null;
+
+  /** Color scheme for syntax highlighting inside code blocks. */
+  readonly colorScheme: ColorScheme;
 };
 
 const WikiContentEnvContext = createContext<WikiContentEnv | null>(null);

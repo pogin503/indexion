@@ -7,14 +7,17 @@
  *   [result summary + clear]
  *   [result tree]
  *
- * Mode toggles work like VSCode's search options (case, word, regex) —
+ * Mode toggles work like VSCode's native search options (case, word, regex) —
  * icon buttons that toggle active state.
  */
 
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback } from "react";
 import type { SearchToWebview, SearchFromWebview, SearchResultItem, SearchMode } from "../../views/search/messages.ts";
 import { usePostMessage, useWebviewReducer } from "../bridge/context.tsx";
 import { StatusMsg } from "../components/status-msg.tsx";
+import { SearchBox, type SearchBoxToggle } from "../components/search-box.tsx";
+import { ResultSummary } from "../components/result-summary.tsx";
+import { useTreeSelect } from "../components/use-tree-select.ts";
 import layout from "../components/sidebar-layout.module.css";
 import styles from "./app.module.css";
 
@@ -158,24 +161,16 @@ export const SearchApp = (): React.JSX.Element => {
     }
   }, [mode, query, postMessage]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        handleSubmit();
-      }
-      if (e.key === "Escape") {
-        dispatch({ type: "clearSearch" });
-      }
-    },
-    [handleSubmit, dispatch],
-  );
-
-  const handleInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      dispatch({ type: "setQuery", value: e.target.value });
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      dispatch({ type: "setQuery", value });
     },
     [dispatch],
   );
+
+  const handleCancel = useCallback(() => {
+    dispatch({ type: "clearSearch" });
+  }, [dispatch]);
 
   const toggleMode = useCallback(
     (id: SearchMode) => {
@@ -184,37 +179,27 @@ export const SearchApp = (): React.JSX.Element => {
     [dispatch],
   );
 
-  // Listen for vsc-tree-select events on the tree element.
-  // vscode-tree-item internally calls stopPropagation on click,
-  // so React onClick never fires. The correct API is vsc-tree-select.
-  // Ref to the vscode-tree custom element for listening to vsc-tree-select events.
-  // Typed as HTMLElement because vscode-elements' VscodeTree type is too strict for ref assignment.
-  const treeRef = useRef<HTMLElement | null>(null);
-  useEffect(() => {
-    const el = treeRef.current;
-    if (!el) {
-      return;
-    }
-    const handler = (e: Event): void => {
-      const detail = (e as CustomEvent).detail as ReadonlyArray<HTMLElement> | undefined;
-      if (!detail || detail.length === 0) {
-        return;
+  const toggles: ReadonlyArray<SearchBoxToggle<SearchMode>> = MODES.map((m) => ({
+    id: m.id,
+    icon: m.icon,
+    title: m.title,
+    active: mode === m.id,
+  }));
+
+  const treeRef = useTreeSelect(
+    (data) => {
+      if (data["filePath"]) {
+        const line = data["line"] ? Number(data["line"]) : undefined;
+        postMessage({
+          type: "openFile",
+          filePath: data["filePath"],
+          line,
+          symbol: data["symbol"],
+        });
       }
-      const selected = detail[0];
-      const filePath = selected.getAttribute("data-file-path");
-      const lineAttr = selected.getAttribute("data-line");
-      const symbol = selected.getAttribute("data-symbol") ?? undefined;
-      if (filePath) {
-        const line = lineAttr ? Number(lineAttr) : undefined;
-        postMessage({ type: "openFile", filePath, line, symbol });
-      }
-    };
-    el.addEventListener("vsc-tree-select", handler);
-    return () => {
-      el.removeEventListener("vsc-tree-select", handler);
-    };
-    // Re-run when results change — tree mounts only when results exist.
-  }, [postMessage, results]);
+    },
+    [postMessage, results],
+  );
 
   const hasResults = results.length > 0;
   const resultCount = results.length;
@@ -248,34 +233,16 @@ export const SearchApp = (): React.JSX.Element => {
 
   return (
     <div className={layout.sidebarRoot}>
-      {/* ── Search input composite (icon + input + toggle buttons in one border) ── */}
-      <div className={styles.searchBox}>
-        <span className={styles.searchBoxIcon}>
-          <vscode-icon name="search" size={16} />
-        </span>
-        <input
-          type="text"
-          className={styles.searchInput}
-          placeholder={currentMode.placeholder}
-          value={query}
-          disabled={!serverReady}
-          onChange={handleInput}
-          onKeyDown={handleKeyDown}
-        />
-        <div className={styles.modeToggles}>
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              title={m.title}
-              className={`${styles.modeToggle} ${mode === m.id ? styles.modeToggleActive : ""}`}
-              onClick={() => toggleMode(m.id)}
-            >
-              <vscode-icon name={m.icon} size={14} />
-            </button>
-          ))}
-        </div>
-      </div>
+      <SearchBox<SearchMode>
+        value={query}
+        onChange={handleQueryChange}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        placeholder={currentMode.placeholder}
+        disabled={!serverReady}
+        toggles={toggles}
+        onToggle={toggleMode}
+      />
 
       {/* ── Progress indicator ── */}
       {searching && <vscode-progress-bar indeterminate className={styles.progressBar} />}
@@ -288,26 +255,15 @@ export const SearchApp = (): React.JSX.Element => {
       {error && <StatusMsg error>{error}</StatusMsg>}
       {searched && !searching && !error && !hasResults && <StatusMsg>No results found.</StatusMsg>}
 
-      {/* ── Result summary ── */}
       {hasResults && (
-        <div className={layout.resultSummarySpaced}>
-          <span>
-            {resultCount} results in {fileCount} files
-          </span>
-          <button type="button" className={layout.textLinkButton} onClick={() => dispatch({ type: "clearSearch" })}>
-            Clear
-          </button>
-        </div>
+        <ResultSummary onClear={() => dispatch({ type: "clearSearch" })}>
+          {resultCount} results in {fileCount} files
+        </ResultSummary>
       )}
 
       {/* ── Results: grouped by file ── */}
       {fileGroups.length > 0 && (
-        <vscode-tree
-          ref={(el: unknown) => {
-            treeRef.current = el as HTMLElement | null;
-          }}
-          className={layout.scrollableTree}
-        >
+        <vscode-tree ref={treeRef} className={layout.scrollableTree}>
           {fileGroups.map((group) => (
             <vscode-tree-item key={group.file} open data-file-path={group.file}>
               <vscode-icon slot="icon-branch" name="file" />

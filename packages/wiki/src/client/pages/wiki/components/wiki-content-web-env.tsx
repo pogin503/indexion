@@ -14,6 +14,7 @@ import {
   type WikiContentEnv,
 } from "./wiki-content-context.tsx";
 import { useDict } from "../../../i18n/index.ts";
+import { useBranding } from "../../../lib/branding-context.tsx";
 import { client } from "../../../lib/client.ts";
 
 type Props = {
@@ -22,6 +23,7 @@ type Props = {
 
 export const WikiContentWebEnv = ({ children }: Props): React.JSX.Element => {
   const d = useDict();
+  const { colorScheme } = useBranding();
 
   const env = useMemo(
     (): WikiContentEnv => ({
@@ -31,8 +33,9 @@ export const WikiContentWebEnv = ({ children }: Props): React.JSX.Element => {
       renderSourceBadge: (source) => <SourceBadge source={source} />,
       sourceFilesLabel: d.wiki_source_files,
       relatedPagesLabel: null,
+      colorScheme,
     }),
-    [d],
+    [d, colorScheme],
   );
 
   const fetchSpec = useCallback(

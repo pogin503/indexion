@@ -1,54 +1,135 @@
 /**
- * @file TreeDataProvider for the Wiki navigation tree.
+ * @file WebviewViewProvider for the wiki sidebar.
  *
- * Same pattern as KGF list: native VSCode tree with command on click.
- * Page content opens in an editor-area WebviewPanel via wikiOpenPage command.
+ * The sidebar presents a nav tree and a search input in a single React app.
+ * The input behaves as a filter: an empty query shows the tree, a non-empty
+ * query shows search hits. The extension host loads nav via `fetchWikiNav`
+ * and search results via `searchWiki`, and delegates page navigation back to
+ * the `indexion.wikiOpenPage` command.
  */
 
 import * as vscode from "vscode";
-import { fetchWikiNav, type HttpClient } from "@indexion/api-client";
-import type { WikiTreeItem } from "./items.ts";
-import { fromNavItem, toTreeItem } from "./items.ts";
+import { fetchWikiNav, searchWiki, type HttpClient } from "@indexion/api-client";
+import type { WikiFromWebview, WikiToWebview } from "./messages.ts";
+import { toWikiSearchHits } from "./messages.ts";
+import { buildWebviewHtml } from "../../extension-host/webview-html.ts";
+import { createWebviewBridge } from "../../extension-host/webview-bridge.ts";
+import { resolveCodiconsUri } from "../../extension-host/codicons.ts";
 
-/** Create the wiki tree data provider. */
-export const createWikiTreeProvider = (
+type Log = { readonly appendLine: (msg: string) => void };
+
+/** Create the wiki sidebar WebviewViewProvider. */
+export const createWikiViewProvider = (
+  extensionUri: vscode.Uri,
   getClient: () => HttpClient | undefined,
-  log?: { readonly appendLine: (msg: string) => void },
-): vscode.TreeDataProvider<WikiTreeItem> & { readonly refresh: () => void } => {
-  const emitter = new vscode.EventEmitter<WikiTreeItem | undefined>();
-  const cache: { pages: ReadonlyArray<WikiTreeItem> } = { pages: [] };
+  log?: Log,
+): vscode.WebviewViewProvider & {
+  readonly notifyServerStatus: (ready: boolean) => void;
+  readonly refresh: () => void;
+} => {
+  const bridge = createWebviewBridge<WikiToWebview>(log);
 
-  const loadNav = async (): Promise<ReadonlyArray<WikiTreeItem>> => {
+  const loadNav = async (): Promise<void> => {
     const client = getClient();
     if (!client) {
-      log?.appendLine("[wiki] loadNav: no client");
-      return [];
+      bridge.post({ type: "error", target: "nav", message: "Server not ready" });
+      return;
     }
+    bridge.post({ type: "loading", target: "nav" });
     const result = await fetchWikiNav(client);
     if (!result.ok) {
-      log?.appendLine(`[wiki] loadNav failed: ${result.error}`);
-      return [];
+      log?.appendLine(`[wiki] nav failed: ${result.error}`);
+      bridge.post({ type: "error", target: "nav", message: result.error });
+      return;
     }
-    log?.appendLine(`[wiki] loadNav: ${result.data.pages.length} pages`);
-    cache.pages = result.data.pages.map(fromNavItem);
-    return cache.pages;
+    log?.appendLine(`[wiki] nav loaded: ${result.data.pages.length} pages`);
+    bridge.post({ type: "navLoaded", nav: result.data });
+  };
+
+  const runSearch = async (query: string): Promise<void> => {
+    const client = getClient();
+    if (!client) {
+      bridge.post({ type: "error", target: "search", message: "Server not ready" });
+      return;
+    }
+    bridge.post({ type: "loading", target: "search" });
+    const result = await searchWiki(client, { query, topK: 20 });
+    if (!result.ok) {
+      log?.appendLine(`[wiki] search failed: ${result.error}`);
+      bridge.post({ type: "error", target: "search", message: result.error });
+      return;
+    }
+    const hits = toWikiSearchHits(result.data as ReadonlyArray<Record<string, unknown>>);
+    log?.appendLine(`[wiki] search "${query}" → ${hits.length} hits`);
+    bridge.post({ type: "searchResults", results: hits });
   };
 
   return {
-    onDidChangeTreeData: emitter.event,
-
-    refresh: () => {
-      loadNav().then(() => emitter.fire(undefined));
+    notifyServerStatus: (ready: boolean) => {
+      bridge.post({ type: "serverStatus", ready });
+      if (ready) {
+        loadNav();
+      }
     },
 
-    getTreeItem: (element: WikiTreeItem): vscode.TreeItem => toTreeItem(element),
+    refresh: () => {
+      loadNav();
+    },
 
-    getChildren: async (element?: WikiTreeItem): Promise<Array<WikiTreeItem>> => {
-      if (!element) {
-        const pages = await loadNav();
-        return [...pages];
-      }
-      return [...element.children.map(fromNavItem)];
+    resolveWebviewView: (view: vscode.WebviewView) => {
+      log?.appendLine("[wiki] resolveWebviewView");
+      view.webview.options = {
+        enableScripts: true,
+        localResourceRoots: [
+          vscode.Uri.joinPath(extensionUri, "dist", "webview"),
+          vscode.Uri.joinPath(extensionUri, "node_modules", "@vscode", "codicons", "dist"),
+        ],
+      };
+
+      const scriptUri = view.webview.asWebviewUri(
+        vscode.Uri.joinPath(extensionUri, "dist", "webview", "wiki-sidebar.js"),
+      );
+      const styleUri = view.webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", "webview", "style.css"));
+      const codiconsUri = resolveCodiconsUri(view.webview, extensionUri);
+
+      view.webview.html = buildWebviewHtml({
+        webview: view.webview,
+        scriptUri,
+        styleUri,
+        codiconsUri,
+        title: "Wiki",
+        allowInlineStyles: true,
+      });
+
+      bridge.attach(view, () => {
+        const ready = getClient() !== undefined;
+        log?.appendLine(`[wiki] webview ready, serverReady=${ready}`);
+        bridge.post({ type: "serverStatus", ready });
+        if (ready) {
+          loadNav();
+        }
+      });
+
+      view.onDidChangeVisibility(() => {
+        if (view.visible && bridge.isReady()) {
+          bridge.post({ type: "serverStatus", ready: getClient() !== undefined });
+        }
+      });
+
+      view.webview.onDidReceiveMessage((msg: WikiFromWebview) => {
+        log?.appendLine(`[wiki] received: ${msg.type}`);
+        switch (msg.type) {
+          case "requestNav":
+            loadNav();
+            break;
+          case "navigate":
+            vscode.commands.executeCommand("indexion.wikiOpenPage", msg.pageId);
+            break;
+          case "search":
+            runSearch(msg.query);
+            break;
+        }
+      });
     },
   };
 };

@@ -101,10 +101,10 @@ describe("activate", () => {
     const registeredTreeIds = registerTreeSpy.mock.calls.map((call) => call[0]);
     expect(registeredTreeIds).toContain("indexion.kgfList");
     expect(registeredTreeIds).toContain("indexion.plans");
-    expect(registeredTreeIds).toContain("indexion.wiki");
 
     const registeredWebviewIds = registerWebviewSpy.mock.calls.map((call) => call[0]);
     expect(registeredWebviewIds).toContain("indexion.search");
+    expect(registeredWebviewIds).toContain("indexion.wiki");
 
     registerTreeSpy.mockRestore();
     registerWebviewSpy.mockRestore();

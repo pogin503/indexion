@@ -11,6 +11,7 @@ import { WikiContent, WikiContentEnvProvider, type WikiContentEnv } from "@index
 import type { WikiPage, WikiSourceRef } from "@indexion/api-client";
 import type { WikiPageToWebview, WikiPageFromWebview } from "../../panels/wiki-page/messages.ts";
 import { usePostMessage, useWebviewReducer } from "../bridge/context.tsx";
+import { useVscodeColorScheme } from "../bridge/use-vscode-color-scheme.ts";
 import { StatusMsg } from "../components/status-msg.tsx";
 import { FileLink } from "../components/file-link.tsx";
 import styles from "./wiki-viewer.module.css";
@@ -59,6 +60,7 @@ export const WikiViewerApp = (): React.JSX.Element => {
   const [state] = useWebviewReducer(wikiViewerReducer, initialState);
   const { page, loading, error, pageVersion } = state;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const colorScheme = useVscodeColorScheme();
 
   useEffect(() => {
     if (pageVersion > 0) {
@@ -96,8 +98,9 @@ export const WikiViewerApp = (): React.JSX.Element => {
       ),
       sourceFilesLabel: "Relevant source files",
       relatedPagesLabel: "Related",
+      colorScheme,
     }),
-    [handleOpenFile, handleNavigate],
+    [handleOpenFile, handleNavigate, colorScheme],
   );
 
   if (loading) {

@@ -1,0 +1,10 @@
+/**
+ * @file Wiki sidebar-specific styles.
+ *
+ * Only a couple of tweaks on top of the shared sidebar layout; the search
+ * box, result summary, and scrollable tree come from shared modules.
+ */
+
+.hitTitle {
+  font-weight: 500;
+}

@@ -1,0 +1,14 @@
+/**
+ * @file Non-module global CSS for the wiki sidebar webview entry.
+ *
+ * Only resets. Panel-specific styles live in wiki-sidebar.module.css and
+ * the shared sidebar-layout / search-box modules.
+ */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}

@@ -12,7 +12,6 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import { MermaidDiagram } from "@indexion/mermaid-viewer";
 import { KgfCodeBlock } from "@indexion/syntax-highlight";
-import { useBranding } from "../../../lib/branding-context.tsx";
 import { useWikiContentEnv } from "./wiki-content-context.tsx";
 import type { WikiPage } from "@indexion/api-client";
 
@@ -22,7 +21,7 @@ type Props = {
 
 export const WikiContent = ({ page }: Props): React.JSX.Element => {
   const env = useWikiContentEnv();
-  const { colorScheme } = useBranding();
+  const { colorScheme } = env;
 
   const renderPre = useCallback(
     (

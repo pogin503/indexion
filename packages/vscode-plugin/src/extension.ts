@@ -9,7 +9,7 @@ import { resolveConfig } from "./config/index.ts";
 import { createKgfListProvider } from "./views/kgf-list/provider.ts";
 import { createSearchViewProvider } from "./views/search/provider.ts";
 import { createPlansProvider } from "./views/plans/provider.ts";
-import { createWikiTreeProvider } from "./views/wiki/provider.ts";
+import { createWikiViewProvider } from "./views/wiki/provider.ts";
 import { createWikiPagePanelManager } from "./panels/wiki-page/panel.ts";
 import { openSettingsPanel } from "./panels/settings/panel.ts";
 import { createExplorePanelManager } from "./views/explore/panel.ts";
@@ -92,9 +92,13 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
   const kgfListProvider = createKgfListProvider(getClient, log);
   vscode.window.registerTreeDataProvider("indexion.kgfList", kgfListProvider);
 
-  // --- Wiki TreeView (same pattern as KGF) ---
-  const wikiTreeProvider = createWikiTreeProvider(getClient, log);
-  vscode.window.registerTreeDataProvider("indexion.wiki", wikiTreeProvider);
+  // --- Wiki sidebar WebviewView (filterable nav + search) ---
+  const wikiViewProvider = createWikiViewProvider(context.extensionUri, getClient, log);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("indexion.wiki", wikiViewProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+  );
 
   // --- Wiki page panel (editor area) ---
   const wikiPanelManager = createWikiPagePanelManager(context, getClient, log);
@@ -104,7 +108,7 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
     const onReady = () => {
       log.appendLine("[activate] server became ready, refreshing views");
       kgfListProvider.refresh();
-      wikiTreeProvider.refresh();
+      wikiViewProvider.notifyServerStatus(true);
       searchProvider.notifyServerStatus(true);
       explorePanelManager.notifyServerStatus(true);
     };
@@ -120,6 +124,7 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
         log.appendLine("[activate] server went down, notifying views");
         searchProvider.notifyServerStatus(false);
         explorePanelManager.notifyServerStatus(false);
+        wikiViewProvider.notifyServerStatus(false);
       }),
     );
 
@@ -149,7 +154,7 @@ export const activate = (context: vscode.ExtensionContext): ExtensionApi => {
 
   context.subscriptions.push(
     vscode.commands.registerCommand("indexion.wikiRefresh", () => {
-      wikiTreeProvider.refresh();
+      wikiViewProvider.refresh();
     }),
   );
 
