@@ -3,6 +3,86 @@
 /// SoT for argument parsing functions used across CLI commands.
 
 ///|
+/// Read a single string option from `argparse.Matches`. Returns the
+/// supplied default when the option is absent or empty. SoT for the
+/// `let get_str = ...` snippet that previously appeared in every CLI.
+pub fn arg_str(
+  matches : @argparse.Matches,
+  key : String,
+  default_ : String,
+) -> String {
+  match matches.values.get(key) {
+    Some(arr) => if arr.length() > 0 { arr[0] } else { default_ }
+    None => default_
+  }
+}
+
+///|
+/// Read a single integer option from `argparse.Matches`, parsing via
+/// `parse_int`. Returns the supplied default when the option is absent
+/// or empty.
+pub fn arg_int(
+  matches : @argparse.Matches,
+  key : String,
+  default_ : Int,
+) -> Int {
+  match matches.values.get(key) {
+    Some(arr) =>
+      if arr.length() > 0 {
+        parse_int(arr[0])
+      } else {
+        default_
+      }
+    None => default_
+  }
+}
+
+///|
+/// Read a single double option from `argparse.Matches`, parsing via
+/// `parse_double`.
+pub fn arg_double(
+  matches : @argparse.Matches,
+  key : String,
+  default_ : Double,
+) -> Double {
+  match matches.values.get(key) {
+    Some(arr) =>
+      if arr.length() > 0 {
+        parse_double(arr[0])
+      } else {
+        default_
+      }
+    None => default_
+  }
+}
+
+///|
+/// Read a repeated option (`action=Append`) from `argparse.Matches`.
+/// Returns the array as-is, or an empty array when the option is absent.
+pub fn arg_list(
+  matches : @argparse.Matches,
+  key : String,
+) -> Array[String] {
+  match matches.values.get(key) {
+    Some(arr) => arr
+    None => []
+  }
+}
+
+///|
+/// Read a flag (boolean) option from `argparse.Matches`.
+pub fn arg_flag(
+  matches : @argparse.Matches,
+  key : String,
+  default_ : Bool,
+) -> Bool {
+  match matches.flags.get(key) {
+    Some(v) => v
+    None => default_
+  }
+}
+
+///|
 /// Parse a double from string.
 /// Handles negative numbers and decimal points.
 pub fn parse_double(s : String) -> Double {
