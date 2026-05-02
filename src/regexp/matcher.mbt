@@ -363,7 +363,47 @@ fn try_collect_repeat_positions_fast(
       None => return None
     }
   }
-  // All simple -- run a greedy loop inline
+  // Quantifier::One is the case for plain `(a|b|c)` (no `*`, `+`, `?`). The
+  // caller will couple our return with surrounding context (e.g. a trailing
+  // `\b` or any other element) and try each end position via backtracking,
+  // so we MUST surface every alternative that matches at this position —
+  // not just the first. The earlier "greedy loop, first-match-wins" form
+  // would commit to the shortest matching alternative and silently fail when
+  // the surrounding context required a longer one (e.g. `\b(you|your)\b`
+  // against "your": `you` fits but the trailing word boundary fails, and
+  // `your` was never considered).
+  if quantifier is One {
+    let positions : Array[Int] = []
+    let seen : Map[Int, Bool] = {}
+    for i, alt in alternatives {
+      let width = alt_widths[i]
+      if pos + width > input_chars.length() {
+        continue
+      }
+      match
+        try_match_simple_sequence(alt, input_chars, pos, case_insensitive) {
+        Some(end_pos) =>
+          if !seen.contains(end_pos) {
+            seen.set(end_pos, true)
+            positions.push(end_pos)
+          }
+        None => ()
+      }
+    }
+    if positions.length() == 0 {
+      return Some([])
+    }
+    if !lazy_ {
+      // Greedy: try longest end position first.
+      positions.sort_by(fn(a, b) { b.compare(a) })
+    } else {
+      positions.sort_by(fn(a, b) { a.compare(b) })
+    }
+    return Some(positions)
+  }
+  // For repeated quantifiers (`*`, `+`, `?`, `{n,m}`) we still drive a greedy
+  // loop, but record every alternative's end position at each step rather
+  // than only the first match.
   let max_repeats = match quantifier {
     Between(_, m) => m
     Exactly(n) => n
@@ -547,6 +587,20 @@ fn match_group(
 
 ///|
 /// Enumerates all possible end positions for a single group match.
+///
+/// "Single match" here corresponds to Group(.., One) in the parse tree: the
+/// caller will try each returned end position against the surrounding
+/// context (e.g. a trailing `\b` or another element) and pick the first that
+/// lets the rest of the pattern succeed. So this function MUST surface every
+/// position the group could legitimately end at, not just one.
+///
+/// The previous implementation walked a `target` loop but only ever called
+/// match_elements_backtrack with the original `pos`, then `break`ed on the
+/// first success. For a group like `(you|your)` against "your" that returned
+/// only the end position of the first matching alternative (`you` → 3),
+/// hiding the longer `your` (→ 4). When the surrounding `\b` then failed at
+/// pos 3, the engine had nothing left to try and the entire pattern reported
+/// no match, producing the alternation-overlap bug.
 fn enumerate_group_end_positions(
   elements : Array[QuantifiedElement],
   input_chars : Array[Char],
@@ -555,21 +609,57 @@ fn enumerate_group_end_positions(
 ) -> Array[Int] {
   let positions : Array[Int] = []
   let seen : Map[Int, Bool] = {}
-  for target = pos; target <= input_chars.length(); target = target + 1 {
-    if seen.contains(target) {
-      continue
+  let push_unique = fn(end : Int) -> Unit {
+    if !seen.contains(end) {
+      seen.set(end, true)
+      positions.push(end)
     }
-    match
-      match_elements_backtrack(elements, 0, input_chars, pos, case_insensitive) {
-      Some(end) => {
-        if !seen.contains(end) {
-          seen.set(end, true)
-          positions.push(end)
+  }
+
+  // Group bodies that are exactly a single Alternation with quantifier One
+  // (the parse tree shape for `(a|b|c)`) need every alternative's end
+  // position. The fast path covers fixed-width alternatives; otherwise we
+  // recurse into each alternative explicitly.
+  if elements.length() == 1 {
+    let qe = elements[0]
+    match (qe.element, qe.quantifier) {
+      (Alternation(alts), One) => {
+        match
+          try_collect_repeat_positions_fast(
+            alts, One, false, input_chars, pos, case_insensitive,
+          ) {
+          Some(fast_positions) => {
+            for end in fast_positions {
+              push_unique(end)
+            }
+            return positions
+          }
+          None => ()
         }
-        break
+        for alt in alts {
+          match
+            match_elements_backtrack(
+              alt, 0, input_chars, pos, case_insensitive,
+            ) {
+            Some(end) => push_unique(end)
+            None => ()
+          }
+        }
+        // Sort by descending length so the caller (greedy) tries the longest
+        // first. Lazy alternation isn't expressible at this layer; if a use
+        // case appears we'll take a `lazy_` flag.
+        positions.sort_by(fn(a, b) { b.compare(a) })
+        return positions
       }
-      None => break
+      _ => ()
     }
+  }
+
+  // Generic fallback: try the group as a single match and record one end.
+  match
+    match_elements_backtrack(elements, 0, input_chars, pos, case_insensitive) {
+    Some(end) => push_unique(end)
+    None => ()
   }
   if elements.length() == 1 {
     // Optimization: single-element group -- enumerate like a simple element
