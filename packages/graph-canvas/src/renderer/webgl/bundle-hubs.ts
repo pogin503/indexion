@@ -55,7 +55,9 @@ export function buildBundleHubs(args: {
   const memberLists = new Map<string, ViewNode[]>();
   for (const node of nodes) {
     const cluster = nodeCluster.get(node.id);
-    if (!cluster) continue;
+    if (!cluster) {
+      continue;
+    }
     const list = memberLists.get(cluster);
     if (list) {
       list.push(node);
@@ -65,9 +67,13 @@ export function buildBundleHubs(args: {
   }
   const centreFor = (cluster: string): Vec3 => {
     const shell = shellByPath.get(cluster);
-    if (shell) return shell.centre;
+    if (shell) {
+      return shell.centre;
+    }
     const cached = centroidCache.get(cluster);
-    if (cached) return cached;
+    if (cached) {
+      return cached;
+    }
     const members = memberLists.get(cluster) ?? [];
     let cx = 0;
     let cy = 0;
@@ -86,7 +92,9 @@ export function buildBundleHubs(args: {
   const out = new Map<string, NodeHub>();
   for (const node of nodes) {
     const cluster = nodeCluster.get(node.id);
-    if (!cluster) continue;
+    if (!cluster) {
+      continue;
+    }
     out.set(node.id, { centre: centreFor(cluster), path: cluster });
   }
   return out;

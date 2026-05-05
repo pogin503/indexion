@@ -114,8 +114,12 @@ export function relaxNeighbours(graph: ViewGraph, node: ViewNode): void {
 }
 
 function clampStep(v: number): number {
-  if (v > MAX_STEP) return MAX_STEP;
-  if (v < -MAX_STEP) return -MAX_STEP;
+  if (v > MAX_STEP) {
+    return MAX_STEP;
+  }
+  if (v < -MAX_STEP) {
+    return -MAX_STEP;
+  }
   return v;
 }
 

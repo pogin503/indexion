@@ -223,7 +223,10 @@ type PerimArgs = {
   readonly vertLen: number;
 };
 
-function perimeterPoint(args: PerimArgs): { readonly x: number; readonly y: number } {
+function perimeterPoint(args: PerimArgs): {
+  readonly x: number;
+  readonly y: number;
+} {
   const { s, xLeft, xRight, yTop, yBot, horizLen, vertLen } = args;
   // Walk: top edge → right edge → bottom edge → left edge.
   let remaining = s;
@@ -332,9 +335,7 @@ function orderByAdjacency(
  *  ANYWHERE under that path (including its own owned leaves and any
  *  descendant clusters' leaves). This is the natural "size" of a
  *  cluster for a treemap. */
-export function computeWeights(
-  args: WeightArgs,
-): Map<string, number> {
+export function computeWeights(args: WeightArgs): Map<string, number> {
   const { roots, childrenOf, ownedNodes } = args;
   const cache = new Map<string, number>();
   const visit = (path: string): number => {

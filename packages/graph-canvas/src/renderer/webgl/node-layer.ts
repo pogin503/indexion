@@ -58,7 +58,10 @@ export class NodeLayer {
   private readonly dummyScale = new Vector3();
   private readonly dummyPos = new Vector3();
 
-  constructor(args: { readonly ctx: SceneContext; readonly settings: NodeRenderSettings }) {
+  constructor(args: {
+    readonly ctx: SceneContext;
+    readonly settings: NodeRenderSettings;
+  }) {
     this.ctx = args.ctx;
     this.settings = args.settings;
     // InstancedMesh multiplies material.color by the per-instance
@@ -199,7 +202,11 @@ export class NodeLayer {
         this.dummyScale.setScalar(0);
         this.dummyPos.set(node.x, node.y, node.z);
         this.dummyQuat.identity();
-        this.dummyMatrix.compose(this.dummyPos, this.dummyQuat, this.dummyScale);
+        this.dummyMatrix.compose(
+          this.dummyPos,
+          this.dummyQuat,
+          this.dummyScale,
+        );
         mesh.setMatrixAt(i, this.dummyMatrix);
         color.copy(this.ctx.bgColor);
         mesh.setColorAt(i, color);
@@ -227,9 +234,12 @@ export class NodeLayer {
       const cluster = nodeCluster?.get(node.id);
       const baseColor = cluster ? clusterColor(cluster) : this.ctx.fgColor;
       color.copy(this.ctx.bgColor).lerp(baseColor, 0.35 + 0.45 * importance);
-      if (selection.selected.has(node.id)) {
+      const isSelected = selection.selected.has(node.id);
+      const isHovered = hoverNode?.id === node.id;
+      if (isSelected) {
         color.lerp(this.ctx.selectionColor, 0.85);
-      } else if (hoverNode?.id === node.id) {
+      }
+      if (!isSelected && isHovered) {
         color.lerp(this.ctx.highlightColor, 0.7);
       }
       if (selection.focusCenter && !selection.focusNeighbors.has(node.id)) {

@@ -287,7 +287,9 @@ export class ClusterLabelLayer {
   private setChipText(chip: HTMLElement, text: string, path: string): void {
     const dot = chip.children[0] as HTMLElement | undefined;
     const label = chip.children[1] as HTMLElement | undefined;
-    if (!dot || !label) return;
+    if (!dot || !label) {
+      return;
+    }
     const c = clusterColor(topLevelOf(path));
     const r = Math.round(c.r * 255);
     const g = Math.round(c.g * 255);
@@ -298,9 +300,11 @@ export class ClusterLabelLayer {
     }
   }
 
-  private projectToScreen(
-    pos: { readonly x: number; readonly y: number; readonly z: number },
-  ): { readonly x: number; readonly y: number } | null {
+  private projectToScreen(pos: {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+  }): { readonly x: number; readonly y: number } | null {
     this.projVec.set(pos.x, pos.y, pos.z);
     this.projVec.project(this.ctx.camera);
     if (this.projVec.z < -1 || this.projVec.z > 1) {
@@ -315,7 +319,12 @@ export class ClusterLabelLayer {
 
 // ─── helpers ─────────────────────────────────────────────────────
 
-type Box = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
+type Box = {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+};
 
 function intersectsAny(box: Box, others: readonly Box[]): boolean {
   for (const o of others) {
@@ -335,7 +344,7 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
 }
 
 function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
+  return Math.max(lo, Math.min(hi, v));
 }
 
 function pixelScale(ctx: SceneContext): number {
@@ -374,9 +383,15 @@ function scorePriority(shell: ClusterShell, projectedPx: number): number {
  *  their last meaningful segment + parent so the chip stays short
  *  but still locates the group. */
 function displayName(path: string): string {
-  if (path === "__isolates__") return "isolates";
-  if (path.startsWith("__isolates_") && path.endsWith("__")) return "isolates";
-  if (path.startsWith("kmeans-")) return `cluster ${path.slice(7)}`;
+  if (path === "__isolates__") {
+    return "isolates";
+  }
+  if (path.startsWith("__isolates_") && path.endsWith("__")) {
+    return "isolates";
+  }
+  if (path.startsWith("kmeans-")) {
+    return `cluster ${path.slice(7)}`;
+  }
   let stripped = path;
   for (const prefix of ["mod:", "kind:", "dir:", "c:"]) {
     if (stripped.startsWith(prefix)) {
@@ -400,6 +415,8 @@ function abbreviatePath(s: string): string {
 }
 
 function truncate(s: string, max: number): string {
-  if (s.length <= max) return s;
+  if (s.length <= max) {
+    return s;
+  }
   return s.slice(0, max - 1) + "…";
 }

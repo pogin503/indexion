@@ -43,6 +43,7 @@ export default tseslint.config(
       "**/vite.*.config.*",
       "**/.vscode-test/**",
       "**/*.d.ts",
+      "tests/integration/**/output/**",
     ],
   },
 

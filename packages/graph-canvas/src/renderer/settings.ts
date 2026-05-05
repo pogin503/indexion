@@ -45,7 +45,7 @@ export const DEFAULT_RENDER_SETTINGS: RenderSettings = {
     // identity AND borders providing geometric separation, the fill
     // can sit much fainter and still convey "tinted region". Higher
     // values made the fill dominate at near zoom and obscured nodes.
-    opacityPeak: 0.20,
+    opacityPeak: 0.2,
     densityGain: 3,
   },
   shell: {
@@ -67,7 +67,7 @@ export const DEFAULT_RENDER_SETTINGS: RenderSettings = {
     // zoom. 0.30 gives a faint web at overview that thickens to a
     // readable structure when zoomed in, without ever becoming
     // dominant.
-    opacity: 0.30,
+    opacity: 0.3,
     bezierSegments: 12,
     bundleStrength: 0.65,
     // Short = bottom 40%, Long = top 80% of length distribution.

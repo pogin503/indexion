@@ -41,7 +41,10 @@ export class ClusterFillLayer {
   private readonly dummyScale = new Vector3();
   private readonly dummyPos = new Vector3();
 
-  constructor(args: { readonly ctx: SceneContext; readonly settings: ClusterFillRenderSettings }) {
+  constructor(args: {
+    readonly ctx: SceneContext;
+    readonly settings: ClusterFillRenderSettings;
+  }) {
     this.ctx = args.ctx;
     this.settings = args.settings;
     const geom = new PlaneGeometry(1, 1);
@@ -141,7 +144,9 @@ export class ClusterFillLayer {
    *  this via the same shell ids so each node knows whether its
    *  cluster is currently in patch-mode (suppress me) or detail-mode
    *  (show me). Returned as a Map keyed by cluster path. */
-  computePatchVisibility(shells: readonly ClusterShell[]): ReadonlyMap<string, number> {
+  computePatchVisibility(
+    shells: readonly ClusterShell[],
+  ): ReadonlyMap<string, number> {
     const cam = this.ctx.camera.position;
     const px = pixelScale(this.ctx.camera, this.ctx.height);
     const { belowPx, abovePx } = this.settings;

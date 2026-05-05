@@ -11,7 +11,13 @@
  * Adding a strategy = adding a new entry to LAYOUT_STRATEGIES.
  */
 
-import type { ClusterShell, LayoutSettings, Vec3, ViewGraph, ViewNode } from "../types.ts";
+import type {
+  ClusterShell,
+  LayoutSettings,
+  Vec3,
+  ViewGraph,
+  ViewNode,
+} from "../types.ts";
 import { computeHierarchy } from "./hierarchy.ts";
 import { applyHdeLayout, volumeFinaliser } from "./hde.ts";
 import { applyHierarchicalLayout } from "./hierarchical/index.ts";
@@ -67,7 +73,6 @@ export type StrategyResult = {
    *  were all volumetric. */
   readonly dimensionality?: LayoutDimensionality;
 };
-
 
 export const LAYOUT_STRATEGIES: readonly LayoutStrategy[] = [
   {
@@ -161,7 +166,9 @@ function buildVolumeClusterShells(
   const groups = new Map<string, ViewNode[]>();
   for (const node of graph.nodes) {
     const cluster = clusterOf.get(node.id);
-    if (!cluster) continue;
+    if (!cluster) {
+      continue;
+    }
     const list = groups.get(cluster);
     if (list) {
       list.push(node);
@@ -171,7 +178,9 @@ function buildVolumeClusterShells(
   }
   const out: ClusterShell[] = [];
   for (const [path, members] of groups) {
-    if (members.length === 0) continue;
+    if (members.length === 0) {
+      continue;
+    }
     let cx = 0;
     let cy = 0;
     let cz = 0;
@@ -186,9 +195,7 @@ function buildVolumeClusterShells(
     const dists = members
       .map((m) =>
         Math.sqrt(
-          (m.x - centreX) ** 2 +
-            (m.y - centreY) ** 2 +
-            (m.z - centreZ) ** 2,
+          (m.x - centreX) ** 2 + (m.y - centreY) ** 2 + (m.z - centreZ) ** 2,
         ),
       )
       .sort((a, b) => a - b);

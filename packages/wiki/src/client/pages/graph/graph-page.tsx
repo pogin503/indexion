@@ -43,7 +43,9 @@ export const GraphPage = (): React.JSX.Element => {
         <Card className="pointer-events-none absolute right-4 top-14 z-10 max-w-xs">
           <CardHeader className="p-3">
             <CardTitle className="font-mono text-sm">{focused.label}</CardTitle>
-            <CardDescription className="font-mono">{focused.kind}</CardDescription>
+            <CardDescription className="font-mono">
+              {focused.kind}
+            </CardDescription>
             {focused.file && (
               <CardDescription className="font-mono text-xs">
                 {focused.file}

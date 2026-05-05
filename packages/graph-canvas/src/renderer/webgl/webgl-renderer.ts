@@ -109,7 +109,10 @@ export class WebGlRenderer {
       controls: this.ctx.controls,
       viewport: { width: init.width, height: init.height },
     });
-    this.nodeLayer = new NodeLayer({ ctx: this.ctx, settings: init.settings.node });
+    this.nodeLayer = new NodeLayer({
+      ctx: this.ctx,
+      settings: init.settings.node,
+    });
     this.edgeLayer = new EdgeLayer({
       ctx: this.ctx,
       settings: init.settings.edge,
@@ -117,7 +120,10 @@ export class WebGlRenderer {
       width: init.width,
       height: init.height,
     });
-    this.shellLayer = new ShellLayer({ ctx: this.ctx, settings: init.settings.shell });
+    this.shellLayer = new ShellLayer({
+      ctx: this.ctx,
+      settings: init.settings.shell,
+    });
     this.clusterFillLayer = new ClusterFillLayer({
       ctx: this.ctx,
       settings: init.settings.clusterFill,
@@ -132,7 +138,10 @@ export class WebGlRenderer {
       container: init.container,
       theme: init.theme,
     });
-    this.labels = new LabelLayer({ container: init.container, theme: init.theme });
+    this.labels = new LabelLayer({
+      container: init.container,
+      theme: init.theme,
+    });
     this.picker = new Picker({
       ctx: this.ctx,
       nodeAccessor: () => ({
@@ -250,7 +259,8 @@ export class WebGlRenderer {
     // nodes inside clusters that are currently rendered as patches.
     // Single source of truth for the patch/detail crossfade — both
     // layers read the same map.
-    const patchVisibility = this.clusterFillLayer.computePatchVisibility(clusterShells);
+    const patchVisibility =
+      this.clusterFillLayer.computePatchVisibility(clusterShells);
 
     const nodeCluster = args.nodeCluster;
     this.nodeLayer.rebuild({

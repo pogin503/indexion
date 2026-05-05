@@ -460,10 +460,18 @@ describe("hierarchical spec: leaf-cell density", () => {
     let minY = Infinity;
     let maxY = -Infinity;
     for (const n of leaves) {
-      if (n.x < minX) minX = n.x;
-      if (n.x > maxX) maxX = n.x;
-      if (n.y < minY) minY = n.y;
-      if (n.y > maxY) maxY = n.y;
+      if (n.x < minX) {
+        minX = n.x;
+      }
+      if (n.x > maxX) {
+        maxX = n.x;
+      }
+      if (n.y < minY) {
+        minY = n.y;
+      }
+      if (n.y > maxY) {
+        maxY = n.y;
+      }
     }
     const bboxArea = (maxX - minX) * (maxY - minY);
     const cellArea = Math.PI * dense.radius * dense.radius;

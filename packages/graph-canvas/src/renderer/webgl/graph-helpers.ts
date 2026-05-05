@@ -7,7 +7,12 @@
  * each layer's responsibility.
  */
 
-import type { FilterResult, ViewEdge, ViewGraph, ViewNode } from "../../types.ts";
+import type {
+  FilterResult,
+  ViewEdge,
+  ViewGraph,
+  ViewNode,
+} from "../../types.ts";
 
 export function filterVisibleNodes(
   graph: ViewGraph,
@@ -46,7 +51,9 @@ export function computeDegreeMap(
 
 /** Largest degree in the visible subgraph. Floored at 4 so single-edge
  *  graphs don't read every node as a "hub". */
-export function computeDegreeCap(degreeMap: ReadonlyMap<string, number>): number {
+export function computeDegreeCap(
+  degreeMap: ReadonlyMap<string, number>,
+): number {
   let cap = 4;
   for (const v of degreeMap.values()) {
     if (v > cap) {

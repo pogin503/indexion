@@ -92,7 +92,11 @@ describe("startRafLoop", () => {
     // re-evaluated every frame the loop runs. Without this, detail
     // freezes between user events.
     const renderer = fakeRenderer();
-    const ref = { current: renderer as unknown as Parameters<typeof startRafLoop>[0]["current"] };
+    const ref = {
+      current: renderer as unknown as Parameters<
+        typeof startRafLoop
+      >[0]["current"],
+    };
     const handle = startRafLoop(ref);
     // Initial kick scheduled the first frame.
     raf.tick();
@@ -110,7 +114,11 @@ describe("startRafLoop", () => {
     const renderer = fakeRenderer();
     // Override tickControls so the camera signature stays stable.
     renderer.tickControls.mockImplementation(() => {});
-    const ref = { current: renderer as unknown as Parameters<typeof startRafLoop>[0]["current"] };
+    const ref = {
+      current: renderer as unknown as Parameters<
+        typeof startRafLoop
+      >[0]["current"],
+    };
     const handle = startRafLoop(ref);
     // Pump enough frames for the quiet-counter to trip.
     for (let i = 0; i < 8; i++) {
@@ -127,7 +135,11 @@ describe("startRafLoop", () => {
 
   it("does not call renderer methods after stop", () => {
     const renderer = fakeRenderer();
-    const ref = { current: renderer as unknown as Parameters<typeof startRafLoop>[0]["current"] };
+    const ref = {
+      current: renderer as unknown as Parameters<
+        typeof startRafLoop
+      >[0]["current"],
+    };
     const handle = startRafLoop(ref);
     handle.stop();
     raf.tick();

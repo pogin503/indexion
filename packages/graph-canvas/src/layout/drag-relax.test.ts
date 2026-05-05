@@ -195,7 +195,9 @@ describe("relaxNeighbours", () => {
           fan[i]!.y - fan[j]!.y,
           fan[i]!.z - fan[j]!.z,
         );
-        if (d > maxSep) maxSep = d;
+        if (d > maxSep) {
+          maxSep = d;
+        }
       }
     }
     // REPEL_DISTANCE = 60, so the equilibrium ring should have

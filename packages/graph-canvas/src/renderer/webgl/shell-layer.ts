@@ -37,7 +37,10 @@ export class ShellLayer {
   private readonly ringNormal = new Vector3(0, 0, 1);
   private readonly toCam = new Vector3();
 
-  constructor(args: { readonly ctx: SceneContext; readonly settings: ShellRenderSettings }) {
+  constructor(args: {
+    readonly ctx: SceneContext;
+    readonly settings: ShellRenderSettings;
+  }) {
     this.ctx = args.ctx;
     this.settings = args.settings;
     const geom = new RingGeometry(
@@ -62,8 +65,14 @@ export class ShellLayer {
   rebuild(shells: readonly ClusterShell[]): void {
     const cam = this.ctx.camera.position;
     const px = pixelScale(this.ctx.camera, this.ctx.height);
-    const { fadeInPx, peakLoPx, peakHiPx, fadeOutPx, ringWidthFrac, targetBandPx } =
-      this.settings;
+    const {
+      fadeInPx,
+      peakLoPx,
+      peakHiPx,
+      fadeOutPx,
+      ringWidthFrac,
+      targetBandPx,
+    } = this.settings;
     const visible: { shell: ClusterShell; alpha: number }[] = [];
     for (const s of shells) {
       const dx = s.centre.x - cam.x;
@@ -97,7 +106,11 @@ export class ShellLayer {
     for (let i = 0; i < visible.length; i++) {
       const { shell: s, alpha } = visible[i]!;
       this.dummyPos.set(s.centre.x, s.centre.y, s.centre.z);
-      this.toCam.set(cam.x - s.centre.x, cam.y - s.centre.y, cam.z - s.centre.z);
+      this.toCam.set(
+        cam.x - s.centre.x,
+        cam.y - s.centre.y,
+        cam.z - s.centre.z,
+      );
       const dist = Math.max(1e-3, this.toCam.length());
       this.toCam.multiplyScalar(1 / dist);
       this.dummyQuat.setFromUnitVectors(this.ringNormal, this.toCam);

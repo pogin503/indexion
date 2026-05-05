@@ -272,10 +272,13 @@ export const BrandingProvider = ({
       document.head.append(link);
     }
     link.href = faviconUrl;
-    if (faviconUrl.endsWith(".svg")) {
-      link.type = "image/svg+xml";
-    } else if (faviconUrl.endsWith(".ico")) {
-      link.type = "image/x-icon";
+    const mimeTypes: Record<string, string> = {
+      ".svg": "image/svg+xml",
+      ".ico": "image/x-icon",
+    };
+    const ext = Object.keys(mimeTypes).find((e) => faviconUrl.endsWith(e));
+    if (ext) {
+      link.type = mimeTypes[ext];
     } else {
       link.removeAttribute("type");
     }

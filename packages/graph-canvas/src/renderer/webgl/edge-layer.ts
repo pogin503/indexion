@@ -41,10 +41,7 @@ import {
   edgeDirectedness,
   type DirectednessContext,
 } from "./arrow-directedness.ts";
-import {
-  edgeImportance,
-  type EdgeImportanceContext,
-} from "./importance.ts";
+import { edgeImportance, type EdgeImportanceContext } from "./importance.ts";
 import { buildBundleHubs, getCorridorControl } from "./bundle-hubs.ts";
 import { clusterColor } from "./cluster-palette.ts";
 import { ensureInstanceCapacity } from "./instanced-pool.ts";
@@ -238,7 +235,8 @@ export class EdgeLayer {
       // dominates the read; same-cluster edges keep their full
       // tint so each cluster's internal connectivity is legible.
       const strongEnd = sameCluster ? 0.85 : 0.45;
-      const tint = (0.20 + (strongEnd - 0.20) * importance) * lengthWeight * nearFade;
+      const tint =
+        (0.2 + (strongEnd - 0.2) * importance) * lengthWeight * nearFade;
 
       // Pick endpoint colours.
       //   - same-cluster edges: tinted by that cluster's palette
@@ -251,12 +249,8 @@ export class EdgeLayer {
       //     so they still render as legible neutral lines.
       const srcBase = srcHub ? clusterColor(srcHub.path) : this.ctx.fgColor;
       const tgtBase = tgtHub ? clusterColor(tgtHub.path) : this.ctx.fgColor;
-      const tmpSrc = new Color()
-        .copy(this.ctx.bgColor)
-        .lerp(srcBase, tint);
-      const tmpTgt = new Color()
-        .copy(this.ctx.bgColor)
-        .lerp(tgtBase, tint);
+      const tmpSrc = new Color().copy(this.ctx.bgColor).lerp(srcBase, tint);
+      const tmpTgt = new Color().copy(this.ctx.bgColor).lerp(tgtBase, tint);
 
       // Selection / hover dimming applies to both endpoints.
       const isFocused =
@@ -283,7 +277,11 @@ export class EdgeLayer {
         cy = (ay + by) * 0.5;
         cz = (az + bz) * 0.5;
       } else {
-        const corridor = getCorridorControl(corridorCache, srcHub.centre, tgtHub.centre);
+        const corridor = getCorridorControl(
+          corridorCache,
+          srcHub.centre,
+          tgtHub.centre,
+        );
         const smx = (ax + bx) * 0.5;
         const smy = (ay + by) * 0.5;
         const smz = (az + bz) * 0.5;
@@ -339,7 +337,13 @@ export class EdgeLayer {
 
       const directedness = edgeDirectedness(edge.kind, directednessContext);
       if (directedness >= 0.35 && proximity > 0.2) {
-        this.placeArrow({ index: arrowIndex, edge, importance, directedness, color });
+        this.placeArrow({
+          index: arrowIndex,
+          edge,
+          importance,
+          directedness,
+          color,
+        });
         arrowIndex++;
       }
     }
@@ -420,7 +424,6 @@ export class EdgeLayer {
     this.arrowMesh.geometry.dispose();
     (this.arrowMesh.material as MeshBasicMaterial).dispose();
   }
-
 }
 
 function writeHidden(

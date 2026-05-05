@@ -9,7 +9,9 @@ description: Release process for indexion. Use when the user asks to release, de
 
 - `.gitmodules` has `pushRecurseSubmodules = on-demand` for all submodules
 - `scripts/sync-version.sh` exists and syncs `moon.mod.json` → `version.mbt` + `marketplace.json` + `plugin.json`
-- All tests pass: `moon test --target native`
+- All MoonBit tests pass: `moon test --target native`
+- All TypeScript tests pass: `bun run test`
+- All lint checks pass: `bun run lint`
 
 ## Version Convention
 
