@@ -28,9 +28,10 @@ export const KgfCodeBlock = (props: Props): React.JSX.Element => {
   const lang = useMemo(() => extractLang(props.className), [props.className]);
   const code = String(props.children).replace(/\n$/, "");
   const { segments } = useKgfHighlight(lang, code, colorScheme);
+  const className = ["indexion-code", rest.className].filter(Boolean).join(" ");
 
   return (
-    <code className={rest.className}>
+    <code className={className}>
       {segments.map((seg, i) =>
         seg.color ? (
           <span key={i} style={{ color: seg.color }}>

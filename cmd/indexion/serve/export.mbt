@@ -114,6 +114,21 @@ pub async fn run_export(matches : @argparse.Matches) -> Unit {
   @digest_cli.log_progress("Copying SPA assets from " + static_dir + "...")
   let asset_count = copy_dir_recursive(static_dir, output_dir)
   @digest_cli.log_progress("Copied " + asset_count.to_string() + " SPA files.")
+  // Static Pages cannot hit the live /api/wiki/assets handler, so publish
+  // project wiki assets at the same API-shaped path used in config JSON.
+  let wiki_asset_count = match
+    @config.resolve_project_indexion_dir(
+      serve_config.workspace_dir,
+      "wiki/assets",
+    ) {
+    Some(dir) => copy_dir_recursive(dir, output_dir + "/api/wiki/assets")
+    None => 0
+  }
+  if wiki_asset_count > 0 {
+    @digest_cli.log_progress(
+      "Copied " + wiki_asset_count.to_string() + " wiki asset files.",
+    )
+  }
   // 2. Build or load digest data (graph + index) — reuses serve logic
   let digest_cli_config = make_digest_cli_config(serve_config)
   let digest_config = @digest_cli.build_digest_config(digest_cli_config)

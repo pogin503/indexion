@@ -19,6 +19,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import type { Branding, BrandingColorSet } from "@indexion/api-client";
+import { resolveAppAssetUrl } from "./asset-url.ts";
 
 // ---------------------------------------------------------------------------
 // Built-in colour presets (SoT for default dark/light themes)
@@ -83,6 +84,7 @@ export type ColorSchemePreference = "dark" | "light" | "system";
 export type BrandingContextValue = {
   readonly title: string | null;
   readonly logoUrl: string | null;
+  readonly faviconUrl: string | null;
   readonly logoAlt: string | null;
   /** Resolved scheme (always "dark" or "light") */
   readonly colorScheme: ColorScheme;
@@ -258,10 +260,32 @@ export const BrandingProvider = ({
     }
   }, [branding?.title]);
 
+  useEffect(() => {
+    const faviconUrl = resolveAppAssetUrl(branding?.faviconUrl ?? null);
+    if (!faviconUrl) {
+      return;
+    }
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.append(link);
+    }
+    link.href = faviconUrl;
+    if (faviconUrl.endsWith(".svg")) {
+      link.type = "image/svg+xml";
+    } else if (faviconUrl.endsWith(".ico")) {
+      link.type = "image/x-icon";
+    } else {
+      link.removeAttribute("type");
+    }
+  }, [branding?.faviconUrl]);
+
   const value = useMemo<BrandingContextValue>(
     () => ({
       title: branding?.title ?? null,
-      logoUrl: branding?.logoUrl ?? null,
+      logoUrl: resolveAppAssetUrl(branding?.logoUrl ?? null),
+      faviconUrl: resolveAppAssetUrl(branding?.faviconUrl ?? null),
       logoAlt: branding?.logoAlt ?? null,
       colorScheme: scheme,
       colorSchemePreference: pref,

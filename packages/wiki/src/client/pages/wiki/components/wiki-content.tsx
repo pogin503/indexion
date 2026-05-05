@@ -42,7 +42,7 @@ export const WikiContent = ({ page }: Props): React.JSX.Element => {
         return <>{props.children}</>;
       }
       return (
-        <pre {...props} className="overflow-x-auto rounded-lg bg-muted p-4">
+        <pre {...props} className="indexion-code-pre overflow-x-auto">
           {props.children}
         </pre>
       );

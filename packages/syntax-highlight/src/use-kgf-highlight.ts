@@ -115,15 +115,38 @@ async function resolveUniversal(fetchSpec: FetchKgfSpec): Promise<CacheEntry> {
 
 export type ColorScheme = "dark" | "light";
 
-/**
- * FNV-1a hash → deterministic HSL color for a token kind.
- *
- * Dark theme:  lightness 55-70%, saturation 55-80%  (bright on dark bg)
- * Light theme: lightness 25-40%, saturation 55-80%  (dark on light bg)
- *
- * Hue and saturation are identical across themes so the same token kind
- * keeps its colour identity; only lightness is flipped.
- */
+const TOKEN_PALETTES: Record<ColorScheme, readonly string[]> = {
+  dark: [
+    "#7dd3fc",
+    "#93c5fd",
+    "#c4b5fd",
+    "#f0abfc",
+    "#f9a8d4",
+    "#fca5a5",
+    "#fdba74",
+    "#fde68a",
+    "#bef264",
+    "#86efac",
+    "#5eead4",
+    "#67e8f9",
+  ],
+  light: [
+    "#0369a1",
+    "#1d4ed8",
+    "#6d28d9",
+    "#a21caf",
+    "#be185d",
+    "#b91c1c",
+    "#c2410c",
+    "#a16207",
+    "#4d7c0f",
+    "#15803d",
+    "#0f766e",
+    "#0e7490",
+  ],
+};
+
+/** FNV-1a hash → deterministic, contrast-checked token color. */
 function colorForKind(kind: string, scheme: ColorScheme): string {
   const FNV_OFFSET = 0x811c9dc5;
   const FNV_PRIME = 0x01000193;
@@ -131,11 +154,8 @@ function colorForKind(kind: string, scheme: ColorScheme): string {
   for (let i = 0; i < kind.length; i++) {
     h = Math.imul(h ^ kind.charCodeAt(i), FNV_PRIME) >>> 0;
   }
-  const hue = h % 360;
-  const sat = 55 + ((h >>> 8) % 25);
-  const lightBase = scheme === "dark" ? 55 : 25;
-  const light = lightBase + ((h >>> 16) % 15);
-  return `hsl(${hue},${sat}%,${light}%)`;
+  const palette = TOKEN_PALETTES[scheme];
+  return palette[h % palette.length]!;
 }
 
 // ─── Types ──────────────────────────────────────────────

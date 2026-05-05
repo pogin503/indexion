@@ -111,3 +111,47 @@ html.light {
   overflow-x: auto;
   max-width: 100%;
 }
+
+.prose pre.indexion-code-pre {
+  margin: 1.25rem 0;
+  border: 1px solid color-mix(in oklch, var(--color-border) 82%, transparent);
+  border-radius: 0.5rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--color-muted) 72%, var(--color-background)),
+      color-mix(in oklch, var(--color-background) 88%, black)
+    );
+  color: var(--color-foreground);
+  padding: 1rem;
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 7%, transparent);
+}
+
+.prose pre.indexion-code-pre code.indexion-code {
+  display: block;
+  min-width: max-content;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  text-shadow: none;
+}
+
+.prose code.indexion-code:not(pre code) {
+  border: 1px solid color-mix(in oklch, var(--color-border) 80%, transparent);
+  border-radius: 0.25rem;
+  background: color-mix(in oklch, var(--color-muted) 72%, transparent);
+  color: var(--color-foreground);
+  padding: 0.1rem 0.3rem;
+  font-size: 0.875em;
+}
+
+html.light .prose pre.indexion-code-pre {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--color-muted) 70%, white),
+      color-mix(in oklch, var(--color-background) 92%, black)
+    );
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 70%, transparent);
+}

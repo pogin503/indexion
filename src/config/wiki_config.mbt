@@ -93,6 +93,7 @@ pub fn WikiColorConfig::to_json(self : WikiColorConfig) -> Json {
 pub struct WikiFileConfig {
   title : String?
   logo_url : String?
+  favicon_url : String?
   logo_alt : String?
   default_color_scheme : String?
   locale : String?
@@ -105,6 +106,7 @@ pub fn WikiFileConfig::empty() -> WikiFileConfig {
   {
     title: None,
     logo_url: None,
+    favicon_url: None,
     logo_alt: None,
     default_color_scheme: None,
     locale: None,
@@ -127,6 +129,7 @@ pub fn parse_wiki_section_key(
   match key {
     "title" => { ..config, title: Some(v) }
     "logo_url" => { ..config, logo_url: Some(v) }
+    "favicon_url" => { ..config, favicon_url: Some(v) }
     "logo_alt" => { ..config, logo_alt: Some(v) }
     "default_color_scheme" => { ..config, default_color_scheme: Some(v) }
     "locale" => { ..config, locale: Some(v) }
@@ -143,6 +146,7 @@ pub fn merge_wiki_configs(
   {
     title: or_opt(primary.title, fallback.title),
     logo_url: or_opt(primary.logo_url, fallback.logo_url),
+    favicon_url: or_opt(primary.favicon_url, fallback.favicon_url),
     logo_alt: or_opt(primary.logo_alt, fallback.logo_alt),
     default_color_scheme: or_opt(
       primary.default_color_scheme,
@@ -207,6 +211,13 @@ pub fn WikiFileConfig::to_branding_json(self : WikiFileConfig) -> Json {
     },
   )
   obj.set(
+    "faviconUrl",
+    match or_opt(self.favicon_url, self.logo_url) {
+      Some(v) => resolve_logo_url(v).to_json()
+      None => Json::null()
+    },
+  )
+  obj.set(
     "logoAlt",
     match self.logo_alt {
       Some(v) => v.to_json()
@@ -245,6 +256,17 @@ pub fn load_wiki_from_json_root(root : Map[String, Json]) -> WikiFileConfig {
         Some(v) =>
           if v.length() > 0 {
             config = { ..config, logo_url: Some(v) }
+          }
+        None => ()
+      }
+    None => ()
+  }
+  match wiki_obj.get("favicon_url") {
+    Some(value) =>
+      match parse_json_string(value) {
+        Some(v) =>
+          if v.length() > 0 {
+            config = { ..config, favicon_url: Some(v) }
           }
         None => ()
       }

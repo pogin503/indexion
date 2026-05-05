@@ -38,6 +38,7 @@ strategy = "hnsw"
 [wiki]
 title = "indexion DeepWiki"
 logo_url = "logo.svg"                 # resolved to /api/wiki/assets/logo.svg
+favicon_url = "logo.svg"              # resolved to /api/wiki/assets/logo.svg
 logo_alt = "indexion"
 default_color_scheme = "system"
 locale = "auto"

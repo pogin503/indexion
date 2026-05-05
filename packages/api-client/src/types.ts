@@ -160,6 +160,7 @@ export type Branding = {
   readonly defaultColorScheme: string | null;
   readonly locale: string | null;
   readonly logoUrl: string | null;
+  readonly faviconUrl: string | null;
   readonly logoAlt: string | null;
   readonly colors: {
     readonly dark: BrandingColorSet;
