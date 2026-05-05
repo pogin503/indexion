@@ -1,0 +1,80 @@
+{
+  "language": "c",
+  "lift": {
+    "scalars": {
+      "int": "Int",
+      "long": "Int",
+      "short": "Int",
+      "char": "Int",
+      "float": "Float",
+      "double": "Float",
+      "_Bool": "Bool",
+      "bool": "Bool",
+      "void": "Unit"
+    },
+    "type_wraps": [],
+    "rule_lifts": {
+      "StructDecl": "IRStruct",
+      "EnumDecl": "IREnum",
+      "FunctionDecl": "IRFn",
+      "Field": "IRStructField",
+      "Param": "IRParam",
+      "TypedefDecl": "IRTypeAlias"
+    },
+    "body_delimiters": [
+      "{",
+      "}"
+    ],
+    "structural_rules": {}
+  },
+  "lower": {
+    "scalars": {
+      "String": "char *",
+      "Float": "double",
+      "Int": "int",
+      "Bool": "_Bool",
+      "Unit": "void"
+    },
+    "type_wraps": [],
+    "comment_prefix": "// ",
+    "preamble_template": "{{comment_prefix}}AUTO-GENERATED via `indexion kgf transcribe`: {{source_lang}} -> {{target_lang}}\n{{comment_prefix}}STUB \u2014 function bodies are CONVERSION-class gaps.\n#include <stdlib.h>\n\n",
+    "no_template_template": "{{comment_prefix}}{{unresolved_marker}}no_template for rule={{rule}}\n",
+    "emit_templates": {
+      "IRStruct": "struct {{id_text}} {\n    {{fields}};\n};\ntypedef struct {{id_text}} {{id_text}};\n",
+      "IRStructField": "{{type}} {{id_text}}",
+      "IREnum": "enum {{id_text}} {\n    {{variants}}\n};\ntypedef enum {{id_text}} {{id_text}};\n",
+      "IRFn": "{{return}} {{id_text}}({{params}}) {{body_text}}\n",
+      "IRParam": "{{type}} {{id_text}}",
+      "IRTypeAlias": "typedef {{rhs}} {{id_text}};\n"
+    },
+    "emit_order": [
+      "IRTypeAlias",
+      "IREnum",
+      "IRStruct",
+      "IRFn"
+    ],
+    "text_replace_pairs": [
+      {
+        "open": "Array<",
+        "close": ">",
+        "template": "%s *"
+      },
+      {
+        "open": "Optional<",
+        "close": ">",
+        "template": "%s *"
+      }
+    ],
+    "collect_separators": {
+      "fields": ";\n    ",
+      "params": ", ",
+      "variants": ",\n    "
+    },
+    "variant_case_style": "screaming",
+    "regex_replace": [
+      { "pattern": "\\blet\\b", "replacement": "" },
+      { "pattern": ":\\s*\\([^)]*\\)\\s*=>\\s*[A-Za-z_][A-Za-z0-9_]*", "replacement": ": void *" },
+      { "pattern": "\\([^)]*\\)\\s*=>\\s*[A-Za-z_][A-Za-z0-9_]*", "replacement": "void *" }
+    ]
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "language": "python",
+  "lift": {
+    "scalars": {
+      "int": "Int",
+      "float": "Float",
+      "bool": "Bool",
+      "str": "String",
+      "None": "Unit",
+      "Any": "@@UNRESOLVED@@Any"
+    },
+    "type_wraps": [],
+    "rule_lifts": {
+      "ClassDef": "IRStruct",
+      "FunctionDef": "IRFn",
+      "AsyncFunctionDef": "IRFn",
+      "Parameter": "IRParam"
+    },
+    "structural_rules": {}
+  },
+  "lower": {
+    "scalars": {
+      "String": "str",
+      "Float": "float",
+      "Int": "int",
+      "Bool": "bool",
+      "Unit": "None"
+    },
+    "type_wraps": [],
+    "comment_prefix": "# ",
+    "preamble_template": "{{comment_prefix}}AUTO-GENERATED via `indexion kgf transcribe`: {{source_lang}} -> {{target_lang}}\n{{comment_prefix}}STUB — function bodies are CONVERSION-class gaps; structure is mechanical.\n\n",
+    "no_template_template": "{{comment_prefix}}{{unresolved_marker}}no_template for rule={{rule}}\n",
+    "emit_templates": {
+      "IREnum": "from enum import Enum\nclass {{id_text}}(Enum):\n    {{variants}}\n",
+      "IRStruct": "from dataclasses import dataclass\n@dataclass\nclass {{id_text}}:\n    {{fields}}\n",
+      "IRStructField": "{{id_text}}: {{type}}",
+      "IRFn": "def {{id_text}}({{params}}) -> {{return}}:{{body_inner_text}}\n",
+      "IRParam": "{{id_text}}: {{type}}"
+    },
+    "emit_order": [
+      "IREnum",
+      "IRStruct",
+      "IRFn"
+    ],
+    "text_replace_pairs": [
+      {
+        "open": "Optional<",
+        "close": ">",
+        "template": "%s | None"
+      },
+      {
+        "open": "Array<",
+        "close": ">",
+        "template": "list[%s]"
+      }
+    ],
+    "collect_separators": {
+      "fields": "\n    ",
+      "params": ", ",
+      "variants": "\n    "
+    },
+    "variant_case_style": "screaming",
+    "regex_replace": [
+      { "pattern": "\\blet\\s+", "replacement": "" },
+      { "pattern": ";", "replacement": "" },
+      { "pattern": "\\?\\?", "replacement": " or " },
+      { "pattern": "\\|\\|", "replacement": " or " },
+      { "pattern": "&&", "replacement": " and " },
+      { "pattern": "\\$\\{", "replacement": "{" },
+      { "pattern": "\\bfalse\\b", "replacement": "False" },
+      { "pattern": "\\btrue\\b", "replacement": "True" },
+      { "pattern": "\\bnull\\b", "replacement": "None" },
+      { "pattern": "\\bundefined\\b", "replacement": "None" },
+      { "pattern": "!([A-Za-z_][A-Za-z0-9_]*\\([A-Za-z0-9_, ]*\\))", "replacement": "not $1" },
+      { "pattern": "([A-Za-z_][A-Za-z0-9_.]*)\\s*==\\s*(\"[A-Za-z0-9_ ]*\")\\s*\\?\\s*(\"[A-Za-z0-9_ ]*\")\\s*:\\s*(\"[A-Za-z0-9_ ]*\")", "replacement": "$3 if $1 == $2 else $4" },
+      { "pattern": "\\bif\\s*\\(([A-Za-z0-9_.= <>!\"]+)\\)\\s+return\\b", "replacement": "if $1: return" },
+      { "pattern": "\\)\\s*\\{", "replacement": "):" },
+      { "pattern": "\\n[ \\t]*\\}", "replacement": "" }
+    ]
+  }
+}

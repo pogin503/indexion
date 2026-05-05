@@ -1,0 +1,67 @@
+{
+  "language": "javascript",
+  "lift": {
+    "scalars": {},
+    "type_wraps": [],
+    "rule_lifts": {
+      "ClassDecl": "IRStruct",
+      "FunctionDecl": "IRFn",
+      "Param": "IRParam"
+    },
+    "body_delimiters": [
+      "{",
+      "}"
+    ],
+    "structural_rules": {},
+    "limits_comment": "JS has no static type system; lift carries no scalar info."
+  },
+  "lower": {
+    "scalars": {
+      "String": "/* String */",
+      "Float": "/* Float */",
+      "Int": "/* Int */",
+      "Bool": "/* Bool */",
+      "Unit": "undefined"
+    },
+    "type_wraps": [],
+    "comment_prefix": "// ",
+    "preamble_template": "{{comment_prefix}}AUTO-GENERATED via `indexion kgf transcribe`: {{source_lang}} -> {{target_lang}}\n{{comment_prefix}}STUB \u2014 function bodies are CONVERSION-class gaps; structure is mechanical.\n\n",
+    "no_template_template": "{{comment_prefix}}{{unresolved_marker}}no_template for rule={{rule}}\n",
+    "emit_templates": {
+      "IRStruct": "export class {{id_text}} {\n  {{fields}}\n}\n",
+      "IRStructField": "{{id_text}};",
+      "IRFn": "export function {{id_text}}({{params}}) {{body_text}}\n",
+      "IRParam": "{{id_text}}"
+    },
+    "emit_order": [
+      "IRStruct",
+      "IRFn"
+    ],
+    "collect_separators": {
+      "fields": "\n  ",
+      "params": ", "
+    },
+    "regex_replace": [
+      {
+        "pattern": ":\\s*[A-Z][A-Za-z0-9_]*\\s*\\[\\]",
+        "replacement": ""
+      },
+      {
+        "pattern": ":\\s*[A-Z][A-Za-z0-9_]*\\s*\\|\\s*\"[a-z]+\"",
+        "replacement": ""
+      },
+      {
+        "pattern": ":\\s*[A-Z][A-Za-z0-9_]*\\s*\\|\\s*null",
+        "replacement": ""
+      },
+      {
+        "pattern": ":\\s*[A-Z][A-Za-z0-9_]*",
+        "replacement": ""
+      },
+      {
+        "pattern": "\\s+as\\s+[A-Z][A-Za-z0-9_]*",
+        "replacement": ""
+      }
+    ]
+  }
+}

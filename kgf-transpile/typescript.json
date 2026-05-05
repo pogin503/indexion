@@ -1,0 +1,162 @@
+{
+  "language": "typescript",
+  "lift": {
+    "scalars": {
+      "string": "String",
+      "number": "Float",
+      "boolean": "Bool",
+      "null": "Unit",
+      "undefined": "Unit",
+      "void": "Unit",
+      "any": "@@UNRESOLVED@@Any",
+      "unknown": "@@UNRESOLVED@@Unknown"
+    },
+    "type_wraps": [
+      {
+        "source_suffix": "[]",
+        "target_template": "Array<%s>"
+      },
+      {
+        "source_suffix": "|null",
+        "target_template": "Optional<%s>"
+      },
+      {
+        "source_suffix": " | null",
+        "target_template": "Optional<%s>"
+      }
+    ],
+    "rule_lifts": {
+      "TypeDecl": "IRTypeAlias",
+      "InterfaceDecl": "IRStruct",
+      "InterfaceHeader": "IRStructHeader",
+      "PropertySig": "IRStructField",
+      "FunctionDecl": "IRFn",
+      "Param": "IRParam",
+      "ExportDecl": "IRVisibility",
+      "ImportNamed": "IRImport"
+    },
+    "module_aliases": {
+      "node:fs": "fs",
+      "node:crypto": "crypto",
+      "node:path": "path",
+      "node:os": "os",
+      "node:http": "http",
+      "node:url": "url",
+      "node:buffer": "buffer",
+      "node:stream": "stream"
+    },
+    "symbol_aliases": {
+      "fs.readFileSync": "fs.read_to_string",
+      "fs.writeFileSync": "fs.write_string",
+      "fs.existsSync": "fs.exists"
+    },
+    "body_delimiters": [
+      "{",
+      "}"
+    ],
+    "regex_replace": [
+      { "pattern": "===", "replacement": "==" },
+      { "pattern": "!==", "replacement": "!=" },
+      { "pattern": "\\bconst\\b", "replacement": "let" },
+      { "pattern": "\\bnew\\s+", "replacement": "" },
+      { "pattern": "`", "replacement": "\"" }
+    ],
+    "structural_rules": {
+      "InterfaceDecl": {
+        "id_from": "InterfaceHeader.id_text",
+        "collect_inner_as": [
+          {
+            "rule": "PropertySig",
+            "label": "fields"
+          }
+        ]
+      },
+      "TypeDecl": {
+        "extract_text": [
+          {
+            "label": "rhs",
+            "after": "=",
+            "before": ";",
+            "trim": true
+          }
+        ],
+        "conditional_lifts": [
+          {
+            "predicate": "string_literal_union",
+            "lift_to": "IREnum",
+            "split_label_capitalized": "variants"
+          }
+        ],
+        "source_intent_comment": "{{comment_prefix}}SOURCE: type {{id_text}} = {{rhs}}"
+      },
+      "FunctionDecl": {
+        "collect_inner_as": [
+          {
+            "rule": "Param",
+            "label": "params"
+          }
+        ],
+        "extract_text": [
+          {
+            "label": "return",
+            "after": "):",
+            "before": "{",
+            "trim": true
+          }
+        ]
+      },
+      "PropertySig": {
+        "extract_text": [
+          {
+            "label": "type",
+            "after": ":",
+            "before": ";",
+            "trim": true,
+            "simplify_unions": true
+          }
+        ]
+      },
+      "Param": {
+        "extract_text": [
+          {
+            "label": "type",
+            "after": ":",
+            "before": "",
+            "trim": true,
+            "simplify_unions": true
+          }
+        ],
+        "source_intent_comment": "{{comment_prefix}}SOURCE: {{_text_raw}}"
+      }
+    }
+  },
+  "lower": {
+    "scalars": {
+      "String": "string",
+      "Float": "number",
+      "Int": "number",
+      "Bool": "boolean",
+      "Unit": "void"
+    },
+    "type_wraps": [],
+    "comment_prefix": "// ",
+    "preamble_template": "{{comment_prefix}}AUTO-GENERATED via `indexion kgf transcribe`: {{source_lang}} -> {{target_lang}}\n{{comment_prefix}}STUB \u2014 function bodies are CONVERSION-class gaps; structure is mechanical.\n\n",
+    "no_template_template": "{{comment_prefix}}{{unresolved_marker}}no_template for rule={{rule}}\n",
+    "emit_templates": {
+      "IRTypeAlias": "export type {{id_text}} = {{rhs}};\n",
+      "IRStruct": "export interface {{id_text}} {\n  {{fields}}\n}\n",
+      "IRStructField": "{{id_text}}: {{type}};",
+      "IRFn": "export function {{id_text}}({{params}}): {{return}} {{body_text}}\n",
+      "IRParam": "{{id_text}}: {{type}}"
+    },
+    "emit_order": [
+      "IRTypeAlias",
+      "IRStruct",
+      "IRFn"
+    ],
+    "collect_separators": {
+      "fields": "\n  ",
+      "params": ", "
+    }
+  }
+}

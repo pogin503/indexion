@@ -1,0 +1,111 @@
+{
+  "language": "moonbit",
+  "lift": {
+    "scalars": {
+      "Int": "Int",
+      "Int64": "Int",
+      "Double": "Float",
+      "Float": "Float",
+      "Bool": "Bool",
+      "String": "String",
+      "Unit": "Unit"
+    },
+    "type_wraps": [
+      {
+        "source_suffix": "?",
+        "target_template": "Optional<%s>"
+      }
+    ],
+    "rule_lifts": {
+      "EnumDecl": "IREnum",
+      "EnumVariant": "IREnumVariant",
+      "StructDecl": "IRStruct",
+      "StructField": "IRStructField",
+      "FnDecl": "IRFn",
+      "Param": "IRParam"
+    },
+    "body_delimiters": [
+      "{",
+      "}"
+    ],
+    "structural_rules": {
+      "StructDecl": {
+        "collect_inner_as": [
+          {
+            "rule": "StructField",
+            "label": "fields"
+          }
+        ]
+      },
+      "FnDecl": {
+        "collect_inner_as": [
+          {
+            "rule": "Param",
+            "label": "params"
+          }
+        ]
+      }
+    }
+  },
+  "lower": {
+    "scalars": {
+      "String": "String",
+      "Float": "Double",
+      "Int": "Int",
+      "Bool": "Bool",
+      "Unit": "Unit"
+    },
+    "type_wraps": [],
+    "comment_prefix": "// ",
+    "preamble_template": "{{comment_prefix}}AUTO-GENERATED via `indexion kgf transcribe`: {{source_lang}} -> {{target_lang}}\n{{comment_prefix}}STUB \u2014 function bodies are CONVERSION-class gaps; structure is mechanical.\n\n",
+    "no_template_template": "{{comment_prefix}}{{unresolved_marker}}no_template for rule={{rule}}\n",
+    "emit_templates": {
+      "IRTypeAlias": "pub typealias {{id_text}} = {{rhs}}\n",
+      "IREnum": "pub enum {{id_text}} {\n  {{variants}}\n}\n",
+      "IRStruct": "pub struct {{id_text}} {\n  {{fields}}\n}\n",
+      "IRStructField": "{{id_text}} : {{type}}",
+      "IRFn": "pub fn {{id_text}}({{params}}) -> {{return}} {{body_text}}\n",
+      "IRParam": "{{id_text}} : {{type}}",
+      "IRImport": "// import {{module_target}} (was {{from_text}})\n"
+    },
+    "emit_order": [
+      "IRImport",
+      "IRTypeAlias",
+      "IREnum",
+      "IRStruct",
+      "IRFn"
+    ],
+    "text_replace_pairs": [
+      {
+        "open": "Optional<",
+        "close": ">",
+        "template": "%s?"
+      },
+      {
+        "open": "Array<",
+        "close": ">",
+        "template": "Array[%s]"
+      }
+    ],
+    "collect_separators": {
+      "fields": "\n  ",
+      "params": ", ",
+      "variants": "\n  "
+    },
+    "module_aliases": {
+      "fs": "@fs",
+      "crypto": "@crypto",
+      "path": "@path",
+      "os": "@os",
+      "http": "@http"
+    },
+    "symbol_aliases": {
+      "fs.read_to_string": "fs.read_file_to_string",
+      "fs.write_string": "fs.write_string_to_file"
+    },
+    "regex_replace": [
+      { "pattern": ";", "replacement": "" },
+      { "pattern": "\\$\\{", "replacement": "\\{" }
+    ]
+  }
+}

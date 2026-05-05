@@ -1,0 +1,83 @@
+{
+  "language": "swift",
+  "lift": {
+    "scalars": {
+      "Int": "Int",
+      "Int8": "Int",
+      "Int16": "Int",
+      "Int32": "Int",
+      "Int64": "Int",
+      "UInt": "Int",
+      "Float": "Float",
+      "Double": "Float",
+      "Bool": "Bool",
+      "String": "String",
+      "Void": "Unit"
+    },
+    "type_wraps": [],
+    "rule_lifts": {
+      "StructDecl": "IRStruct",
+      "ClassDecl": "IRStruct",
+      "EnumDecl": "IREnum",
+      "FunctionDecl": "IRFn",
+      "Property": "IRStructField",
+      "Param": "IRParam",
+      "TypeAliasDecl": "IRTypeAlias"
+    },
+    "body_delimiters": [
+      "{",
+      "}"
+    ],
+    "structural_rules": {}
+  },
+  "lower": {
+    "scalars": {
+      "String": "String",
+      "Float": "Double",
+      "Int": "Int",
+      "Bool": "Bool",
+      "Unit": "Void"
+    },
+    "type_wraps": [],
+    "comment_prefix": "// ",
+    "preamble_template": "{{comment_prefix}}AUTO-GENERATED via `indexion kgf transcribe`: {{source_lang}} -> {{target_lang}}\n{{comment_prefix}}STUB \u2014 function bodies are CONVERSION-class gaps; structure is mechanical.\n\n",
+    "no_template_template": "{{comment_prefix}}{{unresolved_marker}}no_template for rule={{rule}}\n",
+    "emit_templates": {
+      "IRTypeAlias": "typealias {{id_text}} = {{rhs}}\n",
+      "IREnum": "enum {{id_text}} {\n    case {{variants}}\n}\n",
+      "IRStruct": "struct {{id_text}} {\n    {{fields}}\n}\n",
+      "IRStructField": "var {{id_text}}: {{type}}",
+      "IRFn": "func {{id_text}}({{params}}) -> {{return}} {{body_text}}\n",
+      "IRParam": "_ {{id_text}}: {{type}}"
+    },
+    "emit_order": [
+      "IRTypeAlias",
+      "IREnum",
+      "IRStruct",
+      "IRFn"
+    ],
+    "text_replace_pairs": [
+      {
+        "open": "Optional<",
+        "close": ">",
+        "template": "%s?"
+      },
+      {
+        "open": "Array<",
+        "close": ">",
+        "template": "[%s]"
+      }
+    ],
+    "collect_separators": {
+      "fields": "\n    ",
+      "params": ", ",
+      "variants": "\n    case "
+    },
+    "variant_case_style": "pascal",
+    "regex_replace": [
+      { "pattern": ";", "replacement": "" },
+      { "pattern": "\\$\\{", "replacement": "\\(" },
+      { "pattern": ":\\s*\\([^)]*\\)\\s*=>\\s*[A-Za-z_][A-Za-z0-9_]*", "replacement": ": (Any) -> Bool" }
+    ]
+  }
+}

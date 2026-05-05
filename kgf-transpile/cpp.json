@@ -1,0 +1,80 @@
+{
+  "language": "cpp",
+  "lift": {
+    "scalars": {
+      "int": "Int",
+      "long": "Int",
+      "short": "Int",
+      "char": "Int",
+      "float": "Float",
+      "double": "Float",
+      "bool": "Bool",
+      "void": "Unit",
+      "std::string": "String"
+    },
+    "type_wraps": [],
+    "rule_lifts": {
+      "ClassDecl": "IRStruct",
+      "StructDecl": "IRStruct",
+      "EnumDecl": "IREnum",
+      "FunctionDecl": "IRFn",
+      "Field": "IRStructField",
+      "Param": "IRParam",
+      "UsingDecl": "IRTypeAlias"
+    },
+    "body_delimiters": [
+      "{",
+      "}"
+    ],
+    "structural_rules": {}
+  },
+  "lower": {
+    "scalars": {
+      "String": "std::string",
+      "Float": "double",
+      "Int": "int",
+      "Bool": "bool",
+      "Unit": "void"
+    },
+    "type_wraps": [],
+    "comment_prefix": "// ",
+    "preamble_template": "{{comment_prefix}}AUTO-GENERATED via `indexion kgf transcribe`: {{source_lang}} -> {{target_lang}}\n{{comment_prefix}}STUB \u2014 function bodies are CONVERSION-class gaps; structure is mechanical.\n#include <cstdlib>\n#include <string>\n#include <vector>\n#include <optional>\n\n",
+    "no_template_template": "{{comment_prefix}}{{unresolved_marker}}no_template for rule={{rule}}\n",
+    "emit_templates": {
+      "IRStruct": "struct {{id_text}} {\n    {{fields}};\n};\n",
+      "IRStructField": "{{type}} {{id_text}}",
+      "IREnum": "enum class {{id_text}} {\n    {{variants}}\n};\n",
+      "IRFn": "{{return}} {{id_text}}({{params}}) {{body_text}}\n",
+      "IRParam": "{{type}} {{id_text}}",
+      "IRTypeAlias": "using {{id_text}} = {{rhs}};\n"
+    },
+    "emit_order": [
+      "IRTypeAlias",
+      "IREnum",
+      "IRStruct",
+      "IRFn"
+    ],
+    "text_replace_pairs": [
+      {
+        "open": "Optional<",
+        "close": ">",
+        "template": "std::optional<%s>"
+      },
+      {
+        "open": "Array<",
+        "close": ">",
+        "template": "std::vector<%s>"
+      }
+    ],
+    "collect_separators": {
+      "fields": ";\n    ",
+      "params": ", ",
+      "variants": ",\n    "
+    },
+    "regex_replace": [
+      { "pattern": "\\blet\\b", "replacement": "auto" },
+      { "pattern": ":\\s*\\([^)]*\\)\\s*=>\\s*[A-Za-z_][A-Za-z0-9_]*", "replacement": ": void *" },
+      { "pattern": "\\([^)]*:[A-Z][^)]*\\)\\s*=>\\s*[A-Za-z_][A-Za-z0-9_]*", "replacement": "void *" }
+    ]
+  }
+}
