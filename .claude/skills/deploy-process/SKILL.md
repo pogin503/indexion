@@ -9,9 +9,6 @@ description: Release process for indexion. Use when the user asks to release, de
 
 - `.gitmodules` has `pushRecurseSubmodules = on-demand` for all submodules
 - `scripts/sync-version.sh` exists and syncs `moon.mod.json` → `version.mbt` + `marketplace.json` + `plugin.json`
-- All MoonBit tests pass: `moon test --target native`
-- All TypeScript tests pass: `bun run test`
-- All lint checks pass: `bun run lint`
 
 ## Version Convention
 
@@ -42,14 +39,64 @@ cd skills && git add -A && git commit -m "feat: ..." && cd ..
 git add kgfs skills src/ cmd/ ... && git commit -m "feat: ..."
 ```
 
-### 2. Bump version in moon.mod.json
+### 2. Update RELEASE_NOTES.md
+
+Prepend release notes for the new version at the top of `RELEASE_NOTES.md`:
+
+```markdown
+# vX.Y.Z
+
+## Highlights
+
+- **Feature A** — Brief description
+- **Feature B** — Brief description
+
+## New Features
+
+### Feature A
+
+Detailed description...
+
+## Improvements
+
+- Item 1
+- Item 2
+
+## Bug Fixes
+
+- Fix 1
+- Fix 2
+
+---
+
+# vX.Y-1.Z (previous version header follows)
+```
+
+Use `git log vPREV..HEAD --oneline` to review commits since last release.
+
+### 3. Run local verification
+
+Before bumping version, verify all checks pass locally:
+
+```bash
+# MoonBit tests
+moon test --target native
+
+# TypeScript tests
+bun run test
+
+# Lint
+bun run lint
+```
+
+### 4. Bump version in moon.mod.json
 
 Edit `moon.mod.json` and change the `"version"` field:
 - `+0.0.1` for patches (bug fixes)
 - `+0.1.0` for minor (new features, backward compatible)
 - `+1.0.0` for major (breaking changes)
 
-### 3. Run sync-version.sh
+### 5. Run sync-version.sh
 
 ```bash
 bash scripts/sync-version.sh
@@ -57,40 +104,46 @@ bash scripts/sync-version.sh
 
 This propagates the version to `version.mbt` and `marketplace.json`.
 
-### 4. Commit version in skills submodule
+### 6. Commit version in skills submodule
 
 `marketplace.json` lives inside the `skills` submodule, so it needs its own commit:
 
 ```bash
-cd skills && git add .claude-plugin/marketplace.json && git commit -m "release: vX.Y.Z" && cd ..
+cd skills && git add .claude-plugin/marketplace.json .claude-plugin/plugin.json && git commit -m "release: vX.Y.Z" && cd ..
 ```
 
-### 5. Create release commit and tag
+### 7. Create release commit (WITHOUT tag)
 
 ```bash
-git add moon.mod.json src/update/version.mbt skills
+git add moon.mod.json src/update/version.mbt skills RELEASE_NOTES.md
 git commit -m "release: vX.Y.Z"
-git tag -a vX.Y.Z -m "release: vX.Y.Z"
 ```
 
-Use `git tag -a` (annotated tag). `--follow-tags` only pushes annotated tags.
-Lightweight tags (`git tag` without `-a`) require a separate `git push origin vX.Y.Z`.
+**DO NOT create the tag yet.**
 
-### 6. Push
+### 8. Push and wait for CI
 
 ```bash
-git push --follow-tags
+git push
 ```
 
 `push.recurseSubmodules = on-demand` ensures:
 1. `kgfs` submodule is pushed first
 2. `skills` submodule is pushed second
 3. Parent is pushed last
-4. If any submodule push fails, the parent push is aborted
 
-**NEVER** push the parent without `--follow-tags` — tags must travel with the release commit.
+**Wait for CI to pass on GitHub Actions.** Check the workflow status before proceeding.
 
-**NEVER** push submodules manually then the parent separately — use the on-demand mechanism to guarantee ordering.
+### 9. Create and push tag (after CI passes)
+
+Only after CI passes:
+
+```bash
+git tag -a vX.Y.Z -m "release: vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+Use `git tag -a` (annotated tag) for proper release semantics.
 
 ## Push Safety
 
@@ -120,22 +173,37 @@ grep '"version"' skills/.claude-plugin/plugin.json
 
 ## Rollback
 
-If the push fails partway:
+If CI fails after pushing the release commit:
 
 ```bash
+# Fix the issue locally
+# Commit the fix
+git add ... && git commit -m "fix: ..."
+
+# Push the fix
+git push
+
+# Wait for CI to pass, then proceed to step 9
+```
+
+If the tag was already pushed and needs to be removed:
+
+```bash
+# Remove tag from remote
+git push origin :refs/tags/vX.Y.Z
+
 # Remove tag locally
 git tag -d vX.Y.Z
 
-# Reset to pre-release commit
-git reset --soft HEAD~1  # Undo release commit, keep changes staged
-
-# Fix the issue, then redo steps 5-6
+# After fixing issues, recreate the tag on the correct commit
+git tag -a vX.Y.Z -m "release: vX.Y.Z"
+git push origin vX.Y.Z
 ```
 
 ## DO NOT
 
+- Do NOT create the tag before CI passes
 - Do NOT amend the release commit after pushing
 - Do NOT force-push to main
 - Do NOT skip `sync-version.sh` — manual version editing causes drift
 - Do NOT push parent before submodules — on-demand handles this, don't override
-- Do NOT create the tag before the release commit

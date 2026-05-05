@@ -1,3 +1,41 @@
+# v0.12.1
+
+## Highlights
+
+- **Wiki CLI Refactoring** — Centralized wiki directory resolution with shared CLI helpers
+- **Incremental Wiki Updates** — New `WikiUpdatePlan` for tracking and managing wiki content changes
+- **Git Worktree Support** — Async functions for retrieving changed files in git worktrees
+
+## Improvements
+
+### Wiki Common Module
+
+New `cmd/indexion/wiki/common/` module providing shared CLI utilities:
+
+- `resolve_wiki_dir()` — Centralized wiki directory resolution across all wiki commands
+- `print_project_root_error()` — Consistent error messaging for project root issues
+
+### Incremental Wiki Updates
+
+`WikiUpdatePlan` struct for managing incremental updates:
+
+- Track changes in wiki content
+- Efficient update planning for large wikis
+
+### Git Worktree Integration
+
+- New async function for retrieving changed files in git worktrees
+- Enhanced VCS integration in `src/vcs/git/`
+
+### Code Quality
+
+- Simplified array initialization and function signatures
+- Consolidated error handling in file reading and directory checking
+- Streamlined construction of complex data structures
+- Improved test formatting and coverage
+
+---
+
 # v0.12.0
 
 ## Highlights
