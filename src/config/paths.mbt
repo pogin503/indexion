@@ -446,6 +446,49 @@ pub fn find_kgfs_dir(
 }
 
 ///|
+/// Resolve the directory containing KGF transpile specs (`<src>-to-<tgt>.json`).
+///
+/// Transpile specs are mappings between two KGFs and live at
+/// `kgf-transpile/` at the project root. They are intentionally *not*
+/// under `kgfs/` because they are not KGF specs themselves. This is the
+/// SoT for transpile-spec directory resolution; do not hardcode the
+/// `kgf-transpile` literal in callers — go through this function so the
+/// project layout can be changed in one place.
+///
+/// Resolution mirrors `find_kgfs_dir`: explicit override → env var
+/// `INDEXION_KGF_TRANSPILE_DIR` → project-root-relative `kgf-transpile/`.
+pub fn find_kgf_transpile_dir(
+  explicit_path? : String = "",
+  target_dir? : String = ".",
+) -> String? {
+  let base_dir = if target_dir.length() > 0 { target_dir } else { "." }
+  if explicit_path.length() > 0 {
+    let resolved = resolve_path(base_dir, explicit_path)
+    if is_valid_dir(resolved) {
+      return Some(resolved)
+    }
+  }
+  match @sys.get_env_var("INDEXION_KGF_TRANSPILE_DIR") {
+    Some(dir) =>
+      if dir.length() > 0 && is_valid_dir(dir) {
+        return Some(normalize_path(dir))
+      }
+    None => ()
+  }
+  // Walk up from base_dir looking for a `kgf-transpile` sibling.
+  match find_nearest_marker_dir(base_dir, base_dir, ["kgf-transpile"]) {
+    Some(parent) => {
+      let candidate = join_path(parent, "kgf-transpile")
+      if is_valid_dir(candidate) {
+        return Some(normalize_path(candidate))
+      }
+    }
+    None => ()
+  }
+  None
+}
+
+///|
 /// Get the kgfs installation directory (SoT for write path).
 /// Returns the OS-standard data directory with kgfs subdirectory.
 /// Used by `kgf install`, `update`, and `init --global`.

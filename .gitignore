@@ -19,3 +19,7 @@ out/
 coverage/
 .vscode-test/
 packages/graph-canvas/scripts/screenshots
+
+# transpile-todo-app integration test writes target outputs here for
+# inspection and per-language compiler verification.
+tests/integration/transpile-todo-app/output/

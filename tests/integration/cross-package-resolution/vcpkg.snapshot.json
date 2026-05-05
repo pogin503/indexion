@@ -9,8 +9,8 @@
   ],
   "moduleDependsOn": [],
   "stats": {
-    "symbols": 4,
-    "edges": 9,
+    "symbols": 10,
+    "edges": 11,
     "unresolved_structural_edges": 0
   }
 }

@@ -1,0 +1,8 @@
+import {
+  "moonbitlang/x/fs" @fs,
+  "trkbt10/indexion/src/config" @config,
+  "trkbt10/indexion/src/kgf/lexer" @lexer,
+  "trkbt10/indexion/src/kgf/peg" @peg,
+  "trkbt10/indexion/src/kgf/registry" @registry,
+  "trkbt10/indexion/src/regexp" @regexp,
+}

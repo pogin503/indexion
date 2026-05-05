@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/kgf/transpile"
+
+// Values
+pub fn find_spec(String, String, String) -> String?
+
+pub fn load_spec(String) -> TranspileSpec?
+
+pub fn rewrite_events(
+  Array[(String, Map[String, Json])],
+  TranspileSpec
+) -> Array[(String, Map[String, Json])]
+
+pub fn rewrite_events_json(
+  Array[(String, Map[String, Json])],
+  TranspileSpec
+) -> String
+
+pub fn rewrite_type_text(String, TranspileSpec) -> String
+
+pub fn transpile_file_json(String, String, String) -> String?
+
+// Errors
+
+// Types and methods
+pub struct TranspileSpec {
+  // ...
+}
+fn TranspileSpec::source(Self) -> String
+fn TranspileSpec::target(Self) -> String
+fn TranspileSpec::scalars(Self) -> Map[String, String]
+fn TranspileSpec::type_wraps(Self) -> Array[TypeWrap]
+fn TranspileSpec::rule_renames(Self) -> Map[String, String]
+fn TranspileSpec::unresolved_marker(Self) -> String
+impl Show for TranspileSpec
+
+pub struct TypeWrap {
+  // ...
+}
+fn TypeWrap::source_suffix(Self) -> String
+fn TypeWrap::target_template(Self) -> String
+impl Eq for TypeWrap
+impl Show for TypeWrap
+
+// Type aliases
+
+// Traits
+

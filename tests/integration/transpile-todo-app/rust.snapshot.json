@@ -1,0 +1,179 @@
+{
+  "target_lang": "rust",
+  "source_lang": "typescript",
+  "totals": {
+    "files": 6,
+    "ir_events": 2640,
+    "unresolved": 1,
+    "emit_parse_errors": 0,
+    "compile_failures": 6,
+    "no_compiler_available": 0
+  },
+  "ir_rule_histogram": [
+    [
+      "BodyContent",
+      1075
+    ],
+    [
+      "BodyAtom",
+      963
+    ],
+    [
+      "Item",
+      115
+    ],
+    [
+      "TypeAtom",
+      65
+    ],
+    [
+      "IntersectionType",
+      65
+    ],
+    [
+      "Type",
+      61
+    ],
+    [
+      "TypeAnnotation",
+      59
+    ],
+    [
+      "IRParam",
+      32
+    ],
+    [
+      "IRVisibility",
+      22
+    ],
+    [
+      "ImportSpec",
+      20
+    ],
+    [
+      "Body",
+      19
+    ],
+    [
+      "IRFn",
+      19
+    ],
+    [
+      "InterfaceMember",
+      19
+    ],
+    [
+      "ParamList",
+      18
+    ],
+    [
+      "MemberName",
+      16
+    ],
+    [
+      "Atom",
+      14
+    ],
+    [
+      "IRImport",
+      10
+    ],
+    [
+      "ImportDecl",
+      10
+    ],
+    [
+      "ImportSpecList",
+      10
+    ],
+    [
+      "IRStructField",
+      8
+    ],
+    [
+      "Module",
+      6
+    ],
+    [
+      "ArraySuffix",
+      4
+    ],
+    [
+      "IRStruct",
+      3
+    ],
+    [
+      "InterfaceBody",
+      3
+    ],
+    [
+      "IRStructHeader",
+      3
+    ],
+    [
+      "IRTypeAlias",
+      1
+    ]
+  ],
+  "files": [
+    {
+      "file": "cli.ts",
+      "ir_event_count": 982,
+      "unresolved_total": 1,
+      "unresolved_kinds": [
+        [
+          "Unknown",
+          1
+        ]
+      ],
+      "emit_parse_errors": 0,
+      "compile_exit_code": 1
+    },
+    {
+      "file": "main.ts",
+      "ir_event_count": 162,
+      "unresolved_total": 0,
+      "unresolved_kinds": [],
+      "emit_parse_errors": 0,
+      "compile_exit_code": 1
+    },
+    {
+      "file": "types.ts",
+      "ir_event_count": 113,
+      "unresolved_total": 0,
+      "unresolved_kinds": [],
+      "emit_parse_errors": 0,
+      "compile_exit_code": 1
+    },
+    {
+      "file": "format.ts",
+      "ir_event_count": 131,
+      "unresolved_total": 0,
+      "unresolved_kinds": [],
+      "emit_parse_errors": 0,
+      "compile_exit_code": 1
+    },
+    {
+      "file": "service.ts",
+      "ir_event_count": 1062,
+      "unresolved_total": 0,
+      "unresolved_kinds": [],
+      "emit_parse_errors": 0,
+      "compile_exit_code": 1
+    },
+    {
+      "file": "storage.ts",
+      "ir_event_count": 190,
+      "unresolved_total": 0,
+      "unresolved_kinds": [],
+      "emit_parse_errors": 0,
+      "compile_exit_code": 1
+    }
+  ],
+  "unresolved_diagnosis": [
+    [
+      "Unknown",
+      "CONVERSION — TypeScript `unknown` has no canonical equivalent. Marked at lift time."
+    ]
+  ]
+}
