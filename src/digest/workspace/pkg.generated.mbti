@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/digest/workspace"
+
+import {
+  "trkbt10/indexion/src/core/graph",
+  "trkbt10/indexion/src/digest/config",
+  "trkbt10/indexion/src/digest/index",
+  "trkbt10/indexion/src/kgf/cas/types",
+}
+
+// Values
+pub fn build_graph_from_source(String, String, progress? : ((Int, Int, String)) -> Unit) -> GraphBuildResult?
+
+pub fn has_relevant_changed_path(Array[String]) -> Bool
+
+pub fn index_files_exist(String) -> Bool
+
+pub fn is_indexion_generated_path(String) -> Bool
+
+pub fn load_graph(String) -> @graph.CodeGraph?
+
+pub fn load_index_with_graph(String, @config.DigestConfig) -> @index.DigestIndex?
+
+pub async fn may_be_stale(String, String) -> Bool
+
+pub fn resolve_index_dir(String) -> String?
+
+pub fn resolve_source_dir_for_index(String, String) -> String
+
+pub fn resolve_workspace_dir(String) -> String
+
+pub async fn update_index(String, String, String, @config.DigestConfig, progress? : ((Int, Int, String)) -> Unit) -> UpdateResult?
+
+pub async fn update_index_if_stale(String, String, String, @config.DigestConfig, progress? : ((Int, Int, String)) -> Unit) -> UpdateResult?
+
+// Errors
+
+// Types and methods
+pub struct GraphBuildResult {
+  graph : @graph.CodeGraph
+  file_hashes : Map[String, @types.ContentHash]
+}
+
+pub struct UpdateResult {
+  indexed_count : Int
+  skipped_count : Int
+  removed_count : Int
+  saved : Bool
+  save_errors : Array[String]
+}
+
+// Type aliases
+
+// Traits
+

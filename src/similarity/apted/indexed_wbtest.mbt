@@ -74,7 +74,9 @@ test "normalized_tree_edit_distance_indexed matches raw" {
   let raw = normalized_tree_edit_distance(t1, t2, config)
   let (idx1, s1) = index_tree_with_size(t1)
   let (idx2, s2) = index_tree_with_size(t2)
-  let indexed = normalized_tree_edit_distance_indexed(idx1, s1, idx2, s2, config)
+  let indexed = normalized_tree_edit_distance_indexed(
+    idx1, s1, idx2, s2, config,
+  )
   assert_eq(raw, indexed)
 }
 
@@ -138,10 +140,7 @@ test "upper bound: always >= actual similarity" {
     TreeNode::leaf("C"),
     TreeNode::leaf("D"),
   ])
-  let t2 = TreeNode::node("X", [
-    TreeNode::leaf("Y"),
-    TreeNode::leaf("Z"),
-  ])
+  let t2 = TreeNode::node("X", [TreeNode::leaf("Y"), TreeNode::leaf("Z")])
   let config = CostConfig::default()
   let actual = tree_similarity(t1, t2, config)
   let ub = unit_cost_tree_similarity_upper_bound(t1.size(), t2.size())
@@ -184,10 +183,7 @@ test "tsed upper bound: always >= actual tsed" {
     TreeNode::leaf("C"),
     TreeNode::leaf("D"),
   ])
-  let t2 = TreeNode::node("X", [
-    TreeNode::leaf("Y"),
-    TreeNode::leaf("Z"),
-  ])
+  let t2 = TreeNode::node("X", [TreeNode::leaf("Y"), TreeNode::leaf("Z")])
   let config = TSEDConfig::default()
   let actual = calculate_tsed(t1, t2, config)
   let ub = tsed_similarity_upper_bound(t1.size(), t2.size())
@@ -205,7 +201,11 @@ test "indexed distance: both empty" {
   // Size-0 trees can't really exist with TreeNode (min size=1),
   // but test the 0-size code path directly:
   let dist = compute_tree_edit_distance_indexed(
-    idx, 0, idx, 0, CostConfig::default(),
+    idx,
+    0,
+    idx,
+    0,
+    CostConfig::default(),
   )
   assert_eq(dist, 0.0)
 }
@@ -217,9 +217,7 @@ test "indexed distance: one empty" {
   let (idx_t, _) = index_tree_with_size(tree)
   let (idx_e, _) = index_tree_with_size(empty)
   let config = CostConfig::default()
-  let dist = compute_tree_edit_distance_indexed(
-    idx_t, 0, idx_e, 1, config,
-  )
+  let dist = compute_tree_edit_distance_indexed(idx_t, 0, idx_e, 1, config)
   // size1=0 → size2 * insert_cost = 1.0
   assert_eq(dist, 1.0)
 }

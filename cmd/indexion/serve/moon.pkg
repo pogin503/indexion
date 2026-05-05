@@ -24,6 +24,7 @@ import {
   "trkbt10/indexion/src/core/graph" @graph,
   "trkbt10/indexion/src/digest/types" @types,
   "trkbt10/indexion/src/digest/index" @index,
+  "trkbt10/indexion/src/digest/workspace" @digest_workspace,
   "trkbt10/indexion/src/embedding/config" @embed_config,
   "trkbt10/indexion/src/digest/config" @dconfig,
   "trkbt10/indexion/src/digest/embed" @embed,

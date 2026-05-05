@@ -7,7 +7,7 @@ import {
   "trkbt10/indexion/src/docgen/wiki/reader" @wiki_reader,
   "trkbt10/indexion/src/docgen/wiki/index" @wiki_index,
   "trkbt10/indexion/src/docgen/wiki/log" @wiki_log,
-  "trkbt10/indexion/src/docgen/wiki/search" @wiki_search,
+  "trkbt10/indexion/src/docgen/wiki/workspace" @wiki_workspace,
   "trkbt10/indexion/src/kgf/features" @kgf_features,
   "trkbt10/indexion/src/embedding/config" @embed_config,
   "trkbt10/indexion/src/digest/embed" @embed,

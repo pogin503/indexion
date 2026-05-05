@@ -36,7 +36,11 @@ pub fn calculate_tsed_indexed(
     return 1.0
   }
   let distance = compute_tree_edit_distance_indexed(
-    t1, size1, t2, size2, config.cost_config,
+    t1,
+    size1,
+    t2,
+    size2,
+    config.cost_config,
   )
   let similarity = 1.0 - distance / max_size
   if similarity < 0.0 {

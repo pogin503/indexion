@@ -72,6 +72,7 @@ fn search_config() -> SearchConfig {
     model: @embed_config.DEFAULT_EMBEDDING_MODEL,
     base_url: @embed_config.DEFAULT_API_BASE_URL,
     dim: @embed_config.DEFAULT_TFIDF_DIM,
+    no_update: false,
   }
 }
 

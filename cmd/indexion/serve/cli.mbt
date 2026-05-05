@@ -642,17 +642,15 @@ async fn do_load(
   digest_cli_config : @digest_cli.CliConfig,
   digest_config : @dconfig.DigestConfig,
 ) -> ServerState? {
-  let mp = @dconfig.manifest_path(config.index_dir)
-  let gp = @dconfig.graph_path(config.index_dir)
-  if !@fs.path_exists(mp) || !@fs.path_exists(gp) {
+  if !@digest_workspace.index_files_exist(config.index_dir) {
     return None
   }
   @digest_cli.log_progress("Loading index from " + config.index_dir + "...")
-  let graph_json = @fs.read_file_to_string(gp) catch { _ => return None }
-  let graph = match @graph.CodeGraph::from_json_string(graph_json) {
+  let graph = match @digest_workspace.load_graph(config.index_dir) {
     Some(g) => g
     None => return None
   }
+  let graph_json = graph.to_json_string()
   @digest_cli.log_progress(
     "Graph: " + graph.symbol_count().to_string() + " symbols",
   )

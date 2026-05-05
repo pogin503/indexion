@@ -204,9 +204,7 @@ fn full_labels(map : LabelsMap) -> Labels {
 ///|
 /// Builds a `LabelsMap` for a single token: populates `_last*` metadata and
 /// seeds `_text` with the token's textual value.
-fn labels_map_from_token(
-  tok : @types.Tok,
-) -> LabelsMap {
+fn labels_map_from_token(tok : @types.Tok) -> LabelsMap {
   let out = LabelsMap::new()
   let value = tok.get_value()
   out.set_meta(@types.META_LAST, value.to_json())
@@ -288,7 +286,10 @@ fn merge_into(
       target.push_text_chunk(value)
       target.set_meta(@types.META_LAST, value.to_json())
       target.set_meta(@types.META_LAST_POS, tok.pos.to_double().to_json())
-      target.set_meta(@types.META_LAST_LEN, tok.text.length().to_double().to_json())
+      target.set_meta(
+        @types.META_LAST_LEN,
+        tok.text.length().to_double().to_json(),
+      )
     }
     Labels::Full(map) => {
       for key, value in map.meta {
@@ -387,7 +388,9 @@ fn publish_primary_text_as(labels : LabelsMap, dst_key : String) -> Unit {
 fn strip_named_labels(labels : LabelsMap) -> LabelsMap {
   let out = LabelsMap::new()
   for key, value in labels.meta {
-    if key == @types.META_LAST || key == @types.META_LAST_POS || key == @types.META_LAST_LEN {
+    if key == @types.META_LAST ||
+      key == @types.META_LAST_POS ||
+      key == @types.META_LAST_LEN {
       out.set_meta(key, value)
     }
   }

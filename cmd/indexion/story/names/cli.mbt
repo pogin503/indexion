@@ -39,11 +39,9 @@ pub fn command() -> @argparse.Command {
         action=Append,
         about="Glob pattern for spec-side documents (repeatable)",
       ),
-      @argparse.OptionArg::new(
-        "format",
-        about="Output format: text | json",
-        default_values=["text"],
-      ),
+      @argparse.OptionArg::new("format", about="Output format: text | json", default_values=[
+        "text",
+      ]),
       @argparse.OptionArg::new(
         "output",
         about="Output file path (- or empty = stdout)",
@@ -184,7 +182,9 @@ fn render_text(reports : Array[@identity.NameDivergence]) -> String {
       continue
     }
     buf.write_string("\n")
-    buf.write_string("[" + entity.get_origin() + "] " + name.get_display() + "\n")
+    buf.write_string(
+      "[" + entity.get_origin() + "] " + name.get_display() + "\n",
+    )
     buf.write_string("  action: " + r.get_rationale() + "\n")
     let unused = r.get_prominent_unused()
     if unused.length() > 0 {

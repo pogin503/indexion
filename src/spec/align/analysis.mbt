@@ -2314,10 +2314,7 @@ fn file_hashes_match(
   }
   for path, hash in current {
     match cached.get(path) {
-      Some(cached_hash) =>
-        if cached_hash != hash {
-          return false
-        }
+      Some(cached_hash) => if cached_hash != hash { return false }
       None => return false
     }
   }
@@ -2354,7 +2351,9 @@ async fn snapshot_for_config_async(config : SpecAlignConfig) -> AlignSnapshot? {
           specs_dir=config.specs_dir,
           target_dir=config.impl_path,
         )
-        let current_hashes = build_current_file_hashes(effective_config, registry)
+        let current_hashes = build_current_file_hashes(
+          effective_config, registry,
+        )
         if file_hashes_match(cached.file_hashes, current_hashes) {
           // Carry forward the caller's config so that report-only fields
           // (subcommand, fail_on, direction, format, agent) take effect.

@@ -164,9 +164,7 @@ pub struct ChapterAttribution {
 } derive(ToJson)
 
 ///|
-pub fn ChapterAttribution::get_impl_path(
-  self : ChapterAttribution,
-) -> String {
+pub fn ChapterAttribution::get_impl_path(self : ChapterAttribution) -> String {
   self.impl_path
 }
 
@@ -250,9 +248,9 @@ pub struct StoryConfig {
 
 ///|
 pub fn StoryConfig::new(
-  max_terms~ : Int = 20,
-  min_value_length~ : Int = 2,
-  registry_root~ : String = "",
+  max_terms? : Int = 20,
+  min_value_length? : Int = 2,
+  registry_root? : String = "",
 ) -> StoryConfig {
   { max_terms, min_value_length, registry_root }
 }

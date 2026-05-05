@@ -34,18 +34,19 @@ test "planner: each heading section becomes a page" {
     [
       make_doc(
         "spec/cast.md",
-        #|## Alice
-        #|
-        #|A protagonist.
-        #|
-        #|## Bob
-        #|
-        #|A foil.
-        #|
-        #|## Carol
-        #|
-        #|A confidant.
-        ,
+        (
+          #|## Alice
+          #|
+          #|A protagonist.
+          #|
+          #|## Bob
+          #|
+          #|A foil.
+          #|
+          #|## Carol
+          #|
+          #|A confidant.
+        ),
       ),
     ],
     [],
@@ -80,14 +81,15 @@ test "planner: CJK headings produce non-empty slugs" {
     [
       make_doc(
         "spec/characters.md",
-        #|## 宋金花
-        #|
-        #|主人公。
-        #|
-        #|## 外国人の客
-        #|
-        #|誤認される男。
-        ,
+        (
+          #|## 宋金花
+          #|
+          #|主人公。
+          #|
+          #|## 外国人の客
+          #|
+          #|誤認される男。
+        ),
       ),
     ],
     [],
@@ -106,8 +108,7 @@ test "planner: heading-less doc becomes a single page named after stem" {
   let groups = @story.StoryGroups::new(
     [
       make_doc(
-        "spec/freeform.md",
-        "Alice and Bob, side by side, with no headings.",
+        "spec/freeform.md", "Alice and Bob, side by side, with no headings.",
       ),
     ],
     [],

@@ -1,0 +1,16 @@
+import {
+  "moonbitlang/core/json" @json,
+  "moonbitlang/x/fs" @fs,
+  "trkbt10/indexion/src/config" @config,
+  "trkbt10/indexion/src/digest/embed" @embed,
+  "trkbt10/indexion/src/docgen/wiki/reader" @wiki_reader,
+  "trkbt10/indexion/src/docgen/wiki/search" @wiki_search,
+  "trkbt10/indexion/src/docgen/wiki/types" @wiki_types,
+  "trkbt10/indexion/src/embedding/config" @embed_config,
+  "trkbt10/indexion/src/kgf/features" @kgf_features,
+  "trkbt10/indexion/src/vcs/git" @git,
+}
+
+import {
+  "moonbitlang/core/env" @env,
+} for "wbtest"

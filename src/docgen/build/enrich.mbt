@@ -201,8 +201,14 @@ fn is_sigil_pattern(pattern : String) -> Bool {
   if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
     return false
   }
-  if c == '[' || c == '(' || c == '^' || c == '*' || c == '+' || c == '?' ||
-    c == '|' || c == '.' {
+  if c == '[' ||
+    c == '(' ||
+    c == '^' ||
+    c == '*' ||
+    c == '+' ||
+    c == '?' ||
+    c == '|' ||
+    c == '.' {
     return false
   }
   // A sigil pattern must be followed by an identifier class so the full token
@@ -301,9 +307,7 @@ priv struct ProjectEntry {
 }
 
 ///|
-fn build_cluster_meta(
-  specs : Map[String, @kgf_types.KGFSpec],
-) -> ClusterMeta {
+fn build_cluster_meta(specs : Map[String, @kgf_types.KGFSpec]) -> ClusterMeta {
   let bare_prefixes : Array[String] = []
   let ancestor_dirs : Array[String] = []
   let identity_edge_kinds : @hashset.HashSet[String] = @hashset.new()
@@ -377,10 +381,7 @@ fn build_cluster_meta(
 }
 
 ///|
-fn first_feature_value(
-  spec : @kgf_types.KGFSpec,
-  name : String,
-) -> String {
+fn first_feature_value(spec : @kgf_types.KGFSpec, name : String) -> String {
   match spec.get_feature(name) {
     Some(arr) => if arr.length() > 0 { arr[0] } else { "" }
     None => ""
@@ -422,12 +423,12 @@ fn canonicalize_external_refs(
     if modules.contains(target) {
       continue
     }
-    match resolve_to_internal(
-      target, projects, entries_by_manifest, meta, modules,
-    ) {
-      Some(canonical) => if canonical != target {
-        rewrite.set(target, canonical)
-      }
+    match
+      resolve_to_internal(target, projects, entries_by_manifest, meta, modules) {
+      Some(canonical) =>
+        if canonical != target {
+          rewrite.set(target, canonical)
+        }
       None => ()
     }
   }
@@ -472,12 +473,7 @@ fn collect_clusters(
               None => ""
             }
         }
-        projects.push({
-          name,
-          root_dir,
-          manifest_path: edge.from,
-          source_dir,
-        })
+        projects.push({ name, root_dir, manifest_path: edge.from, source_dir })
       }
     }
     if meta.entry_edge_kinds.contains(kind_str) {
@@ -518,9 +514,8 @@ fn resolve_to_internal(
   // Channel A: bare prefix.
   let (prefix_stripped, _) = strip_any_prefix(target, meta.bare_prefixes)
   if prefix_stripped != target {
-    match try_match_project(
-      prefix_stripped, projects, entries_by_manifest, modules,
-    ) {
+    match
+      try_match_project(prefix_stripped, projects, entries_by_manifest, modules) {
       Some(v) => return Some(v)
       None => ()
     }
@@ -530,9 +525,7 @@ fn resolve_to_internal(
     match find_substring_pos(target, anc) {
       Some(idx) => {
         let after = substring_after(target, idx + anc.length())
-        match try_match_project(
-          after, projects, entries_by_manifest, modules,
-        ) {
+        match try_match_project(after, projects, entries_by_manifest, modules) {
           Some(v) => return Some(v)
           None => ()
         }
@@ -584,7 +577,8 @@ fn try_match_project(
             Some(entries) =>
               for entry in entries {
                 let full = join_path_parts(
-                  proj.root_dir, strip_leading_dot_slash(entry),
+                  proj.root_dir,
+                  strip_leading_dot_slash(entry),
                 )
                 if modules.contains(full) {
                   return Some(full)
@@ -620,8 +614,7 @@ fn try_match_project(
               let mod = entry.1
               match mod.file {
                 Some(f) =>
-                  if f.has_prefix(prefix) &&
-                    dir_of(f) == candidate_dir {
+                  if f.has_prefix(prefix) && dir_of(f) == candidate_dir {
                     return Some(mod_id)
                   }
                 None => ()

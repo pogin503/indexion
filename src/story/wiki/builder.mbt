@@ -50,8 +50,11 @@ pub fn build_story_wiki(
       pages=next_pages,
     )
     if !@wiki_manifest.write_page(
-      wiki_dir, next_manifest, proposal.id, proposal.content,
-    ) {
+        wiki_dir,
+        next_manifest,
+        proposal.id,
+        proposal.content,
+      ) {
       // write_page already printed the error; abort the rest of the build
       // so the manifest does not get further out of sync with the disk.
       return Some({ written, skipped })
@@ -66,9 +69,7 @@ pub fn build_story_wiki(
         timestamp=@env.now(),
         operation="story wiki build",
         actor~,
-        summary="Built " +
-        written.length().to_string() +
-        " story wiki page(s)",
+        summary="Built " + written.length().to_string() + " story wiki page(s)",
         affected_pages=written,
       ),
     )
@@ -78,10 +79,7 @@ pub fn build_story_wiki(
 }
 
 ///|
-fn manifest_contains(
-  manifest : @wiki_types.WikiManifest,
-  id : String,
-) -> Bool {
+fn manifest_contains(manifest : @wiki_types.WikiManifest, id : String) -> Bool {
   for mp in manifest.pages {
     if mp.id == id {
       return true

@@ -55,9 +55,7 @@ pub fn load_documents(patterns : Array[String]) -> Array[StoryDocument] {
       continue
     }
     seen[normalized] = true
-    let content = @fs.read_file_to_string(path) catch {
-      _ => continue
-    }
+    let content = @fs.read_file_to_string(path) catch { _ => continue }
     if content.length() == 0 {
       continue
     }
@@ -77,13 +75,9 @@ fn walk_path(path : String, out : Array[String]) -> Unit {
   if !@fs.path_exists(path) {
     return
   }
-  let is_dir = @fs.is_dir(path) catch {
-    _ => false
-  }
+  let is_dir = @fs.is_dir(path) catch { _ => false }
   if is_dir {
-    let entries = @fs.read_dir(path) catch {
-      _ => return
-    }
+    let entries = @fs.read_dir(path) catch { _ => return }
     for entry in entries {
       let child = @config_paths.join_path(path, entry)
       walk_path(child, out)

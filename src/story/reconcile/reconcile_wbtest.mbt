@@ -44,14 +44,12 @@ test "covered_terms surfaces tokens present in both act and impl" {
   // and Margaret but not Parkinson.
   let spec = [
     make_doc(
-      "spec/act.md",
-      "Aldous returns to the manor and quarrels with his sister Margaret about Parkinson.",
+      "spec/act.md", "Aldous returns to the manor and quarrels with his sister Margaret about Parkinson.",
     ),
   ]
   let impl_docs = [
     make_doc(
-      "impl/scene.md",
-      "Aldous walks through the door of the manor. His sister Margaret looks up from the desk.",
+      "impl/scene.md", "Aldous walks through the door of the manor. His sister Margaret looks up from the desk.",
     ),
   ]
   let groups = @story.StoryGroups::new(spec, impl_docs)
@@ -71,17 +69,9 @@ test "covered_terms surfaces tokens present in both act and impl" {
 
 ///|
 test "covered_terms is empty when impl has no overlap with act" {
-  let spec = [
-    make_doc(
-      "spec/act.md",
-      "Aldous returns to the manor.",
-    ),
-  ]
+  let spec = [make_doc("spec/act.md", "Aldous returns to the manor.")]
   let impl_docs = [
-    make_doc(
-      "impl/scene.md",
-      "Beatrice descends the staircase.",
-    ),
+    make_doc("impl/scene.md", "Beatrice descends the staircase."),
   ]
   let groups = @story.StoryGroups::new(spec, impl_docs)
   let report = reconcile(groups, ReconcileConfig::new(similarity_floor=0.0))
@@ -104,14 +94,12 @@ test "inverted-polarity usage: lint corpus as spec, leak terms surface as covere
   // must NOT echo. A "covered" term is then a leak.
   let lint_spec = [
     make_doc(
-      "lint/no-explain.md",
-      "Do not write the word stoic. Do not call the voice mechanical.",
+      "lint/no-explain.md", "Do not write the word stoic. Do not call the voice mechanical.",
     ),
   ]
   let prose = [
     make_doc(
-      "prose/chapter.md",
-      "He looked stoic. The voice came through, mechanical and even.",
+      "prose/chapter.md", "He looked stoic. The voice came through, mechanical and even.",
     ),
   ]
   let groups = @story.StoryGroups::new(lint_spec, prose)

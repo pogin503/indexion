@@ -20,7 +20,7 @@
 /// caller passes the relative path to the fixture from the repo root; the
 /// analyzer is invoked identically to the `doc graph` CLI.
 pub fn analyze_fixture(fixture_dir : String) -> @graph.CodeGraph raise {
-  let exists = (@fs.is_dir(fixture_dir)) catch { _ => false }
+  let exists = @fs.is_dir(fixture_dir) catch { _ => false }
   if !exists {
     fail("fixture directory not found: " + fixture_dir)
   }

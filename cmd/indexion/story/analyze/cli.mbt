@@ -49,11 +49,9 @@ pub fn command() -> @argparse.Command {
         action=Append,
         about="Glob pattern for impl-side documents (repeatable)",
       ),
-      @argparse.OptionArg::new(
-        "format",
-        about="Output format: text | json",
-        default_values=["text"],
-      ),
+      @argparse.OptionArg::new("format", about="Output format: text | json", default_values=[
+        "text",
+      ]),
       @argparse.OptionArg::new(
         "output",
         about="Output file path (- or empty = stdout)",
@@ -82,9 +80,7 @@ pub fn command() -> @argparse.Command {
 pub fn run_matches(matches : @argparse.Matches) -> Unit {
   let config = AnalyzeConfig::from_matches(matches)
   if config.spec.is_empty() || config.impl_.is_empty() {
-    println(
-      "Error: at least one --spec and one --impl pattern is required.",
-    )
+    println("Error: at least one --spec and one --impl pattern is required.")
     println("")
     println(command().render_help())
     return

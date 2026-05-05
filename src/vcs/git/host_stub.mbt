@@ -49,6 +49,15 @@ async fn git_changed_files_native(
 }
 
 ///|
+#warnings("-unused_async")
+async fn git_worktree_changed_files_native(
+  _root : String,
+  _paths : Array[String],
+) -> Array[String]? {
+  None
+}
+
+///|
 /// Return the file modification time in seconds, or None if unavailable.
 #warnings("-unused_async")
 pub async fn file_mtime_seconds(_path : String) -> Int? {

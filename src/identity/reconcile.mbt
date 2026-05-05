@@ -35,8 +35,18 @@ pub fn score_name_divergence(
   registry : @kgf_registry.KGFRegistry,
 ) -> NameDivergence {
   let kinds = identifier_kinds_for(registry, entity.origin)
-  let name_tokens = content_tokens(entity.name.display, entity.origin, registry, kinds)
-  let body_tokens = content_tokens(entity.content, entity.origin, registry, kinds)
+  let name_tokens = content_tokens(
+    entity.name.display,
+    entity.origin,
+    registry,
+    kinds,
+  )
+  let body_tokens = content_tokens(
+    entity.content,
+    entity.origin,
+    registry,
+    kinds,
+  )
 
   // (1) presence of name tokens in body.
   let name_in_content_score = if name_tokens.is_empty() {
@@ -88,7 +98,9 @@ pub fn score_name_divergence(
   // Decision rules. Order matters: Hollow is checked before Rename
   // because a thin body cannot meaningfully be renamed.
   let action = decide_action(
-    name_in_content_score, content_breadth, body_tokens.length(),
+    name_in_content_score,
+    content_breadth,
+    body_tokens.length(),
   )
   let rationale = build_rationale(
     action,
@@ -150,7 +162,10 @@ fn body_tokens_absent_from_name(
   // Build the name's token set via KGF, lowercased to match body
   // tokens (KGF lowercases identifier feature values when emitting).
   let name_tokens = content_tokens(
-    entity.name.display, entity.origin, registry, kinds,
+    entity.name.display,
+    entity.origin,
+    registry,
+    kinds,
   )
   let name_set : Map[String, Bool] = {}
   for t in name_tokens {
@@ -259,7 +274,9 @@ fn build_rationale(
     Split => {
       buf.write_string("body covers many distinct topics (breadth ")
       buf.write_string(@text_format.format_percent(content_breadth))
-      buf.write_string(") and the name covers only a slice; consider splitting around: ")
+      buf.write_string(
+        ") and the name covers only a slice; consider splitting around: ",
+      )
       buf.write_string(@text_ops.join_with_limit(prominent_unused, 4))
     }
     Hollow =>

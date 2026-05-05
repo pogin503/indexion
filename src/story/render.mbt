@@ -68,18 +68,12 @@ fn render_text(report : StoryReport) -> String {
       } else {
         for ps in top {
           buf.write_string(
-            "  " +
-            format_score(ps.similarity) +
-            "  ← " +
-            ps.spec_path +
-            "\n",
+            "  " + format_score(ps.similarity) + "  ← " + ps.spec_path + "\n",
           )
         }
         if attr.by_spec.length() > top.length() {
           let rest = attr.by_spec.length() - top.length()
-          buf.write_string(
-            "  (+" + rest.to_string() + " more spec doc(s))\n",
-          )
+          buf.write_string("  (+" + rest.to_string() + " more spec doc(s))\n")
         }
       }
     }

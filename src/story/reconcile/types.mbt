@@ -138,9 +138,7 @@ pub struct ActReconcileCandidate {
 } derive(ToJson)
 
 ///|
-pub fn ActReconcileCandidate::get_act(
-  self : ActReconcileCandidate,
-) -> PlotAct {
+pub fn ActReconcileCandidate::get_act(self : ActReconcileCandidate) -> PlotAct {
   self.act
 }
 
@@ -209,9 +207,7 @@ pub fn ReconcileReport::get_acts(self : ReconcileReport) -> Array[PlotAct] {
 }
 
 ///|
-pub fn ReconcileReport::get_impl_paths(
-  self : ReconcileReport,
-) -> Array[String] {
+pub fn ReconcileReport::get_impl_paths(self : ReconcileReport) -> Array[String] {
   self.impl_paths
 }
 
@@ -244,17 +240,12 @@ pub struct ReconcileConfig {
 
 ///|
 pub fn ReconcileConfig::new(
-  similarity_floor~ : Double = 0.15,
-  runner_up_margin~ : Double = 0.05,
-  max_terms_per_candidate~ : Int = 8,
-  registry_root~ : String = "",
+  similarity_floor? : Double = 0.15,
+  runner_up_margin? : Double = 0.05,
+  max_terms_per_candidate? : Int = 8,
+  registry_root? : String = "",
 ) -> ReconcileConfig {
-  {
-    similarity_floor,
-    runner_up_margin,
-    max_terms_per_candidate,
-    registry_root,
-  }
+  { similarity_floor, runner_up_margin, max_terms_per_candidate, registry_root }
 }
 
 ///|

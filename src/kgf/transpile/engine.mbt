@@ -53,7 +53,7 @@ fn apply_scalar_subs(text : String, scalars : Map[String, String]) -> String {
     while i < chars.length() && not(is_token_boundary(chars[i])) {
       i = i + 1
     }
-    let token = text.substring(start=start, end=i)
+    let token = text.substring(start~, end=i)
     match scalars.get(token) {
       Some(replacement) => buf.write_string(replacement)
       None => buf.write_string(token)
@@ -197,7 +197,8 @@ fn lift_event(
       match entry.1 {
         String(s) =>
           new_labels.set(
-            key, Json::string(apply_regex_replace_all(s, lift_regex)),
+            key,
+            Json::string(apply_regex_replace_all(s, lift_regex)),
           )
         _ => ()
       }
@@ -318,7 +319,10 @@ pub fn lower_to_code(
 ) -> String {
   let buf = StringBuilder::new()
   let preamble_labels = make_preamble_labels(
-    source_lang, target_lang, unresolved_marker, lower.comment_prefix,
+    source_lang,
+    target_lang,
+    unresolved_marker,
+    lower.comment_prefix,
   )
   buf.write_string(
     render_template(lower.preamble_template, preamble_labels, unresolved_marker),
@@ -363,14 +367,19 @@ pub fn lower_to_code(
     // Source-intent comment, if the source rule declared one. Renders
     // the `source_intent_comment` template before the main template so
     // the original source text stays visible alongside the lowered code.
-    emit_source_intent_comment(buf, lift, lower, lowered_labels, unresolved_marker)
+    emit_source_intent_comment(
+      buf, lift, lower, lowered_labels, unresolved_marker,
+    )
     match lower.emit_templates.get(effective_rule) {
       Some(template) => {
         // Apply text_replace per-label (so `->` in the template literal
         // is NOT munged by `> → ]`, only canonical-IR-shaped label values).
         let post_labels = apply_text_replace_to_labels(
-          lowered_labels, lower.scalars, lower.text_replace(),
-          lower.text_replace_pairs(), lower.regex_replace(),
+          lowered_labels,
+          lower.scalars,
+          lower.text_replace(),
+          lower.text_replace_pairs(),
+          lower.regex_replace(),
         )
         let rendered = render_template(template, post_labels, unresolved_marker)
         buf.write_string(rendered)
@@ -380,12 +389,20 @@ pub fn lower_to_code(
       }
       None => {
         let fallback_labels : Map[String, Json] = {}
-        fallback_labels.set("comment_prefix", Json::string(lower.comment_prefix))
-        fallback_labels.set("unresolved_marker", Json::string(unresolved_marker))
+        fallback_labels.set(
+          "comment_prefix",
+          Json::string(lower.comment_prefix),
+        )
+        fallback_labels.set(
+          "unresolved_marker",
+          Json::string(unresolved_marker),
+        )
         fallback_labels.set("rule", Json::string(effective_rule))
         buf.write_string(
           render_template(
-            lower.no_template_template, fallback_labels, unresolved_marker,
+            lower.no_template_template,
+            fallback_labels,
+            unresolved_marker,
           ),
         )
       }
@@ -489,7 +506,8 @@ fn apply_structural_rules(
           match c.split_label_capitalized {
             Some(label_name) =>
               populate_variant_split(
-                labels, label_name,
+                labels,
+                label_name,
                 lower.collect_separators().get(label_name).unwrap_or("\n  "),
                 lower.variant_case_style(),
               )
@@ -505,8 +523,7 @@ fn apply_structural_rules(
     Some(rules) =>
       for r in rules {
         apply_collect_inner_as(
-          labels, r, raw_events, start_tok, end_tok, lift, lower,
-          unresolved_marker,
+          labels, r, raw_events, start_tok, end_tok, lift, lower, unresolved_marker,
         )
       }
     None => ()
@@ -625,14 +642,14 @@ fn split_on(text : String, sep : String) -> Array[String] {
   let mut i = 0
   while i + sep.length() <= text.length() {
     if text.substring(start=i, end=i + sep.length()) == sep {
-      result.push(text.substring(start=start, end=i))
+      result.push(text.substring(start~, end=i))
       i = i + sep.length()
       start = i
     } else {
       i = i + 1
     }
   }
-  result.push(text.substring(start=start, end=text.length()))
+  result.push(text.substring(start~, end=text.length()))
   result
 }
 
@@ -869,14 +886,22 @@ fn apply_collect_inner_as(
     // The returned effective rule may differ from `lifted.0` if a
     // conditional_lift fires; templates are looked up by that rule.
     let child_effective_rule = apply_structural_rules(
-      lifted.0, child_labels, raw_events, lift, lower, unresolved_marker,
+      lifted.0,
+      child_labels,
+      raw_events,
+      lift,
+      lower,
+      unresolved_marker,
     )
     // Render via the target's template for the child's IR rule.
     match lower.emit_templates.get(child_effective_rule) {
       Some(child_template) => {
         let post_labels = apply_text_replace_to_labels(
-          child_labels, lower.scalars, lower.text_replace(),
-          lower.text_replace_pairs(), lower.regex_replace(),
+          child_labels,
+          lower.scalars,
+          lower.text_replace(),
+          lower.text_replace_pairs(),
+          lower.regex_replace(),
         )
         let rendered = render_template(
           child_template, post_labels, unresolved_marker,
@@ -1121,10 +1146,7 @@ fn apply_one_pair(text : String, rule : TextReplacePair) -> String {
             Some(p) =>
               rule.template.substring(start=0, end=p) +
               inner +
-              rule.template.substring(
-                start=p + 2,
-                end=rule.template.length(),
-              )
+              rule.template.substring(start=p + 2, end=rule.template.length())
             None => rule.template
           }
           text.substring(start=0, end=pos) +
@@ -1145,11 +1167,7 @@ fn apply_one_pair(text : String, rule : TextReplacePair) -> String {
 /// Find the LAST occurrence of `open` such that the next `close` to its
 /// right does not have another `open` in between. That's the innermost
 /// `open ... close` pair.
-fn find_innermost_open(
-  text : String,
-  open : String,
-  close : String,
-) -> Int? {
+fn find_innermost_open(text : String, open : String, close : String) -> Int? {
   if open.length() == 0 {
     return None
   }
@@ -1192,7 +1210,7 @@ fn replace_all(text : String, from : String, to : String) -> String {
   let mut i = 0
   while i < text.length() {
     if i + from.length() <= text.length() &&
-       text.substring(start=i, end=i + from.length()) == from {
+      text.substring(start=i, end=i + from.length()) == from {
       buf.write_string(to)
       i = i + from.length()
     } else {

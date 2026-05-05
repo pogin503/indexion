@@ -176,6 +176,44 @@ async fn git_changed_files_native(
 }
 
 ///|
+async fn git_worktree_changed_files_native(
+  root : String,
+  paths : Array[String],
+) -> Array[String]? {
+  try {
+    let args : Array[String] = [
+      "-C", root, "status", "--porcelain=v1", "--untracked-files=all", "--",
+    ]
+    for path in paths {
+      args.push(path)
+    }
+    let (exit_code, stdout) = @async_process.collect_stdout(
+      "git",
+      args[:],
+      stderr=@async_process.redirect_to_file(null_device()),
+    )
+    if exit_code != 0 {
+      return None
+    }
+    let files : Array[String] = []
+    for line in stdout.text().split("\n") {
+      let trimmed = line.trim().to_string()
+      if trimmed.length() < 4 {
+        continue
+      }
+      let path = @config_paths.substring_from(trimmed, 3)
+      if path.length() > 0 {
+        files.push(path)
+      }
+    }
+    files.sort()
+    Some(files)
+  } catch {
+    _ => None
+  }
+}
+
+///|
 /// Return the file modification time in seconds, or None if unavailable.
 pub async fn file_mtime_seconds(path : String) -> Int? {
   try {

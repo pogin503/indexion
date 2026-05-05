@@ -31,6 +31,7 @@ pub(all) struct SearchConfig {
   model : String
   base_url : String
   dim : Int
+  no_update : Bool
 }
 
 ///|
@@ -71,6 +72,7 @@ pub fn SearchConfig::from_matches(matches : @argparse.Matches) -> SearchConfig {
     dim: @common.parse_int(
       get_str("dim", @embed_config.DEFAULT_TFIDF_DIM.to_string()),
     ),
+    no_update: get_flag("no-update"),
   }
 }
 
@@ -82,6 +84,10 @@ pub fn command() -> @argparse.Command {
     flags=[
       @argparse.FlagArg::new("files", about="Show matching file paths only"),
       @argparse.FlagArg::new("json", about="Output as JSON"),
+      @argparse.FlagArg::new(
+        "no-update",
+        about="Skip automatic digest index update before searching",
+      ),
     ],
     options=[
       @argparse.OptionArg(
@@ -140,15 +146,9 @@ pub fn command() -> @argparse.Command {
 /// Load the digest index from the project's .indexion/digest/ directory.
 /// Returns None if no index exists.
 fn load_digest_index(workspace_dir : String) -> @index.DigestIndex? {
-  let index_dir = match
-    @config.resolve_project_indexion_dir(workspace_dir, "digest") {
+  let index_dir = match @digest_workspace.resolve_index_dir(workspace_dir) {
     Some(dir) => dir
     None => return None
-  }
-  let mp = @dconfig.manifest_path(index_dir)
-  let gp = @dconfig.graph_path(index_dir)
-  if !@fs.path_exists(mp) || !@fs.path_exists(gp) {
-    return None
   }
   let embed_file_config = @digest_cli.load_embedding_file_config()
   let digest_config = @digest_cli.build_digest_config(
@@ -172,12 +172,156 @@ fn load_digest_index(workspace_dir : String) -> @index.DigestIndex? {
     },
     file_providers=embed_file_config.providers,
   )
-  let graph_json = @fs.read_file_to_string(gp) catch { _ => return None }
-  let graph = match @graph.CodeGraph::from_json_string(graph_json) {
-    Some(g) => g
+  @digest_workspace.load_index_with_graph(index_dir, digest_config)
+}
+
+///|
+fn digest_index_dir(workspace_dir : String) -> String? {
+  @digest_workspace.resolve_index_dir(workspace_dir)
+}
+
+///|
+fn build_digest_cli_config(
+  search_config : SearchConfig,
+  workspace_dir : String,
+  index_dir : String,
+) -> @digest_cli.CliConfig {
+  let embed_file_config = @digest_cli.load_embedding_file_config()
+  {
+    command: "build",
+    input_path: workspace_dir,
+    purpose: search_config.query,
+    index_dir,
+    provider: search_config.provider_name,
+    dim: search_config.dim,
+    strategy: "hnsw",
+    top_k: search_config.top_k,
+    min_score: search_config.min_score,
+    specs_dir: search_config.specs_dir,
+    api_key_env: search_config.api_key_env,
+    api_base_url: search_config.base_url,
+    model: search_config.model,
+    source_dir: workspace_dir,
+    no_update: search_config.no_update,
+    file_providers: embed_file_config.providers,
+  }
+}
+
+///|
+async fn update_digest_index_if_stale(
+  config : SearchConfig,
+  workspace_dir : String,
+  quiet : Bool,
+) -> Unit {
+  if config.no_update {
+    return
+  }
+  if !@common.is_directory(workspace_dir) {
+    return
+  }
+  let index_dir = match digest_index_dir(workspace_dir) {
+    Some(dir) => dir
+    None => return
+  }
+  let digest_cli_config = build_digest_cli_config(
+    config, workspace_dir, index_dir,
+  )
+  let digest_config = @digest_cli.build_digest_config(
+    digest_cli_config,
+    file_providers=digest_cli_config.file_providers,
+  )
+  match
+    @digest_workspace.update_index_if_stale(
+      workspace_dir,
+      index_dir,
+      config.specs_dir,
+      digest_config,
+    ) {
+    Some(result) =>
+      if result.indexed_count > 0 || result.removed_count > 0 {
+        if !quiet {
+          println(
+            "Auto-update: " +
+            result.indexed_count.to_string() +
+            " indexed, " +
+            result.removed_count.to_string() +
+            " removed",
+          )
+        }
+      }
+    None => ()
+  }
+}
+
+///|
+fn wiki_target_dir(paths : Array[String]) -> String? {
+  if paths.length() != 1 {
+    return None
+  }
+  let wiki_dir = match @wiki_workspace.resolve_wiki_dir(paths[0]) {
+    Some(dir) => dir
     None => return None
   }
-  Some(@index.DigestIndex::load_with_graph(index_dir, digest_config, graph))
+  if @wiki_workspace.is_wiki_dir(wiki_dir) {
+    Some(wiki_dir)
+  } else {
+    None
+  }
+}
+
+///|
+async fn update_wiki_index_if_stale(
+  config : SearchConfig,
+  paths : Array[String],
+  quiet : Bool,
+) -> Unit {
+  if config.no_update {
+    return
+  }
+  let wiki_dir = match wiki_target_dir(paths) {
+    Some(dir) => dir
+    None => return
+  }
+  let provider = @embed_config.resolve_provider(
+    config.provider_name,
+    config.api_key_env,
+    config.base_url,
+    config.model,
+    config.dim,
+  ) catch {
+    @embed_config.MissingApiKey(env) => {
+      if !quiet {
+        println(
+          "Warning: wiki search index not updated: " +
+          env +
+          " not set for provider",
+        )
+      }
+      return
+    }
+    @embed_config.UnknownProvider(name) => {
+      if !quiet {
+        println(
+          "Warning: wiki search index not updated: unknown provider " + name,
+        )
+      }
+      return
+    }
+  }
+  match
+    @wiki_workspace.update_search_index_if_stale(
+      wiki_dir,
+      config.specs_dir,
+      provider,
+    ) {
+    Some(result) =>
+      if !quiet {
+        println(
+          "Wiki auto-update: " + result.sections_count.to_string() + " sections",
+        )
+      }
+    None => ()
+  }
 }
 
 ///|
@@ -232,6 +376,7 @@ pub async fn run_to_json(config : SearchConfig) -> String? {
   }
   let paths = if config.paths.is_empty() { ["."] } else { config.paths }
   // Pre-built wiki index path
+  update_wiki_index_if_stale(config, paths, true)
   match load_prebuilt_wiki_index(paths) {
     Some(wiki_idx) => {
       let wiki_hits = wiki_idx.search(
@@ -247,7 +392,10 @@ pub async fn run_to_json(config : SearchConfig) -> String? {
     None => ()
   }
   // Use the pre-built digest index (SoT).
-  let workspace = graph_target_dir(paths)
+  let workspace = @digest_workspace.resolve_workspace_dir(
+    graph_target_dir(paths),
+  )
+  update_digest_index_if_stale(config, workspace, true)
   match load_digest_index(workspace) {
     Some(index) => {
       let hits = query_digest_index(
@@ -272,6 +420,7 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
   let paths = if config.paths.is_empty() { ["."] } else { config.paths }
   // When targeting a single wiki directory with a pre-built vector index,
   // use the full WikiSearchIndex (engine + sections map) to resolve hits.
+  update_wiki_index_if_stale(config, paths, config.json_output)
   match load_prebuilt_wiki_index(paths) {
     Some(wiki_idx) => {
       let wiki_hits = wiki_idx.search(
@@ -305,7 +454,10 @@ pub async fn run_matches(matches : @argparse.Matches) -> Unit {
     None => ()
   }
   // Use the pre-built digest index (SoT).
-  let workspace = graph_target_dir(paths)
+  let workspace = @digest_workspace.resolve_workspace_dir(
+    graph_target_dir(paths),
+  )
+  update_digest_index_if_stale(config, workspace, config.json_output)
   match load_digest_index(workspace) {
     Some(index) => {
       let hits = query_digest_index(

@@ -47,7 +47,6 @@ fn preprocess_content(
   toolkit.preprocess(content)
 }
 
-
 ///|
 pub fn tokenize_source(
   content : String,
@@ -386,7 +385,8 @@ pub fn extract_all_declarations_from_events(
         if name.length() == 0 {
           continue
         }
-        let start_tok = match event_token_index(labels, @kgf_types.META_START_TOK) {
+        let start_tok = match
+          event_token_index(labels, @kgf_types.META_START_TOK) {
           Some(value) => value
           None => continue
         }

@@ -4,13 +4,15 @@ package "trkbt10/indexion/cmd/indexion/digest"
 import {
   "moonbitlang/core/argparse",
   "trkbt10/indexion/src/core/graph",
-  "trkbt10/indexion/src/kgf/cas/types",
+  "trkbt10/indexion/src/digest/workspace",
 }
 
 // Values
 pub fn build_digest_config(CliConfig, file_providers? : Array[@trkbt10/indexion/src/config.ProviderFileEntry]) -> @trkbt10/indexion/src/digest/config.DigestConfig
 
-pub fn build_graph_from_source(String, String) -> GraphBuildResult?
+pub fn build_graph_from_source(String, String, quiet? : Bool) -> @workspace.GraphBuildResult?
+
+pub fn build_hint() -> String
 
 pub fn command() -> @argparse.Command
 
@@ -26,7 +28,7 @@ pub fn log_error(String) -> Unit
 
 pub fn log_progress(String) -> Unit
 
-pub fn resolve_provider(CliConfig) -> @trkbt10/indexion/src/embedding/config.EmbeddingProvider
+pub fn resolve_provider(CliConfig) -> @trkbt10/indexion/src/embedding/config.EmbeddingProvider raise @trkbt10/indexion/src/embedding/config.ProviderError
 
 pub async fn run_matches(@argparse.Matches) -> Unit
 
@@ -55,12 +57,8 @@ pub fn CliConfig::apply_embedding_file_config(Self, @trkbt10/indexion/src/config
 pub fn CliConfig::default() -> Self
 pub fn CliConfig::from_matches(@argparse.Matches) -> Self
 
-pub(all) struct GraphBuildResult {
-  graph : @graph.CodeGraph
-  file_hashes : Map[String, @types.ContentHash]
-}
-
 // Type aliases
+pub using @workspace {type GraphBuildResult}
 
 // Traits
 

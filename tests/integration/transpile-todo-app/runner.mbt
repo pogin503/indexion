@@ -68,10 +68,10 @@ fn list_ts_files() -> Array[String] raise {
 
 ///|
 fn collect_ts_files(dir : String, out : Array[String]) -> Unit raise {
-  let entries = (@fs.read_dir(dir)) catch { _ => return }
+  let entries = @fs.read_dir(dir) catch { _ => return }
   for entry in entries {
     let path = dir + "/" + entry
-    let is_dir = (@fs.is_dir(path)) catch { _ => false }
+    let is_dir = @fs.is_dir(path) catch { _ => false }
     if is_dir {
       collect_ts_files(path, out)
     } else if path.has_suffix(".ts") {
@@ -133,78 +133,102 @@ fn is_kind_char(c : Char) -> Bool {
 /// problem? See `kind_diagnosis()` for the rationale.
 fn kind_diagnosis() -> Array[(String, String)] {
   let pairs : Array[(String, String)] = []
-  pairs.push((
-    "id_text",
-    "MAPPING — KGF DOES extract the id (it's on a sibling rule like " +
-    "InterfaceHeader/StructHeader); spec format has no `id_from: <SiblingRule>.<label>` clause.",
-  ))
-  pairs.push((
-    "rhs",
-    "MAPPING — TypeDecl event carries the full text (e.g. `type X = a|b;`); " +
-    "spec format has no substring/regex extraction operator.",
-  ))
-  pairs.push((
-    "variants",
-    "MAPPING — variant tokens ARE in the source events (string-literal-union); " +
-    "spec format has no inner-event aggregation operator.",
-  ))
-  pairs.push((
-    "fields",
-    "MAPPING — KGF emits PropertySig children of InterfaceDecl; " +
-    "spec format has no inner-event aggregation operator.",
-  ))
-  pairs.push((
-    "params",
-    "MAPPING — KGF emits Param children of FunctionDecl; " +
-    "spec format has no inner-event aggregation operator.",
-  ))
-  pairs.push((
-    "return",
-    "KGF — TypeScript KGF does not label a FunctionDecl's return type as a " +
-    "named edge. The Type event near the body is unattributed.",
-  ))
-  pairs.push((
-    "body",
-    "ENGINE+CONVERSION — `body` label on FunctionDecl event is just the " +
-    "closing brace token. The full body text lives on `body_text`; the " +
-    "lower template should reference that. Even with body_text, expression " +
-    "syntax is the part that genuinely cannot be cross-language transpiled.",
-  ))
-  pairs.push((
-    "body_text",
-    "CONVERSION — full body text of source function. No mechanical mapping " +
-    "to target body exists; this is the genuine cross-language gap.",
-  ))
-  pairs.push((
-    "Any",
-    "CONVERSION — TypeScript `any` has no canonical equivalent. Marked at lift time.",
-  ))
-  pairs.push((
-    "Unknown",
-    "CONVERSION — TypeScript `unknown` has no canonical equivalent. Marked at lift time.",
-  ))
-  pairs.push((
-    "type_wrap",
-    "MAPPING — Python's generic syntax (`List[X]`) cannot be lifted by " +
-    "the current suffix-wrap rule; needs a richer wrap form.",
-  ))
-  pairs.push((
-    "module_target",
-    "MAPPING — source import path was not in `lift.module_aliases` (e.g. " +
-    "user's relative `./types.ts`). Extend the spec's `module_aliases` " +
-    "table or accept relative imports as a separate concern.",
-  ))
-  pairs.push((
-    "module_canonical",
-    "MAPPING — canonical category was set by lift but `lower.module_aliases` " +
-    "does not have a target translation. Extend lower spec.",
-  ))
+  pairs.push(
+    (
+      "id_text",
+      "MAPPING — KGF DOES extract the id (it's on a sibling rule like " +
+      "InterfaceHeader/StructHeader); spec format has no `id_from: <SiblingRule>.<label>` clause.",
+    ),
+  )
+  pairs.push(
+    (
+      "rhs",
+      "MAPPING — TypeDecl event carries the full text (e.g. `type X = a|b;`); " +
+      "spec format has no substring/regex extraction operator.",
+    ),
+  )
+  pairs.push(
+    (
+      "variants",
+      "MAPPING — variant tokens ARE in the source events (string-literal-union); " +
+      "spec format has no inner-event aggregation operator.",
+    ),
+  )
+  pairs.push(
+    (
+      "fields",
+      "MAPPING — KGF emits PropertySig children of InterfaceDecl; " +
+      "spec format has no inner-event aggregation operator.",
+    ),
+  )
+  pairs.push(
+    (
+      "params",
+      "MAPPING — KGF emits Param children of FunctionDecl; " +
+      "spec format has no inner-event aggregation operator.",
+    ),
+  )
+  pairs.push(
+    (
+      "return",
+      "KGF — TypeScript KGF does not label a FunctionDecl's return type as a " +
+      "named edge. The Type event near the body is unattributed.",
+    ),
+  )
+  pairs.push(
+    (
+      "body",
+      "ENGINE+CONVERSION — `body` label on FunctionDecl event is just the " +
+      "closing brace token. The full body text lives on `body_text`; the " +
+      "lower template should reference that. Even with body_text, expression " +
+      "syntax is the part that genuinely cannot be cross-language transpiled.",
+    ),
+  )
+  pairs.push(
+    (
+      "body_text",
+      "CONVERSION — full body text of source function. No mechanical mapping " +
+      "to target body exists; this is the genuine cross-language gap.",
+    ),
+  )
+  pairs.push(
+    (
+      "Any", "CONVERSION — TypeScript `any` has no canonical equivalent. Marked at lift time.",
+    ),
+  )
+  pairs.push(
+    (
+      "Unknown", "CONVERSION — TypeScript `unknown` has no canonical equivalent. Marked at lift time.",
+    ),
+  )
+  pairs.push(
+    (
+      "type_wrap",
+      "MAPPING — Python's generic syntax (`List[X]`) cannot be lifted by " +
+      "the current suffix-wrap rule; needs a richer wrap form.",
+    ),
+  )
+  pairs.push(
+    (
+      "module_target",
+      "MAPPING — source import path was not in `lift.module_aliases` (e.g. " +
+      "user's relative `./types.ts`). Extend the spec's `module_aliases` " +
+      "table or accept relative imports as a separate concern.",
+    ),
+  )
+  pairs.push(
+    (
+      "module_canonical",
+      "MAPPING — canonical category was set by lift but `lower.module_aliases` " +
+      "does not have a target translation. Extend lower spec.",
+    ),
+  )
   pairs
 }
 
 ///|
 /// Build the snapshot for a single target language.
-async fn build_target_snapshot(target : String) -> TargetSnapshot raise {
+async fn build_target_snapshot(target : String) -> TargetSnapshot {
   let files = list_ts_files()
   let per_file : Array[FileDrift] = []
   let rule_hist : Map[String, Int] = {}
@@ -400,7 +424,7 @@ fn write_snapshot(path : String, content : String) -> Unit raise {
 
 ///|
 /// Public entry consumed by per-target test files.
-pub async fn run_target_snapshot(target : String) -> Unit raise {
+pub async fn run_target_snapshot(target : String) -> Unit {
   let snap = build_target_snapshot(target)
   let actual = snapshot_string(snap) + "\n"
   assert_snapshot_matches(snapshot_path(target), actual)
@@ -433,8 +457,10 @@ fn ensure_dir(path : String) -> Unit raise {
       continue
     }
     acc = if acc.length() == 0 { p } else { acc + "/" + p }
-    if not((@fs.is_dir(acc)) catch { _ => false }) {
-      (@fs.create_dir(acc)) catch { _ => () }
+    if not(@fs.is_dir(acc) catch { _ => false }) {
+      @fs.create_dir(acc) catch {
+        _ => ()
+      }
     }
   }
 }
@@ -447,12 +473,12 @@ fn split_path(path : String) -> Array[String] {
   let mut i = 0
   while i < chars.length() {
     if chars[i] == '/' {
-      result.push(path.substring(start=start, end=i))
+      result.push(path.substring(start~, end=i))
       start = i + 1
     }
     i = i + 1
   }
-  result.push(path.substring(start=start, end=path.length()))
+  result.push(path.substring(start~, end=path.length()))
   result
 }
 
@@ -463,14 +489,14 @@ fn split_on_runner(text : String, sep : String) -> Array[String] {
   let mut i = 0
   while i + sep.length() <= text.length() {
     if text.substring(start=i, end=i + sep.length()) == sep {
-      result.push(text.substring(start=start, end=i))
+      result.push(text.substring(start~, end=i))
       i = i + sep.length()
       start = i
     } else {
       i = i + 1
     }
   }
-  result.push(text.substring(start=start, end=text.length()))
+  result.push(text.substring(start~, end=text.length()))
   result
 }
 
@@ -489,7 +515,9 @@ async fn compile_check(target : String, file_path : String) -> Int {
   if cmd_path.length() == 0 {
     return -1
   }
-  @process.run(cmd, args[:]) catch { _ => -2 }
+  @process.run(cmd, args[:]) catch {
+    _ => -2
+  }
 }
 
 ///|
@@ -514,7 +542,7 @@ fn bootstrap_project(target : String, dir : String) -> Unit raise {
         dir + "/lib.rs",
         "#![allow(non_snake_case, non_camel_case_types, dead_code, unused_imports)]\npub mod cli;\npub mod format;\npub mod main;\npub mod service;\npub mod storage;\npub mod types;\n",
       )
-    "c" => {
+    "c" =>
       // C: write a single header that re-exports all decls, plus
       // re-emit each .c with `#include \"all.h\"` prepended via a wrapper.
       // For simplicity we generate `all.h` as the union of struct/enum
@@ -523,7 +551,6 @@ fn bootstrap_project(target : String, dir : String) -> Unit raise {
         dir + "/all.h",
         "#ifndef TRANSPILE_ALL_H\n#define TRANSPILE_ALL_H\n#include <stdlib.h>\ntypedef enum { OPEN, DONE } TodoStatus;\ntypedef struct { double id; char * title; TodoStatus status; char * createdAt; } Todo;\ntypedef struct { double nextId; Todo * items; } TodoStore;\ntypedef struct { double exitCode; char * output; } CliResult;\n#endif\n",
       )
-    }
     "cpp" =>
       @fs.write_string_to_file(
         dir + "/all.hpp",
@@ -555,9 +582,8 @@ fn compile_command(target : String, file : String) -> (String, Array[String]) {
       (
         "rustc",
         [
-          "--crate-type=lib", "--emit=metadata", "--edition=2021",
-          "--allow=non_snake_case", "--allow=non_camel_case_types",
-          "--allow=dead_code", "--allow=unused_variables",
+          "--crate-type=lib", "--emit=metadata", "--edition=2021", "--allow=non_snake_case",
+          "--allow=non_camel_case_types", "--allow=dead_code", "--allow=unused_variables",
           "--out-dir=/tmp/indexion-rustc-out", file,
         ],
       )
@@ -574,8 +600,13 @@ fn compile_command(target : String, file : String) -> (String, Array[String]) {
       (
         "c++",
         [
-          "-fsyntax-only", "-std=c++17", "-x", "c++",
-          "-include", dir + "/all.hpp", file,
+          "-fsyntax-only",
+          "-std=c++17",
+          "-x",
+          "c++",
+          "-include",
+          dir + "/all.hpp",
+          file,
         ],
       )
     }
@@ -621,7 +652,7 @@ fn which(cmd : String) -> String {
   }
   for dir in split_on_runner(path, ":") {
     let candidate = dir + "/" + cmd
-    let exists = (@fs.path_exists(candidate)) catch { _ => false }
+    let exists = @fs.path_exists(candidate) catch { _ => false }
     if exists {
       return candidate
     }
@@ -643,9 +674,7 @@ fn check_emit_parses(code : String, target_lang : String) -> Int {
     Some(s) => s
     None => return -1
   }
-  let diagnostics = @kgf_check.check_source(
-    code, "<transpile-emit>", spec,
-  )
+  let diagnostics = @kgf_check.check_source(code, "<transpile-emit>", spec)
   let mut errors = 0
   for d in diagnostics {
     if d.get_severity() == "error" {

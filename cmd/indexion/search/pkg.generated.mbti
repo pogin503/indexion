@@ -3,17 +3,28 @@ package "trkbt10/indexion/cmd/indexion/search"
 
 import {
   "moonbitlang/core/argparse",
+  "trkbt10/vcdb/core/filter",
 }
 
 // Values
+pub fn build_corpus(Array[String], SearchConfig) -> Array[@trkbt10/indexion/src/search.SearchDocument]
+
 pub fn command() -> @argparse.Command
 
+pub fn hits_to_json(Array[@trkbt10/indexion/src/search.SearchHit]) -> String
+
+pub fn load_prebuilt_wiki_index(Array[String]) -> @trkbt10/indexion/src/docgen/wiki/search.WikiSearchIndex?
+
+pub fn parse_filter(String) -> @filter.FilterExpr?
+
 pub async fn run_matches(@argparse.Matches) -> Unit
+
+pub async fn run_to_json(SearchConfig) -> String?
 
 // Errors
 
 // Types and methods
-pub struct SearchConfig {
+pub(all) struct SearchConfig {
   query : String
   paths : Array[String]
   top_k : Int
@@ -24,6 +35,12 @@ pub struct SearchConfig {
   files_only : Bool
   json_output : Bool
   filter_str : String
+  provider_name : String
+  api_key_env : String
+  model : String
+  base_url : String
+  dim : Int
+  no_update : Bool
 }
 pub fn SearchConfig::from_matches(@argparse.Matches) -> Self
 

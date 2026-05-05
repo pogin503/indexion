@@ -48,11 +48,9 @@ pub fn command() -> @argparse.Command {
         action=Append,
         about="Glob pattern for impl-side documents (repeatable)",
       ),
-      @argparse.OptionArg::new(
-        "format",
-        about="Output format: text | json",
-        default_values=["text"],
-      ),
+      @argparse.OptionArg::new("format", about="Output format: text | json", default_values=[
+        "text",
+      ]),
       @argparse.OptionArg::new(
         "output",
         about="Output file path (- or empty = stdout)",

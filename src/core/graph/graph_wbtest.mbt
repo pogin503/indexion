@@ -476,7 +476,10 @@ test "to_json_string: unknown edge targets are backfilled as external modules" {
   attrs.set("via", "some/external/pkg")
   attrs.set("dep_kind", "value")
   graph.add_edge(
-    ModuleDependsOn, "src/mymod.pkg", "pkg:some/external/pkg", attrs~,
+    ModuleDependsOn,
+    "src/mymod.pkg",
+    "pkg:some/external/pkg",
+    attrs~,
   )
   assert_edges_reference_known_nodes(graph)
   guard CodeGraph::from_json_string(graph.to_json_string()) is Some(parsed) else {
@@ -521,7 +524,10 @@ test "to_json_string: full invariant holds for mixed graph" {
   let ext_attrs : Map[String, String] = {}
   ext_attrs.set("via", "moonbitlang/core")
   graph.add_edge(
-    ModuleDependsOn, "a.mbt", "pkg:moonbitlang/core", attrs=ext_attrs,
+    ModuleDependsOn,
+    "a.mbt",
+    "pkg:moonbitlang/core",
+    attrs=ext_attrs,
   )
   assert_edges_reference_known_nodes(graph)
 }

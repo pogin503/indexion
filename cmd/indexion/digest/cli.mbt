@@ -597,11 +597,7 @@ async fn query_with_cascade(
 
 ///|
 /// Result of building a graph from source, including file content hashes.
-pub(all) struct GraphBuildResult {
-  graph : @graph.CodeGraph
-  /// Map of file path -> content hash for all analyzed files.
-  file_hashes : Map[String, @cas_types.ContentHash]
-}
+pub type GraphBuildResult = @workspace.GraphBuildResult
 
 ///|
 /// Build graph from source directory.
@@ -610,40 +606,15 @@ pub(all) struct GraphBuildResult {
 pub fn build_graph_from_source(
   source_dir : String,
   specs_dir : String,
+  quiet? : Bool = false,
 ) -> GraphBuildResult? {
-  log_progress("Loading language specs...")
-  let registry = @kgf_features.load_registry_or_empty(
-    specs_dir~,
-    target_dir=source_dir,
-  )
-  log_progress("Collecting files...")
-  let kgf_ignore = registry.collect_ignore_patterns()
-  let discover_opts = @pipeline.DiscoverOptions::new(
-    kgf_ignore~,
-    root_dir=source_dir,
-  )
-  let paths = @pipeline.discover_files([source_dir], discover_opts)
-  if paths.length() == 0 {
-    log_error("No files found in: " + source_dir)
-    return None
+  if !quiet {
+    log_progress("Loading language specs...")
   }
-  let files = @pipeline.collect_supported_files(paths, registry)
-  if files.length() == 0 {
-    log_error("No supported files found")
-    return None
-  }
-  log_progress("Found " + files.length().to_string() + " files to analyze.")
-  // Compute content hashes from file content while it's in memory.
-  // This is the single point where file content is available — after graph
-  // construction, content is discarded and only structural data remains.
-  let file_hashes : Map[String, @cas_types.ContentHash] = {}
-  for entry in files {
-    let path = entry.0
-    let content = entry.1
-    file_hashes.set(path, @cas_hash.compute_hash(content))
-  }
-  // Build graph with progress callback
   let progress_fn : ((Int, Int, String)) -> Unit = fn(info) {
+    if quiet {
+      return
+    }
     let (current, total, path) = info
     log_progress(
       "[" +
@@ -654,14 +625,25 @@ pub fn build_graph_from_source(
       path,
     )
   }
-  let progress_callback = @build.ProgressCallback::new(progress_fn)
-  let doc_config = @build.DocConfig::new(files, registry.to_specs_map())
-  let (_, graph) = @build.build_with_graph_progress(
-    doc_config,
-    Some(progress_callback),
+  let result = @workspace.build_graph_from_source(
+    source_dir,
+    specs_dir,
+    progress=progress_fn,
   )
-  log_progress("Analysis complete.")
-  Some({ graph, file_hashes })
+  match result {
+    Some(r) => {
+      if !quiet {
+        log_progress("Analysis complete.")
+      }
+      Some(r)
+    }
+    None => {
+      if !quiet {
+        log_error("No supported files found in: " + source_dir)
+      }
+      None
+    }
+  }
 }
 
 ///|
@@ -799,13 +781,15 @@ async fn run_build_inner(config : CliConfig) -> Unit {
 /// Detect source directory for auto-update.
 /// Priority: --source flag > input_path from build > "." (current directory).
 fn detect_source_dir(config : CliConfig) -> String {
-  if config.source_dir.length() > 0 {
-    return config.source_dir
+  let requested_dir = if config.source_dir.length() > 0 {
+    config.source_dir
+  } else if config.input_path.length() > 0 &&
+    @common.is_directory(config.input_path) {
+    config.input_path
+  } else {
+    "."
   }
-  if config.input_path.length() > 0 && @common.is_directory(config.input_path) {
-    return config.input_path
-  }
-  "."
+  @workspace.resolve_source_dir_for_index(requested_dir, config.index_dir)
 }
 
 ///|
@@ -827,21 +811,26 @@ async fn run_query_async(config : CliConfig) -> Unit {
   if !config.no_update {
     let source_dir = detect_source_dir(config)
     if @common.is_directory(source_dir) {
-      // Build graph and file hashes from source
-      match build_graph_from_source(source_dir, config.specs_dir) {
-        Some(build_result) => {
-          let index = @index.DigestIndex::load_or_create(
-            config.index_dir,
-            digest_config,
-          )
-          let file_hashes : Map[String, @cas_types.ContentHash]? = Some(
-            build_result.file_hashes,
-          )
-          let result = index.build_with_config(
-            build_result.graph,
-            digest_config,
-            file_hashes~,
-          )
+      let progress_fn : ((Int, Int, String)) -> Unit = fn(info) {
+        let (current, total, path) = info
+        log_progress(
+          "[" +
+          current.to_string() +
+          "/" +
+          total.to_string() +
+          "] Analyzing: " +
+          path,
+        )
+      }
+      match
+        @workspace.update_index_if_stale(
+          source_dir,
+          config.index_dir,
+          config.specs_dir,
+          digest_config,
+          progress=progress_fn,
+        ) {
+        Some(result) => {
           if result.indexed_count > 0 || result.removed_count > 0 {
             log_progress(
               "Auto-update: " +
@@ -850,10 +839,12 @@ async fn run_query_async(config : CliConfig) -> Unit {
               result.removed_count.to_string() +
               " removed",
             )
-            let _ = index.save_to_dir(config.index_dir, build_result.graph)
+          }
+          for err in result.save_errors {
+            log_error(err)
           }
         }
-        None => () // Source analysis failed — proceed with saved index
+        None => () // Fresh enough or source analysis failed — proceed with saved index
       }
     }
   }
@@ -868,14 +859,7 @@ async fn run_query_async(config : CliConfig) -> Unit {
     return
   }
   // Load graph for unit resolution
-  let graph_path = @dconfig.graph_path(config.index_dir)
-  let graph_content = @fs.read_file_to_string(graph_path) catch {
-    @fs.IOError(msg) => {
-      log_error("Reading graph: " + msg)
-      return
-    }
-  }
-  let graph = match @graph.CodeGraph::from_json_string(graph_content) {
+  let graph = match @workspace.load_graph(config.index_dir) {
     Some(g) => g
     None => {
       log_error("Failed to parse graph JSON")

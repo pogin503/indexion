@@ -16,5 +16,9 @@ pub fn parse_int_or_zero(text : String) -> Int {
       return 0
     }
   }
-  if has_digit { value } else { 0 }
+  if has_digit {
+    value
+  } else {
+    0
+  }
 }

@@ -108,10 +108,7 @@ pub fn tokenize_doc(
 /// `<CWD>/kgfs/story/` directly and load only the matching directory; if
 /// neither exists we return an empty registry so the failure is loud.
 fn load_story_registry(root : String) -> @kgf_registry.KGFRegistry {
-  let candidates = [
-    @config_paths.join_path(root, "kgfs/story"),
-    "kgfs/story",
-  ]
+  let candidates = [@config_paths.join_path(root, "kgfs/story"), "kgfs/story"]
   for path in candidates {
     if @fs.path_exists(path) {
       return @kgf_registry.KGFRegistry::load_from_dir(path)
@@ -167,10 +164,7 @@ fn average_length(lists : Array[Array[String]]) -> Double {
 ///|
 /// Compute the n:m story divergence report between a spec group and an
 /// impl group using BM25 weighting.
-pub fn analyze_story(
-  groups : StoryGroups,
-  config : StoryConfig,
-) -> StoryReport {
+pub fn analyze_story(groups : StoryGroups, config : StoryConfig) -> StoryReport {
   let spec = groups.get_spec()
   let impl_ = groups.get_impl()
   let registry = load_story_registry(config.get_registry_root())
@@ -211,17 +205,10 @@ pub fn analyze_story(
       } else {
         0.0
       }
-      by_spec.push({
-        spec_path: s.path,
-        impl_path: p.path,
-        similarity: sim,
-      })
+      by_spec.push({ spec_path: s.path, impl_path: p.path, similarity: sim })
     }
     by_spec.sort_by(fn(a, b) { b.similarity.compare(a.similarity) })
-    let combined = bm25_pair_similarity(
-      flatten(spec_tokens),
-      impl_tokens[i],
-    )
+    let combined = bm25_pair_similarity(flatten(spec_tokens), impl_tokens[i])
     attributions.push({
       impl_path: p.path,
       by_spec,

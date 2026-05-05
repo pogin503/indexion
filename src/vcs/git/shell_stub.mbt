@@ -7,6 +7,12 @@ pub async fn is_repo(_root : String) -> Bool {
 ///|
 /// Compute the relative path from the repository root for Git queries.
 pub fn query_path(root : String, path : String) -> String {
+  if path == "." {
+    return "."
+  }
+  if !@config_paths.is_absolute_path(path) {
+    return path
+  }
   let rel = @config_paths.relative_to(root, path)
   if rel.length() == 0 {
     "."
@@ -53,4 +59,16 @@ pub async fn changed_files(
     .map(fn(path) { query_path(_root, path) })
     .collect()
   git_changed_files_native(_root, _base, rel_paths)
+}
+
+///|
+pub async fn worktree_changed_files(
+  _root : String,
+  _paths : Array[String],
+) -> Array[String]? {
+  let rel_paths = _paths
+    .iter()
+    .map(fn(path) { query_path(_root, path) })
+    .collect()
+  git_worktree_changed_files_native(_root, rel_paths)
 }

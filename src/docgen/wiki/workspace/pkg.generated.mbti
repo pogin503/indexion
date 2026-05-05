@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/docgen/wiki/workspace"
+
+import {
+  "trkbt10/indexion/src/digest/embed",
+  "trkbt10/indexion/src/embedding/config",
+}
+
+// Values
+pub fn index_files_exist(String) -> Bool
+
+pub fn is_wiki_dir(String) -> Bool
+
+pub fn is_wiki_search_generated_path(String) -> Bool
+
+pub async fn may_be_stale(String) -> Bool
+
+pub fn resolve_wiki_dir(String) -> String?
+
+pub async fn update_search_index(String, String, @config.EmbeddingProvider) -> SearchUpdateResult? raise @embed.EmbedError
+
+pub async fn update_search_index_if_stale(String, String, @config.EmbeddingProvider) -> SearchUpdateResult?
+
+pub fn wiki_content_paths(String) -> Array[String]?
+
+// Errors
+
+// Types and methods
+pub struct SearchUpdateResult {
+  sections_count : Int
+  saved : Bool
+}
+
+// Type aliases
+
+// Traits
+

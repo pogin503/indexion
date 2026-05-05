@@ -41,9 +41,7 @@ pub fn compare_tsed(
     fn(ti, tj) {
       let (idx_i, size_i) = ti
       let (idx_j, size_j) = tj
-      @apted.calculate_tsed_indexed(
-        idx_i, size_i, idx_j, size_j, tsed_config,
-      )
+      @apted.calculate_tsed_indexed(idx_i, size_i, idx_j, size_j, tsed_config)
     },
   )
 }
@@ -65,7 +63,9 @@ fn compare_trees_core(
   let all_trees : Array[Array[(@apted.IndexedTree, Int)]] = []
   for file in files {
     let raw_trees = @tree_extract.extract(
-      file.display_name, file.content, registry,
+      file.display_name,
+      file.content,
+      registry,
     )
     let prepared : Array[(@apted.IndexedTree, Int)] = []
     for tree in raw_trees {
@@ -172,9 +172,7 @@ pub fn compare_tsed_functions(
     fn(ti, tj) {
       let (idx_i, size_i) = ti
       let (idx_j, size_j) = tj
-      @apted.calculate_tsed_indexed(
-        idx_i, size_i, idx_j, size_j, tsed_config,
-      )
+      @apted.calculate_tsed_indexed(idx_i, size_i, idx_j, size_j, tsed_config)
     },
   )
 }
@@ -198,7 +196,9 @@ fn compare_functions_core(
   ] = []
   for file in files {
     let func_trees = @tree_extract.extract_functions(
-      file.display_name, file.content, registry,
+      file.display_name,
+      file.content,
+      registry,
     )
     for ft in func_trees {
       let (func, tree) = ft
@@ -206,11 +206,7 @@ fn compare_functions_core(
     }
   }
   if all_functions.length() < 2 {
-    return {
-      matches: [],
-      file_count: files.length(),
-      pairs_compared: 0,
-    }
+    return { matches: [], file_count: files.length(), pairs_compared: 0 }
   }
   let matches : Array[SimilarityMatch] = []
   let mut pairs_compared = 0
@@ -243,9 +239,5 @@ fn compare_functions_core(
       }
     }
   }
-  {
-    matches,
-    file_count: files.length(),
-    pairs_compared,
-  }
+  { matches, file_count: files.length(), pairs_compared }
 }

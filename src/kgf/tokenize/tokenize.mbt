@@ -128,7 +128,8 @@ pub fn tokenize_file(
   // and re-tokenize content tokens with the detected language's spec.
   let fence_token = get_single_feature(spec, @types.FEATURE_EMBEDDED_CODE_FENCE)
   let content_token = get_single_feature(
-    spec, @types.FEATURE_EMBEDDED_CONTENT_TOKEN,
+    spec,
+    @types.FEATURE_EMBEDDED_CONTENT_TOKEN,
   )
   let tokens = toolkit.tokenize(content)
   let mut in_fence = false

@@ -27,12 +27,7 @@ pub fn arg_int(
   default_ : Int,
 ) -> Int {
   match matches.values.get(key) {
-    Some(arr) =>
-      if arr.length() > 0 {
-        parse_int(arr[0])
-      } else {
-        default_
-      }
+    Some(arr) => if arr.length() > 0 { parse_int(arr[0]) } else { default_ }
     None => default_
   }
 }
@@ -46,12 +41,7 @@ pub fn arg_double(
   default_ : Double,
 ) -> Double {
   match matches.values.get(key) {
-    Some(arr) =>
-      if arr.length() > 0 {
-        parse_double(arr[0])
-      } else {
-        default_
-      }
+    Some(arr) => if arr.length() > 0 { parse_double(arr[0]) } else { default_ }
     None => default_
   }
 }
@@ -59,10 +49,7 @@ pub fn arg_double(
 ///|
 /// Read a repeated option (`action=Append`) from `argparse.Matches`.
 /// Returns the array as-is, or an empty array when the option is absent.
-pub fn arg_list(
-  matches : @argparse.Matches,
-  key : String,
-) -> Array[String] {
+pub fn arg_list(matches : @argparse.Matches, key : String) -> Array[String] {
   match matches.values.get(key) {
     Some(arr) => arr
     None => []

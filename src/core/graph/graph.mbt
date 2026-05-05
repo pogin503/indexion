@@ -140,7 +140,12 @@ pub fn CodeGraph::rewrite_edge_targets(
       None => e.to
     }
     if new_from != e.from || new_to != e.to {
-      self.edges[i] = { kind: e.kind, from: new_from, to: new_to, attrs: e.attrs }
+      self.edges[i] = {
+        kind: e.kind,
+        from: new_from,
+        to: new_to,
+        attrs: e.attrs,
+      }
     }
   }
   // Also drop any `moduleDependsOn` edges that become self-loops as a result
@@ -473,7 +478,11 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
   let backfilled_samples : Array[String] = []
   for edge in self.edges {
     let (resolved_to, _) = resolve_edge_target(
-      edge.to, edge, self.modules, self.symbols, symbol_by_module_name,
+      edge.to,
+      edge,
+      self.modules,
+      self.symbols,
+      symbol_by_module_name,
     )
     // Also resolve the edge's `from`: nested declarations (class methods
     // etc.) are emitted by semantics scripts with from = the parent
@@ -482,7 +491,10 @@ pub fn CodeGraph::to_json_string(self : CodeGraph) -> String {
     // rewrite keeps both endpoints pointing at real nodes.
     let resolved_from = match
       rewrite_by_trailing_name(
-        edge.from, self.modules, self.symbols, symbol_by_module_name,
+        edge.from,
+        self.modules,
+        self.symbols,
+        symbol_by_module_name,
       ) {
       Some(v) => v
       None => edge.from

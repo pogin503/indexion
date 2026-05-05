@@ -28,6 +28,8 @@ pub async fn repo_root(String) -> String?
 
 pub async fn status_dirty(String, String) -> Bool
 
+pub async fn worktree_changed_files(String, Array[String]) -> Array[String]?
+
 // Errors
 
 // Types and methods

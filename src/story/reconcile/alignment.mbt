@@ -31,12 +31,7 @@ pub fn reconcile(
   }
   let candidates = build_candidates(acts, impl_, config, registry)
   let orphan_impl = compute_orphans(impl_paths, candidates)
-  {
-    acts,
-    impl_paths,
-    candidates,
-    orphan_impl,
-  }
+  { acts, impl_paths, candidates, orphan_impl }
 }
 
 ///|
@@ -122,7 +117,9 @@ fn build_candidate(
   let pairs : Array[ImplMatch] = []
   for p in impl_ {
     let impl_tokens = @story.tokenize_doc(
-      p.get_content(), p.get_path(), registry,
+      p.get_content(),
+      p.get_path(),
+      registry,
     )
     let sim = @story.bm25_pair_similarity(act_tokens, impl_tokens)
     pairs.push({ impl_path: p.get_path(), similarity: sim })
@@ -148,11 +145,20 @@ fn build_candidate(
     None => ()
   }
   let (missing_terms, extra_terms, covered_terms) = compute_term_diffs(
-    act, impl_, best_match, config.max_terms_per_candidate,
-    registry, corpus_df, corpus_total, corpus_avg_len,
+    act,
+    impl_,
+    best_match,
+    config.max_terms_per_candidate,
+    registry,
+    corpus_df,
+    corpus_total,
+    corpus_avg_len,
   )
   let action = decide_action(
-    best_match, runner_ups, missing_terms.length(), extra_terms.length(),
+    best_match,
+    runner_ups,
+    missing_terms.length(),
+    extra_terms.length(),
   )
   let rationale = build_rationale(
     action, best_match, runner_ups, missing_terms, extra_terms,
@@ -199,9 +205,7 @@ fn compute_term_diffs(
     None => ([], [], [])
     Some(m) => {
       let impl_content = lookup_impl_content(impl_, m.impl_path)
-      let impl_tokens = @story.tokenize_doc(
-        impl_content, m.impl_path, registry,
-      )
+      let impl_tokens = @story.tokenize_doc(impl_content, m.impl_path, registry)
       let impl_set = build_token_set(impl_tokens)
       let act_set = build_token_set(act_tokens)
       let missing_vec = @tfidf.build_bm25_vector(

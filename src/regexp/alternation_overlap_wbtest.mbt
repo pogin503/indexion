@@ -16,6 +16,7 @@
 // the outer backtracking can try each in turn. These tests pin the fix and
 // guard against regressions in either path.
 
+///|
 test "alternation: 2-alt overlap, shorter first, literal" {
   // Regression: `\b(you|your)\b` against "your". Bug previously returned
   // `false` because `you` matched first and `\b` failed at offset 3.
@@ -24,6 +25,7 @@ test "alternation: 2-alt overlap, shorter first, literal" {
   assert_eq(r.text, "your")
 }
 
+///|
 test "alternation: 2-alt overlap, shorter first, char class" {
   let r = match_pattern("\\b([Yy]ou|[Yy]our)\\b", "your", 0)
   assert_true(r.matched)
@@ -33,6 +35,7 @@ test "alternation: 2-alt overlap, shorter first, char class" {
   assert_eq(r2.text, "Your")
 }
 
+///|
 test "alternation: 3-alt overlap, prefix sequence, literal" {
   // (I|you|your) — `I` and `you` both prefix-match before `your`.
   let r = match_pattern("\\b(I|you|your)\\b", "your", 0)
@@ -40,12 +43,14 @@ test "alternation: 3-alt overlap, prefix sequence, literal" {
   assert_eq(r.text, "your")
 }
 
+///|
 test "alternation: 3-alt overlap, prefix sequence, char class" {
   let r = match_pattern("\\b(I|[Yy]ou|[Yy]our)\\b", "your", 0)
   assert_true(r.matched)
   assert_eq(r.text, "your")
 }
 
+///|
 test "alternation: longer-first ordering already worked" {
   // Sanity: when the longer alternative comes first the bug was hidden,
   // so this case succeeded both before and after the fix.
@@ -54,6 +59,7 @@ test "alternation: longer-first ordering already worked" {
   assert_eq(r.text, "your")
 }
 
+///|
 test "alternation: shorter form still matches when standalone" {
   // After the fix, `you` standing alone must still match — we should
   // surface every alternative's end position, not silently bias toward
@@ -63,6 +69,7 @@ test "alternation: shorter form still matches when standalone" {
   assert_eq(r.text, "you")
 }
 
+///|
 test "alternation: char class as the only alternative" {
   let r = match_pattern("\\b([Yy]our)\\b", "your", 0)
   assert_true(r.matched)

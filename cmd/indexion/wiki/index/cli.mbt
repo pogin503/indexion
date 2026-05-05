@@ -174,10 +174,8 @@ async fn run_build(matches : @argparse.Matches) -> Unit {
         return
       }
     }
-    let search_index = @wiki_search.build_search_index(
-      wiki.pages,
-      provider,
-      registry~,
+    let result = @wiki_workspace.update_search_index(
+      wiki_dir_resolved, specs_dir, provider,
     ) catch {
       @embed.ParseError(msg) => {
         println("Error building search index: " + msg)
@@ -194,12 +192,14 @@ async fn run_build(matches : @argparse.Matches) -> Unit {
         return
       }
     }
-    search_index.save(wiki_dir_resolved)
-    println(
-      "Built vectors.db: " +
-      search_index.sections.length().to_string() +
-      " sections",
-    )
+    let sections_count = match result {
+      Some(r) => r.sections_count
+      None => {
+        println("Error: No wiki found at " + wiki_dir_resolved)
+        return
+      }
+    }
+    println("Built vectors.db: " + sections_count.to_string() + " sections")
   }
   // Log the operation
   let op_log = @wiki_log.WikiLog::load(wiki_dir_resolved)

@@ -36,7 +36,9 @@ pub fn normalized_tree_edit_distance_indexed(
   size2 : Int,
   config : CostConfig,
 ) -> Double {
-  let raw_dist = compute_tree_edit_distance_indexed(t1, size1, t2, size2, config)
+  let raw_dist = compute_tree_edit_distance_indexed(
+    t1, size1, t2, size2, config,
+  )
   let max_dist = size1.to_double() * config.delete_cost +
     size2.to_double() * config.insert_cost
   if max_dist <= 0.0 {
@@ -85,7 +87,11 @@ pub fn unit_cost_tree_similarity_upper_bound(
   }
   let diff = if size1 > size2 { size1 - size2 } else { size2 - size1 }
   let ub = 1.0 - diff.to_double() / denom.to_double()
-  if ub < 0.0 { 0.0 } else { ub }
+  if ub < 0.0 {
+    0.0
+  } else {
+    ub
+  }
 }
 
 ///|

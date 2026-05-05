@@ -8,9 +8,7 @@ test "diagram: tokenize mermaid flowchart" {
   let spec = registry.get_spec("mermaid").unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let fixtures = get_fixtures_dir()
-  let src = @fs.read_file_to_string(
-    fixtures + "/diagram/mermaid/flowchart.mmd",
-  ) catch {
+  let src = @fs.read_file_to_string(fixtures + "/diagram/mermaid/flowchart.mmd") catch {
     _ => ""
   }
   if src.length() > 0 {
@@ -30,9 +28,7 @@ test "diagram: tokenize mermaid sequence diagram" {
   let spec = registry.get_spec("mermaid").unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let fixtures = get_fixtures_dir()
-  let src = @fs.read_file_to_string(
-    fixtures + "/diagram/mermaid/sequence.mmd",
-  ) catch {
+  let src = @fs.read_file_to_string(fixtures + "/diagram/mermaid/sequence.mmd") catch {
     _ => ""
   }
   if src.length() > 0 {
@@ -50,9 +46,7 @@ test "diagram: tokenize mermaid class diagram" {
   let spec = registry.get_spec("mermaid").unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let fixtures = get_fixtures_dir()
-  let src = @fs.read_file_to_string(
-    fixtures + "/diagram/mermaid/class.mmd",
-  ) catch {
+  let src = @fs.read_file_to_string(fixtures + "/diagram/mermaid/class.mmd") catch {
     _ => ""
   }
   if src.length() > 0 {
@@ -97,9 +91,7 @@ test "diagram: tokenize mermaid gantt chart" {
   let spec = registry.get_spec("mermaid").unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let fixtures = get_fixtures_dir()
-  let src = @fs.read_file_to_string(
-    fixtures + "/diagram/mermaid/gantt.mmd",
-  ) catch {
+  let src = @fs.read_file_to_string(fixtures + "/diagram/mermaid/gantt.mmd") catch {
     _ => ""
   }
   if src.length() > 0 {
@@ -118,9 +110,7 @@ test "diagram: tokenize mermaid state diagram" {
   let spec = registry.get_spec("mermaid").unwrap()
   let lexer = @lexer.Lexer::new(spec.get_tokens())
   let fixtures = get_fixtures_dir()
-  let src = @fs.read_file_to_string(
-    fixtures + "/diagram/mermaid/state.mmd",
-  ) catch {
+  let src = @fs.read_file_to_string(fixtures + "/diagram/mermaid/state.mmd") catch {
     _ => ""
   }
   if src.length() > 0 {

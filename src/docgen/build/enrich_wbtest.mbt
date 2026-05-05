@@ -6,9 +6,7 @@
 fn make_source_spec() -> @kgf_types.KGFSpec {
   @kgf_types.KGFSpec::new(
     "moonbit",
-    tokens=[
-      @kgf_types.TokenDef::new("PackageRef", "@[a-zA-Z_][a-zA-Z0-9_]*"),
-    ],
+    tokens=[@kgf_types.TokenDef::new("PackageRef", "@[a-zA-Z_][a-zA-Z0-9_]*")],
     resolver=@kgf_types.ResolverSpec::new(bare_prefix="pkg:"),
   )
 }
@@ -18,7 +16,7 @@ fn make_source_spec() -> @kgf_types.KGFSpec {
 /// specific identity edge kind. Mirrors moon-mod.kgf's features.
 fn make_project_manifest_spec(
   identity_edge_kind : String,
-  bare_prefix~ : String = "pkg:",
+  bare_prefix? : String = "pkg:",
 ) -> @kgf_types.KGFSpec {
   let features : Map[String, Array[String]] = {}
   features.set("manifest_role", ["project"])
@@ -38,7 +36,7 @@ fn make_project_manifest_spec(
 fn make_package_manifest_spec(
   identity_edge_kind : String,
   entry_edge_kinds : Array[String],
-  bare_prefix~ : String = "",
+  bare_prefix? : String = "",
   ancestors? : Array[String] = [],
 ) -> @kgf_types.KGFSpec {
   let features : Map[String, Array[String]] = {}
@@ -146,10 +144,7 @@ test "enrich_graph: implicit alias is derived from trailing segment when no alia
 test "enrich_graph: canonicalize rewrites internal pkg target to package manifest id" {
   let graph = @graph.CodeGraph::new()
   // Internal project manifest — emits projectName edge.
-  let _ = graph.get_or_add_module(
-    "moon.mod.json",
-    file=Some("moon.mod.json"),
-  )
+  let _ = graph.get_or_add_module("moon.mod.json", file=Some("moon.mod.json"))
   graph.add_edge(
     @graph.EdgeKind::from_string("projectName"),
     "moon.mod.json",
@@ -168,10 +163,7 @@ test "enrich_graph: canonicalize rewrites internal pkg target to package manifes
     "src/filter/moon.pkg",
   )
   // A source file that (before canonicalization) targets `pkg:<proj>/src/filter`.
-  let _ = graph.get_or_add_module(
-    "src/caller.mbt",
-    file=Some("src/caller.mbt"),
-  )
+  let _ = graph.get_or_add_module("src/caller.mbt", file=Some("src/caller.mbt"))
   let attrs : Map[String, String] = {}
   attrs.set("via", "trkbt10/indexion/src/filter")
   graph.add_edge(
@@ -247,8 +239,9 @@ test "enrich_graph: workspace package ancestor-walk target is rewritten to inter
   // dir and packageName/mainEntry as identity/entry edges.
   specs.set(
     "package-json",
-    make_package_manifest_spec(
-      "packageName", ["mainEntry"], ancestors=["node_modules/"]),
+    make_package_manifest_spec("packageName", ["mainEntry"], ancestors=[
+      "node_modules/",
+    ]),
   )
   enrich_graph(graph, [], specs)
   let mut found_canonical = false
@@ -264,10 +257,7 @@ test "enrich_graph: workspace package ancestor-walk target is rewritten to inter
 ///|
 test "enrich_graph: self-loop edges are dropped after canonicalization" {
   let graph = @graph.CodeGraph::new()
-  let _ = graph.get_or_add_module(
-    "moon.mod.json",
-    file=Some("moon.mod.json"),
-  )
+  let _ = graph.get_or_add_module("moon.mod.json", file=Some("moon.mod.json"))
   graph.add_edge(
     @graph.EdgeKind::from_string("projectName"),
     "moon.mod.json",

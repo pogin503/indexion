@@ -380,8 +380,7 @@ fn try_collect_repeat_positions_fast(
       if pos + width > input_chars.length() {
         continue
       }
-      match
-        try_match_simple_sequence(alt, input_chars, pos, case_insensitive) {
+      match try_match_simple_sequence(alt, input_chars, pos, case_insensitive) {
         Some(end_pos) =>
           if !seen.contains(end_pos) {
             seen.set(end_pos, true)
@@ -626,7 +625,12 @@ fn enumerate_group_end_positions(
       (Alternation(alts), One) => {
         match
           try_collect_repeat_positions_fast(
-            alts, One, false, input_chars, pos, case_insensitive,
+            alts,
+            One,
+            false,
+            input_chars,
+            pos,
+            case_insensitive,
           ) {
           Some(fast_positions) => {
             for end in fast_positions {
@@ -638,9 +642,7 @@ fn enumerate_group_end_positions(
         }
         for alt in alts {
           match
-            match_elements_backtrack(
-              alt, 0, input_chars, pos, case_insensitive,
-            ) {
+            match_elements_backtrack(alt, 0, input_chars, pos, case_insensitive) {
             Some(end) => push_unique(end)
             None => ()
           }

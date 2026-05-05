@@ -398,9 +398,7 @@ pub fn LowerSpec::regex_replace(self : LowerSpec) -> Array[RegexReplace] {
 }
 
 ///|
-pub fn LowerSpec::collect_separators(
-  self : LowerSpec,
-) -> Map[String, String] {
+pub fn LowerSpec::collect_separators(self : LowerSpec) -> Map[String, String] {
   match self.collect_separators {
     Some(m) => m
     None => Map::new()

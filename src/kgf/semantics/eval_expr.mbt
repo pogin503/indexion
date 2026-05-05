@@ -741,7 +741,11 @@ fn eval_func_starts_with(args : Array[Json]) -> Json {
 /// match), `before=false` returns the suffix (everything after the match,
 /// excluding the delimiter itself). Shared body for `beforeFirst` /
 /// `afterFirst` in the KGF semantics DSL.
-fn split_first_occurrence(text : String, delimiter : String, before~ : Bool) -> String {
+fn split_first_occurrence(
+  text : String,
+  delimiter : String,
+  before~ : Bool,
+) -> String {
   if delimiter.length() == 0 {
     return if before { text } else { text }
   }
@@ -762,7 +766,9 @@ fn eval_func_before_first(args : Array[Json]) -> Json {
     return "".to_json()
   }
   split_first_occurrence(
-    json_to_string(args[0]), json_to_string(args[1]), before=true,
+    json_to_string(args[0]),
+    json_to_string(args[1]),
+    before=true,
   ).to_json()
 }
 
@@ -772,7 +778,9 @@ fn eval_func_after_first(args : Array[Json]) -> Json {
     return "".to_json()
   }
   split_first_occurrence(
-    json_to_string(args[0]), json_to_string(args[1]), before=false,
+    json_to_string(args[0]),
+    json_to_string(args[1]),
+    before=false,
   ).to_json()
 }
 

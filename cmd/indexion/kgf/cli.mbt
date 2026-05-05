@@ -159,11 +159,9 @@ pub fn command() -> @argparse.Command {
     ),
   ]
   let format_option : Array[@argparse.OptionArg] = [
-    @argparse.OptionArg(
-      "format",
-      about="Output format: human, json",
-      default_values=["human"],
-    ),
+    @argparse.OptionArg("format", about="Output format: human, json", default_values=[
+      "human",
+    ]),
   ]
   @argparse.Command(
     "kgf",

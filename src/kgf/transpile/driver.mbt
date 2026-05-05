@@ -38,7 +38,9 @@ pub fn transpile_file_json(
     Some(s) => s
     None => return None
   }
-  let source_text = @fs.read_file_to_string(file_path) catch { _ => return None }
+  let source_text = @fs.read_file_to_string(file_path) catch {
+    _ => return None
+  }
   let source = if source_text.has_suffix("\n") {
     source_text
   } else {
@@ -69,11 +71,17 @@ pub fn transpile_file_json(
           Some((open_ch, close_ch)) =>
             if has_body_pos(ev.0, ev.1) {
               let slice = extract_body_from_source(
-                source, ev.1, open_ch, close_ch,
+                source,
+                ev.1,
+                open_ch,
+                close_ch,
               )
               if slice.length() > 0 {
                 new_labels = enrich_with_raw_body(
-                  ev.1, slice, open_ch, close_ch,
+                  ev.1,
+                  slice,
+                  open_ch,
+                  close_ch,
                 )
               }
             }
@@ -89,8 +97,7 @@ pub fn transpile_file_json(
       // unresolved marker if set; both default to @@UNRESOLVED@@.
       let unresolved_marker = source_spec.unresolved_marker()
       let code = lower_to_code(
-        ir_events, events, source_lang, target_lang, unresolved_marker,
-        lift, lower,
+        ir_events, events, source_lang, target_lang, unresolved_marker, lift, lower,
       )
       // Build response envelope.
       let ir_events_json : Array[Json] = ir_events
