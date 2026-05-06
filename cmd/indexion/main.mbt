@@ -39,6 +39,7 @@
 /// | `search` | Semantic search across code, wiki, and docs |
 /// | `grep` | KGF-aware token pattern search |
 /// | `identity audit` | Detect name/content drift for files, folders, symbols |
+/// | `agent orient` | Generate pre-edit structure context for coding agents |
 /// | `perf kgf` | Run KGF parser performance benchmarks |
 ///
 /// ## Quick Start
@@ -86,6 +87,7 @@ fn build_command() -> @argparse.Command {
       @wiki_cli.command(),
       @story_cli.command(),
       @identity_cli.command(),
+      @agent_cli.command(),
     ],
   )
 }
@@ -121,6 +123,7 @@ async fn main {
     "wiki" => @wiki_cli.dispatch(sub)
     "story" => @story_cli.dispatch(sub)
     "identity" => @identity_cli.dispatch(sub)
+    "agent" => @agent_cli.dispatch(sub)
     _ => ()
   }
 }
