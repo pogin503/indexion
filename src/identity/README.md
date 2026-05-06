@@ -37,6 +37,10 @@ derive_display(text)                         → human label
 derive_name(text, path_hint, registry)       → Name { id, display }
 identifier_kinds_for(registry, path_hint)    → spec-driven content kinds
 score_name_divergence(entity, registry)      → NameDivergence
+
+IdentityAuditConfig                         — code identity scan settings
+IdentityAuditReport                         — file/folder/symbol audit report
+audit_code_identity(config)                 → IdentityAuditReport
 ```
 
 ## How it stays SoT-honest
@@ -66,3 +70,22 @@ package.
   content tokens for BM25 (replacing a hand-coded language list)
 - `cmd/indexion/story/names/` — `indexion story names` reports name ↔
   content drift across spec headings
+- `cmd/indexion/identity/` — `indexion identity audit` reports file,
+  folder, and symbol name ↔ content drift for codebases
+
+## Code Identity Audit
+
+`audit_code_identity` builds a code graph for the target paths, derives
+file/folder/symbol summaries from graph declarations, docs, module notes, and
+path scope terms, then compares those summaries with the names they claim to
+identify.
+
+Repeated basenames are not special-cased. If a basename appears in multiple
+directories, the audit derives a scoped name from its parent directory. This
+keeps conventional files and command entrypoints evaluable without hardcoding
+specific filenames.
+
+```bash
+indexion identity audit src/
+indexion identity audit --format=json --output=.indexion/cache/identity/report.json .
+```

@@ -38,6 +38,7 @@
 /// | `segment` | Split text into contextual segments |
 /// | `search` | Semantic search across code, wiki, and docs |
 /// | `grep` | KGF-aware token pattern search |
+/// | `identity audit` | Detect name/content drift for files, folders, symbols |
 /// | `perf kgf` | Run KGF parser performance benchmarks |
 ///
 /// ## Quick Start
@@ -84,6 +85,7 @@ fn build_command() -> @argparse.Command {
       @spec_cli.command(),
       @wiki_cli.command(),
       @story_cli.command(),
+      @identity_cli.command(),
     ],
   )
 }
@@ -118,6 +120,7 @@ async fn main {
     "spec" => @spec_cli.dispatch(sub)
     "wiki" => @wiki_cli.dispatch(sub)
     "story" => @story_cli.dispatch(sub)
+    "identity" => @identity_cli.dispatch(sub)
     _ => ()
   }
 }
