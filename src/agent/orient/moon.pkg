@@ -1,8 +1,12 @@
 import {
+  "moonbitlang/core/json" @json,
+  "moonbitlang/core/math" @math,
+  "moonbitlang/x/fs" @fs,
   "trkbt10/indexion/src/config" @config_paths,
   "trkbt10/indexion/src/core/graph" @graph,
   "trkbt10/indexion/src/docgen/build" @build,
   "trkbt10/indexion/src/docgen/render" @render,
+  "trkbt10/indexion/src/kgf/cas/hash" @cas_hash,
   "trkbt10/indexion/src/kgf/features" @kgf_features,
   "trkbt10/indexion/src/kgf/registry" @kgf_registry,
   "trkbt10/indexion/src/pipeline" @pipeline,

@@ -27,10 +27,26 @@ fn orient_command() -> @argparse.Command {
   @argparse.Command(
     "orient",
     about="Build a pre-edit structure brief for coding agents",
+    flags=[
+      @argparse.FlagArg::new(
+        "no-update",
+        about="Use the saved orientation map without refreshing changed files",
+      ),
+    ],
     options=[
       @argparse.OptionArg("specs-dir", about=@help.specs_dir, default_values=[
         "kgfs",
       ]),
+      @argparse.OptionArg::new(
+        "cache-dir",
+        about="Directory for the prebuilt agent orientation map",
+        default_values=[".indexion/cache/agent"],
+      ),
+      @argparse.OptionArg::new(
+        "wiki-dir",
+        about="Wiki directory used as curated project knowledge",
+        default_values=[".indexion/wiki"],
+      ),
       @argparse.OptionArg::new(
         "task",
         about="Task description text. Use --task-file for longer prompts.",
@@ -90,6 +106,9 @@ fn orient_config_from_matches(
       _ => base.paths
     },
     specs_dir: @common.arg_str(matches, "specs-dir", base.specs_dir),
+    cache_dir: @common.arg_str(matches, "cache-dir", base.cache_dir),
+    wiki_dir: @common.arg_str(matches, "wiki-dir", base.wiki_dir),
+    no_update: @common.arg_flag(matches, "no-update", base.no_update),
     limit: @common.arg_int(matches, "limit", base.limit),
   }
 }
@@ -116,6 +135,8 @@ fn render_markdown(report : @agent_orient.AgentOrientReport) -> String {
   render_items(buf, "Consumer Surfaces", report.consumer_surfaces)
   render_items(buf, "Do Not Implement Here", report.do_not_implement_here)
   render_items(buf, "Required Preflight", report.required_preflight)
+  render_quiz(buf, report.readiness_quiz)
+  render_map_status(buf, report.map_status)
   render_evidence(buf, report.evidence)
   render_list(buf, "Workflow", report.workflow)
   render_list(buf, "Notes", report.notes)
@@ -143,6 +164,49 @@ fn render_items(
     buf.write_string("\n")
   }
   buf.write_string("\n")
+}
+
+///|
+fn render_quiz(
+  buf : StringBuilder,
+  quiz : Array[@agent_orient.AgentOrientQuizItem],
+) -> Unit {
+  buf.write_string("## Readiness Quiz\n\n")
+  if quiz.length() == 0 {
+    buf.write_string("- None found.\n\n")
+    return
+  }
+  for item in quiz {
+    buf.write_string("- ")
+    buf.write_string(item.question)
+    buf.write_string(" Expected: `")
+    buf.write_string(item.expected_answer)
+    buf.write_string("` Evidence: `")
+    buf.write_string(item.evidence_path)
+    buf.write_string("`\n")
+  }
+  buf.write_string("\n")
+}
+
+///|
+fn render_map_status(
+  buf : StringBuilder,
+  status : @agent_orient.AgentOrientMapStatus,
+) -> Unit {
+  buf.write_string("## Orientation Map\n\n")
+  buf.write_string("- Files: ")
+  buf.write_string(status.total_files.to_string())
+  buf.write_string("\n- Owners: ")
+  buf.write_string(status.total_owners.to_string())
+  buf.write_string("\n- Documentation sources: ")
+  buf.write_string(status.total_doc_sources.to_string())
+  buf.write_string("\n- Knowledge changed: ")
+  buf.write_string(status.knowledge_changed.to_string())
+  buf.write_string("\n- Refreshed owners: ")
+  buf.write_string(status.refreshed_owners.length().to_string())
+  buf.write_string("\n- Reused owners: ")
+  buf.write_string(status.reused_owners.length().to_string())
+  buf.write_string("\n\n")
 }
 
 ///|
