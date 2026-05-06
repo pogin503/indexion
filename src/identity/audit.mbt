@@ -5,6 +5,14 @@ priv struct LocalEntitySummary {
   origin_hint : String
   name : String
   actual_summary : String
+  declaration_symbols : Int
+  behavior_symbols : Int
+}
+
+///|
+priv struct LocalEntityProfile {
+  declaration_symbols : Int
+  behavior_symbols : Int
 }
 
 ///|
@@ -140,6 +148,7 @@ fn build_file_summaries(
   model : PathNameModel,
 ) -> Array[LocalEntitySummary] {
   let by_module : Map[String, Array[String]] = {}
+  let profiles : Map[String, LocalEntityProfile] = {}
   for entry in graph.get_symbols() {
     let sym = entry.1
     let text = symbol_summary_text(sym.name, sym.doc)
@@ -147,6 +156,10 @@ fn build_file_summaries(
       Some(arr) => arr.push(text)
       None => by_module.set(sym.module_id, [text])
     }
+    profiles.set(
+      sym.module_id,
+      profile_with_symbol(profiles.get(sym.module_id), sym.kind),
+    )
   }
   let result : Array[LocalEntitySummary] = []
   for file in files {
@@ -159,6 +172,7 @@ fn build_file_summaries(
         }
       None => ()
     }
+    let profile = profiles.get(file.path).unwrap_or(empty_entity_profile())
     for note in graph.get_notes("module_doc", file.path) {
       summary.write_string(note.content)
       summary.write_string("\n")
@@ -170,6 +184,8 @@ fn build_file_summaries(
       origin_hint: file.path,
       name: scoped_path_name(file.path, model),
       actual_summary: summary.to_string(),
+      declaration_symbols: profile.declaration_symbols,
+      behavior_symbols: profile.behavior_symbols,
     })
   }
   result
@@ -212,6 +228,8 @@ fn build_folder_summaries(
       origin_hint: children[0].origin_hint,
       name: scoped_path_name(dir, model),
       actual_summary: summary.to_string(),
+      declaration_symbols: count_declaration_symbols(children),
+      behavior_symbols: count_behavior_symbols(children),
     })
   }
   result
@@ -241,6 +259,16 @@ fn build_symbol_summaries(
       origin_hint: path,
       name: sym.name,
       actual_summary: symbol_summary_text(sym.name, sym.doc),
+      declaration_symbols: if is_declaration_symbol_kind(sym.kind) {
+        1
+      } else {
+        0
+      },
+      behavior_symbols: if is_behavior_symbol_kind(sym.kind) {
+        1
+      } else {
+        0
+      },
     })
   }
   result
@@ -248,12 +276,58 @@ fn build_symbol_summaries(
 
 ///|
 fn is_identity_symbol_kind(kind : String) -> Bool {
-  kind == "Function" ||
+  is_behavior_symbol_kind(kind) || is_declaration_symbol_kind(kind)
+}
+
+///|
+fn is_behavior_symbol_kind(kind : String) -> Bool {
+  kind == "Function"
+}
+
+///|
+fn is_declaration_symbol_kind(kind : String) -> Bool {
   kind == "Class" ||
   kind == "Interface" ||
   kind == "Struct" ||
   kind == "Enum" ||
   kind == "Type"
+}
+
+///|
+fn empty_entity_profile() -> LocalEntityProfile {
+  { declaration_symbols: 0, behavior_symbols: 0 }
+}
+
+///|
+fn profile_with_symbol(
+  current : LocalEntityProfile?,
+  kind : String,
+) -> LocalEntityProfile {
+  let profile = current.unwrap_or(empty_entity_profile())
+  let declaration_symbols = if is_declaration_symbol_kind(kind) { 1 } else { 0 }
+  let behavior_symbols = if is_behavior_symbol_kind(kind) { 1 } else { 0 }
+  {
+    declaration_symbols: profile.declaration_symbols + declaration_symbols,
+    behavior_symbols: profile.behavior_symbols + behavior_symbols,
+  }
+}
+
+///|
+fn count_declaration_symbols(children : Array[LocalEntitySummary]) -> Int {
+  let mut total = 0
+  for child in children {
+    total = total + child.declaration_symbols
+  }
+  total
+}
+
+///|
+fn count_behavior_symbols(children : Array[LocalEntitySummary]) -> Int {
+  let mut total = 0
+  for child in children {
+    total = total + child.behavior_symbols
+  }
+  total
 }
 
 ///|
@@ -272,6 +346,7 @@ fn score_audit_entity(
     ),
     registry,
   )
+  let action = effective_identity_action(entity, name_report)
   {
     kind: entity.kind,
     path: entity.path,
@@ -280,10 +355,10 @@ fn score_audit_entity(
     actual_summary: entity.actual_summary,
     similarity,
     divergence,
-    identity_action: name_report.get_action().label(),
-    assessment: assessment_for(name_report),
+    identity_action: action.label(),
+    assessment: assessment_for(action),
     prominent_unused: name_report.get_prominent_unused(),
-    recommendation: recommendation_for(entity, name_report, divergence),
+    recommendation: recommendation_for(entity, action, divergence),
   }
 }
 
@@ -311,10 +386,10 @@ fn expected_summary(entity : LocalEntitySummary) -> String {
 ///|
 fn recommendation_for(
   entity : LocalEntitySummary,
-  name_report : NameDivergence,
+  action : NameAction,
   divergence : Double,
 ) -> String {
-  match name_report.get_action() {
+  match action {
     Keep => "keep"
     Hollow => "insufficient-content"
     Split => "split-or-move-" + entity.kind
@@ -328,13 +403,33 @@ fn recommendation_for(
 }
 
 ///|
-fn assessment_for(name_report : NameDivergence) -> String {
-  match name_report.get_action() {
+fn assessment_for(action : NameAction) -> String {
+  match action {
     Keep => "name-content-aligned"
     Hollow => "insufficient-content"
     Rename => "name-content-drift"
     Split => "overbroad-content"
   }
+}
+
+///|
+fn effective_identity_action(
+  entity : LocalEntitySummary,
+  report : NameDivergence,
+) -> NameAction {
+  let action = report.get_action()
+  if action != Keep && is_declaration_heavy_file(entity) {
+    Hollow
+  } else {
+    action
+  }
+}
+
+///|
+fn is_declaration_heavy_file(entity : LocalEntitySummary) -> Bool {
+  entity.kind == "file" &&
+  entity.declaration_symbols > 0 &&
+  entity.declaration_symbols >= entity.behavior_symbols
 }
 
 ///|
@@ -397,8 +492,7 @@ fn append_feature_values(
 fn scoped_path_name(path : String, model : PathNameModel) -> String {
   let base = @config_paths.basename(path)
   let stem = file_stem(base)
-  let count = model.basename_counts.get(base).unwrap_or(0)
-  if count <= 1 {
+  if model.basename_counts.get(base).unwrap_or(0) == 0 {
     return stem
   }
   let parent = @config_paths.basename(@config_paths.dirname(path))

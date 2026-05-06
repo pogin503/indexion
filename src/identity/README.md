@@ -80,10 +80,12 @@ file/folder/symbol summaries from graph declarations, docs, module notes, and
 path scope terms, then compares those summaries with the names they claim to
 identify.
 
-Repeated basenames are not special-cased. If a basename appears in multiple
-directories, the audit derives a scoped name from its parent directory. This
-keeps conventional files and command entrypoints evaluable without hardcoding
-specific filenames.
+File basenames are evaluated with their immediate parent scope, so conventional
+entrypoints such as `cli.mbt` are checked as package-level names rather than
+context-free nouns. Declaration-heavy files whose graph is mostly types,
+structs, enums, or interfaces are reported as insufficient content instead of a
+rename/split candidate; they often need more behavioral evidence before a naming
+decision is meaningful.
 
 ```bash
 indexion identity audit src/

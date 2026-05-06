@@ -5,8 +5,18 @@
 - **Wiki CLI Refactoring** — Centralized wiki directory resolution with shared CLI helpers
 - **Incremental Wiki Updates** — New `WikiUpdatePlan` for tracking and managing wiki content changes
 - **Git Worktree Support** — Async functions for retrieving changed files in git worktrees
+- **Agent Orientation and Identity Audit** — Pre-edit owner briefs and scoped name/content audit refinements for coding-agent workflows
 
 ## Improvements
+
+### Agent Orientation and Identity Audit
+
+- `indexion agent orient` builds a cached orientation map and renders likely
+  implementation owners, knowledge sources, consumer surfaces, unsafe edit
+  locations, preflight evidence, and readiness quiz prompts.
+- `indexion identity audit` now evaluates file basenames with parent scope and
+  classifies declaration-heavy files as insufficient content rather than forcing
+  rename/split recommendations.
 
 ### Wiki Common Module
 
