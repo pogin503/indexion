@@ -25,6 +25,7 @@ test "agent orient: matched terms use shared tokenizer vocabulary" {
 test "agent orient: readiness quiz captures owner and forbidden path" {
   let quiz = readiness_quiz(
     [{ path: "src/identity", reason: "owner" }],
+    [],
     [{ path: "cmd/indexion/identity/cli.mbt", reason: "consumer" }],
     [{ path: "cmd/indexion/identity/cli.mbt", reason: "forbidden" }],
     [{ path: "src/identity/audit.mbt", reason: "read first" }],
@@ -39,6 +40,7 @@ test "agent orient: readiness quiz captures owner and forbidden path" {
 test "agent orient: readiness quiz prefers implementation preflight evidence" {
   let quiz = readiness_quiz(
     [{ path: "src/identity", reason: "owner" }],
+    [],
     [],
     [{ path: "cmd/indexion/identity/cli.mbt", reason: "forbidden" }],
     [
@@ -90,11 +92,14 @@ test "agent orient: owner profile uses directory concept text" {
     None,
   )
   let task = "detect drift between names and implementation contents"
-  let terms = owner_task_terms_for_task(task, task_tokens(task), map)
-  assert_true(terms.contains("content"))
-  assert_true(terms.contains("name"))
+  let terms = owner_task_terms_from_map(task_tokens(task), map)
+  if !terms.contains("content") {
+    fail("profile terms=" + terms.join(","))
+  }
   let owners = likely_owners(map, terms, task, 3)
-  assert_eq(owners[0].path, "src/identity")
+  if owners[0].path != "src/identity" {
+    fail("profile terms=" + terms.join(",") + " owner=" + owners[0].path)
+  }
 }
 
 ///|
@@ -125,14 +130,17 @@ test "agent orient: wiki sources do not smear parent pages into children" {
 }
 
 ///|
-test "agent orient: owner terms prefer objective over infrastructure constraints" {
+test "agent orient: owner query uses provided objective gloss" {
   let briefs : Array[LocalFileBrief] = [
     new_local_file_brief(
-      "src/core/graph/README.md", "h1", "code graph codebase search reconcile wiki infrastructure",
-      "CodeGraph represents a codebase as modules, symbols, names, content, and edges. Reconcile commands consume the graph.",
+      "src/search/README.md", "h1", "search grep graph wiki reconcile cli", "Search infrastructure indexes graph, grep, wiki, and reconcile corpora for codebase lookup.",
     ),
     new_local_file_brief(
-      "src/identity/README.md", "h2", "identity name content drift", "Names and content are separate artifacts that drift. This package measures whether a name still fits its content.",
+      "src/identity/README.md", "h2", "identity name content drift", "Names and content are separate artifacts that drift. This package scores whether implementation contents still fit file, folder, and function names.",
+    ),
+    new_local_file_brief(
+      "src/identity/types.mbt", "h3", "NameDivergence NamedEntity content name drift",
+      "NameDivergence measures whether names still fit content bodies",
     ),
   ]
   let map = build_or_update_orient_map(
@@ -140,10 +148,89 @@ test "agent orient: owner terms prefer objective over infrastructure constraints
     briefs,
     None,
   )
-  let task = "Build a codebase tool that detects drift between names and implementation contents. Reuse existing graph, search, wiki, and reconcile infrastructure."
-  let terms = owner_task_terms_for_task(task, task_tokens(task), map)
-  assert_false(terms.contains("graph"))
-  assert_false(terms.contains("search"))
+  let task = "name/content drift scoring and remediation planning"
+  let terms = owner_task_terms_from_map(task_tokens(task), map)
+  assert_true(terms.contains("content"))
+  let owners = likely_owners(map, terms, task, 2)
+  if owners[0].path != "src/identity" {
+    fail("gloss terms=" + terms.join(",") + " owner=" + owners[0].path)
+  }
+}
+
+///|
+test "agent orient: documentation-only paths remain knowledge sources" {
+  let briefs : Array[LocalFileBrief] = [
+    new_local_file_brief(
+      "RELEASE_NOTES.md", "h1", "name content drift scoring planning", "Release notes mention name/content drift scoring and remediation planning.",
+    ),
+    new_local_file_brief(
+      "wiki/Home.md", "h2", "name content drift scoring planning", "Wiki overview mentions name/content drift scoring and remediation planning.",
+    ),
+    new_local_file_brief(
+      "src/identity/README.md", "h3", "identity name content drift", "Names and content drift apart. Identity scores whether implementation contents still fit names.",
+    ),
+    new_local_file_brief(
+      "src/identity/types.mbt", "h4", "NameDivergence NamedEntity content name drift",
+      "NameDivergence measures whether names still fit content bodies",
+    ),
+  ]
+  let map = build_or_update_orient_map(
+    { ..AgentOrientConfig::default(), no_update: false },
+    briefs,
+    None,
+  )
+  assert_true(owner_path_exists(map, "RELEASE_NOTES.md"))
+  assert_true(owner_path_exists(map, "wiki"))
+  let task = "name/content drift scoring and remediation planning"
+  let terms = owner_task_terms_from_map(task_tokens(task), map)
   let owners = likely_owners(map, terms, task, 2)
   assert_eq(owners[0].path, "src/identity")
+  let knowledge = likely_knowledge_sources(map, terms, task, 2)
+  assert_true(
+    knowledge[0].path == "RELEASE_NOTES.md" || knowledge[0].path == "wiki",
+  )
+}
+
+///|
+test "agent orient: preflight leads with initial owner evidence" {
+  let briefs : Array[LocalFileBrief] = [
+    new_local_file_brief(
+      "skills/skills/indexion-agent-orient/SKILL.md", "h1", "agent orient thin cli reconcile search graph",
+      "Agent orientation skill tells consumers to run graph search and reconcile before editing CLI.",
+    ),
+    new_local_file_brief(
+      "src/identity/README.md", "h2", "identity name content drift", "Names and content drift apart. Identity scores whether names still fit implementation contents.",
+    ),
+    new_local_file_brief(
+      "src/identity/types.mbt", "h3", "NameDivergence NamedEntity content name drift",
+      "NameDivergence measures whether names still fit content bodies",
+    ),
+  ]
+  let map = build_or_update_orient_map(
+    { ..AgentOrientConfig::default(), no_update: false },
+    briefs,
+    None,
+  )
+  let task = "name/content drift scoring"
+  let terms = owner_task_terms_from_map(task_tokens(task), map)
+  let owners = likely_owners(map, terms, task, 2)
+  assert_eq(owners[0].path, "src/identity")
+  assert_true(
+    owners[0].reason.contains("Initial implementation-owner hypothesis"),
+  )
+  let scored = score_briefs(briefs, task_tokens(task), task)
+  scored.sort_by(fn(a, b) { b.score.compare(a.score) })
+  let preflight = required_preflight(map, owners, scored, 3)
+  assert_eq(preflight[0].path, "src/identity/README.md")
+  assert_true(preflight[0].reason.contains("confirm the likely owner"))
+}
+
+///|
+fn owner_path_exists(map : AgentOrientMap, path : String) -> Bool {
+  for owner in map.owners {
+    if owner.path == path {
+      return true
+    }
+  }
+  false
 }

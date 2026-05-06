@@ -86,11 +86,7 @@ fn orient_report_from_map(
   orient_map : AgentOrientMap,
 ) -> AgentOrientReport {
   let file_task_terms = filter_task_terms(raw_task_terms, raw_briefs)
-  let owner_task_terms = owner_task_terms_for_task(
-    config.task,
-    raw_task_terms,
-    orient_map,
-  )
+  let owner_task_terms = owner_task_terms_from_map(raw_task_terms, orient_map)
   let briefs = score_briefs(raw_briefs, file_task_terms, config.task)
   briefs.sort_by(fn(a, b) {
     let c = b.score.compare(a.score)
@@ -111,17 +107,30 @@ fn orient_report_from_map(
     config.task,
     config.limit,
   )
+  let knowledge_sources = likely_knowledge_sources(
+    orient_map,
+    if owner_task_terms.is_empty() {
+      file_task_terms
+    } else {
+      owner_task_terms
+    },
+    config.task,
+    config.limit,
+  )
   let consumers = consumer_surfaces(briefs, config.limit)
   let forbidden = do_not_implement_here(briefs, config.limit)
-  let preflight = required_preflight(briefs, config.limit)
+  let preflight = required_preflight(orient_map, owners, briefs, config.limit)
   {
     version: "agent-orient-v1",
     task: config.task,
     likely_owners: owners,
+    knowledge_sources,
     consumer_surfaces: consumers,
     do_not_implement_here: forbidden,
     required_preflight: preflight,
-    readiness_quiz: readiness_quiz(owners, consumers, forbidden, preflight),
+    readiness_quiz: readiness_quiz(
+      owners, knowledge_sources, consumers, forbidden, preflight,
+    ),
     map_status: orient_map.status,
     evidence,
     workflow: orientation_workflow(),
@@ -486,56 +495,15 @@ fn filter_owner_task_terms(
 }
 
 ///|
-fn owner_task_terms_for_task(
-  task : String,
+fn owner_task_terms_from_map(
   raw_terms : Array[String],
   orient_map : AgentOrientMap,
 ) -> Array[String] {
-  let objective_terms = objective_task_terms(task, raw_terms)
-  let focused = filter_owner_task_terms(objective_terms, orient_map)
-  if focused.length() >= 2 {
+  let focused = filter_owner_task_terms(raw_terms, orient_map)
+  if focused.length() > 0 {
     focused
   } else {
-    filter_owner_task_terms(raw_terms, orient_map)
-  }
-}
-
-///|
-fn objective_task_terms(
-  task : String,
-  raw_terms : Array[String],
-) -> Array[String] {
-  let primary = task_tokens(first_task_sentence(task))
-  if primary.length() < 3 {
-    return raw_terms
-  }
-  let result : Array[String] = []
-  for term in primary {
-    if raw_terms.contains(term) && !result.contains(term) {
-      result.push(term)
-    }
-  }
-  if result.length() < 3 {
     raw_terms
-  } else {
-    result
-  }
-}
-
-///|
-fn first_task_sentence(task : String) -> String {
-  let result = StringBuilder::new()
-  for ch in task {
-    if ch == '.' || ch == '!' || ch == '?' || ch == '\n' {
-      break
-    }
-    result.write_char(ch)
-  }
-  let sentence = result.to_string().trim().to_owned()
-  if sentence.length() == 0 {
-    task
-  } else {
-    sentence
   }
 }
 
@@ -1072,13 +1040,47 @@ fn likely_owners(
 ) -> Array[AgentOrientItem] {
   let owner_briefs = score_owner_briefs(orient_map, task_terms, task)
   let result : Array[AgentOrientItem] = []
+  let mut rank = 0
   for brief in owner_briefs {
     if brief.score <= 0.0 {
       continue
     }
+    if !owner_has_implementation(orient_map, brief.path) {
+      continue
+    }
+    let reason = if rank == 0 {
+      "Initial implementation-owner hypothesis; highest-scored implementation profile for task terms: "
+    } else {
+      "Alternate implementation owner candidate for task terms: "
+    }
     result.push({
       path: brief.path,
-      reason: "Closest non-CLI directory concept profile for task terms: " +
+      reason: reason + brief.matched_terms.join(", "),
+    })
+    rank += 1
+    if result.length() >= limit {
+      break
+    }
+  }
+  result
+}
+
+///|
+fn likely_knowledge_sources(
+  orient_map : AgentOrientMap,
+  task_terms : Array[String],
+  task : String,
+  limit : Int,
+) -> Array[AgentOrientItem] {
+  let owner_briefs = score_owner_briefs(orient_map, task_terms, task)
+  let result : Array[AgentOrientItem] = []
+  for brief in owner_briefs {
+    if brief.score <= 0.0 || owner_has_implementation(orient_map, brief.path) {
+      continue
+    }
+    result.push({
+      path: brief.path,
+      reason: "Knowledge source matching task terms; use as context, not as an implementation target: " +
       brief.matched_terms.join(", "),
     })
     if result.length() >= limit {
@@ -1086,6 +1088,21 @@ fn likely_owners(
     }
   }
   result
+}
+
+///|
+fn owner_has_implementation(orient_map : AgentOrientMap, path : String) -> Bool {
+  match find_orient_owner(orient_map, path) {
+    None => false
+    Some(owner) => {
+      for file in owner.files {
+        if !is_consumer_path(file) && !is_documentation_path(file) {
+          return true
+        }
+      }
+      false
+    }
+  }
 }
 
 ///|
@@ -1316,28 +1333,108 @@ fn do_not_implement_here(
 
 ///|
 fn required_preflight(
+  orient_map : AgentOrientMap,
+  owners : Array[AgentOrientItem],
   briefs : Array[LocalFileBrief],
   limit : Int,
 ) -> Array[AgentOrientItem] {
   let result : Array[AgentOrientItem] = []
+  for item in owner_preflight(orient_map, owners, limit) {
+    push_preflight_item(result, item)
+    if result.length() >= limit {
+      return result
+    }
+  }
   let capped = cap(limit, briefs.length())
   for i = 0; i < capped; i = i + 1 {
     let brief = briefs[i]
     if brief.score <= 0.0 {
       continue
     }
-    result.push({
+    push_preflight_item(result, {
       path: brief.path,
       reason: "Read before editing; it is part of the mechanical evidence for this task.",
     })
+    if result.length() >= limit {
+      break
+    }
   }
   result
 }
 
 ///|
+fn owner_preflight(
+  orient_map : AgentOrientMap,
+  owners : Array[AgentOrientItem],
+  limit : Int,
+) -> Array[AgentOrientItem] {
+  let result : Array[AgentOrientItem] = []
+  for owner_item in owners {
+    let owner = find_orient_owner(orient_map, owner_item.path)
+    if owner is None {
+      continue
+    }
+    let owner = owner.unwrap()
+    for path in preferred_owner_evidence_paths(owner) {
+      result.push({
+        path,
+        reason: "Read first to confirm the likely owner before editing consumers or CLI adapters.",
+      })
+      if result.length() >= limit {
+        return result
+      }
+    }
+  }
+  result
+}
+
+///|
+fn find_orient_owner(
+  orient_map : AgentOrientMap,
+  path : String,
+) -> AgentOrientMapOwner? {
+  for owner in orient_map.owners {
+    if owner.path == path {
+      return Some(owner)
+    }
+  }
+  None
+}
+
+///|
+fn preferred_owner_evidence_paths(owner : AgentOrientMapOwner) -> Array[String] {
+  let result : Array[String] = []
+  for path in owner.doc_sources {
+    if source_matches_owner(path, owner.path) && !result.contains(path) {
+      result.push(path)
+    }
+  }
+  for path in owner.files {
+    if !is_consumer_path(path) && !result.contains(path) {
+      result.push(path)
+    }
+  }
+  result
+}
+
+///|
+fn push_preflight_item(
+  result : Array[AgentOrientItem],
+  item : AgentOrientItem,
+) -> Unit {
+  for existing in result {
+    if existing.path == item.path {
+      return
+    }
+  }
+  result.push(item)
+}
+
+///|
 fn orientation_workflow() -> Array[String] {
   [
-    "Run this orientation brief before editing.", "Read likely owners before opening or creating CLI code.",
+    "Run this orientation brief before editing.", "Treat the first Likely Implementation Owners entry as the initial implementation-owner hypothesis unless follow-up evidence contradicts it.",
+    "Use Knowledge Sources as context, not as implementation targets.", "Read likely owners before opening or creating CLI code.",
     "Treat consumer surfaces as callers unless evidence proves they own the domain logic.",
     "Use doc graph, grep, search, explore, and relevant audit commands to confirm the chosen owner.",
     "If your intended edit path appears under do_not_implement_here, stop and explain the conflict.",
@@ -1391,6 +1488,7 @@ fn is_cmd_path(path : String) -> Bool {
 ///|
 fn readiness_quiz(
   owners : Array[AgentOrientItem],
+  knowledge_sources : Array[AgentOrientItem],
   consumers : Array[AgentOrientItem],
   forbidden : Array[AgentOrientItem],
   preflight : Array[AgentOrientItem],
@@ -1401,6 +1499,13 @@ fn readiness_quiz(
       question: "Which implementation area should own the first core change?",
       expected_answer: owners[0].path,
       evidence_path: owners[0].path,
+    })
+  }
+  if knowledge_sources.length() > 0 {
+    quiz.push({
+      question: "Name one knowledge source that should inform the task.",
+      expected_answer: knowledge_sources[0].path,
+      evidence_path: knowledge_sources[0].path,
     })
   }
   if forbidden.length() > 0 {

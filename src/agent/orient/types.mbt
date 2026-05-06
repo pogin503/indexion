@@ -90,6 +90,7 @@ pub(all) struct AgentOrientReport {
   version : String
   task : String
   likely_owners : Array[AgentOrientItem]
+  knowledge_sources : Array[AgentOrientItem]
   consumer_surfaces : Array[AgentOrientItem]
   do_not_implement_here : Array[AgentOrientItem]
   required_preflight : Array[AgentOrientItem]

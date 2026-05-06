@@ -131,7 +131,8 @@ fn render_markdown(report : @agent_orient.AgentOrientReport) -> String {
     buf.write_string(report.task)
     buf.write_string("\n\n")
   }
-  render_items(buf, "Likely Owners", report.likely_owners)
+  render_items(buf, "Likely Implementation Owners", report.likely_owners)
+  render_items(buf, "Knowledge Sources", report.knowledge_sources)
   render_items(buf, "Consumer Surfaces", report.consumer_surfaces)
   render_items(buf, "Do Not Implement Here", report.do_not_implement_here)
   render_items(buf, "Required Preflight", report.required_preflight)
