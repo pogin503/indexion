@@ -1,3 +1,54 @@
+# v0.13.0
+
+## Highlights
+
+- **Agent Orientation (`indexion agent orient`)** — Pre-edit structure brief for coding agents: cached orientation map with likely implementation owners, knowledge sources, consumer surfaces, unsafe edit locations, preflight evidence, and readiness quiz prompts.
+- **Identity Audit (`indexion identity audit`)** — Detect file/folder/symbol name drift against actual code content; basenames evaluated with parent scope and declaration-heavy files classified as insufficient content rather than forced rename/split.
+- **Wiki Link Fixes** — `wiki://` protocol links now pass through `react-markdown`'s `urlTransform`; broken wiki link handling improvements.
+- **Git Worktree Path Fix** — `query_path` correctly strips the root prefix from relative paths.
+
+## New Features
+
+### `indexion agent orient` — Pre-edit Brief for Coding Agents
+
+```bash
+indexion agent orient
+```
+
+Builds a cached orientation map under the project's data directory and renders a structured brief covering:
+
+- **Likely implementation owners** — files most relevant to the upcoming change, scored from the dependency graph.
+- **Knowledge sources** — wiki pages, READMEs, and doc comments tied to the same surface.
+- **Consumer surfaces** — call sites and external references that may regress.
+- **Unsafe edit locations** — areas with strong invariants that warrant extra care.
+- **Preflight evidence** — evidence rows extracted from scored file briefs.
+- **Readiness quiz** — prompts to confirm the agent has the right mental model before editing.
+
+The orientation map is cached and refreshed incrementally so successive briefs are fast.
+
+### `indexion identity audit` — Name/Content Drift Detection
+
+```bash
+indexion identity audit <path>
+```
+
+Detects when a file/folder/symbol name no longer reflects what the code actually does. Refinements in this release:
+
+- **Parent-scoped basename evaluation** — names are judged in context (e.g. `cmd/indexion/agent/cli.mbt` is read as "agent CLI", not "cli").
+- **Declaration-heavy files** — files that are mostly type/struct declarations are now classified as "insufficient content" rather than triggering rename/split recommendations against thin signal.
+
+## Bug Fixes
+
+- **wiki**: allow `wiki://` protocol in `react-markdown` `urlTransform` so internal wiki links render correctly (#3).
+- **wiki**: fix broken wiki link handling reported in #3.
+- **vcs/git**: `query_path` now strips the root prefix from relative paths instead of leaving an absolute-looking fragment.
+
+## Tooling
+
+- **eslint**: `@typescript-eslint/no-unused-vars` now allows `^_`-prefixed vars and unused destructured rest siblings, matching the existing convention used elsewhere in the monorepo.
+
+---
+
 # v0.12.1
 
 ## Highlights
@@ -5,18 +56,8 @@
 - **Wiki CLI Refactoring** — Centralized wiki directory resolution with shared CLI helpers
 - **Incremental Wiki Updates** — New `WikiUpdatePlan` for tracking and managing wiki content changes
 - **Git Worktree Support** — Async functions for retrieving changed files in git worktrees
-- **Agent Orientation and Identity Audit** — Pre-edit owner briefs and scoped name/content audit refinements for coding-agent workflows
 
 ## Improvements
-
-### Agent Orientation and Identity Audit
-
-- `indexion agent orient` builds a cached orientation map and renders likely
-  implementation owners, knowledge sources, consumer surfaces, unsafe edit
-  locations, preflight evidence, and readiness quiz prompts.
-- `indexion identity audit` now evaluates file basenames with parent scope and
-  classifies declaration-heavy files as insufficient content rather than forcing
-  rename/split recommendations.
 
 ### Wiki Common Module
 
