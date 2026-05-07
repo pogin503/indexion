@@ -12,10 +12,10 @@ For specific topics, browse the **Categories** section.
 
 Most-linked pages that serve as knowledge hubs:
 
+- [Getting Started](wiki://getting-started) — 4 incoming links
 - [CLI Commands](wiki://cli-commands) — 4 incoming links
 - [CLI Entry Point (cmd/indexion)](wiki://cmd-indexion) — 4 incoming links
 - [Core Concepts](wiki://core-concepts) — 4 incoming links
-- [Getting Started](wiki://getting-started) — 3 incoming links
 - [Analysis Tools](wiki://analysis-tools) — 2 incoming links
 - [KGF Engine (src/kgf)](wiki://src-kgf) — 2 incoming links
 - [Digest Pipeline](wiki://digest-pipeline) — 2 incoming links
@@ -94,7 +94,11 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
-- ingest: cli-commands
+- pages update: cmd-indexion
+- pages update: cli-commands
+- pages update: codegraph
+- pages update: getting-started
+- pages update: overview
 - pages update: src-vcs
 - pages update: src-update
 - pages update: src-text
@@ -110,8 +114,4 @@ Most-linked pages that serve as knowledge hubs:
 - pages update: src-docgen
 - pages update: src-digest
 - pages update: src-config
-- pages update: kgf-system
-- pages update: digest-pipeline
-- pages update: cmd-indexion
-- pages update: analysis-tools
 

@@ -12,6 +12,7 @@ graph TD
     main["main.mbt<br/>build_command() + dispatch"]
 
     main --> init["init"]
+    main --> check["check"]
     main --> explore["explore"]
     main --> plan["plan"]
     main --> wiki["wiki"]
@@ -24,7 +25,12 @@ graph TD
     main --> update["update"]
     main --> serve["serve"]
     main --> grep["grep"]
+    main --> search["search"]
+    main --> mcp["mcp"]
     main --> spec["spec"]
+    main --> story["story"]
+    main --> identity["identity"]
+    main --> agent["agent"]
 
     plan --> plan_refactor["plan refactor"]
     plan --> plan_docs["plan documentation"]
@@ -70,8 +76,20 @@ graph TD
     spec_align --> spec_align_status["align status"]
     spec_align --> spec_align_watch["align watch"]
 
+    story --> story_analyze["story analyze"]
+    story --> story_reconcile["story reconcile"]
+    story --> story_names["story names"]
+    story --> story_wiki["story wiki"]
+    story_wiki --> story_wiki_plan["wiki plan"]
+    story_wiki --> story_wiki_build["wiki build"]
+
+    identity --> identity_audit["identity audit"]
+    agent --> agent_orient["agent orient"]
+
     common["common/<br/>shared CLI utilities"]
+    helpmod["help/<br/>shared option/flag descriptions"]
     main -.-> common
+    main -.-> helpmod
 ```
 
 ## Dispatch Flow
@@ -91,6 +109,7 @@ Nested dispatchers (`plan`, `doc`, `perf`) follow the same pattern internally, w
 | Subcommand | Package | Description |
 |------------|---------|-------------|
 | `init` | `cmd/indexion/init` | Initialize project configuration |
+| `check` | `cmd/indexion/check` | Validate source files against their KGF specs |
 | `explore` | `cmd/indexion/explore` | Analyze file similarity in a directory |
 | `plan` | `cmd/indexion/plan` | Generate planning documents (6 sub-subcommands) |
 | `wiki` | `cmd/indexion/wiki` | Wiki management (pages/index/lint/export/import/log/hook) |
@@ -103,7 +122,12 @@ Nested dispatchers (`plan`, `doc`, `perf`) follow the same pattern internally, w
 | `update` | `cmd/indexion/update` | Self-update mechanism |
 | `serve` | `cmd/indexion/serve` | HTTP server for all features via REST API |
 | `grep` | `cmd/indexion/grep` | Code search with KGF awareness |
-| `spec` | `cmd/indexion/spec` | Specification-driven analysis (3 sub-subcommands) |
+| `search` | `cmd/indexion/search` | Semantic search across code, wiki, and docs |
+| `mcp` | `cmd/indexion/mcp` | MCP server exposing indexion tools to AI assistants |
+| `spec` | `cmd/indexion/spec` | Specification-driven analysis (draft, verify, align) |
+| `story` | `cmd/indexion/story` | Prose ↔ source notes drift analysis (n:m) |
+| `identity` | `cmd/indexion/identity` | Audit name/content drift (`identity audit`) |
+| `agent` | `cmd/indexion/agent` | Coding-agent orientation briefs (`agent orient`) |
 
 ### `wiki/` -- Wiki Management
 
@@ -125,6 +149,20 @@ The `wiki` package (`cmd/indexion/wiki/cli.mbt`) provides wiki management via tw
 | `hook status` | `cmd/indexion/wiki/hook` | Show whether hooks are installed |
 
 **VCS detection:** `hook` auto-detects the repository type (Git via `.git`, Jujutsu via `.jj`) using `src/vcs/vcs.mbt` and resolves the correct hooks directory per VCS. Hook file parsing uses the KGF shell lexer to locate marker comments, not hand-rolled string scanning.
+
+### `check/` -- KGF Validation
+
+The `check` package (`cmd/indexion/check/cli.mbt`) runs the lex → grammar → resolver pipeline against every source file matching the supplied paths and reports diagnostics. It uses `@common` for file collection and the per-target `exit_with_code` shim so it can return a non-zero exit code from native, wasm-gc, and js builds.
+
+| Field | Description |
+|-------|-------------|
+| `paths` | Files or directories to check (positional, `num_args >= 1`) |
+| `includes` / `excludes` | Repeatable glob filters |
+| `format` | `human` (default) or `json` |
+| `specs_dir` | KGF specs directory (default `kgfs`) |
+| `quiet` | Suppress warnings, only report errors |
+
+Diagnostic severity is rolled up to a single exit code: `0` if there are no errors, non-zero otherwise. JSON output is structured for machine consumption by editor integrations.
 
 ### `spec/` -- Specification-Driven Analysis
 
@@ -186,6 +224,57 @@ The draft engine generates SDD (Spec-Driven Development) requirements from docum
 | `run_to_string(config)` | Combined: generate report and render to string |
 
 The underlying library modules live in `src/docgen/wiki/`: `types` (data model), `reader` (page loading), `lint` (structural checks), `ingest` (change detection), `index` (index generation), `log` (audit trail), `search` (semantic search), and `interop` (format conversion).
+
+### `story/` -- Prose vs. Source Drift
+
+The `story` package (`cmd/indexion/story/cli.mbt`) provides n:m vocabulary divergence analysis between novel-writing source materials and the resulting prose. It assumes a story root with `sources/` (plot, references, scene-notes) and `prose/` (numbered chapters).
+
+| Subcommand | Package | Description |
+|------------|---------|-------------|
+| `analyze` | `cmd/indexion/story/analyze` | Per-chapter source attribution, under-coverage, and out-of-source drift |
+| `reconcile` | `cmd/indexion/story/reconcile` | Reconcile prose drift with sources/references |
+| `names` | `cmd/indexion/story/names` | Audit character/place naming consistency across prose |
+| `wiki plan` | `cmd/indexion/story/wiki/plan` | Propose a wiki page structure from sources |
+| `wiki build` | `cmd/indexion/story/wiki/build` | Build a story-specific wiki from the planned structure |
+
+The underlying analysis library lives in `src/story/`, and the multilingual prose KGF spec is `kgfs/story/multilang-prose.kgf`.
+
+### `identity/` -- Name/Content Drift Audit
+
+The `identity` package (`cmd/indexion/identity/cli.mbt`) exposes a single subcommand, `audit`, that scans files, folders, and (optionally) symbols for name/content divergence. It is backed by `src/identity/` which computes TF-IDF impressions for the name and content sides and reports candidates whose divergence exceeds a configurable threshold.
+
+| Option / Flag | Description | Default |
+|---------------|-------------|---------|
+| `--specs-dir` | KGF specs directory | `kgfs` |
+| `--format` | `text` or `json` | `text` |
+| `--output` | Output path (`-` or empty = stdout) | stdout |
+| `--threshold` | Minimum divergence to surface | `0.62` |
+| `--limit` | Max candidates rendered | `50` |
+| `--no-symbols` | Skip function/type/variable identity checks | -- |
+| `--no-folders` | Skip aggregate folder identity checks | -- |
+| `paths` (positional) | Files or directories to audit | -- |
+
+### `agent/` -- Coding Agent Orientation
+
+The `agent` package (`cmd/indexion/agent/cli.mbt`) exposes `orient`, which builds a pre-edit Markdown or JSON brief for coding agents. The brief is produced by `src/agent/`, which combines:
+
+- A cached agent orientation map (default `.indexion/cache/agent`) that records likely owners, consumer surfaces, and unsafe edit locations across the project.
+- The curated wiki at `--wiki-dir` (default `.indexion/wiki`), used as durable project knowledge.
+- An optional task description supplied via `--task` or `--task-file` to focus the brief on the user's intent.
+
+| Option / Flag | Description | Default |
+|---------------|-------------|---------|
+| `--specs-dir` | KGF specs directory | `kgfs` |
+| `--cache-dir` | Directory for the prebuilt orientation map | `.indexion/cache/agent` |
+| `--wiki-dir` | Wiki directory used as curated knowledge | `.indexion/wiki` |
+| `--task` | Inline task description text | `""` |
+| `--task-file` | Path to a file containing the task description | `""` |
+| `--format` | `md` or `json` | `md` |
+| `--output` | Output path (`-` or empty = stdout) | stdout |
+| `--limit` | Maximum entries per section of the brief | `12` |
+| `--no-update` | Use the saved orientation map without refreshing changed files | -- |
+
+The `--no-update` flag is the fast-path for repeated runs: it skips the rescan of the project and uses the cached map verbatim.
 
 ### `common/` -- Shared CLI Utilities
 
@@ -312,7 +401,7 @@ The main package imports from:
 - `moonbitlang/core/argparse` -- CLI argument parsing
 - `moonbitlang/async` -- async runtime
 - `trkbt10/indexion/src/update` -- version info for `--version` flag
-- All 13 subcommand packages under `cmd/indexion/*`
+- Every subcommand package under `cmd/indexion/*` (init, check, explore, plan, doc, kgf, digest, similarity, segment, perf, update, serve, grep, search, mcp, spec, wiki, story, identity, agent)
 
 The `serve` subcommand additionally depends on `@mhttp` (HTTP server), `@graph` (code graph), `@index` (digest index), `@wiki` (wiki data), and various `src/` library packages.
 

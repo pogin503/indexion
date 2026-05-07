@@ -118,6 +118,7 @@ CodeGraph provides a set of query methods for traversing the graph:
 - `edges_to(node_id)` -- all incoming edges to a node
 - `get_callees(symbol_id)` -- symbols called by this function
 - `get_callers(symbol_id)` -- symbols that call this function
+- `rewrite_edge_targets(rewrite)` -- in-place canonicalization. Used by post-merge enrichment to collapse external references (e.g. `pkg:<proj>/foo`) back to their canonical internal module ids once the project layout has been fully observed. Also drops `ModuleDependsOn` edges that become self-loops after rewriting.
 
 ### Notes
 
@@ -137,6 +138,13 @@ CodeGraph supports round-trip JSON serialization via `to_json_string()` and `fro
 }
 ```
 
+`to_json_string` reconciles edge endpoints against the node tables before writing:
+
+- `Declares` edges whose `to` doesn't match a registered symbol id are remapped to the canonical symbol via a `(module_id, name)` lookup. KGF semantics scripts often emit `<file>::<name>` while `attrs def` registers `<file>::<ns>:<name>`; this lookup keeps both shapes valid.
+- A symmetric trailing-name rewrite is applied to the edge's `from`, so nested declarations (class methods, etc.) end up pointing at the canonical parent symbol id.
+- For structural edge kinds (`Declares`, `ModuleDependsOn`, `Calls`, etc., but **not** `Custom`), any endpoint that still doesn't match a known module or symbol is registered as an external module with `file: null`. This preserves the invariant that every structural endpoint resolves; `Custom` edges are exempt because KGF spec authors use them for free-form metadata (license strings, keywords, repository URLs) that should not become fake nodes.
+- `EdgeKind` round-trips via `EdgeKind::to_string` (snake_case) and `EdgeKind::from_string`, which accepts both camelCase and snake_case so that older consumers and KGF script output remain interchangeable.
+
 This format is used by the `doc graph --format=codegraph` command and the serve API's `/graph` endpoint.
 
 ## How downstream commands use CodeGraph
@@ -150,5 +158,19 @@ This format is used by the `doc graph --format=codegraph` command and the serve 
 | `doc graph` | `ModuleDependsOn` edges for dependency diagrams |
 | `doc readme` | Symbols, docs, and module structure for README generation |
 | `digest` | Symbols, `Calls` edges, and docs for function indexing |
+| `agent orient` | Modules, symbols, and `Calls`/`References` edges for owner/consumer briefs |
+| `identity audit` | Symbols and source content to detect name/content drift |
 
-> **Source:** `src/core/graph/types.mbt`, `src/core/graph/graph.mbt`
+## Query API (`@docgen.query`)
+
+`src/docgen/query/` is the canonical read-side API on top of `CodeGraph`. It groups projection helpers by edge category so consumers don't have to scan the raw edge array:
+
+- `calls.mbt` -- `CallInfo`, `get_file`, `get_via`, etc., for traversing `Calls` edges with file/site metadata.
+- `refs.mbt` -- `SymbolRef`, `get_ref_kind`, `get_ref_site` for `References` edges.
+- `deps.mbt` -- `ModuleDep`, `get_dep_kind`, plus `CircularDep` summaries built from `CircularDependency` edges.
+- `hierarchy.mbt` -- `TypeRelation`, `get_relation` for `Extends`/`Implements` edges.
+- `types.mbt` -- `SymbolDecl`, `get_kind`, `get_doc` for projecting symbol declarations with their documentation.
+
+Higher-level commands (e.g. `agent orient`, `doc graph`) call into this package rather than walking edges directly, which keeps edge-shape changes localized.
+
+> **Source:** `src/core/graph/types.mbt`, `src/core/graph/graph.mbt`, `src/docgen/query/`

@@ -41,6 +41,21 @@ This creates the `kgfs/` directory with bundled specs for supported languages.
 
 ## First commands
 
+### Validate sources against KGF specs
+
+The `check` command tokenizes and parses every source file in a directory against its matching KGF spec, surfacing lex/grammar/resolver diagnostics. Use it as a sanity check after editing a `.kgf` file or when adding new files in an unfamiliar language.
+
+```bash
+# Validate the project, reporting errors and warnings
+indexion check src/
+
+# JSON output for tooling
+indexion check --format=json src/
+
+# Errors only
+indexion check --quiet src/
+```
+
 ### Explore similarity
 
 The `explore` command calculates pairwise similarity between files in a directory. This is the fastest way to spot duplicated or structurally similar code.
@@ -126,6 +141,45 @@ indexion grep --undocumented src/
 indexion grep "KW_pub KW_fn Ident" src/
 ```
 
+### Audit name/content drift
+
+The `identity audit` command flags files, folders, and symbols whose names no longer reflect their content. It uses TF-IDF divergence between the name's expected vocabulary and the actual contents.
+
+```bash
+# Audit the whole project
+indexion identity audit src/
+
+# Lower the threshold to surface more candidates
+indexion identity audit --threshold=0.5 src/
+
+# JSON output for tooling
+indexion identity audit --format=json src/
+```
+
+### Generate an agent orientation brief
+
+The `agent orient` command produces a pre-edit Markdown brief describing likely owners, consumer surfaces, and unsafe edit locations for a coding task. The brief is built from a cached orientation map plus the curated wiki and is meant to be fed to a coding agent before it starts editing.
+
+```bash
+# Refresh the cached orientation map and emit a brief
+indexion agent orient --task="Refactor the digest pipeline" src/
+
+# Reuse the saved map without rescanning
+indexion agent orient --no-update --task-file=task.md src/
+```
+
+### Story divergence
+
+`indexion story` analyzes prose against its source notes (plot/references/scene-notes) using KGF-driven multilingual prose tokenization.
+
+```bash
+# Per-chapter attribution and out-of-source drift
+indexion story analyze <story-root>
+
+# Naming consistency across prose
+indexion story names <story-root>
+```
+
 ### MCP integration
 
 indexion can run as an MCP server, exposing its tools to AI assistants like Claude Code.
@@ -142,4 +196,4 @@ indexion mcp
 - [CLI Entry Point](wiki://cmd-indexion) -- how main.mbt wires up all subcommands
 - [Analysis Tools](wiki://analysis-tools) -- deep dive into the plan commands and similarity algorithms
 
-> **Source:** `cmd/indexion/main.mbt`, `cmd/indexion/explore/cli.mbt`, `cmd/indexion/plan/refactor/cli.mbt`, `cmd/indexion/doc/readme/cli.mbt`
+> **Source:** `cmd/indexion/main.mbt`, `cmd/indexion/check/cli.mbt`, `cmd/indexion/explore/cli.mbt`, `cmd/indexion/plan/refactor/cli.mbt`, `cmd/indexion/doc/readme/cli.mbt`, `cmd/indexion/identity/cli.mbt`, `cmd/indexion/agent/cli.mbt`, `cmd/indexion/story/cli.mbt`, `README.md`

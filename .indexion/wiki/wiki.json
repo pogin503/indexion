@@ -26,9 +26,15 @@
       "file": "getting-started.md",
       "sources": [
         "README.md",
-        "cmd/indexion/main.mbt"
+        "cmd/indexion/main.mbt",
+        "cmd/indexion/check/cli.mbt",
+        "cmd/indexion/identity/cli.mbt",
+        "cmd/indexion/agent/cli.mbt",
+        "cmd/indexion/story/cli.mbt"
       ],
-      "children": []
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:claude"
     },
     {
       "id": "core-concepts",
@@ -105,7 +111,9 @@
         "src/core/graph/graph.mbt",
         "src/docgen/query/"
       ],
-      "children": []
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:claude"
     },
     {
       "id": "digest-pipeline",
@@ -144,7 +152,11 @@
         "cmd/indexion/spec/cli.mbt",
         "cmd/indexion/spec/align/cli.mbt",
         "cmd/indexion/spec/draft/cli.mbt",
-        "cmd/indexion/spec/verify/cli.mbt"
+        "cmd/indexion/spec/verify/cli.mbt",
+        "cmd/indexion/check/cli.mbt",
+        "cmd/indexion/story/cli.mbt",
+        "cmd/indexion/identity/cli.mbt",
+        "cmd/indexion/agent/cli.mbt"
       ],
       "children": [],
       "provenance": "synthesized",
@@ -177,7 +189,11 @@
         "cmd/indexion/wiki/cli.mbt",
         "cmd/indexion/plan/cli.mbt",
         "cmd/indexion/doc/cli.mbt",
-        "cmd/indexion/spec/cli.mbt"
+        "cmd/indexion/spec/cli.mbt",
+        "cmd/indexion/check/cli.mbt",
+        "cmd/indexion/story/cli.mbt",
+        "cmd/indexion/identity/cli.mbt",
+        "cmd/indexion/agent/cli.mbt"
       ],
       "children": [],
       "provenance": "synthesized",

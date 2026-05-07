@@ -6,6 +6,7 @@ indexion's CLI is organized into command groups. Each group addresses a differen
 flowchart TD
     INDEXION[indexion]
     INDEXION --> INIT[init]
+    INDEXION --> CHECK[check]
     INDEXION --> EXPLORE[explore]
     INDEXION --> PLAN[plan]
     INDEXION --> WIKI[wiki]
@@ -21,6 +22,9 @@ flowchart TD
     INDEXION --> SEARCH[search]
     INDEXION --> MCP[mcp]
     INDEXION --> SPEC[spec]
+    INDEXION --> STORY[story]
+    INDEXION --> IDENTITY[identity]
+    INDEXION --> AGENT[agent]
 
     PLAN --> PR[refactor]
     PLAN --> PD[documentation]
@@ -61,6 +65,17 @@ flowchart TD
     SA --> SAS[suggest]
     SA --> SAST[status]
     SA --> SAW[watch]
+
+    STORY --> STA[analyze]
+    STORY --> STR[reconcile]
+    STORY --> STN[names]
+    STORY --> STW[wiki]
+
+    STW --> STWP[plan]
+    STW --> STWB[build]
+
+    IDENTITY --> IDA[audit]
+    AGENT --> AGO[orient]
 ```
 
 ---
@@ -74,6 +89,29 @@ indexion init
 ```
 
 **When to use:** First time setting up indexion in a project. Run once, commit the `kgfs/` directory.
+
+---
+
+## check
+
+Validate source files against their KGF specs. Runs the full lex/grammar/resolver pipeline for every selected file and reports errors and warnings.
+
+```bash
+indexion check [options] <paths...>
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--include=PATTERN` | Include glob pattern (repeatable) | `*` |
+| `--exclude=PATTERN` | Exclude glob pattern (repeatable) | -- |
+| `--format=FORMAT` | `human` or `json` | `human` |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--quiet` | `-q` | Only output errors, suppress warnings |
+
+**When to use:** Sanity-check after editing a `.kgf` spec, or as a CI gate that ensures every source file under `paths` parses cleanly. Returns a non-zero exit code when errors are present.
 
 ---
 
@@ -936,9 +974,120 @@ indexion spec align watch [options] <spec-path> <impl-path>
 
 ---
 
+## story
+
+Analyze prose against its source notes (plot/references/scene-notes). Built around a multilingual prose KGF spec, this is the n-source-to-m-chapter analog of `spec align`.
+
+```bash
+indexion story <subcommand> [options] <story-root>
+```
+
+The expected layout under `<story-root>` is:
+
+```
+sources/
+  plot/         ← plot drafts and revisions
+  references/   ← character sheet, setting, research notes
+  scene-notes/  ← intermediate scene memos
+prose/
+  01-chapter.txt
+  02-chapter.txt
+  ...
+```
+
+### story analyze
+
+Per-chapter source attribution, under-coverage, and out-of-source drift.
+
+```bash
+indexion story analyze [options] <story-root>
+```
+
+### story reconcile
+
+Reconcile drift between prose and sources/references, similar to `plan reconcile` but for narrative materials.
+
+```bash
+indexion story reconcile [options] <story-root>
+```
+
+### story names
+
+Audit character/place naming consistency across prose and sources.
+
+```bash
+indexion story names [options] <story-root>
+```
+
+### story wiki
+
+Manage a story-specific wiki extracted from the sources directory.
+
+| Subcommand | Description |
+|------------|-------------|
+| `plan` | Propose a wiki page structure from sources |
+| `build` | Build the story wiki from the planned structure |
+
+**When to use:** Managing long-form fiction or research-style writing where it matters that prose stays anchored in the supply-side notes.
+
+---
+
+## identity audit
+
+Detect file, folder, and symbol names that no longer reflect their content. Uses TF-IDF divergence between the name's expected vocabulary and the actual content.
+
+```bash
+indexion identity audit [options] [paths...]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--format=FORMAT` | `text` or `json` | `text` |
+| `--threshold=FLOAT` | Minimum divergence to report a candidate | `0.62` |
+| `--limit=INT` | Maximum candidates to render | `50` |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+| `--output=FILE` | Output path (`-` or empty = stdout) | stdout |
+
+| Flag | Description |
+|------|-------------|
+| `--no-symbols` | Skip function/type/variable symbol identity checks |
+| `--no-folders` | Skip aggregate folder identity checks |
+
+**When to use:** Before a refactor, or as a periodic hygiene check. Surfaces files like `parser.mbt` that have drifted into containing mostly tokenizer code, or folders whose name no longer matches their dominant subject vocabulary.
+
+---
+
+## agent orient
+
+Generate a pre-edit structure brief for coding agents. Combines a cached agent orientation map (built incrementally over the project) with the curated wiki to produce a Markdown or JSON brief that names likely owners, consumer surfaces, and unsafe edit locations for a given task.
+
+```bash
+indexion agent orient [options] [paths...]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--task=TEXT` | Task description (use `--task-file` for longer prompts) | -- |
+| `--task-file=FILE` | Path to a file containing the task description | -- |
+| `--cache-dir=DIR` | Directory for the prebuilt orientation map | `.indexion/cache/agent` |
+| `--wiki-dir=DIR` | Curated wiki directory used as project knowledge | `.indexion/wiki` |
+| `--specs-dir=DIR` | KGF specs directory | `kgfs` |
+| `--format=FORMAT` | `md` or `json` | `md` |
+| `--limit=INT` | Maximum entries per section | `12` |
+| `--output=FILE` | Output path (`-` or empty = stdout) | stdout |
+
+| Flag | Description |
+|------|-------------|
+| `--no-update` | Use the saved orientation map without refreshing changed files |
+
+**When to use:** Hand the produced brief to a coding agent (Claude Code, Cursor, Copilot) before it starts editing. The brief reduces the chance of edits that cross hidden ownership boundaries or miss consumer surfaces.
+
+---
+
 ## See Also
 
 - [CLI Entry Point](wiki://cmd-indexion) -- internal architecture of the dispatch mechanism
 - [Overview](wiki://overview) -- architectural context for all commands
+- [Getting Started](wiki://getting-started) -- guided tour of the most common commands
 
-> **Source:** `cmd/indexion/main.mbt`, `cmd/indexion/*/cli.mbt`
+> **Source:** `cmd/indexion/main.mbt`, `cmd/indexion/wiki/cli.mbt`, `cmd/indexion/plan/cli.mbt`, `cmd/indexion/doc/cli.mbt`, `cmd/indexion/spec/cli.mbt`, `cmd/indexion/spec/align/cli.mbt`, `cmd/indexion/spec/draft/cli.mbt`, `cmd/indexion/spec/verify/cli.mbt`, `cmd/indexion/check/cli.mbt`, `cmd/indexion/story/cli.mbt`, `cmd/indexion/identity/cli.mbt`, `cmd/indexion/agent/cli.mbt`

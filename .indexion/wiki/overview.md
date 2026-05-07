@@ -24,11 +24,11 @@ relationships, cross-package structure, and semantic similarity
 [`README.md:7-12`].
 
 indexion ships as a single native binary with no runtime dependencies. Language
-support is provided by a bundled collection of 60+ KGF spec files covering
-25 programming languages, 9 DSL/document formats, 4 natural languages, and
-13 project-manifest formats. Adding support for a new language or format means
-writing a new `.kgf` file -- no recompilation required
-[`README.md:278-280`, `kgfs/`].
+support is provided by a bundled collection of KGF spec files. The `kgfs/` tree
+covers programming languages, DSL/document formats, natural languages, project
+manifests, diagram formats, and a `story/` category for prose analysis.
+Adding support for a new language or format means writing a new `.kgf` file --
+no recompilation required [`README.md`, `kgfs/`].
 
 ---
 
@@ -67,20 +67,24 @@ flowchart LR
     subgraph Analysis["Analysis & Commands"]
         direction TB
         EXP["explore<br/>(similarity matrix)"]
+        CHK["check<br/>(KGF validation)"]
         REF["plan refactor<br/>(duplicate detection)"]
         REC["plan reconcile<br/>(doc drift)"]
         SOL["plan solid<br/>(extraction plan)"]
         UNW["plan unwrap<br/>(wrapper removal)"]
         PDOC["plan documentation<br/>(coverage audit)"]
         PREAD["plan readme<br/>(README plans)"]
-        WIKI["wiki pages(plan/add/update/ingest)<br/>index build/lint<br/>export/import/log"]
+        WIKI["wiki pages(plan/add/update/ingest)<br/>index build/lint<br/>export/import/log/hook"]
         DOC["doc graph/readme/init<br/>(doc generation)"]
         GRP["grep<br/>(token search)"]
         SRCH["search<br/>(semantic search)"]
         DIG["digest<br/>(semantic index)"]
         SRV["serve<br/>(HTTP API)"]
         MCPS["mcp<br/>(MCP server)"]
-        SPEC["spec<br/>(draft/verify/align)"]
+        SPECS["spec<br/>(draft/verify/align)"]
+        STORY["story<br/>(prose drift)"]
+        IDENT["identity audit<br/>(name/content drift)"]
+        AGENT["agent orient<br/>(coding agent brief)"]
     end
 
     subgraph Output
@@ -148,6 +152,8 @@ as a subcommand of the `indexion` CLI:
 
 | Command              | What it does                                                     |
 |----------------------|------------------------------------------------------------------|
+| `init`               | Initializes a project with bundled KGF specs and configuration   |
+| `check`              | Validates source files against their KGF specs (lex+grammar+resolver) |
 | `explore`            | Pairwise file similarity matrix using configurable strategies    |
 | `plan refactor`      | Detects duplicate code blocks and similar functions              |
 | `plan solid`         | Plans extraction of shared code into a common package            |
@@ -171,9 +177,13 @@ as a subcommand of the `indexion` CLI:
 | `grep`               | KGF-aware token pattern search across source files               |
 | `search`             | Semantic search across code, wiki, and documentation             |
 | `sim`                | Point comparison of two texts with multiple algorithms           |
+| `segment`            | Splits text into contextual segments (window/tfidf/hybrid)       |
 | `digest`             | Builds a semantic index for purpose-based function lookup        |
 | `serve`              | HTTP server for CodeGraph, Digest, and wiki REST API             |
 | `mcp`                | MCP server exposing indexion tools to AI assistants              |
+| `kgf`                | KGF spec inspection (tokens, events, edges, classify train)      |
+| `perf kgf`           | KGF parser performance benchmarks                                |
+| `update`             | Self-update of the indexion binary                               |
 | `spec draft`         | Generates an SDD draft from usage or README documents            |
 | `spec verify`        | Checks spec-to-implementation conformance via token analysis     |
 | `spec align diff`    | Detects drift between spec requirements and implementation       |
@@ -181,6 +191,12 @@ as a subcommand of the `indexion` CLI:
 | `spec align suggest` | Generates provenance-backed reconciliation suggestions           |
 | `spec align status`  | Summarizes alignment status for CI with exit code control        |
 | `spec align watch`   | Watches inputs and reruns alignment on changes                   |
+| `story analyze`      | Analyzes prose vs. source notes vocabulary divergence (n:m)      |
+| `story reconcile`    | Reconciles prose drift with sources/references                   |
+| `story names`        | Audits character/place naming consistency across prose           |
+| `story wiki plan` / `wiki build` | Manages a story-specific wiki extracted from sources |
+| `identity audit`     | Detects name/content drift for files, folders, and symbols       |
+| `agent orient`       | Generates a pre-edit structure brief for coding agents           |
 
 Output can be rendered as Markdown, JSON, or GitHub Issue format depending on
 the `--format` flag.
@@ -292,22 +308,34 @@ only to candidates above the pre-filter threshold.
 
 ## Multi-Language Support
 
-indexion currently ships KGF specs in four categories:
+indexion currently ships KGF specs grouped by purpose under `kgfs/`:
 
-**Programming Languages (25 specs)** -- C, C++, C#, Clojure, Dart, Elixir,
-Go, Haskell, Java, JavaScript, JavaScript-JSX, Julia, Kotlin, Lua, MoonBit,
-OCaml, PHP, Python, Ruby, Rust, Scala, Swift, TypeScript, TypeScript-JSX, Zig.
+**Programming Languages (`kgfs/programming/`)** -- C, C++, C#, Clojure, Dart,
+Elixir, Go, Haskell, Java, JavaScript, JavaScript-JSX, Julia, Kotlin, Lua,
+MoonBit, OCaml, PHP, Protobuf, Python, Ruby, Rust, Scala, Swift, TypeScript,
+TypeScript-JSX, Zig.
 
-**DSL and Document Formats (9 specs)** -- CSS, HTML, Markdown, MoonPkg,
-npm package.json, Plaintext, SQL, SQL-DDL, TOML.
+**DSL and Document Formats (`kgfs/dsl/`)** -- CSS, GitHub Wiki, GitLab Wiki,
+HTML, JSON, KGF (self-describing), Markdown, MoonPkg, npm package.json,
+Plaintext, RFC Plaintext, SDD Requirement, SDD User Story, Shell, SQL,
+SQL-DDL, Technical Document, TOML, XML, YAML.
 
-**Natural Languages (4 specs)** -- Chinese, English, Japanese, Korean. Used
-for text segmentation and digest keyword extraction.
+**Natural Languages (`kgfs/natural/`)** -- Chinese, English, Japanese, Korean.
+Used for text segmentation and digest keyword extraction.
 
-**Project Manifest Formats (13 specs)** -- build.gradle.kts, Cargo.toml,
-composer.json, .csproj, deno.json, Gemfile, go.mod, moon.mod.json,
-package.json, Package.swift, pom.xml, pyproject.toml, vcpkg.json. These let
-the resolver understand dependency declarations across ecosystems.
+**Project Manifest Formats (`kgfs/project/`)** -- build.gradle.kts, Cargo.toml,
+composer.json, .csproj, deno.json, Gemfile, .gitmodules, go.mod, moon.mod.json,
+package.json, Package.swift, pom.xml, pyproject.toml, vcpkg.json, plus
+binary office formats (.docx, .pptx, .xlsx). These let the resolver understand
+dependency declarations and embedded text across ecosystems.
+
+**Diagram Formats (`kgfs/diagram/`)** -- Mermaid.
+
+**Story Formats (`kgfs/story/`)** -- multilingual prose, used by the
+`indexion story` family of commands.
+
+**Universal fallback (`kgfs/universal.kgf`)** -- a generic spec that backs
+files indexion does not have a dedicated parser for.
 
 ### How KGF Enables Language-Agnostic Analysis
 
@@ -362,6 +390,8 @@ The registry search order is configurable [`README.md:303-309`]:
 indexion/
   cmd/indexion/               # CLI entry point and subcommands
     common/                   #   Shared CLI utilities (@common)
+    help/                     #   Shared option/flag descriptions
+    init/ check/              #   indexion init, indexion check
     explore/                  #   indexion explore
     plan/{refactor,solid,     #   indexion plan {refactor,solid,
           unwrap,reconcile,   #     unwrap,reconcile,
@@ -378,6 +408,11 @@ indexion/
     grep/ perf/               #   indexion grep, indexion perf
     serve/ segment/ kgf/      #   indexion serve, segment, kgf
     search/ mcp/              #   indexion search, indexion mcp
+    spec/{draft,verify,align}# indexion spec {draft, verify, align}
+    story/{analyze,reconcile,#   indexion story (prose drift)
+           names,wiki}/      #
+    identity/ agent/         #   indexion identity audit, agent orient
+    naming/ update/          #   shared naming, indexion update
   src/
     core/graph/               # CodeGraph types and construction
     kgf/                      # KGF engine (lexer, peg, parser,
@@ -398,6 +433,13 @@ indexion/
                               #   render, analyze, query, wiki/)
     scope/ text/              # Scope analysis, text utils
     segmentation/ http/       # Segmentation, HTTP client
+    spec/                     # SDD analysis (draft, align)
+    story/                    # Prose/source drift engine
+    identity/ agent/          # Identity audit + agent orientation
+    reconcile/ document/      # Doc reconcile, document model
+    embedding/ regexp/        # Embedding providers, regex utils
+    platform/ vfs/ zip/       # Platform abstraction, virtual FS
+    update/                   # Self-update mechanism
     vcs/                      # VCS detection + hooks-dir SoT
       git/                    #   Git-specific operations
   kgfs/                       # KGF specification files
