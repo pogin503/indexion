@@ -88,6 +88,8 @@ export default tseslint.config(
         "error",
         {
           argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
           caughtErrors: "all",
         },
       ],
