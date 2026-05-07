@@ -1,0 +1,51 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/agent/orient/report"
+
+import {
+  "trkbt10/indexion/src/agent/orient/model",
+  "trkbt10/indexion/src/agent/orient/types",
+}
+
+// Values
+pub fn briefs_from_orient_map(@model.AgentOrientMap) -> Array[@types.LocalFileBrief]
+
+pub fn consumer_surfaces(Array[@types.LocalFileBrief], Int) -> Array[@model.AgentOrientItem]
+
+pub fn do_not_implement_here(Array[@types.LocalFileBrief], Int) -> Array[@model.AgentOrientItem]
+
+pub fn evidence_from_briefs(Array[@types.LocalFileBrief], Int) -> Array[@model.AgentOrientEvidence]
+
+pub fn evidence_preview(String, Int) -> String
+
+pub fn find_orient_owner(@model.AgentOrientMap, String) -> @model.AgentOrientMapOwner?
+
+pub fn first_owner_preflight(Array[@model.AgentOrientItem]) -> @model.AgentOrientItem
+
+pub fn orient_bounded_count(Int, Int) -> Int
+
+pub fn orient_map_file_is_consumer(@model.AgentOrientMap, String) -> Bool
+
+pub fn orient_report_from_map(@model.AgentOrientConfig, Array[String], Array[@types.LocalFileBrief], @model.AgentOrientMap) -> @model.AgentOrientReport
+
+pub fn orientation_notes() -> Array[String]
+
+pub fn orientation_workflow() -> Array[String]
+
+pub fn owner_preflight(@model.AgentOrientMap, Array[@model.AgentOrientItem], Int) -> Array[@model.AgentOrientItem]
+
+pub fn preferred_owner_evidence_paths(@model.AgentOrientMapOwner, @model.AgentOrientMap) -> Array[String]
+
+pub fn push_preflight_item(Array[@model.AgentOrientItem], @model.AgentOrientItem) -> Unit
+
+pub fn readiness_quiz(Array[@model.AgentOrientItem], Array[@model.AgentOrientItem], Array[@model.AgentOrientItem], Array[@model.AgentOrientItem], Array[@model.AgentOrientItem]) -> Array[@model.AgentOrientQuizItem]
+
+pub fn required_preflight(@model.AgentOrientMap, Array[@model.AgentOrientItem], Array[@types.LocalFileBrief], Int) -> Array[@model.AgentOrientItem]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

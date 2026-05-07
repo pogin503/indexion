@@ -1,0 +1,75 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/agent/orient/map"
+
+import {
+  "trkbt10/indexion/src/agent/orient/model",
+  "trkbt10/indexion/src/agent/orient/types",
+}
+
+// Values
+pub fn affected_owner_dirs(Array[String], Array[String], Array[String], Array[String], Bool, @model.AgentOrientMap?) -> Array[String]
+
+pub fn build_or_update_orient_map(@model.AgentOrientConfig, Array[@types.LocalFileBrief], @model.AgentOrientMap?) -> @model.AgentOrientMap
+
+pub fn build_owner_map_entries(Array[@model.AgentOrientMapFile], Array[@types.LocalDocSource], @model.AgentOrientMap?, Array[String]) -> Array[@model.AgentOrientMapOwner]
+
+pub fn build_owner_map_entry(String, Array[@model.AgentOrientMapFile], Array[@types.LocalDocSource]) -> @model.AgentOrientMapOwner
+
+pub fn cached_file_hashes(@model.AgentOrientMap?) -> Map[String, String]
+
+pub fn cached_owner_for(String, @model.AgentOrientMap?) -> @model.AgentOrientMapOwner?
+
+pub fn collect_wiki_docs(String, Array[String]) -> Array[@types.LocalDocSource]
+
+pub fn deleted_file_paths(Map[String, String], Map[String, String]) -> Array[String]
+
+pub fn doc_source_exists(Array[@types.LocalDocSource], String, String) -> Bool
+
+pub fn is_documentation_path(String) -> Bool
+
+pub fn load_cached_orient_map(@model.AgentOrientConfig) -> @model.AgentOrientMap?
+
+pub fn load_wiki_manifest(String) -> @types.LocalWikiManifest?
+
+pub fn map_status_for_cached(@model.AgentOrientMap) -> @model.AgentOrientMapStatus
+
+pub fn orient_knowledge_hash(Array[@types.LocalDocSource]) -> String
+
+pub fn orient_map_file_from_brief(@types.LocalFileBrief) -> @model.AgentOrientMapFile
+
+pub fn orient_map_path(@model.AgentOrientConfig) -> String
+
+pub fn owner_dir(String) -> String
+
+pub fn owner_dirs_from_files(Array[@model.AgentOrientMapFile]) -> Array[String]
+
+pub fn owner_doc_source_count(Array[@model.AgentOrientMapOwner]) -> Int
+
+pub fn owner_files_still_match(@model.AgentOrientMapOwner, Array[@model.AgentOrientMapFile]) -> Bool
+
+pub fn owner_paths(Array[@model.AgentOrientMapOwner]) -> Array[String]
+
+pub fn push_unique_dir(Array[String], String) -> Unit
+
+pub fn refreshed_map_status(Int, Array[@model.AgentOrientMapOwner], Array[String], Array[String], Array[String], Bool, Array[String], Array[String]) -> @model.AgentOrientMapStatus
+
+pub fn reused_owner_dirs(Array[@model.AgentOrientMapOwner], Array[String]) -> Array[String]
+
+pub fn save_orient_map(@model.AgentOrientConfig, @model.AgentOrientMap) -> Unit
+
+pub fn source_matches_owner(String, String) -> Bool
+
+pub fn trim_trailing_slash(String) -> String
+
+pub fn wiki_page_covers_owner(@types.LocalWikiPage, String) -> Bool
+
+pub fn wiki_page_is_owner_specific(@types.LocalWikiPage) -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,62 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/agent/orient/matching"
+
+import {
+  "trkbt10/indexion/src/agent/orient/model",
+  "trkbt10/indexion/src/agent/orient/types",
+  "trkbt10/indexion/src/pipeline",
+}
+
+// Values
+pub fn brief_is_consumer(@types.LocalFileBrief) -> Bool
+
+pub fn canonical_orient_token(String) -> String
+
+pub fn collect_orient_tokens(String, unique~ : Bool) -> Array[String]
+
+pub fn evidence_kind(@types.LocalFileBrief) -> String
+
+pub fn filter_owner_task_terms(Array[String], @model.AgentOrientMap) -> Array[String]
+
+pub fn filter_task_terms(Array[String], Array[@types.LocalFileBrief]) -> Array[String]
+
+pub fn has_workflow_surface_terms(Array[String]) -> Bool
+
+pub fn infer_file_role(@pipeline.SupportedFile, Array[String], Array[String], Int, Int, external_terms? : Array[String]) -> String
+
+pub fn is_consumer_dominated_term(String, Array[@types.LocalFileBrief]) -> Bool
+
+pub fn map_file_is_consumer(@model.AgentOrientMapFile) -> Bool
+
+pub fn matched_terms_in_tokens(Array[String], Array[String]) -> Array[String]
+
+pub fn orientation_score(String, String, Array[String], Int) -> Double
+
+pub fn owner_task_terms_from_map(Array[String], @model.AgentOrientMap) -> Array[String]
+
+pub fn push_orient_token(Array[String], String, unique~ : Bool) -> Unit
+
+pub fn role_is_cli_consumer(String) -> Bool
+
+pub fn role_is_consumer(String) -> Bool
+
+pub fn role_is_documentation(String) -> Bool
+
+pub fn score_briefs(Array[@types.LocalFileBrief], Array[String], String) -> Array[@types.LocalFileBrief]
+
+pub fn split_orient_token(String) -> Array[String]
+
+pub fn task_token_stream(String) -> Array[String]
+
+pub fn task_tokens(String) -> Array[String]
+
+pub fn term_list_contains_any(Array[String], Array[String]) -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

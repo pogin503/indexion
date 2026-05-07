@@ -1,0 +1,46 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/agent/orient/source"
+
+import {
+  "trkbt10/indexion/src/agent/orient/model",
+  "trkbt10/indexion/src/agent/orient/types",
+  "trkbt10/indexion/src/core/graph",
+  "trkbt10/indexion/src/kgf/registry",
+  "trkbt10/indexion/src/pipeline",
+}
+
+// Values
+pub fn build_file_briefs(Array[@pipeline.SupportedFile], @graph.CodeGraph, @model.AgentOrientMap?) -> Array[@types.LocalFileBrief]
+
+pub fn build_graph(Array[@pipeline.SupportedFile], @registry.KGFRegistry) -> @graph.CodeGraph
+
+pub fn cached_file_for(String, String, @model.AgentOrientMap?) -> @model.AgentOrientMapFile?
+
+pub fn discover_files(@model.AgentOrientConfig, @registry.KGFRegistry) -> Array[@pipeline.SupportedFile]
+
+pub fn external_dependency_terms(Array[@pipeline.SupportedFile], @graph.CodeGraph) -> Map[String, Array[String]]
+
+pub fn graph_endpoint_file(String, @graph.CodeGraph) -> String?
+
+pub fn internal_dependency_counts(Array[@pipeline.SupportedFile], @graph.CodeGraph) -> Map[String, (Int, Int)]
+
+pub fn internal_incoming_count(Map[String, (Int, Int)], String) -> Int
+
+pub fn internal_outgoing_count(Map[String, (Int, Int)], String) -> Int
+
+pub fn new_local_file_brief(String, String, String, String, role? : String, structural_terms? : Array[String], summary_terms? : Array[String]) -> @types.LocalFileBrief
+
+pub fn normalize_surface_owner_roles(Array[@types.LocalFileBrief]) -> Unit
+
+pub fn structural_summary(@pipeline.SupportedFile, @graph.CodeGraph, Map[String, Array[String]]) -> String
+
+pub fn symbol_line(String, String, String?) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

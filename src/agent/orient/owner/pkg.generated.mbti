@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/agent/orient/owner"
+
+import {
+  "trkbt10/indexion/src/agent/orient/model",
+  "trkbt10/indexion/src/agent/orient/types",
+}
+
+// Values
+pub fn build_owner_doc_counts(@model.AgentOrientMap, Array[String]) -> Map[String, Int]
+
+pub fn focused_owner_window_score(String, Array[String], Map[String, Int], Int) -> Double
+
+pub fn likely_knowledge_sources(@model.AgentOrientMap, Array[String], String, Int) -> Array[@model.AgentOrientItem]
+
+pub fn likely_owners(@model.AgentOrientMap, Array[String], String, Int) -> Array[@model.AgentOrientItem]
+
+pub fn owner_file_is_documentation(@model.AgentOrientMap, String) -> Bool
+
+pub fn owner_focus_stride() -> Int
+
+pub fn owner_focus_window_size() -> Int
+
+pub fn owner_has_implementation(@model.AgentOrientMap, String) -> Bool
+
+pub fn owner_orientation_score(String, String, Array[String], Array[String], Map[String, Int], Int) -> Double
+
+pub fn owner_term_weight(String, Map[String, Int], Int) -> Double
+
+pub fn score_owner_briefs(@model.AgentOrientMap, Array[String], String) -> Array[@types.LocalOwnerBrief]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

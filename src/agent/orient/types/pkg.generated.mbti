@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/agent/orient/types"
+
+import {
+  "moonbitlang/core/json",
+  "trkbt10/indexion/src/agent/orient/model",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct LocalDocSource {
+  path : String
+  owner : String
+  source_hash : String
+  content : String
+}
+
+pub(all) struct LocalFileBrief {
+  path : String
+  role : String
+  source_hash : String
+  structural_summary : String
+  summary : String
+  structural_terms : Array[String]
+  summary_terms : Array[String]
+  score : Double
+  matched_terms : Array[String]
+}
+
+pub(all) struct LocalOwnerBrief {
+  path : String
+  score : Double
+  matched_terms : Array[String]
+}
+
+pub(all) struct LocalTermRank {
+  term : String
+  owner_docs : Int
+  consumer_docs : Int
+  all_docs : Int
+}
+
+pub(all) struct LocalWikiManifest {
+  pages : Array[LocalWikiPage]
+} derive(@json.FromJson)
+
+pub(all) struct LocalWikiPage {
+  id : String
+  title : String
+  file : String
+  sources : Array[String]
+} derive(@json.FromJson)
+
+// Type aliases
+pub using @model {type AgentOrientConfig}
+
+pub using @model {type AgentOrientEvidence}
+
+pub using @model {type AgentOrientItem}
+
+pub using @model {type AgentOrientMap}
+
+pub using @model {type AgentOrientMapFile}
+
+pub using @model {type AgentOrientMapOwner}
+
+pub using @model {type AgentOrientMapStatus}
+
+pub using @model {type AgentOrientQuizItem}
+
+pub using @model {type AgentOrientReport}
+
+// Traits
+

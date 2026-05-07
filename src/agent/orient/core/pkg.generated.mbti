@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "trkbt10/indexion/src/agent/orient/core"
+
+import {
+  "trkbt10/indexion/src/agent/orient/model",
+}
+
+// Values
+pub fn orient_agent(@model.AgentOrientConfig) -> @model.AgentOrientReport
+
+pub fn orient_map_path(@model.AgentOrientConfig) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @model {type AgentOrientConfig}
+
+pub using @model {type AgentOrientEvidence}
+
+pub using @model {type AgentOrientItem}
+
+pub using @model {type AgentOrientMap}
+
+pub using @model {type AgentOrientMapFile}
+
+pub using @model {type AgentOrientMapOwner}
+
+pub using @model {type AgentOrientMapStatus}
+
+pub using @model {type AgentOrientQuizItem}
+
+pub using @model {type AgentOrientReport}
+
+// Traits
+
